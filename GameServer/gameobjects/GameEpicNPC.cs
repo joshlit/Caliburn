@@ -9,7 +9,7 @@ namespace DOL.GS
     {
         public GameEpicNPC() : base()
         {
-            ScalingFactor = 60;
+            ScalingFactor = 45;
         }
 
         public override bool HasAbility(string keyName)

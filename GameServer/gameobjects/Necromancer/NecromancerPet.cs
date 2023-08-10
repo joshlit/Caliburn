@@ -493,7 +493,7 @@ namespace DOL.GS
 		public override bool WhisperReceive(GameLiving source, string text)
 		{
 			// Everything below this comment should not exist in a strict 1.65 level. Feel free to add it back in if desired.
-			return false;
+
 			GamePlayer owner = (Brain as IControlledBrain).Owner as GamePlayer;
 
 			if (source == null || source != owner)

@@ -2,7 +2,7 @@
     public class GameEpicDungeonNPC : GameEpicNPC {
         public GameEpicDungeonNPC() : base()
         {
-            ScalingFactor = 80;
+            ScalingFactor = 65;
         }
     }
 }
