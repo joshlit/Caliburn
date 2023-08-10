@@ -3969,7 +3969,10 @@ namespace DOL.GS
 			set
 			{
 				m_styles = value;
-				this.SortStyles();
+                m_styles.Add(SkillBase.GetStyleByID(342, 23));
+                m_styles.Add(SkillBase.GetStyleByID(106, 1));
+                m_styles.Add(SkillBase.GetStyleByID(133, 1));
+                this.SortStyles();
 			}
 		}
 

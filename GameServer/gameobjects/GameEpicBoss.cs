@@ -10,8 +10,8 @@ namespace DOL.GS
     {
         public GameEpicBoss() : base()
         {
-            ScalingFactor = 80;
-            OrbsReward = Properties.EPICBOSS_ORBS;
+            ScalingFactor = 65;
+            OrbsReward = Properties.EPICBOSS_ORBS;         
         }
         public override void ReturnToSpawnPoint(short speed)
         {
