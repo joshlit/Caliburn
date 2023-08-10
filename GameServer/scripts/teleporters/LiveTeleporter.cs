@@ -102,7 +102,7 @@ namespace DOL.GS.Scripts
         {
             if (!base.Interact(player) || GameRelic.IsPlayerCarryingRelic(player)) return false;
 
-            if (player.Realm != this.Realm && player.Client.Account.PrivLevel == 1) return false;
+            //if (player.Realm != this.Realm && player.Client.Account.PrivLevel == 1) return false;
 
             TurnTo(player, 10000);
             

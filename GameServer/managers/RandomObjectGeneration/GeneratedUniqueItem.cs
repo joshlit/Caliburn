@@ -50,7 +50,7 @@ namespace DOL.GS {
     /// </summary>
     public class GeneratedUniqueItem : ItemUnique {
         // TOA Chance in %
-        public const ushort ROG_TOA_ITEM_CHANCE = 0;
+        public const ushort ROG_TOA_ITEM_CHANCE = 33;
         // Armor Chance in %
         public const ushort ROG_ARMOR_CHANCE = 50;
         // Magical Chance in %
@@ -65,7 +65,7 @@ namespace DOL.GS {
         public const ushort ROG_CAP_QUAL = 99;
 
         // Item chance to get a TOA advanced stat in a TOA Item
-        public const ushort ROG_TOA_STAT_CHANCE = 0;
+        public const ushort ROG_TOA_STAT_CHANCE = 10;
 
         // Item chance to get stat bonus
         public const ushort ROG_ITEM_STAT_CHANCE = 45;
@@ -77,7 +77,7 @@ namespace DOL.GS {
         public const ushort ROG_ITEM_SKILL_CHANCE = 25;
 
         // Item chance to get All skills stat
-        public const ushort ROG_STAT_ALLSKILL_CHANCE = 0;
+        public const ushort ROG_STAT_ALLSKILL_CHANCE = 15;
 
         // base Chance to get a magical RoG item, Level*2 is added to get final value
         public const ushort ROG_100_MAGICAL_OFFSET = 60;
@@ -357,11 +357,11 @@ namespace DOL.GS {
 
         private void GenerateProc()
         {
-            if (!Util.Chance(1)) return;
+            if (!Util.Chance(25)) return;
             if (this.Object_Type == (int)eObjectType.Magical)
                 return;
 
-            this.ProcChance = 10;
+            this.ProcChance = 20;
 
             if(((this.Object_Type >= (int)eObjectType._FirstWeapon && this.Object_Type <= (int)eObjectType._LastWeapon) || this.Object_Type == (int)eObjectType.Shield))
             {
@@ -407,6 +407,82 @@ namespace DOL.GS {
                     {
                         this.ProcSpellID = 8017;
                         this.LevelRequirement = 40;
+                    }
+                    else
+                    {
+                        this.LevelRequirement = 45;
+                        switch (Util.Random(22))
+                        {
+                            case 0:
+                                this.ProcSpellID = 40016;  // LifedrainCold65
+                                break;
+                            case 1:
+                                this.ProcSpellID = 32302;  // LifedrainBody65  
+                                break;
+                            case 2:
+                                this.ProcSpellID = 32171;  // Haste17 
+                                break;
+                            case 3:
+                                this.ProcSpellID = 31170;  // AeDDHeat51
+                                break;
+                            case 4:
+                                this.ProcSpellID = 32052;  // DDwDebuff50Spirit
+                                break;
+                            case 5:
+                                this.ProcSpellID = 32051;  // DDwDebuff50Matter
+                                break;
+                            case 6:
+                                this.ProcSpellID = 32053;  // DDwDebuff50Heat
+                                break;
+                            case 7:
+                                this.ProcSpellID = 32050;  // DDwDebuff50Cold
+                                break;
+                            case 8:
+                                this.ProcSpellID = 31171;  // StrConDebuff56
+                                break;
+                            case 9:
+                                this.ProcSpellID = 32305;  // DexQuiDebuff56
+                                break;
+                            case 10:
+                                this.ProcSpellID = 32212;  // Omni75
+                                break;
+                            case 11:
+                                this.ProcSpellID = 31165;  // Endu20
+                                break;
+                            case 12:
+                                this.ProcSpellID = 65525;  // DOTBody64
+                                break;
+                            case 13:
+                                this.ProcSpellID = 65538;  // DOTEnergy64
+                                break;
+                            case 14:
+                                this.ProcSpellID = 65529;  // DDEnergy95
+                                break;
+                            case 15:
+                                this.ProcSpellID = 32031;  // DDHeat95
+                                break;
+                            case 16:
+                                this.ProcSpellID = 321267;  // DDCold95
+                                break;
+                            case 17:
+                                this.ProcSpellID = 32015;  // DOTMatter57
+                                break;
+                            case 18:
+                                this.ProcSpellID = 32014;  // DOTHeat57
+                                break;
+                            case 19:
+                                this.ProcSpellID = 32035;  // DOTHeat64
+                                break;
+                            case 20:
+                                this.ProcSpellID = 35555;  // AtkSpdDebuff40
+                                break;
+                            case 21:
+                                this.ProcSpellID = 40034;  // Powerheal
+                                break;
+                            default:
+                                this.ProcSpellID = 21114;
+                                break;
+                        }
                     }
                 }
                 else
@@ -454,7 +530,7 @@ namespace DOL.GS {
                     }
                 }
             }
-            else if(this.Object_Type >= (int)eObjectType._FirstArmor && this.Object_Type <= (int)eObjectType._LastArmor && this.Item_Type == Slot.TORSO)
+            else if(this.Object_Type >= (int)eObjectType._FirstArmor && this.Object_Type <= (int)eObjectType._LastArmor)
             {
                 if (Util.Chance(50))
                 {
@@ -498,6 +574,79 @@ namespace DOL.GS {
                     {
                         this.ProcSpellID = 8037;
                         this.LevelRequirement = 40;
+                    }
+                    else
+                    {
+                        this.LevelRequirement = 45;
+                        switch (Util.Random(21))
+                        {
+                            case 0:
+                                this.ProcSpellID = 40016;  // LifedrainCold65
+                                break;
+                            case 1:
+                                this.ProcSpellID = 32302;  // LifedrainBody65  
+                                break;
+                            case 2:
+                                this.ProcSpellID = 736;  // heal 84 
+                                break;
+                            case 3:
+                                this.ProcSpellID = 32300;  // heal 130
+                                break;
+                            case 4:
+                                this.ProcSpellID = 31163;  // HOT 118
+                                break;
+                            case 5:
+                                this.ProcSpellID = 31171;  // StrConDebuff56
+                                break;
+                            case 6:
+                                this.ProcSpellID = 32305;  // DexQuiDebuff56
+                                break;
+                            case 7:
+                                this.ProcSpellID = 32212;  // Omni75
+                                break;
+                            case 8:
+                                this.ProcSpellID = 65525;  // DOTBody64
+                                break;
+                            case 9:
+                                this.ProcSpellID = 65538;  // DOTEnergy64
+                                break;
+                            case 10:
+                                this.ProcSpellID = 65529;  // DDEnergy95
+                                break;
+                            case 11:
+                                this.ProcSpellID = 32031;  // DDHeat95
+                                break;
+                            case 12:
+                                this.ProcSpellID = 321267;  // DDCold95
+                                break;
+                            case 13:
+                                this.ProcSpellID = 32015;  // DOTMatter57
+                                break;
+                            case 14:
+                                this.ProcSpellID = 32014;  // DOTHeat57
+                                break;
+                            case 15:
+                                this.ProcSpellID = 32035;  // DOTHeat64
+                                break;
+                            case 16:
+                                this.ProcSpellID = 32160;  // AF47
+                                break;
+                            case 17:
+                                this.ProcSpellID = 32160;  // AcuityBuff47
+                                break;
+                            case 18:
+                                this.ProcSpellID = 32181;  // DMGShield4.7
+                                break;
+                            case 19:
+                                this.ProcSpellID = 32153;  // Ablative50_200
+                                break;
+                            case 20:
+                                this.ProcSpellID = 65516;  // 
+                                break;
+                            default:
+                                this.ProcSpellID = 1564;
+                                break;
+                        }
                     }
                 }
                 else
@@ -823,13 +972,13 @@ namespace DOL.GS {
             //allfocus
             if (CanAddFocus())
                 return eBonusType.Focus;
-            /*
+            
 			// ToA allows stat cap bonuses
 			if (toa && Util.Chance(ROG_TOA_STAT_CHANCE))
 			{
 				return eBonusType.AdvancedStat;
 			}
-			*/
+			
 
             if (Level < 10)
             {
@@ -1005,7 +1154,7 @@ namespace DOL.GS {
                     }
                 case eBonusType.Stat:
                     {
-                        /*
+                        
                         // ToDo: this does not check for duplicates like INT and Acuity
                         ArrayList validStats = new ArrayList();
                         foreach (eProperty property in StatBonus)
@@ -1016,7 +1165,7 @@ namespace DOL.GS {
                             }
                         }
                         return (eProperty)validStats[Util.Random(0, validStats.Count - 1)];
-                        */
+                        
                         return GetWeightedStatForClass(this.charClass);
                     }
                 case eBonusType.AdvancedStat:

@@ -174,7 +174,6 @@ namespace DOL.GS
 		public override bool WhisperReceive(GameLiving source, string str)
 		{
 			// Everything below this comment is added in 1.83, and should not exist in a strict 1.65 level. Feel free to add it back in if desired.
-			return false;
 
 			if (source is not GamePlayer player || player != Owner)
 				return false;

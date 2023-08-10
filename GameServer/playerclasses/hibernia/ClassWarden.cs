@@ -28,7 +28,7 @@ namespace DOL.GS.PlayerClass
 			: base()
 		{
 			m_profession = "PlayerClass.Profession.PathofFocus";
-			m_specializationMultiplier = 15; //18
+			m_specializationMultiplier = 18; //atlas 15
 			m_primaryStat = eStat.EMP;
 			m_secondaryStat = eStat.STR;
 			m_tertiaryStat = eStat.CON;
@@ -48,8 +48,7 @@ namespace DOL.GS.PlayerClass
 
 		public override List<PlayerRace> EligibleRaces => new List<PlayerRace>()
 		{
-			 //PlayerRace.Celt, PlayerRace.Firbolg, PlayerRace.Graoch, PlayerRace.Sylvan,
-			 PlayerRace.Celt, PlayerRace.Firbolg, PlayerRace.Sylvan,
+			 PlayerRace.Celt, PlayerRace.Firbolg, PlayerRace.Graoch, PlayerRace.Sylvan,
 		};
 	}
 }

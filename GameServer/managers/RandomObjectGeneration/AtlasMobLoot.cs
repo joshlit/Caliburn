@@ -207,13 +207,50 @@ namespace DOL.GS {
             ItemTemplate item = null;
                 
                 
-            GeneratedUniqueItem tmp = AtlasROGManager.GenerateMonsterLootROG(player.Realm, classForLoot, lootLevel, player.CurrentZone?.IsOF ?? false);
+            GeneratedUniqueItem tmp = AtlasROGManager.GenerateMonsterLootROG(GetRealmFromClass(classForLoot), classForLoot, lootLevel, player.CurrentZone?.IsOF ?? false);
             tmp.GenerateItemQuality(killedcon);
             //tmp.CapUtility(mob.Level + 1);
             item = tmp;
             item.MaxCount = 1;
 
             return item;
+        }
+        
+        private eRealm GetRealmFromClass(eCharacterClass charClass){
+            switch (charClass)
+            {
+                 case eCharacterClass.Armsman:
+                 case eCharacterClass.Paladin:
+                 case eCharacterClass.Mercenary:
+                 case eCharacterClass.Reaver:
+                 case eCharacterClass.Cleric:
+                 case eCharacterClass.Friar:
+                 case eCharacterClass.Infiltrator:
+                 case eCharacterClass.Minstrel:
+                 case eCharacterClass.Scout:
+                 case eCharacterClass.Cabalist:
+                 case eCharacterClass.Sorcerer:
+                 case eCharacterClass.Theurgist:
+                 case eCharacterClass.Wizard:
+                 case eCharacterClass.Necromancer:
+                     return eRealm.Albion;
+                 case eCharacterClass.Bard:
+                 case eCharacterClass.Druid:
+                 case eCharacterClass.Warden:
+                 case eCharacterClass.Blademaster:
+                 case eCharacterClass.Hero:
+                 case eCharacterClass.Champion:
+                 case eCharacterClass.Eldritch:
+                 case eCharacterClass.Enchanter:
+                 case eCharacterClass.Mentalist:
+                 case eCharacterClass.Nightshade:
+                 case eCharacterClass.Ranger:
+                 case eCharacterClass.Animist:
+                 case eCharacterClass.Valewalker:
+                     return eRealm.Hibernia;
+                 default:
+                     return eRealm.Midgard;
+            }
         }
 
         private eCharacterClass GetRandomClassFromGroup(Group group)
