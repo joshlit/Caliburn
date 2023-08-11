@@ -121,7 +121,7 @@ namespace DOL.GS {
         }
 
         public GeneratedUniqueItem(eRealm realm, eCharacterClass charClass, byte level, eObjectType type, eInventorySlot slot, eDamageType dmg, int minUtility = 15)
-            : this(false, realm, charClass, level, type, slot, dmg, minUtility)
+            : this(Util.Random(100) < ROG_TOA_ITEM_CHANCE, realm, charClass, level, type, slot, dmg, minUtility)
         {
 
         }
@@ -4891,7 +4891,7 @@ namespace DOL.GS {
                         else if (property == eProperty.PowerPoolCapBonus)
                             return Util.Random(1, 10); // cap is 50
                         else
-                            return Util.Random(1, 6); // cap is 26
+                            return Util.Random(1, 3); // cap is 26
                     }
             }
             return 1;
@@ -4988,8 +4988,11 @@ namespace DOL.GS {
             if (GetTotalUtility() > cap)
             {
                 int bestline = 1;
-                while (GetTotalUtility() > cap)
+                int numTries = 0;
+                int overflowProtection = 10;
+                while (GetTotalUtility() > cap && numTries < overflowProtection)
                 {
+                    numTries++;
                     //find highest utility line on the item
                     bestline = GetHighestUtilitySingleLine();
                     //Console.WriteLine($"TotalUti: {GetTotalUtility()} bestline {bestline} ");
@@ -5228,6 +5231,18 @@ namespace DOL.GS {
                 {
                     Bonus = Bonus - Util.Random(1, Math.Min(Bonus, 1)); //up to 5 uti reduction
                 }
+                else if ((eProperty)BonusType is eProperty.MeleeDamage or eProperty.SpellDamage or eProperty.StyleDamage or eProperty.RangedDamage
+                         or eProperty.ArcheryRange or eProperty.SpellRange 
+                         or eProperty.MeleeSpeed or eProperty.ArcherySpeed or eProperty.CastingSpeed or eProperty.ResistPierce)
+                {
+                    Bonus = Bonus - 1;
+                }
+                else if ((eProperty) BonusType is eProperty.SpellDuration or eProperty.BuffEffectiveness
+                         or eProperty.DebuffEffectivness or eProperty.HealingEffectiveness
+                         or eProperty.FatigueConsumption or eProperty.PowerPoolCapBonus or eProperty.SpellPowerCost)
+                {
+                    Bonus = Bonus - 1;
+                }
                 else if (BonusType == 163
                   || BonusType == 164
                   || BonusType == 167
@@ -5241,7 +5256,7 @@ namespace DOL.GS {
             return Bonus;
         }
         
-        private int IncreaseSingleLineUtility(int BonusType, int Bonus)
+        private int IncreaseSingleLineUtility(int BonusType, int itemBonus)
         {
             //Console.WriteLine($"Increasing utility for {this.Name}. Total bonus before: {Bonus} bonustype {BonusType}");
             //based off of eProperty
@@ -5255,28 +5270,40 @@ namespace DOL.GS {
             //167 == all dual weild = *10
             //168 == all archery = *10
             if (BonusType != 0 &&
-                Bonus != 0)
+                itemBonus != 0)
             {
                 if (BonusType < 9 || BonusType == 156)
                 {
                     //reduce by 1-4, but not more than exists
-                    Bonus = Bonus + Util.Random(1, Math.Min(Bonus, 10)); //up to ~7 uti reduction
+                    itemBonus = itemBonus + Util.Random(1, Math.Min(itemBonus, 10)); //up to ~7 uti reduction
                 }
                 else if (BonusType == 9)
                 {
-                    Bonus = Bonus + Util.Random(1, Math.Min(Bonus, 2)); //up to 4 uti reduction
+                    itemBonus = itemBonus + Util.Random(1, Math.Min(itemBonus, 2)); //up to 4 uti reduction
                 }
                 else if (BonusType == 10)
                 {
-                    Bonus = Bonus + Util.Random(1, Math.Min(Bonus, 20)); //up to 5 uti reduction
+                    itemBonus = itemBonus + Util.Random(1, Math.Min(itemBonus, 20)); //up to 5 uti reduction
                 }
                 else if (BonusType < 20)
                 {
-                    Bonus = Bonus + Util.Random(1, Math.Min(Bonus, 3)); //up to 6 uti reduction
+                    itemBonus = itemBonus + Util.Random(1, Math.Min(itemBonus, 3)); //up to 6 uti reduction
                 }
                 else if (BonusType < 115)
                 {
-                    Bonus = Bonus + Util.Random(1, Math.Min(Bonus, 1)); //up to 5 uti reduction
+                    itemBonus = itemBonus + Util.Random(1, Math.Min(itemBonus, 1)); //up to 5 uti reduction
+                }
+                else if ((eProperty)BonusType is eProperty.MeleeDamage or eProperty.SpellDamage or eProperty.StyleDamage or eProperty.RangedDamage
+                         or eProperty.ArcheryRange or eProperty.SpellRange 
+                         or eProperty.MeleeSpeed or eProperty.ArcherySpeed or eProperty.CastingSpeed or eProperty.ResistPierce)
+                {
+                    itemBonus = itemBonus + 1;
+                }
+                else if ((eProperty) BonusType is eProperty.SpellDuration or eProperty.BuffEffectiveness
+                         or eProperty.DebuffEffectivness or eProperty.HealingEffectiveness
+                         or eProperty.FatigueConsumption or eProperty.PowerPoolCapBonus or eProperty.SpellPowerCost)
+                {
+                    itemBonus = itemBonus + 1;
                 }
                 else if (BonusType == 163
                          || BonusType == 164
@@ -5284,13 +5311,31 @@ namespace DOL.GS {
                          || BonusType == 168
                          || BonusType == 213)
                 {
-                    Bonus = 0; //no +all skills on rogs
+                    itemBonus = 0; //no +all skills on rogs
                 }
             }
             //Console.WriteLine($"Total bonus after: {Bonus}");
-            return Bonus;
+            return itemBonus;
         }
 
+        private double GetTotalUtility()
+        {
+            double totalUti = 0;
+            totalUti += GetSingleUtility(Bonus1Type, Bonus1);
+            totalUti += GetSingleUtility(Bonus2Type, Bonus2);
+            totalUti += GetSingleUtility(Bonus3Type, Bonus3);
+            totalUti += GetSingleUtility(Bonus4Type, Bonus4);
+            totalUti += GetSingleUtility(Bonus5Type, Bonus5);
+            totalUti += GetSingleUtility(Bonus6Type, Bonus6);
+            totalUti += GetSingleUtility(Bonus7Type, Bonus7);
+            totalUti += GetSingleUtility(Bonus8Type, Bonus8);
+            totalUti += GetSingleUtility(Bonus9Type, Bonus9);
+            totalUti += GetSingleUtility(Bonus10Type, Bonus10);
+            totalUti += GetSingleUtility(ExtraBonusType, ExtraBonus);
+            return totalUti;
+        }
+        
+        /*
         private double GetTotalUtility()
         {
             double totalUti = 0;
@@ -5665,9 +5710,9 @@ namespace DOL.GS {
             }
 
             return totalUti;
-        }
+        }*/
 
-        private double GetSingleUtility(int BonusType, int Bonus)
+        private double GetSingleUtility(int itemBonusType, int itemBonus)
         {
             double totalUti = 0;
 
@@ -5681,39 +5726,89 @@ namespace DOL.GS {
             //164 == all melee = *10
             //167 == all dual weild = *10
             //168 == all archery = *10
-            if (BonusType != 0 &&
-                Bonus != 0)
+            if (itemBonusType == 0 ||
+                itemBonus == 0) return totalUti;
+            
+            switch (itemBonusType)
             {
-                if (BonusType < 9 || BonusType == 156)
+                case < 9:
+                case 156:
+                    totalUti += itemBonus * .6667;
+                    break;
+                case 9:
+                    totalUti += itemBonus;
+                    break;
+                case 10:
+                case 210:
+                    totalUti += itemBonus * .25;
+                    break;
+                case < 20:
+                    totalUti += itemBonus * 2;
+                    break;
+                case < 115:
+                    totalUti += itemBonus * 5;
+                    break;
+                case 163:
+                case 164:
+                case 167:
+                case 168:
+                case 213:
+                    totalUti += itemBonus * 10;
+                    break;
+                case 165:
+                    totalUti += 0;
+                    break;
+                default:
                 {
-                    totalUti += Bonus * .6667;
-                }
-                else if (BonusType == 9)
-                {
-                    totalUti += Bonus;
-                }
-                else if (BonusType == 10)
-                {
-                    totalUti += Bonus * .25;
-                }
-                else if (BonusType < 20)
-                {
-                    totalUti += Bonus * 2;
-                }
-                else if (BonusType < 115)
-                {
-                    totalUti += Bonus * 5;
-                }
-                else if (BonusType == 163
-                  || BonusType == 164
-                  || BonusType == 167
-                  || BonusType == 168
-                  || BonusType == 213)
-                {
-                    totalUti += Bonus * 10;
+                    switch ((eProperty) itemBonusType)
+                    {
+                        //5 uti TOA bonuses
+                        case eProperty.MeleeDamage:
+                        case eProperty.SpellDamage:
+                        case eProperty.StyleDamage:
+                        case eProperty.RangedDamage:
+                        case eProperty.ArcheryRange:
+                        case eProperty.SpellRange:
+                        case eProperty.MeleeSpeed:
+                        case eProperty.ArcherySpeed:
+                        case eProperty.CastingSpeed:
+                        case eProperty.ResistPierce:
+                            totalUti += itemBonus * 5;
+                            break;
+                        //2 uti TOA bonuses
+                        case eProperty.SpellDuration:
+                        case eProperty.BuffEffectiveness:
+                        case eProperty.DebuffEffectivness:
+                        case eProperty.HealingEffectiveness:
+                        case eProperty.FatigueConsumption:
+                        case eProperty.PowerPoolCapBonus:
+                        case eProperty.SpellPowerCost:
+                        case eProperty.PowerPool:
+                        case eProperty.StrCapBonus:
+                        case eProperty.DexCapBonus:
+                        case eProperty.ConCapBonus:
+                        case eProperty.QuiCapBonus:
+                        case eProperty.AcuCapBonus:
+                        case eProperty.ChaCapBonus:
+                        case eProperty.EmpCapBonus:
+                        case eProperty.IntCapBonus:
+                        case eProperty.PieCapBonus:
+                        case eProperty.BodyResCapBonus:
+                        case eProperty.ColdResCapBonus:
+                        case eProperty.CrushResCapBonus:
+                        case eProperty.EnergyResCapBonus:
+                        case eProperty.HeatResCapBonus:
+                        case eProperty.MatterResCapBonus:
+                        case eProperty.SlashResCapBonus:
+                        case eProperty.SpiritResCapBonus:
+                        case eProperty.ThrustResCapBonus:
+                            totalUti += itemBonus * 2;
+                            break;
+                    }
+                    break;
                 }
             }
-
+            //Console.WriteLine($"single Uti of {totalUti} for bonus {itemBonus} of type {(eProperty)itemBonusType} {itemBonusType}");
 
             return totalUti;
         }
