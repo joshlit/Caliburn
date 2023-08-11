@@ -431,7 +431,7 @@ namespace DOL.GS.Commands
                             MobPosX = BasePosX;
                             MobPosY = BasePosY;
                         }
-                        mob[MobNumber].WalkTo(new Point3D(MobPosX, MobPosY, commanderMob.Z, mob[MobNumber].MaxSpeed));
+                        mob[MobNumber].WalkTo(new Point3D(MobPosX, MobPosY, commanderMob.Z), mob[MobNumber].MaxSpeed);
                         mob[MobNumber].Heading = Convert.ToUInt16(commanderMob.Heading);
                         mob[MobNumber].Heading = Convert.ToUInt16(commanderMob.Heading);
                     }
