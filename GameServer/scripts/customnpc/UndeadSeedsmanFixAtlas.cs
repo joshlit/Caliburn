@@ -273,7 +273,7 @@ namespace DOL.AI.Brain
                 if (chance == 3)
                 {
                     int spot = Util.Random(0, UndeadSeedsman.UndeadSeedsmanWalks.GetLength(0) - 1);
-                    seedsman.WalkTo(new Point3D(UndeadSeedsman.UndeadSeedsmanWalks[spot, 0], UndeadSeedsman.UndeadSeedsmanWalks[spot, 1], UndeadSeedsman.UndeadSeedsmanWalks[spot, 2], 80));
+                    seedsman.WalkTo(new Point3D(UndeadSeedsman.UndeadSeedsmanWalks[spot, 0], UndeadSeedsman.UndeadSeedsmanWalks[spot, 1], UndeadSeedsman.UndeadSeedsmanWalks[spot, 2]), 80);
                 }
             }
             
