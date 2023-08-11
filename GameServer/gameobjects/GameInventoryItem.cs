@@ -895,426 +895,119 @@ namespace DOL.GS {
         public double GetTotalUtility()
         {
             double totalUti = 0;
-
-            //based off of eProperty
-            //1-8 == stats = *.6667
-            //9 == power cap = *2
-            //10 == maxHP =  *.25
-            //11-19 == resists = *2
-            //20-115 == skill = *5
-            //163 == all magic = *5
-            //164 == all melee = *5
-            //167 == all dual weild = *5
-            //168 == all archery = *5
-            if (Bonus1Type != 0 &&
-                Bonus1 != 0)
-            {
-                if (Bonus1Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus1 * .6667;
-                }
-                else if (Bonus1Type == 9)
-                {
-                    totalUti += Bonus1;
-                }
-                else if (Bonus1Type == 10)
-                {
-                    totalUti += Bonus1 * .25;
-                }
-                else if (Bonus1Type < 20)
-                {
-                    totalUti += Bonus1 * 2;
-                }
-                else if (Bonus1Type < 115)
-                {
-                    totalUti += Bonus1 * 5;
-                }
-                else if (Bonus1Type == 163
-                  || Bonus1Type == 164
-                  || Bonus1Type == 167
-                  || Bonus1Type == 168
-                  || Bonus1Type == 213)
-                {
-                    totalUti += Bonus1 * 5;
-                }
-            }
-
-            if (Bonus2Type != 0 &&
-                Bonus2 != 0)
-            {
-                if (Bonus2Type < 9 || Bonus2Type == 156)
-                {
-                    totalUti += Bonus2 * .6667;
-                }
-                else if (Bonus2Type == 9)
-                {
-                    totalUti += Bonus2;
-                }
-                else if (Bonus2Type == 10)
-                {
-                    totalUti += Bonus2 * .25;
-                }
-                else if (Bonus2Type < 20)
-                {
-                    totalUti += Bonus2 * 2;
-                }
-                else if (Bonus2Type < 115)
-                {
-                    totalUti += Bonus2 * 5;
-                }
-                else if (Bonus2Type == 163
-                  || Bonus2Type == 164
-                  || Bonus2Type == 167
-                  || Bonus2Type == 168
-                  || Bonus2Type == 213)
-                {
-                    totalUti += Bonus2 * 5;
-                }
-            }
-
-            if (Bonus3Type != 0 &&
-                Bonus3 != 0)
-            {
-                if (Bonus3Type < 9 || Bonus3Type == 156)
-                {
-                    totalUti += Bonus3 * .6667;
-                }
-                else if (Bonus3Type == 9)
-                {
-                    totalUti += Bonus3;
-                }
-                else if (Bonus3Type == 10)
-                {
-                    totalUti += Bonus3 * .25;
-                }
-                else if (Bonus3Type < 20)
-                {
-                    totalUti += Bonus3 * 2;
-                }
-                else if (Bonus3Type < 115)
-                {
-                    totalUti += Bonus3 * 5;
-                }
-                else if (Bonus3Type == 163
-                  || Bonus3Type == 164
-                  || Bonus3Type == 167
-                  || Bonus3Type == 168
-                  || Bonus3Type == 213)
-                {
-                    totalUti += Bonus3 * 5;
-                }
-            }
-
-            if (Bonus4Type != 0 &&
-                Bonus4 != 0)
-            {
-                if (Bonus4Type < 9 || Bonus4Type == 156)
-                {
-                    totalUti += Bonus4 * .6667;
-                }
-                else if (Bonus4Type == 9)
-                {
-                    totalUti += Bonus4;
-                }
-                else if (Bonus4Type == 10)
-                {
-                    totalUti += Bonus4 * .25;
-                }
-                else if (Bonus4Type < 20)
-                {
-                    totalUti += Bonus4 * 2;
-                }
-                else if (Bonus4Type < 115)
-                {
-                    totalUti += Bonus4 * 5;
-                }
-                else if (Bonus4Type == 163
-                  || Bonus4Type == 164
-                  || Bonus4Type == 167
-                  || Bonus4Type == 168
-                  || Bonus4Type == 213)
-                {
-                    totalUti += Bonus4 * 5;
-                }
-            }
-
-            if (Bonus5Type != 0 &&
-                Bonus5 != 0)
-            {
-                if (Bonus5Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus5 * .6667;
-                }
-                else if (Bonus5Type == 9)
-                {
-                    totalUti += Bonus5;
-                }
-                else if (Bonus5Type == 10)
-                {
-                    totalUti += Bonus5 * .25;
-                }
-                else if (Bonus5Type < 20)
-                {
-                    totalUti += Bonus5 * 2;
-                }
-                else if (Bonus5Type < 115)
-                {
-                    totalUti += Bonus5 * 5;
-                }
-                else if (Bonus5Type == 163
-                  || Bonus5Type == 164
-                  || Bonus5Type == 167
-                  || Bonus5Type == 168
-                  || Bonus5Type == 213)
-                {
-                    totalUti += Bonus5 * 5;
-                }
-            }
-
-            if (Bonus6Type != 0 &&
-                Bonus6 != 0)
-            {
-                if (Bonus6Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus6 * .6667;
-                }
-                else if (Bonus6Type == 9)
-                {
-                    totalUti += Bonus6;
-                }
-                else if (Bonus6Type == 10)
-                {
-                    totalUti += Bonus6 * .25;
-                }
-                else if (Bonus6Type < 20)
-                {
-                    totalUti += Bonus6 * 2;
-                }
-                else if (Bonus6Type < 115)
-                {
-                    totalUti += Bonus6 * 5;
-                }
-                else if (Bonus6Type == 163
-                  || Bonus6Type == 164
-                  || Bonus6Type == 167
-                  || Bonus6Type == 168
-                  || Bonus6Type == 213)
-                {
-                    totalUti += Bonus6 * 5;
-                }
-            }
-
-            if (Bonus7Type != 0 &&
-                Bonus7 != 0)
-            {
-                if (Bonus7Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus7 * .6667;
-                }
-                else if (Bonus7Type == 9)
-                {
-                    totalUti += Bonus7;
-                }
-                else if (Bonus7Type == 10)
-                {
-                    totalUti += Bonus7 * .25;
-                }
-                else if (Bonus7Type < 20)
-                {
-                    totalUti += Bonus7 * 2;
-                }
-                else if (Bonus7Type < 115)
-                {
-                    totalUti += Bonus7 * 5;
-                }
-                else if (Bonus7Type == 163
-                  || Bonus7Type == 164
-                  || Bonus7Type == 167
-                  || Bonus7Type == 168
-                  || Bonus7Type == 213)
-                {
-                    totalUti += Bonus7 * 5;
-                }
-            }
-            if (Bonus8Type != 0 &&
-                Bonus8 != 0)
-            {
-                if (Bonus8Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus8 * .6667;
-                }
-                else if (Bonus8Type == 9)
-                {
-                    totalUti += Bonus8;
-                }
-                else if (Bonus8Type == 10)
-                {
-                    totalUti += Bonus8 * .25;
-                }
-                else if (Bonus8Type < 20)
-                {
-                    totalUti += Bonus8 * 2;
-                }
-                else if (Bonus8Type < 115)
-                {
-                    totalUti += Bonus8 * 5;
-                }
-                else if (Bonus8Type == 163
-                  || Bonus8Type == 164
-                  || Bonus8Type == 167
-                  || Bonus8Type == 168
-                  || Bonus8Type == 213)
-                {
-                    totalUti += Bonus8 * 5;
-                }
-            }
-            if (Bonus9Type != 0 &&
-                Bonus9 != 0)
-            {
-                if (Bonus9Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus9 * .6667;
-                }
-                else if (Bonus9Type == 9)
-                {
-                    totalUti += Bonus9;
-                }
-                else if (Bonus9Type == 10)
-                {
-                    totalUti += Bonus9 * .25;
-                }
-                else if (Bonus9Type < 20)
-                {
-                    totalUti += Bonus9 * 2;
-                }
-                else if (Bonus9Type < 115)
-                {
-                    totalUti += Bonus9 * 5;
-                }
-                else if (Bonus9Type == 163
-                  || Bonus9Type == 164
-                  || Bonus9Type == 167
-                  || Bonus9Type == 168
-                  || Bonus9Type == 213)
-                {
-                    totalUti += Bonus9 * 5;
-                }
-            }
-            if (Bonus10Type != 0 &&
-                Bonus10 != 0)
-            {
-                if (Bonus10Type < 9 || Bonus1Type == 156)
-                {
-                    totalUti += Bonus10 * .6667;
-                }
-                else if (Bonus10Type == 9)
-                {
-                    totalUti += Bonus10;
-                }
-                else if (Bonus10Type == 10)
-                {
-                    totalUti += Bonus10 * .25;
-                }
-                else if (Bonus10Type < 20)
-                {
-                    totalUti += Bonus10 * 2;
-                }
-                else if (Bonus10Type < 115)
-                {
-                    totalUti += Bonus10 * 5;
-                }
-                else if (Bonus10Type == 163
-                  || Bonus10Type == 164
-                  || Bonus10Type == 167
-                  || Bonus10Type == 168
-                  || Bonus10Type == 213)
-                {
-                    totalUti += Bonus10 * 5;
-                }
-            }
-            if (ExtraBonusType != 0 &&
-                ExtraBonus != 0)
-            {
-                if (ExtraBonusType < 9 || Bonus1Type == 156)
-                {
-                    totalUti += ExtraBonus * .6667;
-                }
-                else if (ExtraBonusType == 9)
-                {
-                    totalUti += ExtraBonus;
-                }
-                else if (ExtraBonusType == 10)
-                {
-                    totalUti += ExtraBonus * .25;
-                }
-                else if (ExtraBonusType < 20)
-                {
-                    totalUti += ExtraBonus * 2;
-                }
-                else if (ExtraBonusType < 115)
-                {
-                    totalUti += ExtraBonus * 5;
-                }
-                else if (ExtraBonusType == 163
-                  || ExtraBonusType == 164
-                  || ExtraBonusType == 167
-                  || ExtraBonusType == 168
-                  || ExtraBonusType == 213)
-                {
-                    totalUti += ExtraBonus * 5;
-                }
-            }
-
+            totalUti += GetSingleUtility(Bonus1Type, Bonus1);
+            totalUti += GetSingleUtility(Bonus2Type, Bonus2);
+            totalUti += GetSingleUtility(Bonus3Type, Bonus3);
+            totalUti += GetSingleUtility(Bonus4Type, Bonus4);
+            totalUti += GetSingleUtility(Bonus5Type, Bonus5);
+            totalUti += GetSingleUtility(Bonus6Type, Bonus6);
+            totalUti += GetSingleUtility(Bonus7Type, Bonus7);
+            totalUti += GetSingleUtility(Bonus8Type, Bonus8);
+            totalUti += GetSingleUtility(Bonus9Type, Bonus9);
+            totalUti += GetSingleUtility(Bonus10Type, Bonus10);
+            totalUti += GetSingleUtility(ExtraBonusType, ExtraBonus);
             return totalUti;
         }
+        
 
-        private double GetSingleUtility(int BonusType, int Bonus)
+        private double GetSingleUtility(int itemBonusType, int itemBonus)
         {
             double totalUti = 0;
 
             //based off of eProperty
             //1-8 == stats = *.6667
-            //9 == power cap = *2
+            //9 == power cap = *1
             //10 == maxHP =  *.25
             //11-19 == resists = *2
             //20-115 == skill = *5
-            //163 == all magic = *5
-            //164 == all melee = *5
-            //167 == all dual wield = *5
-            //168 == all archery = *5
-            if (BonusType != 0 &&
-                Bonus != 0)
+            //163 == all magic = *10
+            //164 == all melee = *10
+            //167 == all dual weild = *10
+            //168 == all archery = *10
+            if (itemBonusType == 0 ||
+                itemBonus == 0) return totalUti;
+            
+            switch (itemBonusType)
             {
-                if (BonusType < 9 || BonusType == 156)
+                case < 9:
+                case 156:
+                    totalUti += itemBonus * .6667;
+                    break;
+                case 9:
+                    totalUti += itemBonus;
+                    break;
+                case 10:
+                case 210:
+                    totalUti += itemBonus * .25;
+                    break;
+                case < 20:
+                    totalUti += itemBonus * 2;
+                    break;
+                case < 115:
+                    totalUti += itemBonus * 5;
+                    break;
+                case 163:
+                case 164:
+                case 167:
+                case 168:
+                case 213:
+                    totalUti += itemBonus * 10;
+                    break;
+                case 165:
+                    totalUti += 0;
+                    break;
+                default:
                 {
-                    totalUti += Bonus * .6667;
-                }
-                else if (BonusType == 9)
-                {
-                    totalUti += Bonus;
-                }
-                else if (BonusType == 10)
-                {
-                    totalUti += Bonus * .25;
-                }
-                else if (BonusType < 20)
-                {
-                    totalUti += Bonus * 2;
-                }
-                else if (BonusType < 115)
-                {
-                    totalUti += Bonus * 5;
-                }
-                else if (BonusType == 163
-                  || BonusType == 164
-                  || BonusType == 167
-                  || BonusType == 168
-                  || BonusType == 213)
-                {
-                    totalUti += Bonus * 5;
+                    switch ((eProperty) itemBonusType)
+                    {
+                        //5 uti TOA bonuses
+                        case eProperty.MeleeDamage:
+                        case eProperty.SpellDamage:
+                        case eProperty.StyleDamage:
+                        case eProperty.RangedDamage:
+                        case eProperty.ArcheryRange:
+                        case eProperty.SpellRange:
+                        case eProperty.MeleeSpeed:
+                        case eProperty.ArcherySpeed:
+                        case eProperty.CastingSpeed:
+                        case eProperty.ResistPierce:
+                            totalUti += itemBonus * 5;
+                            break;
+                        //2 uti TOA bonuses
+                        case eProperty.SpellDuration:
+                        case eProperty.BuffEffectiveness:
+                        case eProperty.DebuffEffectivness:
+                        case eProperty.HealingEffectiveness:
+                        case eProperty.FatigueConsumption:
+                        case eProperty.PowerPoolCapBonus:
+                        case eProperty.SpellPowerCost:
+                        case eProperty.PowerPool:
+                        case eProperty.StrCapBonus:
+                        case eProperty.DexCapBonus:
+                        case eProperty.ConCapBonus:
+                        case eProperty.QuiCapBonus:
+                        case eProperty.AcuCapBonus:
+                        case eProperty.ChaCapBonus:
+                        case eProperty.EmpCapBonus:
+                        case eProperty.IntCapBonus:
+                        case eProperty.PieCapBonus:
+                        case eProperty.BodyResCapBonus:
+                        case eProperty.ColdResCapBonus:
+                        case eProperty.CrushResCapBonus:
+                        case eProperty.EnergyResCapBonus:
+                        case eProperty.HeatResCapBonus:
+                        case eProperty.MatterResCapBonus:
+                        case eProperty.SlashResCapBonus:
+                        case eProperty.SpiritResCapBonus:
+                        case eProperty.ThrustResCapBonus:
+                            totalUti += itemBonus * 2;
+                            break;
+                        
+                    }
+                    break;
                 }
             }
-
+            Console.WriteLine($"single Uti of {totalUti} for bonus {itemBonus} of type {(eProperty)itemBonusType} {itemBonusType}");
 
             return totalUti;
         }
