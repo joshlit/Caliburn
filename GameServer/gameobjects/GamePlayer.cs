@@ -15150,18 +15150,18 @@ namespace DOL.GS
         }
         #endregion
 
-        #region Constructors
-        /// <summary>
-        /// Returns the string representation of the GamePlayer
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return new StringBuilder(base.ToString())
-                .Append(" class=").Append(CharacterClass.Name)
-                .Append('(').Append(CharacterClass.ID.ToString()).Append(')')
-                .ToString();
-        }
+		#region Constructors
+		/// <summary>
+		/// Returns the string representation of the GamePlayer
+		/// </summary>
+		/// <returns></returns>
+		public override string ToString()
+		{
+			return new StringBuilder(base.ToString())
+				.Append(" class=").Append(CharacterClass.Name)
+				.Append('(').Append(CharacterClass.ID.ToString()).Append(')')
+				.ToString();
+		}
 
         public static GamePlayer CreateTestableGamePlayer() { return CreateTestableGamePlayer(new DefaultCharacterClass()); }
 
