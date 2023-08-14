@@ -1293,7 +1293,7 @@ namespace DOL.GS
         {
             lock (m_lockAreas)
             {
-                if (m_Areas.ContainsKey(area.ID) == false)
+                if (m_Areas == null || m_Areas.ContainsKey(area.ID) == false)
                 {
                     return;
                 }
