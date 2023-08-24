@@ -405,7 +405,10 @@ namespace DOL.GS
                 delve.Add(Description);
                 delve.Add(" ");
             }
-
+            if (Object_Type == (int)eObjectType.Gem)
+            {
+                WriteMagicalBonuses(delve, player.Client, false);
+            }
             if ((Object_Type >= (int)eObjectType.GenericWeapon) && (Object_Type <= (int)eObjectType._LastWeapon) ||
                 Object_Type == (int)eObjectType.Instrument)
             {
@@ -1015,7 +1018,19 @@ namespace DOL.GS
         {
             if (bonusCat != 0 && bonusValue != 0 && !SkillBase.CheckPropertyType((eProperty)bonusCat, ePropertyType.Focus))
             {
-                if (IsPvEBonus((eProperty)bonusCat))
+                if (bonusCat == (int)eProperty.Socket_Charge)
+                {
+                    list.Add("[Charge Socket]");
+                }
+                else if(bonusCat == (int)eProperty.Socket_Proc)
+                {
+                    list.Add("[Proc Socket]");
+                }
+                else if(bonusCat == (int)eProperty.Socket_Stat)
+                {
+                    list.Add("[Stat Socket]");
+                }
+                else if (IsPvEBonus((eProperty)bonusCat))
                 {
                     // Evade: {0}% (PvE Only)
                     list.Add(string.Format(SkillBase.GetPropertyName((eProperty)bonusCat), bonusValue));
