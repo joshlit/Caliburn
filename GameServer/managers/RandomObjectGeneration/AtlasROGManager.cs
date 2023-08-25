@@ -131,6 +131,8 @@ namespace DOL.GS {
             {
                 GenerateOrbAmount(living, amount);
             }
+
+
         }
 
         private static void GenerateBPs(GameLiving living, int amount)

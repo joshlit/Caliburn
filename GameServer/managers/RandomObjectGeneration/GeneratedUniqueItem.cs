@@ -42,6 +42,7 @@ using System.Collections.Generic;
 
 using DOL.Events;
 using DOL.Database;
+using Microsoft.CodeAnalysis;
 
 namespace DOL.GS {
     /// <summary>
@@ -898,16 +899,97 @@ namespace DOL.GS {
                 multiplier += 0.15;
             }
 
+
+            int slotStats = 0;
+            int procSlots = 0;
+
+            if (this.Object_Type == (int)eObjectType.Magical)
+            {
+                System.Diagnostics.Debug.WriteLine($"Magical");
+                if (Util.Chance(30))
+                {
+                    slotStats += 1;
+                }
+                if (Util.Chance(30))
+                {
+                    slotStats += 1;
+                }
+            }
+            if (Object_Type >= (int)eObjectType._FirstArmor && Object_Type <= (int)eObjectType._LastArmor)
+            {
+                System.Diagnostics.Debug.WriteLine($"armor");
+                switch (Item_Type)
+                {
+                    case (int)eInventorySlot.TorsoArmor:
+                        if (Util.Chance(25))
+                            slotStats += 1;
+                        if (Util.Chance(25))
+                            slotStats += 1;
+                        if (Util.Chance(25))
+                            slotStats += 1;
+                        if (Util.Chance(25))
+                            slotStats += 1;
+
+
+                        if (Util.Chance(20))
+                            procSlots = 1;
+
+                        if (Util.Chance(15))
+                            procSlots = 2;
+                        break;
+
+                    case (int)eInventorySlot.ArmsArmor:
+                    case (int)eInventorySlot.LegsArmor:
+
+                        if (Util.Chance(25))
+                            slotStats += 1;
+                        if (Util.Chance(25))
+                            slotStats += 1;
+                        if (Util.Chance(25))
+                            slotStats += 1;
+
+                        if (Util.Chance(20))
+                            procSlots = 1;
+
+                        if (Util.Chance(15))
+                            procSlots = 2;
+                        break;
+
+                    case (int)eInventorySlot.HeadArmor:
+                    case (int)eInventorySlot.FeetArmor:
+                    case (int)eInventorySlot.HandsArmor:
+                        if (Util.Chance(25))
+                            slotStats += 1;
+                        if (Util.Chance(25))
+                            slotStats += 1;
+
+                        if (Util.Chance(20))
+                            procSlots = 1;
+
+                        if (Util.Chance(15))
+                            procSlots = 2;
+                        break;
+                }
+            }
+            number += slotStats;
+
+
+
             for (int i = 0; i < number; i++)
             {
                 eBonusType type = this.GetPropertyType(toa);
                 eProperty property = this.GetProperty(type);
+
                 double tmpMulti = multiplier;
                 if (type == eBonusType.Stat)
                     tmpMulti = 1;
                 if (!this.BonusExists(property))
                 {
                     int amount = (int)Math.Ceiling((double)GetBonusAmount(type, property));
+                    if (i >= number - slotStats)
+                    {
+                        amount = 1;
+                    }
                     this.WriteBonus(property, amount);
                     fAddedBonus = true;
                     if (!fMagicScaled)
@@ -918,6 +1000,26 @@ namespace DOL.GS {
                 }
             }
 
+            if (slotStats > 0)
+            {
+                for (int i = 1; i <= slotStats; i++)
+                {
+                    eBonusType type = this.GetPropertyType(toa);
+                    eProperty property = this.GetProperty(type);
+                    System.Diagnostics.Debug.WriteLine($"Adding stat socket to {Name} {i} - number:{number} slotStats:{slotStats}");
+                    this.WriteBonus(eProperty.Socket_Stat, 1);
+                }
+            }
+            if (procSlots > 0)
+            {
+                for (int i = 1; i <= procSlots; i++)
+                {
+                    eBonusType type = this.GetPropertyType(toa);
+                    eProperty property = this.GetProperty(type);
+                    System.Diagnostics.Debug.WriteLine($"Adding proc socket {i} - number:{number} slotStats:{slotStats}");
+                    this.WriteBonus(eProperty.Socket_Proc, 1);
+                }
+            }
             // non magical items get lowercase names
             if (number == 0 || !fAddedBonus)
                 this.Name = this.Name.ToLower();
@@ -4827,6 +4929,31 @@ namespace DOL.GS {
             {
                 this.Bonus5 = amount;
                 this.Bonus5Type = (int)property;
+            }
+            else if (this.Bonus6 == 0)
+            {
+                this.Bonus6 = amount;
+                this.Bonus6Type = (int)property;
+            }
+            else if (this.Bonus7 == 0)
+            {
+                this.Bonus7 = amount;
+                this.Bonus7Type = (int)property;
+            }
+            else if (this.Bonus8 == 0)
+            {
+                this.Bonus8 = amount;
+                this.Bonus8Type = (int)property;
+            }
+            else if (this.Bonus9 == 0)
+            {
+                this.Bonus9 = amount;
+                this.Bonus9Type = (int)property;
+            }
+            else if (this.Bonus10 == 0)
+            {
+                this.Bonus10 = amount;
+                this.Bonus10Type = (int)property;
             }
         }
 
