@@ -2132,7 +2132,7 @@ namespace DOL.GS
 
 			Notify(GameObjectEvent.MoveTo, this, new MoveToEventArgs(regionID, x, y, z, heading));
 
-			HashSet<GamePlayer> playersInRadius = GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
+			List<GamePlayer> playersInRadius = GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
 
 			m_x = x;
 			m_y = y;
@@ -4294,7 +4294,7 @@ namespace DOL.GS
 			{
 				case "b": // Broadcast message without "[Broadcast] {0}:" string start
 				{
-					foreach (GamePlayer player in CurrentRegion.GetPlayersInRadius(this, 25000, false))
+					foreach (GamePlayer player in GetPlayersInRadius(25000))
 					{
 					  player.Out.SendMessage(text, eChatType.CT_Broadcast, eChatLoc.CL_ChatWindow);
 					}

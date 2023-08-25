@@ -12,38 +12,12 @@ namespace DOL.GS
 
         public void AddLast(LinkedListNode<T> node)
         {
-            _lock.EnterWriteLock();
-
-            try
-            {
-                _list.AddLast(node);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
+            _list.AddLast(node);
         }
 
         public void Remove(LinkedListNode<T> node)
         {
-            _lock.EnterWriteLock();
-
-            try
-            {
-                _list.Remove(node);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
+            _list.Remove(node);
         }
 
         public Reader GetReader()
@@ -51,16 +25,28 @@ namespace DOL.GS
             return new Reader(this);
         }
 
+        public Writer GetWriter()
+        {
+            return new Writer(this);
+        }
+
+        public Writer TryGetWriter(out bool success)
+        {
+            return new Writer(this, out success);
+        }
+
         // A disposable iterator-like class taking care of the locking. Only iterations from first to last nodes are allowed, and the lock can't be upgraded.
         public sealed class Reader : IDisposable
         {
             LinkedListNode<T> _current;
             ConcurrentLinkedList<T> _list;
+            private bool _hasLock;
 
             public Reader(ConcurrentLinkedList<T> list)
             {
                 _list = list;
                 _list._lock.EnterReadLock();
+                _hasLock = true;
                 _current = _list._list.First;
             }
 
@@ -82,7 +68,37 @@ namespace DOL.GS
 
             public void Dispose()
             {
-                _list._lock.ExitReadLock();
+                if (_hasLock)
+                    _list._lock.ExitReadLock();
+            }
+        }
+
+        // A disposable class taking care of acquiring and disposing a write lock.
+        public sealed class Writer : IDisposable
+        {
+            private const int WRITE_LOCK_TIMEOUT = 3;
+
+            private ConcurrentLinkedList<T> _list;
+            private bool _hasLock;
+
+            public Writer(ConcurrentLinkedList<T> list)
+            {
+                _list = list;
+                _list._lock.EnterWriteLock();
+                _hasLock = true;
+            }
+
+            public Writer(ConcurrentLinkedList<T> list, out bool success)
+            {
+                _list = list;
+                _hasLock = _list._lock.TryEnterWriteLock(WRITE_LOCK_TIMEOUT);
+                success = _hasLock;
+            }
+
+            public void Dispose()
+            {
+                if (_hasLock)
+                    _list._lock.ExitWriteLock();
             }
         }
     }

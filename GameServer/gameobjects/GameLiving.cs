@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Drawing.Text;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -541,49 +542,47 @@ namespace DOL.GS
 		/// <summary>
 		/// Calculates armor absorb level
 		/// </summary>
-		/// <param name="slot"></param>
-		/// <returns></returns>
 		public virtual double GetArmorAbsorb(eArmorSlot slot)
 		{
-			double absorbBonus = GetModified(eProperty.ArmorAbsorption) / 100.0;
-
-			double debuffBuffRatio = 2;
-
-			double constitutionPerAbsorptionPercent = 4;
-			double baseConstitutionPerAbsorptionPercent = 12; //kept for DB legacy reasons
-			var constitutionBuffBonus = BaseBuffBonusCategory[eProperty.Constitution] + SpecBuffBonusCategory[eProperty.Constitution];
-			var constitutionDebuffMalus = Math.Abs(DebuffCategory[eProperty.Constitution] + SpecDebuffCategory[eProperty.Constitution]);
-			double constitutionAbsorb = 0;
-			//simulate old behavior for base constitution
-			double baseConstitutionAbsorb = (GetBaseStat((eStat)eProperty.Constitution) - 60) / baseConstitutionPerAbsorptionPercent / 100.0;
-			double consitutionBuffAbsorb = (constitutionBuffBonus - constitutionDebuffMalus * debuffBuffRatio) / constitutionPerAbsorptionPercent / 100;
-			constitutionAbsorb += baseConstitutionAbsorb + consitutionBuffAbsorb;
-
-			//Note: On Live SpecAFBuffs do nothing => Cap to Live baseAF cap;
-			double afPerAbsorptionPercent = 6;
-			double liveBaseAFcap = 150 * 1.25 * 1.25;
-			double afBuffBonus = Math.Min(liveBaseAFcap, BaseBuffBonusCategory[eProperty.ArmorFactor] + SpecBuffBonusCategory[eProperty.ArmorFactor]);
-			//double afDebuffMalus = Math.Abs(DebuffCategory[eProperty.ArmorFactor] + SpecDebuffCategory[eProperty.ArmorFactor]);
-			double afBuffAbsorb = (afBuffBonus * debuffBuffRatio) / afPerAbsorptionPercent / 100;
-
 			double baseAbsorb = 0;
 
 			if (this is NecromancerPet nPet)
 			{
-				if (nPet.Owner.Level == 50) baseAbsorb = 0.5;
-				else if (nPet.Owner.Level >= 40) baseAbsorb = 0.40;
-				else if (nPet.Owner.Level >= 30) baseAbsorb = 0.27;
-				else if (nPet.Owner.Level >= 20) baseAbsorb = 0.19;
-				else if (nPet.Owner.Level >= 10) baseAbsorb = 0.10;
+				if (nPet.Owner.Level == 50)
+					baseAbsorb = 0.5;
+				else if (nPet.Owner.Level >= 40)
+					baseAbsorb = 0.40;
+				else if (nPet.Owner.Level >= 30)
+					baseAbsorb = 0.27;
+				else if (nPet.Owner.Level >= 20)
+					baseAbsorb = 0.19;
+				else if (nPet.Owner.Level >= 10)
+					baseAbsorb = 0.10;
 			}
 			else
 			{
-				if (Level >= 30) baseAbsorb = 0.27;
-				else if (Level >= 20) baseAbsorb = 0.19;
-				else if (Level >= 10) baseAbsorb = 0.10;
+				if (Level >= 30)
+					baseAbsorb = 0.27;
+				else if (Level >= 20)
+					baseAbsorb = 0.19;
+				else if (Level >= 10)
+					baseAbsorb = 0.10;
 			}
-			double absorb = 1 - (1 - absorbBonus) * (1 - baseAbsorb) * (1 - constitutionAbsorb) * (1 - afBuffAbsorb);
+
+			double absorbBonus = GetModified(eProperty.ArmorAbsorption) / 100.0;
+			double constitutionAbsorb = GetAbsorbFromStat(eProperty.Constitution, 4);
+			double dexterityAbsorb = GetAbsorbFromStat(eProperty.Dexterity, 4);
+			double absorb = 1 - (1 - baseAbsorb) * (1 - absorbBonus) * (1 - constitutionAbsorb) * (1 - dexterityAbsorb);
 			return absorb;
+
+			double GetAbsorbFromStat(eProperty property, double buffStatPerAbsorption)
+			{
+				int buff = BaseBuffBonusCategory[property] + SpecBuffBonusCategory[property];
+				int debuff = Math.Abs(DebuffCategory[property] + SpecDebuffCategory[property]);
+				double debuffEffectiveness = 2; // Debuffs are made more effective.
+				double absorbFromStat = (buff - debuff * debuffEffectiveness) / buffStatPerAbsorption / 100;
+				return absorbFromStat;
+			}
 		}
 
 		/// <summary>
@@ -591,7 +590,7 @@ namespace DOL.GS
 		/// </summary>
 		public virtual double GetWeaponSkill(InventoryItem weapon)
 		{
-			// Needs to be overriden.
+			// Needs to be overridden.
 			return 0;
 		}
 
@@ -3446,39 +3445,27 @@ namespace DOL.GS
 		/// </summary>
 		public override int Health
 		{
-			get { return m_health; }
+			get => m_health;
 			set
 			{
+				int maxHealth = MaxHealth;
 
-				int maxhealth = MaxHealth;
-				if (value >= maxhealth)
+				if (value >= maxHealth)
 				{
-					m_health = maxhealth;
+					m_health = maxHealth;
 
-					// noret: i see a problem here when players get not RPs after this player was healed to full
-					// either move this to GameNPC or add a check.
-
-					//We clean all damagedealers if we are fully healed,
-					//no special XP calculations need to be done
+					// We clean all damage dealers if we are fully healed, no special XP calculations need to be done.
+					// May prevent players from gaining RPs after this living was healed to full?
 					lock (m_xpGainers.SyncRoot)
 					{
-						//DOLConsole.WriteLine(this.Name+": Health=100% -> clear xpgainers");
 						m_xpGainers.Clear();
 					}
 				}
-				else if (value > 0)
-				{
-					m_health = value;
-				}
 				else
-				{
-					m_health = 0;
-				}
+					m_health = Math.Max(0, value);
 
-				if (IsAlive && m_health < maxhealth)
-				{
+				if (IsAlive && m_health < maxHealth)
 					StartHealthRegeneration();
-				}
 			}
 		}
 
