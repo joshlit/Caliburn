@@ -901,6 +901,7 @@ namespace DOL.GS {
 
 
             int slotStats = 0;
+            int chargeSlots = 0;
             int procSlots = 0;
 
             if (this.Object_Type == (int)eObjectType.Magical)
@@ -913,6 +914,10 @@ namespace DOL.GS {
                 if (Util.Chance(30))
                 {
                     slotStats += 1;
+                }
+                if (Util.Chance(10))
+                {
+                    chargeSlots += 1;
                 }
             }
             if (Object_Type >= (int)eObjectType._FirstArmor && Object_Type <= (int)eObjectType._LastArmor)
@@ -931,11 +936,12 @@ namespace DOL.GS {
                             slotStats += 1;
 
 
-                        if (Util.Chance(20))
+                        if (Util.Chance(20) && Level >= 40)
                             procSlots = 1;
 
-                        if (Util.Chance(15))
-                            procSlots = 2;
+                        if (Util.Chance(20) && Level >= 40)
+                            chargeSlots = 1;
+
                         break;
 
                     case (int)eInventorySlot.ArmsArmor:
@@ -948,11 +954,11 @@ namespace DOL.GS {
                         if (Util.Chance(25))
                             slotStats += 1;
 
-                        if (Util.Chance(20))
+                        if (Util.Chance(20) && Level >= 40)
                             procSlots = 1;
 
-                        if (Util.Chance(15))
-                            procSlots = 2;
+                        if (Util.Chance(20) && Level >= 40)
+                            chargeSlots = 1;
                         break;
 
                     case (int)eInventorySlot.HeadArmor:
@@ -963,15 +969,15 @@ namespace DOL.GS {
                         if (Util.Chance(25))
                             slotStats += 1;
 
-                        if (Util.Chance(20))
+                        if (Util.Chance(20) && Level >= 40)
                             procSlots = 1;
 
-                        if (Util.Chance(15))
-                            procSlots = 2;
+                        if (Util.Chance(20) && Level >= 40)
+                            chargeSlots = 1;
                         break;
                 }
             }
-            number += slotStats;
+            //number += slotStats;
 
 
 
@@ -1018,6 +1024,16 @@ namespace DOL.GS {
                     eProperty property = this.GetProperty(type);
                     System.Diagnostics.Debug.WriteLine($"Adding proc socket {i} - number:{number} slotStats:{slotStats}");
                     this.WriteBonus(eProperty.Socket_Proc, 1);
+                }
+            }
+            if (chargeSlots > 0)
+            {
+                for (int i = 1; i <= chargeSlots; i++)
+                {
+                    eBonusType type = this.GetPropertyType(toa);
+                    eProperty property = this.GetProperty(type);
+                    System.Diagnostics.Debug.WriteLine($"Adding charge socket {i} - number:{number} chargeSlots:{chargeSlots}");
+                    this.WriteBonus(eProperty.Socket_Charge, 1);
                 }
             }
             // non magical items get lowercase names
