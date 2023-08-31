@@ -3,13 +3,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
+using DOL.Events;
 
 namespace DOL.GS {
 
     public class ItemGemsLootGen : LootGeneratorBase {
 
 
+        public static List<int> ProcsChargesSpellIds = new List<int>();
 
+        [ScriptLoadedEvent]
+        public static async void OnScriptLoaded(DOLEvent e, object sender, EventArgs args)
+        {
+            //WhereClause realmFilter = DB.Column("Realm").IsEqualTo((byte)playerRealm).Or(DB.Column("Realm").IsEqualTo(0)).Or(DB.Column("Realm").IsNull());
+            SpellLine line = SkillBase.GetSpellLine(GlobalSpellsLines.Item_Effects);
+            List<DBLineXSpell> procsChargesLineXSpells = GameServer.Database.SelectObjects<DBLineXSpell>(DB.Column("LineName").IsEqualTo("Item Effects")).ToList();
+            ProcsChargesSpellIds = procsChargesLineXSpells.Select(a => a.SpellID).Where(SpellID =>
+            {
+
+                Spell procSpell = SkillBase.FindSpell(SpellID, line);
+                return procSpell != null && procSpell.SpellType.ToString().Contains("Summon") == false;
+
+            }).ToList();
+
+        }
         /// <summary>
         /// Generate loot for given mob
         /// </summary>
@@ -51,9 +68,9 @@ namespace DOL.GS {
                 tmp.Price = 1;
                 tmp.Level = mob.Level;
                 tmp.ClassType = "DOL.GS.ItemStatGem";
-                if (Util.Chance(33))
+                if (Util.Chance(25))
                 {
-                    tmp.Name = "Resist Gem";
+                    tmp.Name = "Resist Gem";    
                     int diff = (int)eProperty.Resist_Last - (int)eProperty.Resist_First;
                     int stat = (int)eProperty.Resist_First + Util.Random(0, diff - 1);
                     tmp.Bonus1Type = stat;
@@ -61,6 +78,18 @@ namespace DOL.GS {
                     int min = mob.Level / 12;
                     int max = min * 4;
                     tmp.Bonus1 = Util.Random(min, max);
+                }
+                else if (Util.Chance(10) && mob.Level >= 40)
+                {
+                    tmp.Name = "Proc Gem";
+                    tmp.ProcSpellID = ProcsChargesSpellIds.OrderBy(a => System.Guid.NewGuid()).FirstOrDefault();
+                    tmp.ClassType = "DOL.GS.ItemProcGem";
+                }
+                else if (Util.Chance(10) && mob.Level >= 40)
+                {
+                    tmp.Name = "Charge Gem";
+                    tmp.SpellID = ProcsChargesSpellIds.OrderBy(a => System.Guid.NewGuid()).FirstOrDefault();
+                    tmp.ClassType = "DOL.GS.ItemChargeGem";
                 }
                 else
                 {
@@ -85,137 +114,6 @@ namespace DOL.GS {
             }
 
             return loot;
-        }
-
-
-        private ItemTemplate GenerateItemTemplate(GamePlayer player, eCharacterClass classForLoot, byte lootLevel, int killedcon)
-        {
-            ItemTemplate item = null;
-                
-                
-            GeneratedUniqueItem tmp = AtlasROGManager.GenerateMonsterLootROG(GetRealmFromClass(classForLoot), classForLoot, lootLevel, player.CurrentZone?.IsOF ?? false);
-            tmp.GenerateItemQuality(killedcon);
-            //tmp.CapUtility(mob.Level + 1);
-            item = tmp;
-            item.MaxCount = 1;
-
-            return item;
-        }
-        
-        private eRealm GetRealmFromClass(eCharacterClass charClass){
-            switch (charClass)
-            {
-                 case eCharacterClass.Armsman:
-                 case eCharacterClass.Paladin:
-                 case eCharacterClass.Mercenary:
-                 case eCharacterClass.Reaver:
-                 case eCharacterClass.Cleric:
-                 case eCharacterClass.Friar:
-                 case eCharacterClass.Infiltrator:
-                 case eCharacterClass.Minstrel:
-                 case eCharacterClass.Scout:
-                 case eCharacterClass.Cabalist:
-                 case eCharacterClass.Sorcerer:
-                 case eCharacterClass.Theurgist:
-                 case eCharacterClass.Wizard:
-                 case eCharacterClass.Necromancer:
-                     return eRealm.Albion;
-                 case eCharacterClass.Bard:
-                 case eCharacterClass.Druid:
-                 case eCharacterClass.Warden:
-                 case eCharacterClass.Blademaster:
-                 case eCharacterClass.Hero:
-                 case eCharacterClass.Champion:
-                 case eCharacterClass.Eldritch:
-                 case eCharacterClass.Enchanter:
-                 case eCharacterClass.Mentalist:
-                 case eCharacterClass.Nightshade:
-                 case eCharacterClass.Ranger:
-                 case eCharacterClass.Animist:
-                 case eCharacterClass.Valewalker:
-                     return eRealm.Hibernia;
-                 default:
-                     return eRealm.Midgard;
-            }
-        }
-
-        private eCharacterClass GetRandomClassFromGroup(Group group)
-        {
-            List<eCharacterClass> validClasses = new List<eCharacterClass>();
-
-            foreach (GamePlayer player in group.GetMembersInTheGroup())
-            {
-                validClasses.Add((eCharacterClass)player.CharacterClass.ID);
-            }
-            eCharacterClass ranClass = validClasses[Util.Random(validClasses.Count - 1)];
-
-            return ranClass;
-        }
-        
-        private eCharacterClass GetRandomClassFromBattlegroup(BattleGroup battlegroup)
-        {
-            List<eCharacterClass> validClasses = new List<eCharacterClass>();
-
-            foreach (GamePlayer player in battlegroup.Members.Keys)
-            {
-                validClasses.Add((eCharacterClass)player.CharacterClass.ID);
-            }
-            eCharacterClass ranClass = validClasses[Util.Random(validClasses.Count - 1)];
-
-            return ranClass;
-        }
-
-        private eCharacterClass GetRandomClassFromRealm(eRealm realm)
-        {
-            List<eCharacterClass> classesForRealm = new List<eCharacterClass>();
-            switch (realm)
-            {
-                case eRealm.Albion:
-                    classesForRealm.Add(eCharacterClass.Armsman);
-                    classesForRealm.Add(eCharacterClass.Cabalist);
-                    classesForRealm.Add(eCharacterClass.Cleric);
-                    classesForRealm.Add(eCharacterClass.Friar);
-                    classesForRealm.Add(eCharacterClass.Infiltrator);
-                    classesForRealm.Add(eCharacterClass.Mercenary);
-                    classesForRealm.Add(eCharacterClass.Necromancer);
-                    classesForRealm.Add(eCharacterClass.Paladin);
-                    classesForRealm.Add(eCharacterClass.Reaver);
-                    classesForRealm.Add(eCharacterClass.Scout);
-                    classesForRealm.Add(eCharacterClass.Sorcerer);
-                    classesForRealm.Add(eCharacterClass.Theurgist);
-                    classesForRealm.Add(eCharacterClass.Wizard);
-                    break;
-                case eRealm.Midgard:
-                    classesForRealm.Add(eCharacterClass.Berserker);
-                    classesForRealm.Add(eCharacterClass.Bonedancer);
-                    classesForRealm.Add(eCharacterClass.Healer);
-                    classesForRealm.Add(eCharacterClass.Hunter);
-                    classesForRealm.Add(eCharacterClass.Runemaster);
-                    classesForRealm.Add(eCharacterClass.Savage);
-                    classesForRealm.Add(eCharacterClass.Shadowblade);
-                    classesForRealm.Add(eCharacterClass.Skald);
-                    classesForRealm.Add(eCharacterClass.Spiritmaster);
-                    classesForRealm.Add(eCharacterClass.Thane);
-                    classesForRealm.Add(eCharacterClass.Warrior);
-                    break;
-                case eRealm.Hibernia:
-                    classesForRealm.Add(eCharacterClass.Animist);
-                    classesForRealm.Add(eCharacterClass.Bard);
-                    classesForRealm.Add(eCharacterClass.Blademaster);
-                    classesForRealm.Add(eCharacterClass.Champion);
-                    classesForRealm.Add(eCharacterClass.Druid);
-                    classesForRealm.Add(eCharacterClass.Eldritch);
-                    classesForRealm.Add(eCharacterClass.Enchanter);
-                    classesForRealm.Add(eCharacterClass.Hero);
-                    classesForRealm.Add(eCharacterClass.Mentalist);
-                    classesForRealm.Add(eCharacterClass.Nightshade);
-                    classesForRealm.Add(eCharacterClass.Ranger);
-                    classesForRealm.Add(eCharacterClass.Valewalker);
-                    classesForRealm.Add(eCharacterClass.Warden);
-                    break;
-            }
-
-            return classesForRealm[Util.Random(classesForRealm.Count - 1)];
         }
     }
 }
