@@ -6665,8 +6665,8 @@ namespace DOL.GS
                 return 0;
 
             int classBaseWeaponSkill = weapon.SlotPosition == (int)eInventorySlot.DistanceWeapon ? CharacterClass.WeaponSkillRangedBase : CharacterClass.WeaponSkillBase;
-            double preBuff = Level * classBaseWeaponSkill / 200.0 * (1 + 0.01 * GetWeaponStat(weapon) / 2) * Effectiveness;
-            return Math.Max(0, preBuff * GetModified(eProperty.WeaponSkill) * 0.01);
+            double weaponSkill = Level * classBaseWeaponSkill / 200.0 * (1 + 0.01 * GetWeaponStat(weapon) / 2) * Effectiveness;
+            return Math.Max(0, weaponSkill * GetModified(eProperty.WeaponSkill) * 0.01);
         }
 
         /// <summary>
@@ -6755,7 +6755,7 @@ namespace DOL.GS
                 return 0;
 
             // Debuffs can't lower absorb below 0%: https://darkageofcamelot.com/article/friday-grab-bag-08302019
-            return Math.Max(0, (item.SPD_ABS + GetModified(eProperty.ArmorAbsorption)) * 0.01);
+            return Math.Clamp((item.SPD_ABS + GetModified(eProperty.ArmorAbsorption)) * 0.01, 0, 1);
         }
 
         /// <summary>
@@ -6780,35 +6780,36 @@ namespace DOL.GS
         /// <param name="weapon">the weapon used for attack</param>
         public override double WeaponDamage(InventoryItem weapon)
         {
-            if (weapon != null)
-            {
-                //TODO if attackweapon is ranged -> attackdamage is arrow damage
-                int DPS = weapon.DPS_AF;
-
-                // apply relic bonus prior to cap
-                DPS = (int)((double)DPS * (1.0 + RelicMgr.GetRelicBonusModifier(Realm, eRelicType.Strength)));
-
-                // apply damage cap before quality
-                // http://www.classesofcamelot.com/faq.asp?mode=view&cat=10
-                int cap = 12 + 3 * Level;
-                if (RealmLevel > 39)
-                    cap += 3;
-
-                if (DPS > cap)
-                {
-                    DPS = cap;
-                }
-                //(1.0 + BuffBonusCategory1[(int)eProperty.DPS]/100.0 - BuffBonusCategory3[(int)eProperty.DPS]/100.0)
-                DPS = (int)(DPS * (1 + (GetModified(eProperty.DPS) * 0.01)));
-                // beware to use always ConditionPercent, because Condition is abolute value
-                //				return (int) ((DPS/10.0)*(weapon.Quality/100.0)*(weapon.Condition/(double)weapon.MaxCondition)*100.0);
-                double wdamage = (0.001 * DPS * weapon.Quality * weapon.Condition) / weapon.MaxCondition;
-                return wdamage;
-            }
-            else
-            {
+            if (weapon == null)
                 return 0;
-            }
+
+            return ApplyWeaponQualityAndConditionToDamage(weapon, WeaponDamageWithoutQualityAndCondition(weapon));
+        }
+
+        public double WeaponDamageWithoutQualityAndCondition(InventoryItem weapon)
+        {
+            if (weapon == null)
+                return 0;
+
+            double Dps = weapon.DPS_AF;
+
+            // Apply dps cap before quality and condition.
+            // http://www.classesofcamelot.com/faq.asp?mode=view&cat=10
+            int dpsCap = 12 + 3 * Level;
+
+            if (RealmLevel > 39)
+                dpsCap += 3;
+
+            if (Dps > dpsCap)
+                Dps = dpsCap;
+
+            Dps *= 1 + GetModified(eProperty.DPS) * 0.01;
+            return Dps * 0.1;
+        }
+
+        public double ApplyWeaponQualityAndConditionToDamage(InventoryItem weapon, double damage)
+        {
+            return damage * weapon.Quality * 0.01 * weapon.Condition / weapon.MaxCondition;
         }
 
         public override bool CanCastWhileAttacking()

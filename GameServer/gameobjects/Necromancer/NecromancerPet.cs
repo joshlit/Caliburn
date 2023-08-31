@@ -23,6 +23,7 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
+using DOL.GS.PropertyCalc;
 using DOL.GS.RealmAbilities;
 using DOL.GS.ServerProperties;
 using DOL.Language;
@@ -78,16 +79,10 @@ namespace DOL.GS
 		/// items the caster was wearing when the summon started, will be
 		/// transferred to the pet.
 		/// </summary>
-		/// <param name="npcTemplate"></param>
-		/// <param name="owner">Player who summoned this pet.</param>
-		/// <param name="summonConBonus">Item constitution bonuses of the player.</param>
-		/// <param name="summonHitsBonus">Hits bonuses of the player.</param>
-		public NecromancerPet(INpcTemplate npcTemplate, int summonConBonus, int summonHitsBonus) : base(npcTemplate)
+		public NecromancerPet(INpcTemplate npcTemplate) : base(npcTemplate)
 		{
-			// Transfer bonuses.
-			m_summonConBonus = summonConBonus;
-			m_summonHitsBonus = summonHitsBonus;
-
+			// Update max health on summon.
+			GetModified(eProperty.MaxHealth);
 			// Set immunities/load equipment/etc.
 			switch (Name.ToLower())
 			{
@@ -121,9 +116,6 @@ namespace DOL.GS
 
 		#region Stats
 
-		private int m_summonConBonus;
-		private int m_summonHitsBonus;
-
 		/// <summary>
 		/// Get modified bonuses for the pet; some bonuses come from the shade, some come from the pet.
 		/// </summary>
@@ -132,113 +124,35 @@ namespace DOL.GS
 			if (Brain == null || (Brain as IControlledBrain) == null)
 				return base.GetModified(property);
 
-			GameLiving livingOwner = (Brain as IControlledBrain).GetLivingOwner();
-			GamePlayer playerOwner = livingOwner as GamePlayer;
-
 			switch (property)
 			{
-				case eProperty.Resist_Body:
-				case eProperty.Resist_Cold:
-				case eProperty.Resist_Crush:
-				case eProperty.Resist_Energy:
-				case eProperty.Resist_Heat:
-				case eProperty.Resist_Matter:
-				case eProperty.Resist_Slash:
-				case eProperty.Resist_Spirit:
-				case eProperty.Resist_Thrust:
-					return base.GetModified(property);
-				case eProperty.Strength:
-				case eProperty.Dexterity:
-				case eProperty.Quickness:
-				case eProperty.Intelligence:
-					{
-						// Get item bonuses from the shade, but buff bonuses from the pet.
-						int itemBonus = livingOwner.GetModifiedFromItems(property);
-						int buffBonus = GetModifiedFromBuffs(property);
-						int debuff = DebuffCategory[(int)property];
-
-						// Base stats from the pet; add this to item bonus
-						// afterwards, as it is treated the same way for
-						// debuffing purposes.
-						int baseBonus = 0;
-						int augRaBonus = 0;
-
-						switch (property)
-						{
-							case eProperty.Strength:
-								baseBonus = Strength;
-								augRaBonus = AtlasRAHelpers.GetStatEnhancerAmountForLevel(playerOwner != null ? AtlasRAHelpers.GetAugStrLevel(playerOwner) : 0);
-								break;
-							case eProperty.Dexterity:
-								baseBonus = Dexterity;
-								augRaBonus = AtlasRAHelpers.GetStatEnhancerAmountForLevel(playerOwner != null ? AtlasRAHelpers.GetAugDexLevel(playerOwner) : 0);
-								break;
-							case eProperty.Quickness:
-								baseBonus = Quickness;
-								augRaBonus = AtlasRAHelpers.GetStatEnhancerAmountForLevel(playerOwner != null ? AtlasRAHelpers.GetAugQuiLevel(playerOwner) : 0);
-								break;
-							case eProperty.Intelligence:
-								baseBonus = Intelligence;
-								augRaBonus = AtlasRAHelpers.GetStatEnhancerAmountForLevel(playerOwner != null ? AtlasRAHelpers.GetAugAcuityLevel(playerOwner) : 0);
-								break;
-						}
-
-						itemBonus += baseBonus + augRaBonus;
-
-						// Apply debuffs. 100% Effectiveness for player buffs, but only 50% effectiveness for item bonuses.
-						buffBonus -= Math.Abs(debuff);
-
-						if (buffBonus < 0)
-						{
-							itemBonus += buffBonus / 2;
-							buffBonus = 0;
-							if (itemBonus < 0)
-								itemBonus = 0;
-						}
-
-						return itemBonus + buffBonus;
-					}
-				case eProperty.Constitution:
-					{
-						int baseBonus = Constitution;
-						int buffBonus = GetModifiedFromBuffs(eProperty.Constitution);
-						int debuff = DebuffCategory[(int)property];
-
-						// Apply debuffs. 100% Effectiveness for player buffs, but only 50% effectiveness for base bonuses.
-						buffBonus -= Math.Abs(debuff);
-
-						if (buffBonus < 0)
-						{
-							baseBonus += buffBonus / 2;
-							buffBonus = 0;
-							if (baseBonus < 0)
-								baseBonus = 0;
-						}
-
-						return baseBonus + buffBonus;
-					}
 				case eProperty.MaxHealth:
+				{
+					int hitsCap = MaxHealthCalculator.GetItemBonusCap(Owner) + MaxHealthCalculator.GetItemBonusCapIncrease(Owner);
+					int conFromRa = 0;
+					int conFromItems = 0;
+					int maxHealthFromItems = 0;
+					double toughnessMod = 1.0;
+					
+					if ((Brain as IControlledBrain).GetLivingOwner() is GamePlayer playerOwner)
 					{
-						int conBonus = (int)(3.1 * m_summonConBonus);
-						int hitsBonus = 30 * Level + m_summonHitsBonus;
-						int debuff = DebuffCategory[(int)property];
+						conFromRa = AtlasRAHelpers.GetStatEnhancerAmountForLevel(AtlasRAHelpers.GetAugConLevel(playerOwner));
+						conFromItems = playerOwner.GetModifiedFromItems(eProperty.Constitution);
+						maxHealthFromItems = playerOwner.ItemBonus[(int) eProperty.MaxHealth];
+						AtlasOF_ToughnessAbility toughness = playerOwner.GetAbility<AtlasOF_ToughnessAbility>();
 
-						// Apply debuffs. As only base constitution affects pet health, effectiveness is a flat 50%.
-						conBonus -= Math.Abs(debuff) / 2;
-
-						if (conBonus < 0)
-							conBonus = 0;
-						
-						int totalBonus = conBonus + hitsBonus;
-
-						AtlasOF_ToughnessAbility toughness = playerOwner?.GetAbility<AtlasOF_ToughnessAbility>();
-						double toughnessMod = toughness != null ? 1 + toughness.GetAmountForLevel(toughness.Level) * 0.01 : 1;
-
-						return (int)(totalBonus * toughnessMod);
+						if (toughness != null)
+							toughnessMod = 1 + toughness.GetAmountForLevel(toughness.Level) * 0.01;
 					}
-			}
 
-			return base.GetModified(property);
+					int conBonus = (int) ((conFromItems + conFromRa) * 3.1);
+					int hitsBonus = 30 * Level + Math.Min(maxHealthFromItems, hitsCap);
+					int totalBonus = conBonus + hitsBonus;
+					return (int) (totalBonus * toughnessMod);
+				}
+				default:
+					return base.GetModified(property);
+			}
 		}
 
 		public override int Health
@@ -276,7 +190,7 @@ namespace DOL.GS
 			if (Name.ToUpper() == "GREATER NECROSERVANT")
 			{
 				Strength = Properties.NECRO_GREATER_PET_STR_BASE;
-				Constitution = (short) (Properties.NECRO_GREATER_PET_CON_BASE + m_summonConBonus);
+				Constitution = Properties.NECRO_GREATER_PET_CON_BASE;
 				Dexterity = Properties.NECRO_GREATER_PET_DEX_BASE;
 				Quickness = Properties.NECRO_GREATER_PET_QUI_BASE;
 				Intelligence = Properties.NECRO_GREATER_PET_INT_BASE;
@@ -293,7 +207,7 @@ namespace DOL.GS
 			else
 			{
 				Strength = Properties.NECRO_PET_STR_BASE;
-				Constitution = (short) (Properties.NECRO_PET_CON_BASE + m_summonConBonus);
+				Constitution = Properties.NECRO_PET_CON_BASE;
 				Dexterity = Properties.NECRO_PET_DEX_BASE;
 				Quickness = Properties.NECRO_PET_QUI_BASE;
 				Intelligence = Properties.NECRO_PET_INT_BASE;

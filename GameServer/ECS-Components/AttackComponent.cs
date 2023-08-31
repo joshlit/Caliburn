@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using DOL.AI.Brain;
 using DOL.Database;
@@ -457,118 +458,111 @@ namespace DOL.GS
             }
         }
 
-        /// <summary>
-        /// Gets the attack damage
-        /// </summary>
-        /// <param name="weapon">the weapon used for attack</param>
-        /// <returns>the weapon damage</returns>
-        public double AttackDamage(InventoryItem weapon)
+        public double AttackDamage(InventoryItem weapon, out double damageCap)
         {
-            if (owner is GamePlayer p)
+            double effectiveness = 1;
+            damageCap = 0;
+
+            if (owner is GamePlayer player)
             {
                 if (weapon == null)
                     return 0;
 
-                double effectiveness = 1.00;
-                double damage = p.WeaponDamage(weapon) * weapon.SPD_ABS * 0.1;
-                
-                //slow weapon bonus as found here: https://www2.uthgard.net/tracker/issue/2753/@/Bow_damage_variance_issue_(taking_item_/_spec_???)
-                //EDPS * (your WS/target AF) * (1-absorb) * slow weap bonus * SPD * 2h weapon bonus * Arrow Bonus 
-                damage *= 1 + (weapon.SPD_ABS - 20) * 0.03 * 0.1;
-
-                if (weapon.Hand == 1) // two-hand
-                {
-                    // twohanded used weapons get 2H-Bonus = 10% + (Skill / 2)%
-                    int spec = p.WeaponSpecLevel(weapon) - 1;
-                    damage *= 1.1 + spec * 0.005;
-                }
+                damageCap = player.WeaponDamageWithoutQualityAndCondition(weapon) * weapon.SPD_ABS * 0.1 * CalculateSlowWeaponDamageModifier(weapon);
 
                 if (weapon.Item_Type == Slot.RANGED)
                 {
-                    //ammo damage bonus
-                    InventoryItem ammo = p.rangeAttackComponent.Ammo;
+                    damageCap *= CalculateTwoHandedDamageModifier(weapon);
+                    InventoryItem ammo = player.rangeAttackComponent.Ammo;
 
                     if (ammo != null)
                     {
                         switch ((ammo.SPD_ABS) & 0x3)
                         {
                             case 0:
-                                damage *= 0.85;
-                                break; //Blunt       (light) -15%
-                            //case 1: damage *= 1;	break; //Bodkin     (medium)   0%
+                                damageCap *= 0.85;
+                                break; // Blunt (light) -15%.
+                            case 1:
+                                break; // Bodkin (medium) 0%.
                             case 2:
-                                damage *= 1.15;
-                                break; //doesn't exist on live
+                                damageCap *= 1.15;
+                                break; // Doesn't exist on live.
                             case 3:
-                                damage *= 1.25;
-                                break; //Broadhead (X-heavy) +25%
+                                damageCap *= 1.25;
+                                break; // Broadhead (X-heavy) +25%.
                         }
                     }
 
-                    //Ranged damage buff,debuff,Relic,RA
-                    effectiveness += p.GetModified(eProperty.RangedDamage) * 0.01;
-                }
-                else if (weapon.Item_Type == Slot.RIGHTHAND || weapon.Item_Type == Slot.LEFTHAND ||
-                         weapon.Item_Type == Slot.TWOHAND)
-                {
-                    //Melee damage buff,debuff,Relic,RA
-                    effectiveness += p.GetModified(eProperty.MeleeDamage) * 0.01;
-
-                    if (weapon.Item_Type != Slot.TWOHAND)
+                    if (weapon.Object_Type is ((int) eObjectType.Longbow) or ((int) eObjectType.RecurvedBow) or ((int) eObjectType.CompositeBow))
                     {
-                        if (p.Inventory?.GetItem(eInventorySlot.LeftHandWeapon) != null)
+                        if (Properties.ALLOW_OLD_ARCHERY)
+                            effectiveness += player.GetModified(eProperty.RangedDamage) * 0.01;
+                        else
                         {
-                            var leftWep = p.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-                            if (p.GetModifiedSpecLevel(Specs.Left_Axe) > 0)
-                            {
-                                int LASpec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
-                                if (LASpec > 0)
-                                {
-                                    var leftAxeEffectiveness = 0.625 + 0.0034 * LASpec;
-                                
-                                    if (p.GetModified(eProperty.OffhandDamageAndChance) > 0)
-                                        leftAxeEffectiveness += 0.01 * p.GetModified(eProperty.OffhandDamageAndChance);
-
-                                    damage *= leftAxeEffectiveness;
-                                }
-                            }
+                            effectiveness += owner.GetModified(eProperty.RangedDamage) * 0.01;
+                            effectiveness += owner.GetModified(eProperty.SpellDamage) * 0.01;
                         }
                     }
+                    else
+                        effectiveness += player.GetModified(eProperty.RangedDamage) * 0.01;
+                }
+                else if (weapon.Item_Type is Slot.RIGHTHAND or Slot.LEFTHAND or Slot.TWOHAND)
+                {
+                    effectiveness += player.GetModified(eProperty.MeleeDamage) * 0.01;
+
+                    if (weapon.Item_Type == Slot.TWOHAND)
+                        damageCap *= CalculateTwoHandedDamageModifier(weapon);
+                    else if (player.Inventory?.GetItem(eInventorySlot.LeftHandWeapon) != null)
+                        damageCap *= CalculateLeftAxeModifier();
                 }
 
-                damage *= effectiveness;
-                return damage;
+                damageCap *= effectiveness;
+                double damage = player.ApplyWeaponQualityAndConditionToDamage(weapon, damageCap);
+                damageCap *= 3;
+                return damage *= effectiveness;
             }
             else
             {
-                double effectiveness = 1.00;
                 double damage = (1.0 + owner.Level / Properties.PVE_MOB_DAMAGE_F1 + owner.Level * owner.Level / Properties.PVE_MOB_DAMAGE_F2) * NpcWeaponSpeed() * 0.1;
 
-                if (weapon == null
-                    || weapon.SlotPosition == Slot.RIGHTHAND
-                    || weapon.SlotPosition == Slot.LEFTHAND
-                    || weapon.SlotPosition == Slot.TWOHAND)
-                    //Melee damage buff,debuff,RA
+                if (weapon == null ||
+                    weapon.SlotPosition == Slot.RIGHTHAND ||
+                    weapon.SlotPosition == Slot.LEFTHAND ||
+                    weapon.SlotPosition == Slot.TWOHAND)
+                {
                     effectiveness += owner.GetModified(eProperty.MeleeDamage) * 0.01;
+                }
                 else if (weapon.SlotPosition == Slot.RANGED)
                 {
-                    if (weapon.Object_Type == (int)eObjectType.Longbow
-                        || weapon.Object_Type == (int)eObjectType.RecurvedBow
-                        || weapon.Object_Type == (int)eObjectType.CompositeBow)
+                    if (weapon.Object_Type is ((int) eObjectType.Longbow) or ((int) eObjectType.RecurvedBow) or ((int) eObjectType.CompositeBow))
                     {
-                        if (ServerProperties.Properties.ALLOW_OLD_ARCHERY)
+                        if (Properties.ALLOW_OLD_ARCHERY)
                             effectiveness += owner.GetModified(eProperty.RangedDamage) * 0.01;
                         else
+                        {
+                            effectiveness += owner.GetModified(eProperty.RangedDamage) * 0.01;
                             effectiveness += owner.GetModified(eProperty.SpellDamage) * 0.01;
+                        }
                     }
                     else
                         effectiveness += owner.GetModified(eProperty.RangedDamage) * 0.01;
                 }
 
                 damage *= effectiveness;
+
+                if (owner is GameEpicBoss epicBoss)
+                    damageCap = damage + epicBoss.Empathy / 100.0 * Properties.SET_EPIC_ENCOUNTER_WEAPON_DAMAGE_CAP;
+                else
+                    damageCap = damage * 3;
+
                 return damage;
             }
         }
+
+        //public double AttackDamage(InventoryItem weapon)
+        //{
+        //    return AttackDamage(weapon, out _);
+        //}
 
         public void RequestStartAttack(GameObject attackTarget)
         {
@@ -1112,20 +1106,21 @@ namespace DOL.GS
         /// attacktimer and should not be called manually
         /// </summary>
         /// <returns>the object where we collect and modifiy all parameters about the attack</returns>
-        public AttackData LivingMakeAttack(WeaponAction action, GameObject target, InventoryItem weapon, Style style, double effectiveness,
-            int interruptDuration, bool dualWield, bool ignoreLOS = false)
+        public AttackData LivingMakeAttack(WeaponAction action, GameObject target, InventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS = false)
         {
-            AttackData ad = new AttackData();
-            ad.Attacker = owner;
-            ad.Target = target as GameLiving;
-            ad.Damage = 0;
-            ad.CriticalDamage = 0;
-            ad.Style = style;
-            ad.WeaponSpeed = AttackSpeed(weapon) / 100;
-            ad.DamageType = AttackDamageType(weapon);
-            ad.ArmorHitLocation = eArmorSlot.NOTSET;
-            ad.Weapon = weapon;
-            ad.IsOffHand = weapon != null && weapon.SlotPosition == Slot.LEFTHAND;
+            AttackData ad = new()
+            {
+                Attacker = owner,
+                Target = target as GameLiving,
+                Damage = 0,
+                CriticalDamage = 0,
+                Style = style,
+                WeaponSpeed = AttackSpeed(weapon) / 100,
+                DamageType = AttackDamageType(weapon),
+                ArmorHitLocation = eArmorSlot.NOTSET,
+                Weapon = weapon,
+                IsOffHand = weapon != null && weapon.SlotPosition == Slot.LEFTHAND
+            };
 
             // Asp style range add.
             IEnumerable<(Spell, int, int)> rangeProc = style?.Procs.Where(x => x.Item1.SpellType == eSpellType.StyleRange);
@@ -1251,7 +1246,7 @@ namespace DOL.GS
                 case eAttackResult.HitUnstyled:
                 case eAttackResult.HitStyle:
                 {
-                    double damage = AttackDamage(weapon) * effectiveness;
+                    double damage = AttackDamage(weapon, out double damageCap) * effectiveness;
                     InventoryItem armor = null;
 
                     if (ad.Target.Inventory != null)
@@ -1280,25 +1275,17 @@ namespace DOL.GS
                     }
 
                     double specModifier = CalculateSpecModifier(ad.Target, weaponForSpecModifier);
-                    double modifiedWeaponSkill = CalculateModifiedWeaponSkill(ad.Target, weapon, specModifier);
-                    double armorMod = CalculateTargetArmor(ad.Target, ad.ArmorHitLocation);
-                    double damageMod = Math.Min(3.0, modifiedWeaponSkill / armorMod);
+                    double weaponSkill = CalculateWeaponSkill(ad.Target, weapon, specModifier, out double baseWeaponSkill);
+                    double armorMod = CalculateTargetArmor(ad.Target, ad.ArmorHitLocation, out double bonusArmorFactor, out double armorFactor, out double absorb);
+                    double damageMod = weaponSkill / armorMod;
+
+                    if (action.RangedAttackType == eRangedAttackType.Critical)
+                        damageCap *= 2; // This may be incorrect. Critical shot doesn't double damage on >yellow targets.
 
                     if (playerOwner != null)
                     {
-                        damage *= damageMod;
-
                         if (playerOwner.UseDetailedCombatLog)
-                        {
-                            playerOwner.Out.SendMessage($"Damage Modifier: {(int) (damageMod * 1000)}",
-                                eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                        }
-
-                        if (ad.Target is GamePlayer attackee && attackee.UseDetailedCombatLog)
-                        {
-                            attackee.Out.SendMessage($"Damage Modifier: {(int) (damageMod * 1000)}", eChatType.CT_DamageAdd,
-                                eChatLoc.CL_SystemWindow);
-                        }
+                            PrintDetailedCombatLog(playerOwner, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, damageCap);
 
                         // Badge Of Valor Calculation 1+ absorb or 1- absorb
                         // if (ad.Attacker.EffectList.GetOfType<BadgeOfValorEffect>() != null)
@@ -1309,12 +1296,7 @@ namespace DOL.GS
                     else
                     {
                         if (owner is GameEpicBoss boss)
-                            damage *= damageMod + boss.Strength / 200;
-                        else
-                            damage *= damageMod;
-
-                        if (ad.Target is GamePlayer attackee && attackee.UseDetailedCombatLog)
-                            attackee.Out.SendMessage($"NPC Damage Modifier: {(int) (damageMod * 1000)}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+                            damageMod += boss.Strength / 200;
 
                         // Badge Of Valor Calculation 1+ absorb or 1- absorb
                         // if (ad.Attacker.EffectList.GetOfType<BadgeOfValorEffect>() != null)
@@ -1323,11 +1305,14 @@ namespace DOL.GS
                         //     damage *= 1.0 - Math.Min(0.85, ad.Target.GetArmorAbsorb(ad.ArmorHitLocation));
                     }
 
+                    if (target is GamePlayer targetPlayer && targetPlayer.UseDetailedCombatLog)
+                        PrintDetailedCombatLog(targetPlayer, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, damageCap);
+
                     if (ad.IsOffHand)
                         damage *= 1 + owner.GetModified(eProperty.OffhandDamage) * 0.01;
 
                     // If the target is another player's pet, shouldn't 'PVP_MELEE_DAMAGE' be used?
-                    if (owner is GamePlayer || owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain && owner.Realm != 0)
+                    if (owner is GamePlayer || (owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain && owner.Realm != 0))
                     {
                         if (target is GamePlayer)
                             damage = (int) (damage * Properties.PVP_MELEE_DAMAGE);
@@ -1335,18 +1320,13 @@ namespace DOL.GS
                             damage = (int) (damage * Properties.PVE_MELEE_DAMAGE);
                     }
 
+                    damage *= damageMod;
                     double preResistDamage = damage;
                     double primarySecondaryResistMod = CalculateTargetResistance(ad.Target, ad.DamageType, armor);
                     double preConversionDamage = preResistDamage * primarySecondaryResistMod;
                     double conversionMod = CalculateTargetConversion(ad.Target, damage * primarySecondaryResistMod);
-                    damage = (int) (preConversionDamage * conversionMod);
 
-                    if (action.RangedAttackType == eRangedAttackType.Critical)
-                        damage = Math.Min(damage, (int) (UnstyledDamageCap(weapon) * 2));
-                    else
-                        damage = Math.Min(damage, (int) UnstyledDamageCap(weapon) /* * effectiveness*/);
-
-                    if (StyleProcessor.ExecuteStyle(owner, ad.Target, ad.Style, weapon, preResistDamage, ad.ArmorHitLocation, ad.StyleEffects, out int styleDamage, out int animationId))
+                    if (StyleProcessor.ExecuteStyle(owner, ad.Target, ad.Style, weapon, preResistDamage, damageCap, ad.ArmorHitLocation, ad.StyleEffects, out int styleDamage, out int animationId))
                     {
                         double preResistStyleDamage = styleDamage;
                         double preConversionStyleDamage = preResistStyleDamage * primarySecondaryResistMod;
@@ -1360,9 +1340,17 @@ namespace DOL.GS
                         ad.AttackResult = eAttackResult.HitStyle;
                     }
 
-                    ApplyTargetConversionRegen(ad.Target, (int) (preConversionDamage - damage));
+                    damage = preConversionDamage * conversionMod;
                     ad.Modifier = (int) (damage - preResistDamage);
-                    ad.Damage = (int) damage;
+                    damage = (int) Math.Min(damage, damageCap);
+
+                    if (conversionMod < 1)
+                    {
+                        double conversionAmount = conversionMod > 0 ? damage / conversionMod - damage : damage;
+                        ApplyTargetConversionRegen(ad.Target, (int) conversionAmount);
+                    }
+
+                    ad.Damage = (int) Math.Min(damage, damageCap);
                     ad.CriticalDamage = CalculateMeleeCriticalDamage(ad, action, weapon);
                     break;
                 }
@@ -1376,6 +1364,15 @@ namespace DOL.GS
                         playerOwner.Endurance -= StyleProcessor.CalculateEnduranceCost(playerOwner, ad.Style, weapon.SPD_ABS) / 2;
 
                     break;
+                }
+
+                static void PrintDetailedCombatLog(GamePlayer player, double armorFactor, double absorb, double armorMod, double baseWeaponSkill, double specModifier, double weaponSkill, double damageMod, double damageCap)
+                {
+                    StringBuilder stringBuilder = new();
+                    stringBuilder.Append($"BaseWS: {baseWeaponSkill:0.00} | SpecMod: {specModifier:0.00} | WS: {weaponSkill:0.00}\n");
+                    stringBuilder.Append($"AF: {armorFactor:0.00} | ABS: {absorb * 100:0.00}% | AF/ABS: {armorMod:0.00}\n");
+                    stringBuilder.Append($"DamageMod: {damageMod:0.00} | DamageCap: {damageCap:0.00}");
+                    player.Out.SendMessage(stringBuilder.ToString(), eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
                 }
             }
 
@@ -1724,42 +1721,23 @@ namespace DOL.GS
             return ad;
         }
 
-        public double CalculateModifiedWeaponSkill(GameLiving target, InventoryItem weapon, double specModifier)
+        public double CalculateWeaponSkill(GameLiving target, InventoryItem weapon, double specModifier, out double baseWeaponSkill)
         {
-            return CalculateModifiedWeaponSkill(target, 1 + owner.GetWeaponSkill(weapon), 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength), specModifier);
+            baseWeaponSkill = 1 + owner.GetWeaponSkill(weapon);
+            return CalculateWeaponSkill(target, baseWeaponSkill, 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength), specModifier);
         }
 
-        public double CalculateModifiedWeaponSkill(GameLiving target, double weaponSkill, double relicBonus, double specModifier)
+        public double CalculateWeaponSkill(GameLiving target, double baseWeaponSkill, double relicBonus, double specModifier)
         {
-            double modifiedWeaponSkill;
-
             if (owner is GamePlayer)
-            {
-                modifiedWeaponSkill = weaponSkill * relicBonus * specModifier;
+                return baseWeaponSkill * relicBonus * specModifier;
 
-                if (owner is GamePlayer weaponskiller && weaponskiller.UseDetailedCombatLog)
-                {
-                    weaponskiller.Out.SendMessage(
-                        $"Base WS: {weaponSkill:0.00} | Calc WS: {modifiedWeaponSkill:0.00} | SpecMod: {specModifier:0.00}",
-                        eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                }
+            baseWeaponSkill += target.Level * 65 / 50.0;
 
-                if (target is GamePlayer attackee && attackee.UseDetailedCombatLog)
-                {
-                    attackee.Out.SendMessage(
-                        $"Base WS: {weaponSkill:0.00} | Calc WS: {modifiedWeaponSkill:0.00} | SpecMod: {specModifier:0.00}",
-                        eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                }
-            }
-            else
-            {
-                modifiedWeaponSkill = weaponSkill + target.Level * 65 / 50.0;
+            if (owner.Level < 10)
+                baseWeaponSkill *= 1 - 0.05 * (10 - owner.Level);
 
-                if (owner.Level < 10)
-                    modifiedWeaponSkill *= 1 - 0.05 * (10 - owner.Level);
-            }
-
-            return modifiedWeaponSkill;
+            return baseWeaponSkill;
         }
 
         public double CalculateSpecModifier(GameLiving target, InventoryItem weapon)
@@ -1784,69 +1762,50 @@ namespace DOL.GS
             }
             else
             {
-                int minimun;
+                int minimum;
                 int maximum;
 
                 if (owner is GameEpicBoss)
                 {
-                    minimun = 95;
+                    minimum = 95;
                     maximum = 105;
                 }
                 else
                 {
-                    minimun = 75;
+                    minimum = 75;
                     maximum = 125;
                 }
 
-                specModifier = (Util.Random(maximum - minimun) + minimun) * 0.01;
+                specModifier = (Util.Random(maximum - minimum) + minimum) * 0.01;
             }
 
             return specModifier;
         }
 
+        private const int ARMOR_FACTOR_LEVEL_SCALAR = 25;
+
         public double CalculateTargetArmor(GameLiving target, eArmorSlot armorSlot)
         {
-            double armorMod;
-            int AFLevelScalar = 25;
+            return CalculateTargetArmor(target, armorSlot, out _, out _, out _);
+        }
 
+        public double CalculateTargetArmor(GameLiving target, eArmorSlot armorSlot, out double bonusArmorFactor, out double armorFactor, out double absorb)
+        {
             if (owner is GamePlayer)
-            {
-                double baseAF = target is GamePlayer ? target.Level * AFLevelScalar / 50.0 : 2;
-
-                if (baseAF < 1)
-                    baseAF = 1;
-
-                armorMod = (baseAF + target.GetArmorAF(armorSlot)) / (1 - target.GetArmorAbsorb(armorSlot));
-
-                if (owner is GamePlayer weaponskiller && weaponskiller.UseDetailedCombatLog)
-                {
-                    weaponskiller.Out.SendMessage(
-                        $"Base AF: {target.GetArmorAF(armorSlot) + baseAF:0.00} | ABS: {target.GetArmorAbsorb(armorSlot) * 100:0.00} | AF/ABS: {armorMod:0.00}",
-                        eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                }
-
-                if (target is GamePlayer attackee && attackee.UseDetailedCombatLog)
-                {
-                    attackee.Out.SendMessage(
-                        $"Base AF: {target.GetArmorAF(armorSlot) + baseAF:0.00} | ABS: {target.GetArmorAbsorb(armorSlot) * 100:0.00} | AF/ABS: {armorMod:0.00}",
-                        eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                }
-
-                return armorMod;
-            }
+                bonusArmorFactor = target is GamePlayer ? Math.Max(1, target.Level * ARMOR_FACTOR_LEVEL_SCALAR / 50.0) : 2;
             else
             {
-                if (target.Level < 21)
-                    AFLevelScalar += 20 - target.Level;
+                int armorFactorLevelScalar = ARMOR_FACTOR_LEVEL_SCALAR;
 
-                double baseAF = target.Level * AFLevelScalar / 50.0;
-                armorMod = (baseAF + target.GetArmorAF(armorSlot)) / (1 - target.GetArmorAbsorb(armorSlot));
+                if (target.Level < 21)
+                    armorFactorLevelScalar += 20 - target.Level;
+
+                bonusArmorFactor = target.Level * armorFactorLevelScalar / 50.0;
             }
 
-            if (armorMod <= 0)
-                armorMod = 0.1;
-
-            return armorMod;
+            absorb = target.GetArmorAbsorb(armorSlot);
+            armorFactor = bonusArmorFactor + target.GetArmorAF(armorSlot);
+            return absorb >= 1 ? double.MaxValue : armorFactor / (1 - absorb);
         }
 
         public static double CalculateTargetResistance(GameLiving target, eDamageType damageType, InventoryItem armor)
@@ -2888,124 +2847,15 @@ namespace DOL.GS
         /// </summary>
         protected float MinMeleeCriticalDamage => 0.1f;
 
-        /// <summary>
-        /// Max. Damage possible without style
-        /// </summary>
-        /// <param name="weapon">attack weapon</param>
-        public double UnstyledDamageCap(InventoryItem weapon)
+        public static double CalculateSlowWeaponDamageModifier(InventoryItem weapon)
         {
-            if (owner is GameEpicBoss) // Damage cap for epic encounters if they use melee weapons.
-            {
-                var p = owner as GameEpicBoss;
-                return AttackDamage(weapon) * ((double) p.Empathy / 100) * Properties.SET_EPIC_ENCOUNTER_WEAPON_DAMAGE_CAP;
-            }
+            // Slow weapon bonus as found here: https://www2.uthgard.net/tracker/issue/2753/@/Bow_damage_variance_issue_(taking_item_/_spec_???)
+            return 1 + (weapon.SPD_ABS - 20) * 0.003;
+        }
 
-            if (owner is GamePlayer)
-            {
-                var p = owner as GamePlayer;
-
-                if (weapon != null)
-                {
-                    int DPS = weapon.DPS_AF;
-                    int cap = 12 + 3 * p.Level;
-                    if (p.RealmLevel > 39)
-                        cap += 3;
-                    if (DPS > cap)
-                        DPS = cap;
-
-                    double result = DPS * weapon.SPD_ABS * 0.03 * (0.94 + 0.003 * weapon.SPD_ABS);
-
-                    if (weapon.Hand == 1) //2h
-                    {
-                        result *= 1.1 + (owner.WeaponSpecLevel(weapon) - 1) * 0.005;
-                        if (weapon.Item_Type == Slot.RANGED)
-                        {
-                            // http://home.comcast.net/~shadowspawn3/bowdmg.html
-                            //ammo damage bonus
-                            double ammoDamageBonus = 1;
-                            InventoryItem ammo = p.rangeAttackComponent.Ammo;
-
-                            if (ammo != null)
-                            {
-                                switch ((ammo.SPD_ABS) & 0x3)
-                                {
-                                    case 0:
-                                        ammoDamageBonus = 0.85;
-                                        break; //Blunt (light) -15%
-                                    case 1:
-                                        ammoDamageBonus = 1;
-                                        break; //Bodkin (medium) 0%
-                                    case 2:
-                                        ammoDamageBonus = 1.15;
-                                        break; //doesn't exist on live
-                                    case 3:
-                                        ammoDamageBonus = 1.25;
-                                        break; //Broadhead (X-heavy) +25%
-                                }
-                            }
-
-                            result *= ammoDamageBonus;
-                        }
-                    }
-
-                    if (weapon.Item_Type == Slot.RANGED && (weapon.Object_Type == (int) eObjectType.Longbow ||
-                                                            weapon.Object_Type == (int) eObjectType.RecurvedBow ||
-                                                            weapon.Object_Type == (int) eObjectType.CompositeBow))
-                    {
-                        if (Properties.ALLOW_OLD_ARCHERY)
-                        {
-                            result += p.GetModified(eProperty.RangedDamage) * 0.01;
-                        }
-                        else
-                        {
-                            result += p.GetModified(eProperty.SpellDamage) * 0.01;
-                            result += p.GetModified(eProperty.RangedDamage) * 0.01;
-                        }
-                    }
-                    else if (weapon.Item_Type == Slot.RANGED)
-                    {
-                        //Ranged damage buff,debuff,Relic,RA
-                        result += p.GetModified(eProperty.RangedDamage) * 0.01;
-                    }
-                    else if (weapon.Item_Type == Slot.RIGHTHAND || weapon.Item_Type == Slot.LEFTHAND ||
-                             weapon.Item_Type == Slot.TWOHAND)
-                    {
-                        result *= 1 + p.GetModified(eProperty.MeleeDamage) * 0.01;
-                    }
-
-                    if (p.Inventory?.GetItem(eInventorySlot.LeftHandWeapon) != null && weapon.Item_Type != Slot.TWOHAND)
-                    {
-                        if (p.GetModifiedSpecLevel(Specs.Left_Axe) > 0)
-                        {
-                            int LASpec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
-                            if (LASpec > 0)
-                            {
-                                var leftAxeEffectiveness = 0.625 + 0.0034 * LASpec;
-                                
-                                if (p.GetModified(eProperty.OffhandDamageAndChance) > 0)
-                                {
-                                    leftAxeEffectiveness += 0.01 * p.GetModified(eProperty.OffhandDamageAndChance);
-                                }
-
-                                result *= leftAxeEffectiveness;
-                            }
-                        }
-                    }
-
-                    if (result <= 0) //Checking if 0 or negative
-                        result = 1;
-                    return result;
-                }
-                else
-                {
-                    // TODO: whats the damage cap without weapon?
-                    return AttackDamage(weapon) * 3 * (1 + (AttackSpeed(weapon) * 0.001 - 2) * 0.03);
-                }
-            }
-            else
-            {
-                return AttackDamage(weapon) * (2.82 + 0.00009 * AttackSpeed(weapon));
-            }
+        public double CalculateTwoHandedDamageModifier(InventoryItem weapon)
+        {
+            return 1.1 + (owner.WeaponSpecLevel(weapon) - 1) * 0.005;
         }
 
         /// <summary>
@@ -3032,142 +2882,78 @@ namespace DOL.GS
         /// </summary>
         public int CalculateLeftHandSwingCount()
         {
-            if (owner is GamePlayer)
+            if (CanUseLefthandedWeapon == false)
+                return 0;
+
+            if (owner.GetBaseSpecLevel(Specs.Left_Axe) > 0)
             {
-                if (CanUseLefthandedWeapon == false)
-                    return 0;
-
-                if (owner.GetBaseSpecLevel(Specs.Left_Axe) > 0)
+                if (owner is GamePlayer player && player.UseDetailedCombatLog)
                 {
-                    if (owner is GamePlayer ptemp && ptemp.UseDetailedCombatLog)
-                    {
-                        int LASpec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
-                        double effectiveness = 0;
-                        if (LASpec > 0)
-                        {
-                            effectiveness = 0.625 + 0.0034 * LASpec;
-                        }
-
-                        ptemp.Out.SendMessage(
-                            $"{Math.Round(effectiveness * 100, 2)}% dmg (after LA penalty) \n",
-                            eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                    }
-
-                    return 1; // always use left axe
-                }
-                
-
-                int specLevel = Math.Max(owner.GetModifiedSpecLevel(Specs.Celtic_Dual),
-                    owner.GetModifiedSpecLevel(Specs.Dual_Wield));
-                specLevel = Math.Max(specLevel, owner.GetModifiedSpecLevel(Specs.Fist_Wraps));
-
-                decimal tmpOffhandChance = (25 + (specLevel - 1) * 68 / 100);
-                tmpOffhandChance += owner.GetModified(eProperty.OffhandChance) +
-                                    owner.GetModified(eProperty.OffhandDamageAndChance);
-                
-                if (owner is GamePlayer p && p.UseDetailedCombatLog && owner.GetModifiedSpecLevel(Specs.HandToHand) <= 0)
-                {
-                    p.Out.SendMessage(
-                        $"OH swing%: {Math.Round(tmpOffhandChance, 2)} ({owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance)}% from RAs) \n",
-                        eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                }
-                
-                if (specLevel > 0)
-                {
-                    return Util.Chance((int) tmpOffhandChance) ? 1 : 0;
+                    int spec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
+                    double effectiveness = CalculateLeftAxeModifier();
+;
+                    player.Out.SendMessage($"{Math.Round(effectiveness * 100, 2)}% dmg (after LA penalty) \n", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
                 }
 
-                // HtH chance
-                specLevel = owner.GetModifiedSpecLevel(Specs.HandToHand);
-                InventoryItem attackWeapon = owner.ActiveWeapon;
-                InventoryItem leftWeapon = (owner.Inventory == null)
-                    ? null
-                    : owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-                if (specLevel > 0 && attackWeapon != null && //attackWeapon.Object_Type == (int) eObjectType.HandToHand &&
-                    leftWeapon != null && leftWeapon.Object_Type == (int) eObjectType.HandToHand)
-                {
-                    specLevel--;
-                    int randomChance = Util.Random(99);
-                    int doubleHitChance = (specLevel >> 1) + owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance);
-                    int tripleHitChance = doubleHitChance + (specLevel >> 2) + ((owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance)) >> 1);
-                    int quadHitChance = tripleHitChance + (specLevel >> 4) + ((owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance)) >> 2);
-                    
-                    if (owner is GamePlayer pl && pl.UseDetailedCombatLog)
-                    {
-                        pl.Out.SendMessage(
-                            $"Chance for 2 hits: {doubleHitChance}% | 3 hits: { (specLevel > 25 ? tripleHitChance-doubleHitChance : 0)}% | 4 hits: {(specLevel > 40 ? quadHitChance-tripleHitChance : 0)}% \n",
-                            eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
-                    }
-                    
-                    if (randomChance < doubleHitChance)
-                        return 1; // 1 hit = spec/2
-                    
-                    //doubleHitChance += specLevel >> 2;
-                    if (randomChance < tripleHitChance && specLevel > 25)
-                        return 2; // 2 hits = spec/4
-                    
-                    //doubleHitChance += specLevel >> 4;
-                    if (randomChance < quadHitChance && specLevel > 40)
-                        return 3; // 3 hits = spec/16
+                return 1; // always use left axe
+            }
 
-                    return 0;
-                }
+            int specLevel = Math.Max(owner.GetModifiedSpecLevel(Specs.Celtic_Dual), owner.GetModifiedSpecLevel(Specs.Dual_Wield));
+            specLevel = Math.Max(specLevel, owner.GetModifiedSpecLevel(Specs.Fist_Wraps));
+
+            decimal tmpOffhandChance = 25 + (specLevel - 1) * 68 / 100;
+            tmpOffhandChance += owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance);
+
+            if (owner is GamePlayer p && p.UseDetailedCombatLog && owner.GetModifiedSpecLevel(Specs.HandToHand) <= 0)
+                p.Out.SendMessage($"OH swing%: {Math.Round(tmpOffhandChance, 2)} ({owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance)}% from RAs) \n", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
                 
-                
+            if (specLevel > 0)
+                return Util.Chance((int) tmpOffhandChance) ? 1 : 0;
+
+            // HtH chance
+            specLevel = owner.GetModifiedSpecLevel(Specs.HandToHand);
+            InventoryItem attackWeapon = owner.ActiveWeapon;
+            InventoryItem leftWeapon = (owner.Inventory == null) ? null : owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+
+            if (specLevel > 0 && attackWeapon != null && leftWeapon != null && leftWeapon.Object_Type == (int) eObjectType.HandToHand)
+            {
+                specLevel--;
+                int randomChance = Util.Random(99);
+                int doubleHitChance = (specLevel >> 1) + owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance);
+                int tripleHitChance = doubleHitChance + (specLevel >> 2) + ((owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance)) >> 1);
+                int quadHitChance = tripleHitChance + (specLevel >> 4) + ((owner.GetModified(eProperty.OffhandChance) + owner.GetModified(eProperty.OffhandDamageAndChance)) >> 2);
+
+                if (owner is GamePlayer pl && pl.UseDetailedCombatLog)
+                    pl.Out.SendMessage( $"Chance for 2 hits: {doubleHitChance}% | 3 hits: { (specLevel > 25 ? tripleHitChance-doubleHitChance : 0)}% | 4 hits: {(specLevel > 40 ? quadHitChance-tripleHitChance : 0)}% \n", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+
+                if (randomChance < doubleHitChance)
+                    return 1; // 1 hit = spec/2
+
+                //doubleHitChance += specLevel >> 2;
+                if (randomChance < tripleHitChance && specLevel > 25)
+                    return 2; // 2 hits = spec/4
+
+                //doubleHitChance += specLevel >> 4;
+                if (randomChance < quadHitChance && specLevel > 40)
+                    return 3; // 3 hits = spec/16
             }
 
             return 0;
         }
 
-        /// <summary>
-        /// Returns a multiplier to adjust left hand damage
-        /// </summary>
-        /// <returns></returns>
-        public double CalculateLeftHandEffectiveness(InventoryItem mainWeapon, InventoryItem leftWeapon)
+        public double CalculateLeftAxeModifier()
         {
-            double effectiveness = 1.0;
+            int LeftAxeSpec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
 
-            if (owner is GamePlayer)
-            {
-                if (CanUseLefthandedWeapon && leftWeapon != null &&
-                    leftWeapon.Object_Type == (int) eObjectType.LeftAxe && mainWeapon != null &&
-                    (mainWeapon.Item_Type == Slot.RIGHTHAND || mainWeapon.Item_Type == Slot.LEFTHAND))
-                {
-                    int LASpec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
-                    if (LASpec > 0)
-                    {
-                        effectiveness = 0.625 + 0.0034 * LASpec;
-                    }
-                }
-            }
+            if (LeftAxeSpec == 0)
+                return 1.0;
 
-            return effectiveness;
-        }
+            double modifier = 0.625 + 0.0034 * LeftAxeSpec;
 
-        /// <summary>
-        /// Returns a multiplier to adjust right hand damage
-        /// </summary>
-        /// <param name="leftWeapon"></param>
-        /// <returns></returns>
-        public double CalculateMainHandEffectiveness(InventoryItem mainWeapon, InventoryItem leftWeapon)
-        {
-            double effectiveness = 1.0;
+            if (owner.GetModified(eProperty.OffhandDamageAndChance) > 0)
+                return modifier + owner.GetModified(eProperty.OffhandDamageAndChance) * 0.01;
 
-            if (owner is GamePlayer)
-            {
-                if (CanUseLefthandedWeapon && leftWeapon != null &&
-                    leftWeapon.Object_Type == (int) eObjectType.LeftAxe && mainWeapon != null &&
-                    (mainWeapon.Item_Type == Slot.RIGHTHAND || mainWeapon.Item_Type == Slot.LEFTHAND))
-                {
-                    int LASpec = owner.GetModifiedSpecLevel(Specs.Left_Axe);
-                    if (LASpec > 0)
-                    {
-                        effectiveness = 0.625 + 0.0034 * LASpec;
-                    }
-                }
-            }
-
-            return effectiveness;
+            return modifier;
         }
     }
 }

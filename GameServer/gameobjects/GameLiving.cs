@@ -22,7 +22,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Drawing.Text;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -570,19 +569,10 @@ namespace DOL.GS
 			}
 
 			double absorbBonus = GetModified(eProperty.ArmorAbsorption) / 100.0;
-			double constitutionAbsorb = GetAbsorbFromStat(eProperty.Constitution, 4);
-			double dexterityAbsorb = GetAbsorbFromStat(eProperty.Dexterity, 4);
-			double absorb = 1 - (1 - baseAbsorb) * (1 - absorbBonus) * (1 - constitutionAbsorb) * (1 - dexterityAbsorb);
-			return absorb;
-
-			double GetAbsorbFromStat(eProperty property, double buffStatPerAbsorption)
-			{
-				int buff = BaseBuffBonusCategory[property] + SpecBuffBonusCategory[property];
-				int debuff = Math.Abs(DebuffCategory[property] + SpecDebuffCategory[property]);
-				double debuffEffectiveness = 2; // Debuffs are made more effective.
-				double absorbFromStat = (buff - debuff * debuffEffectiveness) / buffStatPerAbsorption / 100;
-				return absorbFromStat;
-			}
+			double absorptionFromConstitution = StatCalculator.CalculateBuffContributionToAbsorbOrResist(this, eProperty.Constitution) / 4;
+			double absorptionFromDexterity = StatCalculator.CalculateBuffContributionToAbsorbOrResist(this, eProperty.Dexterity) / 4;
+			double absorb = 1 - (1 - baseAbsorb) * (1 - absorbBonus) * (1 - absorptionFromConstitution) * (1 - absorptionFromDexterity);
+			return Math.Clamp(absorb, 0, 1);
 		}
 
 		/// <summary>
@@ -4669,7 +4659,7 @@ namespace DOL.GS
 		#region ControlledNpc
 
 		private int m_petCount;
-		public int PetCount { get; private set; }
+		public int PetCount => m_petCount;
 
 		public void UpdatePetCount(bool add)
 		{
