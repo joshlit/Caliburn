@@ -66,7 +66,7 @@ namespace DOL.GS {
         public const ushort ROG_CAP_QUAL = 99;
 
         // Item chance to get a TOA advanced stat in a TOA Item
-        public const ushort ROG_TOA_STAT_CHANCE = 10;
+        public const ushort ROG_TOA_STAT_CHANCE = 20;
 
         // Item chance to get stat bonus
         public const ushort ROG_ITEM_STAT_CHANCE = 45;

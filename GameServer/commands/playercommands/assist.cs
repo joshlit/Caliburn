@@ -79,6 +79,7 @@ namespace DOL.GS.Commands
                             #endregion
                             #region PvE rules
                         case eGameServerType.GST_PvE:
+                        case eGameServerType.GST_Casual:
                             {
                                 //We cannot assist our target when it has no target.
                                 if (!HasTarget(client, assistPlayer))
@@ -213,6 +214,7 @@ namespace DOL.GS.Commands
 						#endregion
                         #region PvE rules
                         case eGameServerType.GST_PvE:
+                        case eGameServerType.GST_Casual:
                             {
                                 if(client.Player.TargetObject is GamePlayer)
                                 {
