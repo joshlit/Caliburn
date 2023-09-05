@@ -112,7 +112,7 @@ namespace DOL.GS {
         }
 
         public GeneratedUniqueItem(eRealm realm, eCharacterClass charClass, byte level, eObjectType type, eInventorySlot slot, eDamageType dmg, int minUtility = 15)
-            : this(Util.Random(100) < ROG_TOA_ITEM_CHANCE, realm, charClass, level, type, slot, dmg, minUtility)
+            : this(Util.Random(100) < Properties.ROG_TOA_ITEM_CHANCE, realm, charClass, level, type, slot, dmg, minUtility)
         {
 
         }
