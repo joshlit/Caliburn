@@ -93,7 +93,14 @@ namespace DOL.GS
 
                 }
 
-                unique.ProcSpellID = this.ProcSpellID;
+                if (unique.ProcSpellID == 0)
+                {
+                    unique.ProcSpellID = this.ProcSpellID;
+                }
+                else
+                {
+                    unique.ProcSpellID1 = this.ProcSpellID;
+                }
 
                 if (unique.Bonus1Type == (int)eProperty.Socket_Proc)
                 {
