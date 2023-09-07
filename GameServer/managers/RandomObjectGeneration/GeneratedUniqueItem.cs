@@ -967,7 +967,47 @@ namespace DOL.GS {
                         break;
                 }
             }
-            //number += slotStats;
+
+            if (Object_Type >= (int)eObjectType._FirstWeapon && Object_Type <= (int)eObjectType._LastWeapon)
+            {
+                if (Hand == 1) //2h
+                {
+                    if (Util.Chance(30))
+                        slotStats += 1;
+                    if (Util.Chance(30))
+                        slotStats += 1;
+
+
+                    if (Util.Chance(20) && Level >= 40)
+                        procSlots = 1;
+
+                    if (Util.Chance(20) && Level >= 40)
+                        chargeSlots = 1;
+
+                } else //1h
+                {
+                    if (Util.Chance(30))
+                        slotStats += 1;
+
+                    if (Level >= 40)
+                        if (Util.Chance(20))
+                            procSlots = 1;
+                        else if (Util.Chance(20))
+                            chargeSlots = 1;
+                }
+            }
+
+            if (Object_Type >= (int)eObjectType.Shield)
+            {
+                if (Util.Chance(30))
+                    slotStats += 1;
+
+                if (Level >= 40)
+                    if (Util.Chance(20))
+                        procSlots = 1;
+                    else if (Util.Chance(20))
+                        chargeSlots = 1;
+            }
 
 
 
