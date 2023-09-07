@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServerScripts", "GameSe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DOLConfig", "DOLConfig\DOLConfig.csproj", "{E1131DC5-BA14-4FD3-B717-FA2ACA6E49AA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrystalAI", "CrystalAI\CrystalAI-0.7.2\CrystalAI\CrystalAI.csproj", "{07C0FAB3-2769-4792-8625-36501A4D197F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{E1131DC5-BA14-4FD3-B717-FA2ACA6E49AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1131DC5-BA14-4FD3-B717-FA2ACA6E49AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1131DC5-BA14-4FD3-B717-FA2ACA6E49AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07C0FAB3-2769-4792-8625-36501A4D197F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07C0FAB3-2769-4792-8625-36501A4D197F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07C0FAB3-2769-4792-8625-36501A4D197F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07C0FAB3-2769-4792-8625-36501A4D197F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
