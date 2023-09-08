@@ -23,10 +23,10 @@ using System;
 namespace Crystal {
 
   public abstract class DecisionMakerBase : IDecisionMaker {
-    IUtilityAi _ai;
-    IContextProvider _contextProvider;
-    IAction _currentAction;
-    IContext _currentContext;
+    protected IUtilityAi _ai;
+    protected IContextProvider _contextProvider;
+    protected IAction _currentAction;
+    protected IContext _currentContext;
     int _recursionCounter;
     ITransition _transitionAction;
     public DecisionMakerState State { get; protected set; }
@@ -69,7 +69,7 @@ namespace Crystal {
     /// <summary>
     ///   Makes a decision on what should be the next action to be executed.
     /// </summary>
-    public void Think() {
+    public virtual void Think() {
       if(ActionStillRunning())
         return;
 
