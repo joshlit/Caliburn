@@ -602,6 +602,7 @@ namespace DOL.GS
                 case eSpellType.SummonSpiritFighter:
                 case eSpellType.SummonHunterPet:
                 case eSpellType.SummonUnderhill:
+                case eSpellType.SummonCompanion:
                 case eSpellType.SummonDruidPet:
                 case eSpellType.SummonSimulacrum:
                 case eSpellType.SummonNecroPet:

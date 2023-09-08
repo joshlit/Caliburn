@@ -373,6 +373,7 @@ namespace DOL.GS
         Zephyr = 367,
         ZoAura = 368,
         ZoSummon = 369,
-        Null = 370
+        Null = 370,
+        SummonCompanion = 371
     }
 }

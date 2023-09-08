@@ -154,6 +154,8 @@ namespace DOL.GS
         /// </summary>
         public static readonly string RESURRECT_REZ_SICK_EFFECTIVENESS = "RES_SICK_EFFECTIVENESS";
 
+        public List<Companion> Companions = new List<Companion>();
+
         /// <summary>
         /// Array that stores ML step completition
         /// </summary>

@@ -5,6 +5,15 @@ using DOL.GS;
 
 public class GameLoopDecisionMaker : DecisionMakerBase
 {
+    private static int placeholderInt = 0;
+    public static GameLoopDecisionMaker CreateDecisionMaker(GameLiving owner)
+    {
+        var testGuy = new TestGuy($"Test{++placeholderInt}", owner);
+        var testBrain = new TestGuyConstructor().Create($"TestGuyAI");
+        Console.WriteLine($"TestGuy: {testGuy} | TestBrain: {testBrain} | Body Name {owner?.Name}");
+        return new GameLoopDecisionMaker(testBrain, testGuy);
+    }
+    
     public GameLoopDecisionMaker(IUtilityAi ai, IContextProvider contextProvider) : base(ai, contextProvider)
     {
     }

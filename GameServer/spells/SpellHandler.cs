@@ -203,6 +203,7 @@ namespace DOL.GS.Spells
 						case eSpellType.SummonMinion:
 						case eSpellType.SummonSimulacrum:
 						case eSpellType.SummonUnderhill:
+						case eSpellType.SummonCompanion:
 						//case eSpellType.SummonVaultkeeper:
 						case eSpellType.SummonAnimistAmbusher:
 						case eSpellType.SummonAnimistPet:
@@ -3887,6 +3888,8 @@ namespace DOL.GS.Spells
 					return "gsummon";
 				case eSpellType.SummonNecroPet:
 					return "ssummon";
+				case eSpellType.SummonCompanion:
+					return "companion";
 				case eSpellType.StyleCombatSpeedDebuff:
 				case eSpellType.StyleStun:
 				case eSpellType.StyleSpeedDecrease:				
@@ -4174,6 +4177,9 @@ namespace DOL.GS.Spells
 				case eSpellType.SummonMinion:
 					dw.AddKeyValuePair("damage", Spell.Value);
 					break;
+				case eSpellType.SummonCompanion:
+					dw.AddKeyValuePair("damage", 50);
+					break;
 			}
 		}
 
@@ -4297,6 +4303,7 @@ namespace DOL.GS.Spells
 				case eSpellType.SummonSimulacrum:
 				case eSpellType.SummonSpiritFighter:
 				case eSpellType.SummonUnderhill:
+				case eSpellType.SummonCompanion:
 					dw.AddKeyValuePair("power_level", Spell.Damage);
 					//dw.AddKeyValuePair("delve_string", "Summons a Pet to serve you.");
 					//dw.AddKeyValuePair("description_string", "Summons a Pet to serve you.");

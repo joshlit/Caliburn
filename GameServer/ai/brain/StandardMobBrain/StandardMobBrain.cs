@@ -1145,6 +1145,7 @@ namespace DOL.AI.Brain
                 case eSpellType.SummonUnderhill:
                 case eSpellType.SummonSimulacrum:
                 case eSpellType.SummonSpiritFighter:
+                case eSpellType.SummonCompanion:
                     //case "SummonTheurgistPet":
                     if (Body.ControlledBrain != null)
                         break;
