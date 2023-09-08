@@ -899,7 +899,7 @@ namespace DOL.GS
                 log.Debug("Used Memory: " + GC.GetTotalMemory(false) / 1024 / 1024 + "MB");
 
                 if (allErrors != string.Empty)
-                    log.Error("Error loading the following NPC ClassType(s), GameNPC used instead:" + allErrors.TrimEnd(','));
+                    log.Error($"Error loading the following NPC ClassType(s) | region ID {ID} | GameNPC used instead:" + allErrors.TrimEnd(','));
 
                 Thread.Sleep(0);  // give up remaining thread time to other resources
             }
@@ -1293,7 +1293,7 @@ namespace DOL.GS
         {
             lock (m_lockAreas)
             {
-                if (m_Areas == null || m_Areas.ContainsKey(area.ID) == false)
+                if (m_Areas == null || area is null || m_Areas.ContainsKey(area.ID) == false)
                 {
                     return;
                 }

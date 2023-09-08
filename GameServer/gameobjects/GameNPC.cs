@@ -4000,68 +4000,73 @@ namespace DOL.GS
 			if (m_styles == null)
 				return;
 
-			foreach (Style s in m_styles)
+			lock (m_styles.SyncRoot)
 			{
-				if (s == null)
+				if(m_styles.Count > 0) Console.WriteLine($"sort styles for {this.Name}");
+				foreach (Style s in m_styles)
 				{
-					if (log.IsWarnEnabled)
+					if (s == null)
 					{
-						String sError = $"GameNPC.SortStyles(): NULL style for NPC named {Name}";
-						if (m_InternalID != null)
-							sError += $", InternalID {this.m_InternalID}";
-						if (m_npcTemplate != null)
-							sError += $", NPCTemplateID {m_npcTemplate.TemplateId}";
-						log.Warn(sError);
-					}
-					continue; // Keep sorting, as a later style may not be null
-				}// if (s == null)
+						if (log.IsWarnEnabled)
+						{
+							String sError = $"GameNPC.SortStyles(): NULL style for NPC named {Name}";
+							if (m_InternalID != null)
+								sError += $", InternalID {this.m_InternalID}";
+							if (m_npcTemplate != null)
+								sError += $", NPCTemplateID {m_npcTemplate.TemplateId}";
+							log.Warn(sError);
+						}
+						continue; // Keep sorting, as a later style may not be null
+					}// if (s == null)
 
-				switch (s.OpeningRequirementType)
-				{
-					case Style.eOpening.Defensive:
-						if (StylesDefensive == null)
-							StylesDefensive = new List<Style>(1);
-						StylesDefensive.Add(s);
-						break;
-					case Style.eOpening.Positional:
-						switch ((Style.eOpeningPosition)s.OpeningRequirementValue)
-						{
-							case Style.eOpeningPosition.Back:
-								if (StylesBack == null)
-									StylesBack = new List<Style>(1);
-								StylesBack.Add(s);
-								break;
-							case Style.eOpeningPosition.Side:
-								if (StylesSide == null)
-									StylesSide = new List<Style>(1);
-								StylesSide.Add(s);
-								break;
-							case Style.eOpeningPosition.Front:
-								if (StylesFront == null)
-									StylesFront = new List<Style>(1);
-								StylesFront.Add(s);
-								break;
-							default:
-								log.Warn($"GameNPC.SortStyles(): Invalid OpeningRequirementValue for positional style {s.Name }, ID {s.ID}, ClassId {s.ClassID}");
-								break;
-						}
-						break;
-					default:
-						if (s.OpeningRequirementValue > 0)
-						{
-							if (StylesChain == null)
-								StylesChain = new List<Style>(1);
-							StylesChain.Add(s);
-						}
-						else
-						{
-							if (StylesAnytime == null)
-								StylesAnytime = new List<Style>(1);
-							StylesAnytime.Add(s);
-						}
-						break;
-				}// switch (s.OpeningRequirementType)
-			}// foreach
+					switch (s.OpeningRequirementType)
+					{
+						case Style.eOpening.Defensive:
+							if (StylesDefensive == null)
+								StylesDefensive = new List<Style>(1);
+							StylesDefensive.Add(s);
+							break;
+						case Style.eOpening.Positional:
+							switch ((Style.eOpeningPosition)s.OpeningRequirementValue)
+							{
+								case Style.eOpeningPosition.Back:
+									if (StylesBack == null)
+										StylesBack = new List<Style>(1);
+									StylesBack.Add(s);
+									break;
+								case Style.eOpeningPosition.Side:
+									if (StylesSide == null)
+										StylesSide = new List<Style>(1);
+									StylesSide.Add(s);
+									break;
+								case Style.eOpeningPosition.Front:
+									if (StylesFront == null)
+										StylesFront = new List<Style>(1);
+									StylesFront.Add(s);
+									break;
+								default:
+									log.Warn($"GameNPC.SortStyles(): Invalid OpeningRequirementValue for positional style {s.Name }, ID {s.ID}, ClassId {s.ClassID}");
+									break;
+							}
+							break;
+						default:
+							if (s.OpeningRequirementValue > 0)
+							{
+								if (StylesChain == null)
+									StylesChain = new List<Style>(1);
+								StylesChain.Add(s);
+							}
+							else
+							{
+								if (StylesAnytime == null)
+									StylesAnytime = new List<Style>(1);
+								StylesAnytime.Add(s);
+							}
+							break;
+					}// switch (s.OpeningRequirementType)
+				}// foreach
+			}
+			
 		}// SortStyles()
 
 		/// <summary>
