@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Crystal;
 using DOL.Events;
 using DOL.GS;
 using DOL.GS.Effects;
@@ -53,6 +54,8 @@ namespace DOL.AI.Brain
 		protected int m_tempX = 0;
 		protected int m_tempY = 0;
 		protected int m_tempZ = 0;
+
+		private GameLoopDecisionMaker _decisionMaker;
 
 		/// <summary>
 		/// Holds the controlling player of this brain
@@ -97,6 +100,16 @@ namespace DOL.AI.Brain
 			FSM.Add(new StandardMobState_DEAD(this));
 
 			FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+		}
+
+		private void CreateDecisionMaker()
+		{
+			var testGuy = new TestGuy($"Test Pet of {Body?.Name}", Body);
+			var testBrain = new TestGuyConstructor().Create($"TestGuyAI");
+			Console.WriteLine($"TestGuy: {testGuy} | TestBrain: {testBrain} | Body Name {Body?.Name}");
+			_decisionMaker = new GameLoopDecisionMaker(testBrain, testGuy);
+			_decisionMaker.Start();
+			Console.WriteLine($"Decision Maker set to {_decisionMaker}");
 		}
 
 		protected bool m_isMainPet = true;
@@ -384,6 +397,7 @@ namespace DOL.AI.Brain
 		/// <returns>true if started</returns>
 		public override bool Start()
 		{
+			//CreateDecisionMaker();
 			if (!base.Start())
 				return false;
 
@@ -411,6 +425,7 @@ namespace DOL.AI.Brain
 		/// </summary>
 		public override void Think()
 		{
+			_decisionMaker?.Think();
 			base.Think();
 		}
 
