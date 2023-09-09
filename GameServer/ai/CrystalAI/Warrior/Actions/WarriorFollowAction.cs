@@ -3,14 +3,14 @@ using Crystal;
 using DOL.GS;
 
 
-public class WarriorFollowAction : ActionBase<WarriorContext> {
+public class WarriorFollowAction : ActionBase<CompanionContextBase> {
     public static readonly string Name = "WarriorFollow";
 
     public override IAction Clone() {
         return new WarriorFollowAction(this);
     }
 
-    protected override void OnExecute(WarriorContext context) {
+    protected override void OnExecute(CompanionContextBase context) {
         context.Report(Name);
         if (context.Body is GameNPC npc)
         {

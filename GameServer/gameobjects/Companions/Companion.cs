@@ -57,9 +57,15 @@ public class Companion : GameNPC
         get { return (m_ownBrain as CrystalBrain)?.Owner; }
     }
 
+    public override void Die(GameObject killer)
+    {
+        if (Owner is GamePlayer p && p.Companions.Contains(this)) p.Companions.Remove(this);
+        base.Die(killer);
+    }
+
     public override void LoadTemplate(INpcTemplate template)
     {
         base.LoadTemplate(template);
-        m_ownBrain = new CrystalBrain(this);
+        //m_ownBrain = new CrystalBrain(this);
     }
 }

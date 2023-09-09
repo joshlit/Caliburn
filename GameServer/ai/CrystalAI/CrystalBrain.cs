@@ -27,9 +27,10 @@ public class CrystalBrain : ABrain, IControlledBrain
 {
     public GameLoopDecisionMaker DecisionMaker;
 
-    public CrystalBrain(GameLiving owner) : base()
+    public CrystalBrain(GameLiving attachedEntity) : base()
     {
-        DecisionMaker = GameLoopDecisionMaker.CreateWarrior(owner);
+        DecisionMaker = GameLoopDecisionMaker.CreateWarrior(attachedEntity);
+        DecisionMaker.Start();
     }
 
 
@@ -51,6 +52,8 @@ public class CrystalBrain : ABrain, IControlledBrain
         get { return m_owner; }
         set { m_owner = value; }
     }
+
+    public GameLiving AttachedEntity;
     public void Attack(GameObject target)
     {
         

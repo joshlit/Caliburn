@@ -8,7 +8,13 @@ public class CompanionContextBase : IContext
     public int DISTANCE_TO_CHECK = 1000;
     
     public GameLiving Body;
-    public GameLiving PlayerOwner;
+
+    private GamePlayer _playerOwner;
+    public GamePlayer PlayerOwner
+    {
+        get { return _playerOwner; }
+        set { _playerOwner= value; }
+    }
 
     private float _distanceFromOwner;
     public float DistanceFromOwner

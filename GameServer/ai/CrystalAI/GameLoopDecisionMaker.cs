@@ -14,16 +14,18 @@ public class GameLoopDecisionMaker : DecisionMakerBase
         return new GameLoopDecisionMaker(testBrain, testGuy);
     }
     
-    public static GameLoopDecisionMaker CreateWarrior(GameLiving owner)
+    public static GameLoopDecisionMaker CreateWarrior(GameLiving attachedEntity)
     {
-        var warrior = new Warrior($"{owner.Name}-Warrior{++placeholderInt}", owner);
+        var warrior = new Warrior($"{attachedEntity.Name}-Warrior{++placeholderInt}", attachedEntity);
         var warriorBrain = new WarriorConstructor().Create($"WarriorAI");
-        Console.WriteLine($"Warrior: {warrior} | Brain: {warriorBrain} | Owner: {owner?.Name}");
+        Console.WriteLine($"Warrior: {warrior} | Brain: {warriorBrain} | Owner: {attachedEntity?.Name}");
         return new GameLoopDecisionMaker(warriorBrain, warrior);
     }
 
     public GameLoopDecisionMaker(IUtilityAi ai, IContextProvider contextProvider) : base(ai, contextProvider)
-    { }
+    {
+        Console.WriteLine($"GameloopDecisionMaker construction | ai {ai} | contextProvider {contextProvider}");
+    }
 
     protected override void OnStart()
     {
@@ -47,6 +49,9 @@ public class GameLoopDecisionMaker : DecisionMakerBase
 
     public void SetPlayerOwner(GamePlayer playerOwner)
     {
-        if (_currentContext is CompanionContextBase ccb) ccb.PlayerOwner = playerOwner;
+        Console.WriteLine($"Current contextProv {_contextProvider} context {_contextProvider.Context()} CompBase? {_contextProvider.Context() is CompanionContextBase} Warrior? {_contextProvider.Context() is WarriorContext}");
+        Console.WriteLine($"Setting decision maker owner to {playerOwner} previousOwner: {(_contextProvider.Context() as CompanionContextBase)?.PlayerOwner}");
+        if (_contextProvider.Context() is CompanionContextBase ccb) ccb.PlayerOwner = playerOwner;
+        Console.WriteLine($"New owner {(_contextProvider.Context() as CompanionContextBase)?.PlayerOwner}");
     }
 }

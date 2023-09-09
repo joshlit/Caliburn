@@ -34,6 +34,14 @@ namespace DOL.GS.Commands
 			{
 				client.Player.MessageToSelf("You have no companion pet.",eChatType.CT_SpellResisted);
 			}
+
+			if (client.Player.Companions.Count > 0)
+			{
+				foreach (var companion in client.Player.Companions)
+				{
+					companion.Die(companion);
+				}
+			}
 		}
 
 	}
