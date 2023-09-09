@@ -12,10 +12,10 @@ public class FleeAction : ActionBase<TestContext> {
 
     protected override void OnExecute(TestContext context) {
         context.Report(Name);
-        var fleeTarget = context.NearestPlayer;
+        var fleeTarget = context.NearestLiving;
         var owner = context.Owner;
         CalculateFleeTarget(fleeTarget, owner);
-        context.MinDistance = 100 * (1f - (float)context.Owner.GetDistanceTo(context.NearestPlayer)/context.DISTANCE_TO_CHECK);
+        context.MinDistance = 100 * (1f - (float)context.Owner.GetDistanceTo(context.NearestLiving)/context.DISTANCE_TO_CHECK);
         EndInSuccess(context);
         Console.WriteLine($"CrystalAI {owner.Name} running from {fleeTarget.Name}! | Distance: {context.MinDistance}");
     }

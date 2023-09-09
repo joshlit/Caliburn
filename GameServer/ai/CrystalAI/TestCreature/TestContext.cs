@@ -27,7 +27,7 @@ public class TestContext : IContext
         set { _minDistance = value.Clamp(0f, 100f); }
     }
 
-    public GameLiving NearestPlayer;
+    public GameLiving NearestLiving;
     
     string _lastAction;
     public void Report(string what) {

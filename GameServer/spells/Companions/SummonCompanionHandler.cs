@@ -68,6 +68,13 @@ namespace DOL.GS.Spells
             if (m_companion == null)
                 return;
 
+            if (m_companion.Brain is CrystalBrain cb)
+            {
+	            cb.Owner = Caster;
+	            cb.DecisionMaker.SetPlayerOwner(Caster as GamePlayer);
+            }
+            m_companion.Owner = Caster;
+
             if (Spell.Message1 == string.Empty)
             {
                 MessageToCaster(string.Format("The {0} is now under your control.", m_companion.Name), eChatType.CT_Spell);
@@ -126,7 +133,10 @@ namespace DOL.GS.Spells
 			if (brain == null)
 				brain = new CrystalBrain(m_companion);
 			m_companion.SetOwnBrain(brain as AI.ABrain);
-
+			if (brain is CrystalBrain cb)
+			{
+				cb.Owner = Caster;
+			}
 			m_companion.SummonSpellDamage = Spell.Damage;
 			m_companion.SummonSpellValue = Spell.Value;
 
@@ -151,7 +161,22 @@ namespace DOL.GS.Spells
 				(brain as ControlledNpcBrain).CheckSpells(StandardMobBrain.eCheckSpellType.Defensive);
 
 			//add to player companion list
-			if(Caster is GamePlayer p) p.Companions.Add(m_companion);
+			if (Caster is GamePlayer p)
+			{
+				p.Companions.Add(m_companion);
+				if (p.Group != null)
+				{
+					p.Group.AddMember(m_companion);
+				}
+				else
+				{
+					
+					Group group = new Group(p);
+					GroupMgr.AddGroup(group);
+					group.AddMember(p);
+					group.AddMember(m_companion);
+				}
+			}
 
 			m_companion.SetPetLevel();
 			m_companion.Health = m_companion.MaxHealth;

@@ -2,12 +2,12 @@ using Crystal;
 
 namespace DOL.GS;
 
-public class DistanceConsideration : ConsiderationBase<TestContext>
+public class DistanceConsideration : ConsiderationBase<CompanionContextBase>
 {
     private IEvaluator _evaluator;
     public static readonly string Name = "DistanceConsideration";
     
-    public override void Consider(TestContext context)
+    public override void Consider(CompanionContextBase context)
     {
         Utility = new Utility(_evaluator.Evaluate(context.MinDistance), Weight);
     }

@@ -216,12 +216,15 @@ namespace DOL.GS
 			SendMessageToGroupMembers(string.Format("{0} has joined the group.", living.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			GameEventMgr.Notify(GroupEvent.MemberJoined, this, new MemberJoinedEventArgs(living));
 
-
+			DOLCharactersXCustomParam hasGrouped = null;
 			//use this to track completely solo characters
 			const string customKey = "grouped_char";
-			var hasGrouped = DOLDB<DOLCharactersXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
+			if (living is GamePlayer) {
+				hasGrouped = DOLDB<DOLCharactersXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
+			}
+			
 
-			if (hasGrouped == null)
+			if (hasGrouped == null && living is GamePlayer)
 			{
 				DOLCharactersXCustomParam groupedChar = new DOLCharactersXCustomParam();
 				groupedChar.DOLCharactersObjectId = player.ObjectId;

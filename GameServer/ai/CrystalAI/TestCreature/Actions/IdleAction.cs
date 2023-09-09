@@ -13,10 +13,10 @@ public class IdleAction : ActionBase<TestContext> {
 
         protected override void OnExecute(TestContext context) {
             context.Report(Name);
-            context.NearestPlayer = GetNearestLiving(context);
-            context.MinDistance = 100 * (1f - (float)context.Owner.GetDistanceTo(context.NearestPlayer)/context.DISTANCE_TO_CHECK);
+            context.NearestLiving = GetNearestLiving(context);
+            context.MinDistance = 100 * (1f - (float)context.Owner.GetDistanceTo(context.NearestLiving)/context.DISTANCE_TO_CHECK);
             EndInSuccess(context);
-            Console.WriteLine($"{Name} OnExecute | Nearest Player {context.NearestPlayer?.Name} | Distance: {context.MinDistance}");
+            Console.WriteLine($"{Name} OnExecute | Nearest Player {context.NearestLiving?.Name} | Distance: {context.MinDistance}");
         }
 
         private GameLiving GetNearestLiving(TestContext context)

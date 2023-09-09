@@ -6,7 +6,7 @@ using DOL.GS;
 public class GameLoopDecisionMaker : DecisionMakerBase
 {
     private static int placeholderInt = 0;
-    public static GameLoopDecisionMaker CreateDecisionMaker(GameLiving owner)
+    public static GameLoopDecisionMaker CreateTestDecisionMaker(GameLiving owner)
     {
         var testGuy = new TestGuy($"Test{++placeholderInt}", owner);
         var testBrain = new TestGuyConstructor().Create($"TestGuyAI");
@@ -14,9 +14,16 @@ public class GameLoopDecisionMaker : DecisionMakerBase
         return new GameLoopDecisionMaker(testBrain, testGuy);
     }
     
-    public GameLoopDecisionMaker(IUtilityAi ai, IContextProvider contextProvider) : base(ai, contextProvider)
+    public static GameLoopDecisionMaker CreateWarrior(GameLiving owner)
     {
+        var warrior = new Warrior($"{owner.Name}-Warrior{++placeholderInt}", owner);
+        var warriorBrain = new WarriorConstructor().Create($"WarriorAI");
+        Console.WriteLine($"Warrior: {warrior} | Brain: {warriorBrain} | Owner: {owner?.Name}");
+        return new GameLoopDecisionMaker(warriorBrain, warrior);
     }
+
+    public GameLoopDecisionMaker(IUtilityAi ai, IContextProvider contextProvider) : base(ai, contextProvider)
+    { }
 
     protected override void OnStart()
     {
@@ -36,5 +43,10 @@ public class GameLoopDecisionMaker : DecisionMakerBase
     protected override void OnResume()
     {
         Console.WriteLine($"GameLoopDecisionMaker resumed");
+    }
+
+    public void SetPlayerOwner(GamePlayer playerOwner)
+    {
+        if (_currentContext is CompanionContextBase ccb) ccb.PlayerOwner = playerOwner;
     }
 }

@@ -39,13 +39,23 @@ public class Companion : GameNPC
         Level = newLevel;
         return true;
     }
-
-    public GameLiving Owner;
+    
+    public GameLiving Owner
+    {
+        get { return (m_ownBrain as CrystalBrain)?.Owner; }
+        set
+        {
+            if(m_ownBrain is CrystalBrain cb) cb.Owner = value;
+        }
+    }
 
     /// <summary>
     /// The root owner of this pet, the person at the top of the owner chain.
     /// </summary>
-    public GameLiving RootOwner;
+    public GameLiving RootOwner
+    {
+        get { return (m_ownBrain as CrystalBrain)?.Owner; }
+    }
 
     public override void LoadTemplate(INpcTemplate template)
     {
