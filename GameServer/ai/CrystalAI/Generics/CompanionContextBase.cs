@@ -5,7 +5,7 @@ namespace DOL.GS;
 public class CompanionContextBase : IContext
 {
     public string Name;
-    public int DISTANCE_TO_CHECK = 1000;
+    public int DISTANCE_TO_CHECK = 250;
     
     public GameLiving Body;
 

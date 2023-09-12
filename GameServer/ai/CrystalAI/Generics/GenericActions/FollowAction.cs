@@ -17,7 +17,7 @@ public class FollowAction : ActionBase<CompanionContextBase> {
         {
             npc.Follow(context.Target, 50, 10000);
             context.MinDistance = 100 * (1f - (float)context.Body.GetDistanceTo(context.NearestLiving)/context.DISTANCE_TO_CHECK);
-            Console.WriteLine($"CrystalAI {context.Body?.Name} following {context.Target?.Name}! | Distance: {context.MinDistance} Owner: {context.PlayerOwner}");
+            Console.WriteLine($"CrystalAI {context.Body?.Name} following {context.Target?.Name}! | Distance: {context.MinDistance} Owner: {context.PlayerOwner?.Name}");
         }
         
         EndInSuccess(context);

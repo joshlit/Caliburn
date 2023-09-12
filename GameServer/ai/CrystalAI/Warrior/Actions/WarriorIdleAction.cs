@@ -13,11 +13,23 @@ public class WarriorIdleAction : ActionBase<CompanionContextBase> {
 
         protected override void OnExecute(CompanionContextBase context) {
             context.Report(Name);
+            if (context.Body is Companion {RootOwner: null} companion)
+            {
+                companion.Die(companion);
+                EndInFailure(context);
+                return;
+            }
             context.NearestLiving = GetNearestLiving(context);
             context.MinDistance = 100 * (1f - (float)context.Body.GetDistanceTo(context.NearestLiving)/context.DISTANCE_TO_CHECK);
-            if(context.Body is Companion {RootOwner: null} companion) companion.Die(companion);
+            
+            if (context.Target == null) context.Target = context.NearestLiving;
+            if (context.Body is GameNPC npc)
+            {
+                npc.Follow(context.Target, 50, 10000);
+                Console.WriteLine($"CrystalAI {context.Body?.Name} following {context.Target?.Name}! | Distance: {context.MinDistance} Owner: {context.PlayerOwner?.Name}");
+            }
+            
             EndInSuccess(context);
-            Console.WriteLine($"{Name} OnExecute | Nearest Player {context.NearestLiving?.Name} | Distance: {context.MinDistance}");
         }
 
         private GameLiving GetNearestLiving(CompanionContextBase context)

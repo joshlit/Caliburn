@@ -22,10 +22,7 @@ public class GameLoopDecisionMaker : DecisionMakerBase
         return new GameLoopDecisionMaker(warriorBrain, warrior);
     }
 
-    public GameLoopDecisionMaker(IUtilityAi ai, IContextProvider contextProvider) : base(ai, contextProvider)
-    {
-        Console.WriteLine($"GameloopDecisionMaker construction | ai {ai} | contextProvider {contextProvider}");
-    }
+    public GameLoopDecisionMaker(IUtilityAi ai, IContextProvider contextProvider) : base(ai, contextProvider) { }
 
     protected override void OnStart()
     {
@@ -49,9 +46,6 @@ public class GameLoopDecisionMaker : DecisionMakerBase
 
     public void SetPlayerOwner(GamePlayer playerOwner)
     {
-        Console.WriteLine($"Current contextProv {_contextProvider} context {_contextProvider.Context()} CompBase? {_contextProvider.Context() is CompanionContextBase} Warrior? {_contextProvider.Context() is WarriorContext}");
-        Console.WriteLine($"Setting decision maker owner to {playerOwner} previousOwner: {(_contextProvider.Context() as CompanionContextBase)?.PlayerOwner}");
         if (_contextProvider.Context() is CompanionContextBase ccb) ccb.PlayerOwner = playerOwner;
-        Console.WriteLine($"New owner {(_contextProvider.Context() as CompanionContextBase)?.PlayerOwner}");
     }
 }
