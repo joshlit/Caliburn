@@ -167,6 +167,7 @@ namespace DOL.GS.Scripts
             seedsman.Flags ^= GameNPC.eFlags.GHOST;
             seedsman.CurrentSpeed = 0;
             seedsman.MaxSpeedBase = 191;
+            seedsman.SpawnPoint = seedsman;
             UndeadSeedsmanBrain ubrain = new UndeadSeedsmanBrain();
             ubrain.AggroLevel = 100;
             ubrain.AggroRange = 500;
