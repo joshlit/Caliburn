@@ -14,7 +14,7 @@ public class WarriorFollowAction : ActionBase<CompanionContextBase> {
         context.Report(Name);
         if (context.Body is GameNPC npc)
         {
-            npc.Follow(context.Target, 50, 10000);
+            npc.Follow(context.EnemyTarget, 50, 10000);
             context.MinDistance = 100 * (1f - (float)context.Body.GetDistanceTo(context.NearestLiving)/context.DISTANCE_TO_CHECK);
             Console.WriteLine($"CrystalAI {context.Body?.Name} following {npc.TargetObject?.Name}! | Distance: {context.MinDistance}");
         }

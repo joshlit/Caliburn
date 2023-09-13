@@ -1,3 +1,4 @@
+using System;
 using Crystal;
 
 namespace DOL.GS;
@@ -9,7 +10,7 @@ public class AttackerConsideration : ConsiderationBase<CompanionContextBase>
     
     public override void Consider(CompanionContextBase context)
     {
-        Utility = new Utility(_evaluator.Evaluate(context.MinDistance), Weight);
+        Utility = new Utility(_evaluator.Evaluate(Convert.ToByte(context.OwnerInCombat) * 100f), Weight);
     }
 
     public override IConsideration Clone()
@@ -37,6 +38,6 @@ public class AttackerConsideration : ConsiderationBase<CompanionContextBase>
         // Point "b" in the plots below.
         var ptB = new Pointf(100f, 1f);
         
-        _evaluator = new PowerEvaluator(ptA, ptB, 10f);
+        _evaluator = new PowerEvaluator(ptA, ptB, 100f);
     }
 }
