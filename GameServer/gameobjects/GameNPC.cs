@@ -3997,10 +3997,11 @@ namespace DOL.GS
 			if (StylesAnytime != null)
 				StylesAnytime.Clear();
 
-			if (m_styles == null)
+			var styleList = m_styles as ArrayList;
+			if (styleList == null)
 				return;
-
-			foreach (Style s in m_styles)
+			
+			foreach (Style s in styleList.ToArray())
 			{
 				if (s == null)
 				{
