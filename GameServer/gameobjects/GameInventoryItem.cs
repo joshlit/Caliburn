@@ -1009,7 +1009,7 @@ namespace DOL.GS
                     break;
                 }
             }
-            Console.WriteLine($"single Uti of {totalUti} for bonus {itemBonus} of type {(eProperty)itemBonusType} {itemBonusType}");
+            //Console.WriteLine($"single Uti of {totalUti} for bonus {itemBonus} of type {(eProperty)itemBonusType} {itemBonusType}");
 
             return totalUti;
         }
