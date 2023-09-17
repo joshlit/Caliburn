@@ -1,23 +1,3 @@
-/*
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -320,11 +300,6 @@ namespace DOL.GS
         /// Whether or not the player can be attacked.
         /// </summary>
         public override bool IsAttackable { get { return (Client.Account.PrivLevel <= (uint)ePrivLevel.Player && base.IsAttackable); }}
-
-        /// <summary>
-        /// Is this player PvP enabled
-        /// </summary>
-        public virtual bool IsPvP { get { return GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP || (this.CurrentRegionID == 27 && Properties.EVENT_PVP); }}
 
         /// <summary>
         /// Can this player use cross realm items
@@ -1647,32 +1622,6 @@ namespace DOL.GS
                         relY = 385230;
                         relZ = 5410;
                         relHeading = 1756;
-                        break;
-                    }
-
-                    if (Properties.EVENT_THIDRANKI && player.CurrentRegionID == 252)
-                    {
-                        switch (player.Realm)
-                        {
-                            case eRealm.Albion:
-                                relRegion = player.CurrentRegion.ID;
-                                relX = 38113;
-                                relY = 53507;
-                                relZ = 4160;
-                                break;
-                            case eRealm.Midgard:
-                                relRegion = player.CurrentRegion.ID;
-                                relX = 53568;
-                                relY = 23643;
-                                relZ = 4530;
-                                break;
-                            case eRealm.Hibernia:
-                                relRegion = player.CurrentRegion.ID;
-                                relX = 17367;
-                                relY = 18248;
-                                relZ = 4320;
-                                break;
-                        }
                         break;
                     }
 
@@ -7435,12 +7384,13 @@ namespace DOL.GS
                 Out.SendCloseTimerWindow();
             }
 
-            ISpellHandler spellhandler = ScriptMgr.CreateSpellHandler(this, ab.Spell, ab.SpellLine);
+            GameLiving target = TargetObject as GameLiving;
+            ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(this, ab.Spell, ab.SpellLine);
 
-            if (spellhandler != null)
+            if (spellHandler != null)
             {
-                spellhandler.Ability = ab;
-                casted = spellhandler.StartSpell(this);
+                spellHandler.Ability = ab;
+                casted = spellHandler.CheckBeginCast(target) && spellHandler.StartSpell(target);
             }
             else
                 Out.SendMessage(ab.Spell.Name + " not implemented yet (" + ab.Spell.SpellType + ")", eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -8378,15 +8328,20 @@ namespace DOL.GS
                     spell.Concentration = 1;
                 }
 
+                GameLiving target = TargetObject as GameLiving;
                 ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(this, spell, chargeEffectLine);
+
                 if (spellHandler != null)
                 {
+                    if (!spellHandler.CheckBeginCast(target))
+                        return;
+
                     if (IsOnHorse && !spellHandler.HasPositiveEffect)
                         IsOnHorse = false;
 
                     Stealth(false);
 
-                    if (spellHandler.StartSpell(this))
+                    if (spellHandler.StartSpell(target, useItem))
                     {
                         bool castOk = spellHandler.StartReuseTimer;
 
@@ -8396,10 +8351,9 @@ namespace DOL.GS
                             if (subspell != null)
                             {
                                 ISpellHandler subSpellHandler = ScriptMgr.CreateSpellHandler(this, subspell, chargeEffectLine);
-                                if (subSpellHandler != null)
-                                {
-                                    subSpellHandler.StartSpell(this);
-                                }
+
+                                if (subSpellHandler != null && subSpellHandler.CheckBeginCast(target))
+                                    subSpellHandler.StartSpell(target, useItem);
                             }
                         }
 
@@ -8776,17 +8730,6 @@ namespace DOL.GS
                 return false;
             if (IsIgnoring(source))
                 return true;
-
-            if (Properties.EVENT_CROSS_REALM_SAY)
-            {
-                foreach (AbstractArea area in source.CurrentAreas)
-                {
-                    if (area.IsSafeArea)
-                        Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SayReceive.Says", source.GetName(0, false), str),
-                            eChatType.CT_Say, eChatLoc.CL_ChatWindow);
-                    return true;
-                }
-            }
 
             if (GameServer.ServerRules.IsAllowedToUnderstand(source, this) || Properties.ENABLE_DEBUG)
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SayReceive.Says", source.GetName(0, false), str),
@@ -10255,7 +10198,7 @@ namespace DOL.GS
                 return;
             }
 
-            if (sit && (CurrentSpeed > 0 || IsStrafing))
+            if (sit && IsMoving)
             {
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Sit.MustStandingStill"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;

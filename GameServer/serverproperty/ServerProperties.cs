@@ -320,12 +320,18 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		[ServerProperty("system", "hours_uptime_between_shutdown", "Hours between a scheduled server shutdown (-1 = no scheduled restart)", -1)]
 		public static int HOURS_UPTIME_BETWEEN_SHUTDOWN;
-		
+
 		/// <summary>
 		/// Use the NPC Guild Scripts
 		/// </summary>
 		[ServerProperty("system", "use_npcguildscripts", "Use the NPC Guild Scripts", true)]
 		public static bool USE_NPCGUILDSCRIPTS;
+
+		/// <summary>
+		/// Save packets for debugging purpose.
+		/// </summary>
+		[ServerProperty("system", "save_packets", "Save packets and print the last sent/received ones when a client crashes. For debugging purpose.", false)]
+		public static bool SAVE_PACKETS;
 
 		#endregion
 
@@ -1642,7 +1648,7 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("quest", "beetle_rvr_reward", "Beetle Quest realmpoints reward", 0)]
 		public static int BEETLE_RVR_REWARD;
 		#endregion
-		
+
 		#region KEEPS
 		/// <summary>
 		/// The number of players needed for claiming
@@ -2420,7 +2426,7 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Sets the Circle of the Area to check for Turrets
 		/// </summary>
-		[ServerProperty("classes", "turret_area_cap_radius", "Sets the Radius which is checked for the turretareacap", 1000)]
+		[ServerProperty("classes", "turret_area_cap_radius", "Sets the Radius which is checked for the turret area cap", 1000)]
 		public static int TURRET_AREA_CAP_RADIUS;
 
 		[ServerProperty("classes", "theurgist_pet_cap", "Sets the maximum number of pets a Theurgist can summon", 16)]
@@ -2682,66 +2688,6 @@ namespace DOL.GS.ServerProperties
 
 		#region ATLAS
 		/// <summary>
-		/// Disables all XP gains for PvE and PvP kills
-		/// </summary>
-		[ServerProperty("atlas", "event_disable_xp", "Disables gaining XP for all player actions", false)]
-		public static bool EVENT_DISABLE_XP;
-		
-		/// <summary>
-		/// Moves all newly created characters to the Event Zone and levels them to level 24
-		/// </summary>
-		[ServerProperty("atlas", "event_thidranki", "Enables the Thidranki Event (i24 and port to event zone)", false)]
-		public static bool EVENT_THIDRANKI;
-		
-		/// <summary>
-		/// Enables PvP in the Tutorial event zone
-		/// </summary>
-		[ServerProperty("atlas", "event_pvp", "Enables PvP in the Tutorial event zone", false)]
-		public static bool EVENT_PVP;
-		
-		/// <summary>
-		/// Enables the event in the Tutorial zone
-		/// </summary>
-		[ServerProperty("atlas", "event_tutorial", "Enables the event in the Tutorial zone", false)]
-		public static bool EVENT_TUTORIAL;
-
-		/// <summary>
-		/// Allow cross realm grouping for the Event?
-		/// </summary>
-		[ServerProperty("atlas", "event_cross_realm_groups", "Enables cross Realm groups during the event", false)]
-		public static bool EVENT_CROSS_REALM_GROUPS;
-		
-		/// <summary>
-		/// Allow cross cross realm /say in Safe Zones?
-		/// </summary>
-		[ServerProperty("atlas", "event_cross_realm_say", "Enables cross Realm /say in safe zones", false)]
-		public static bool EVENT_CROSS_REALM_SAY;
-
-		/// <summary>
-		/// Maximum character level for the active event
-		/// </summary>
-		[ServerProperty("atlas", "event_lvcap", "Maximum character level for the active event", 0)]
-		public static int EVENT_LVCAP;
-		
-		/// <summary>
-		/// Maximum character realm points for the active event
-		/// </summary>
-		[ServerProperty("atlas", "event_rpcap", "Maximum character realm points for the active event", 0)]
-		public static int EVENT_RPCAP;
-
-		/// <summary>
-		/// Starting RPs amount for all players during the event
-		/// </summary>
-		[ServerProperty("atlas", "event_starting_rp", "Starting RPs amount for all players during the event", 0)]
-		public static int EVENT_START_RP;
-
-		/// <summary>
-		/// Minimum server population required to enable the solo zone
-		/// </summary>
-		[ServerProperty("atlas", "event_solo_pop", "Minimum server population required to enable the solo zone", 0)]
-		public static int EVENT_SOLO_POP;
-		
-		/// <summary>
 		/// Allow claiming of BG keeps
 		/// </summary>
 		[ServerProperty("atlas", "allow_bg_claim", "Allow claiming of BG keeps", false)]
@@ -2916,7 +2862,7 @@ namespace DOL.GS.ServerProperties
         public static int IMMUNITY_TIMER_ADAPTIVE_LENGTH;
 
 		#endregion
-		
+
 		#region RANDOM OBJECT GENERATION
 
 		[ServerProperty("atlas_rog", "rog_toa_item_chance", "chance of generating an object with TOA stats (in %)", 0)]
@@ -2958,8 +2904,19 @@ namespace DOL.GS.ServerProperties
 
 		[ServerProperty("atlas_rog", "rog_use_weighted_generation", "toggle weighted rolls vs. simple generation", false)]
 		public static bool ROG_USE_WEIGHTED_GENERATION;
-		
+
 		#endregion
+
+		#region CONTROLS_AUTOMATION
+
+		[ServerProperty("controls_automation", "auto_select_opening_style", "Automatically perform the opening style of the currently selected style if conditions are not met (recursive).", false)]
+		public static bool AUTO_SELECT_OPENING_STYLE;
+        
+		[ServerProperty("controls_automation", "allow_auto_backup_styles", "Allow players to set an anytime style to be used automatically with /backupstyle", false)]
+		public static bool ALLOW_AUTO_BACKUP_STYLES;
+
+		#endregion
+
 		public static IDictionary<string, object> AllCurrentProperties
 		{
 			get; private set;
