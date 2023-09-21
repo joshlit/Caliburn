@@ -3610,7 +3610,7 @@ namespace DOL.GS
                 return;
 
             m_realmAbilities.FreezeWhile(list => {
-                int index = list.FindIndex(ab => ab.KeyName == ability.KeyName);
+                int index = list.FindIndex(ab => ab.ID == ability.ID);
                 if (index > -1)
                 {
                     list[index].Level = ability.Level;
@@ -3871,7 +3871,7 @@ namespace DOL.GS
                         }
 
                         List<Skill> sps = new List<Skill>();
-                        SpellLine key = spells.Keys.FirstOrDefault(el => el.KeyName == sl.KeyName);
+                        SpellLine key = spells.Keys.FirstOrDefault(el => el.ID == sl.ID);
 
                         if (key != null && spells.ContainsKey(key))
                         {
@@ -3932,7 +3932,7 @@ namespace DOL.GS
                 // Add Spec
                 foreach (Specialization spec in specs.Where(item => item.Trainable))
                 {
-                    int index = innerList.FindIndex(e => (e.Item1 is Specialization) && ((Specialization)e.Item1).KeyName == spec.KeyName);
+                    int index = innerList.FindIndex(e => (e.Item1 is Specialization specialization) && specialization.ID == spec.ID);
 
                     if (index < 0)
                     {
@@ -3948,7 +3948,7 @@ namespace DOL.GS
                 }
 
                 // Add Abilities (Realm ability should be a custom spec)
-                // Abilities order should be saved to db and loaded each time								
+                // Abilities order should be saved to db and loaded each time
                 foreach (Specialization spec in specs)
                 {
                     foreach (Ability abv in spec.GetAbilitiesForLiving(this))
@@ -3959,7 +3959,7 @@ namespace DOL.GS
                         if (ab == null)
                             ab = abv;
 
-                        int index = innerList.FindIndex(k => (k.Item1 is Ability) && ((Ability)k.Item1).KeyName == ab.KeyName);
+                        int index = innerList.FindIndex(k => (k.Item1 is Ability ability) && ability.ID == ab.ID);
 
                         if (index < 0)
                         {
@@ -3975,16 +3975,17 @@ namespace DOL.GS
                     }
                 }
 
-                // Add Hybrid spell
+                // Add Hybrid spells
                 foreach (Specialization spec in specs.Where(item => item.HybridSpellList))
                 {
-                    int index = -1;
-                    foreach(KeyValuePair<SpellLine, List<Skill>> sl in spec.GetLinesSpellsForLiving(this))
+                    foreach (KeyValuePair<SpellLine, List<Skill>> sl in spec.GetLinesSpellsForLiving(this))
                     {
+                        int index = -1;
+
                         foreach (Spell sp in sl.Value.Where(it => (it is Spell) && !((Spell)it).NeedInstrument).Cast<Spell>())
                         {
                             if (index < innerList.Count)
-                                index = innerList.FindIndex(index + 1, e => ((e.Item2 is SpellLine) && ((SpellLine)e.Item2).Spec == sl.Key.Spec) && (e.Item1 is Spell) && !((Spell)e.Item1).NeedInstrument);
+                                index = innerList.FindIndex(index + 1, e => (e.Item2 is SpellLine spellLine) && spellLine.ID == sl.Key.ID && (e.Item1 is Spell spell) && !spell.NeedInstrument);
 
                             if (index < 0 || index >= innerList.Count)
                             {
@@ -4006,7 +4007,7 @@ namespace DOL.GS
                 // Add Songs
                 int songIndex = -1;
                 foreach (Specialization spec in specs.Where(item => item.HybridSpellList))
-                {					
+                {
                     foreach(KeyValuePair<SpellLine, List<Skill>> sl in spec.GetLinesSpellsForLiving(this))
                     {
                         foreach (Spell sp in sl.Value.Where(it => (it is Spell) && ((Spell)it).NeedInstrument).Cast<Spell>())

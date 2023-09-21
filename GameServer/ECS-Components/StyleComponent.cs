@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -122,7 +123,30 @@ namespace DOL.GS
 
             AttackData lastAttackData = _owner.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
             InventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int) eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
-            return StyleProcessor.CanUseStyle(lastAttackData, _owner, NextCombatStyle, weapon) ? NextCombatStyle : NextCombatBackupStyle ?? AutomaticBackupStyle ?? NextCombatStyle;
+            
+            //if they've cached a style and then respecced to no longer have access, remove it
+            if (AutomaticBackupStyle != null && _owner is GamePlayer player && player.WeaponBaseSpecLevel(weapon) < AutomaticBackupStyle.SpecLevelRequirement)
+            {
+                player.Out.SendMessage($"{AutomaticBackupStyle.Name} is no longer a valid backup style for your spec level and has been cleared.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                AutomaticBackupStyle = null;
+            }
+           
+            //determine which style will actually be used
+            Style styleToUse;
+
+            if (StyleProcessor.CanUseStyle(lastAttackData, _owner, NextCombatStyle, weapon))
+                styleToUse = NextCombatStyle;
+            else if (NextCombatBackupStyle != null)
+                styleToUse = NextCombatBackupStyle;
+            else if (AutomaticBackupStyle != null)
+            {
+                StyleProcessor.TryToUseStyle(_owner, AutomaticBackupStyle);
+                styleToUse = NextCombatBackupStyle; // `NextCombatBackupStyle` became `AutomaticBackupStyle` if `TryToUse` succeeded.
+            }
+            else
+                styleToUse = NextCombatStyle; // Not sure why.
+
+            return styleToUse;
         }
 
         /// <summary>

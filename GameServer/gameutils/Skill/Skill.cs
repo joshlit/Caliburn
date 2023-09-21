@@ -1,24 +1,4 @@
-﻿/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-using System;
-using System.Text;
-
+﻿using System.Text;
 using DOL.Database;
 
 namespace DOL.GS
@@ -108,6 +88,35 @@ namespace DOL.GS
 		{
 			return (Skill)MemberwiseClone();
 		}
+
+		public override int GetHashCode()
+		{
+			return m_id;
+		}
+
+		public override bool Equals(object obj)
+		{
+			if (obj == null)
+				return false;
+
+			if (ReferenceEquals(obj, this))
+				return true;
+
+			if (GetType() != obj.GetType())
+				return false;
+
+			return m_id == (obj as Skill).m_id;
+		}
+
+		public static bool operator == (Skill left, Skill right)
+		{
+			return left is null ? right is null : left.Equals(right);
+		}
+
+		public static bool operator != (Skill left, Skill right)
+		{
+			return !(left == right);
+		}
 	}
 
 	/// <summary>
@@ -179,8 +188,13 @@ namespace DOL.GS
 		protected bool m_isBaseLine;
 		protected string m_spec;
 
-		public SpellLine(string keyname, string name, string spec, bool baseline)
-			: base(keyname, name, 0, 0, 1, 0)
+		public SpellLine(string keyname, string name, string spec, bool baseline) : this(keyname, name, 0, spec, baseline)
+		{
+			m_isBaseLine = baseline;
+			m_spec = spec;
+		}
+
+		public SpellLine(string keyname, string name, int id, string spec, bool baseline) : base(keyname, name, id, 0, 1, 0)
 		{
 			m_isBaseLine = baseline;
 			m_spec = spec;
@@ -204,9 +218,8 @@ namespace DOL.GS
 		public override Skill Clone()
 		{
 			return (SpellLine)MemberwiseClone();
-		}	
+		}
 	}
-
 
 	public enum eSkillPage
 	{
@@ -218,5 +231,4 @@ namespace DOL.GS
 		AbilitiesSpell = 0x05,
 		RealmAbilities = 0x06,
 	}
-
 }
