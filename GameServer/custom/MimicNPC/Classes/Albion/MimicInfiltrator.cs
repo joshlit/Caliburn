@@ -19,10 +19,10 @@ namespace DOL.GS.Scripts
 			MimicSpec = new InfiltratorSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne, true);
-			SetArmor(eObjectType.Leather);
-			SetRangedWeapon(eObjectType.Crossbow);
-			SetJewelry();
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
+			MimicEquipment.SetArmor(this, eObjectType.Leather);
+			MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
+			MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

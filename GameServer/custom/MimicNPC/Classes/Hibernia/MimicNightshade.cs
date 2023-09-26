@@ -13,11 +13,11 @@ namespace DOL.GS.Scripts
             MimicSpec = new NightshadeSpec();
 
             DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne, true);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
 
             //SetRangedWeapon(eObjectType.Fired);
-            SetArmor(eObjectType.Leather);
-            SetJewelry();
+            MimicEquipment.SetArmor(this, eObjectType.Leather);
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

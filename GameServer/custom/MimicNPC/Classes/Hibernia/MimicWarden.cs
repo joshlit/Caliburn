@@ -21,11 +21,11 @@ namespace DOL.GS.Scripts
             MimicSpec = new WardenSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-			SetShield(2);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+			MimicEquipment.SetShield(this, 2);
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Reinforced);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Reinforced);
+			MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

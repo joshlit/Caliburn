@@ -19,10 +19,10 @@ namespace DOL.GS.Scripts
 			MimicSpec = new BlademasterSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne, true);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Reinforced);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Reinforced);
+			MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

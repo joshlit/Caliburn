@@ -202,7 +202,7 @@ namespace DOL.GS.Scripts
                         GameLiving owner = brain.Owner;
                         if (owner != null && owner == brain.Body.FollowTarget)
                         {
-                            if (owner is GameNPC)
+                            if (owner is GameNPC && owner is not MimicNPC)
                                 owner = brain.GetPlayerOwner();
 
                             int distance = brain.Body.GetDistanceTo(owner);
@@ -235,7 +235,7 @@ namespace DOL.GS.Scripts
 
                     if (owner != null && owner == brain.Body.FollowTarget)
                     {
-                        if (owner is GameNPC)
+                        if (owner is GameNPC && owner is not MimicNPC)
                             owner = brain.GetPlayerOwner();
 
                         if (owner is GamePlayer playerOwner && playerOwner.IsSprinting)

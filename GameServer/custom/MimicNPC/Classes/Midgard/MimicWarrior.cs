@@ -19,12 +19,12 @@ namespace DOL.GS.Scripts
 			MimicSpec = new WarriorSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
-			SetShield(3);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
+			MimicEquipment.SetShield(this, 3);
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Chain);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Chain);
+			MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

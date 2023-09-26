@@ -21,11 +21,11 @@ namespace DOL.GS.Scripts
             MimicSpec = new DruidSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-			SetShield(1);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+			MimicEquipment.SetShield(this, 1);
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Scale);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Scale);
+			MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

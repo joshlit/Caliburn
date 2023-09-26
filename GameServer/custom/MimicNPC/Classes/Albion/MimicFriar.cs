@@ -19,9 +19,9 @@ namespace DOL.GS.Scripts
             MimicSpec = new FriarSpec();
 
             DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-            SetArmor(eObjectType.Leather);
-            SetJewelry();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetArmor(this, eObjectType.Leather);
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

@@ -14,13 +14,13 @@ namespace DOL.GS.Scripts
             DistributeSkillPoints();
             
             if (GetSpecializationByName("Shields").Level > 1)
-                SetMeleeWeapon(MimicSpec.WeaponTypeOne);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
 
-            SetMeleeWeapon(MimicSpec.WeaponTypeTwo, false, MimicSpec.DamageType);
-            SetArmor(eObjectType.Plate);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, false, MimicSpec.DamageType);
+            MimicEquipment.SetArmor(this, eObjectType.Plate);
             //SetRangedWeapon(eObjectType.Crossbow);
-            SetShield(3);
-            SetJewelry();
+            MimicEquipment.SetShield(this, 3);
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

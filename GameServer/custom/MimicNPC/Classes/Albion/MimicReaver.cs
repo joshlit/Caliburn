@@ -18,10 +18,10 @@ namespace DOL.GS.Scripts
             MimicSpec = new ReaverSpec();
             
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-            SetArmor(eObjectType.Chain);
-			SetJewelry();
-			SetShield(3);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetArmor(this, eObjectType.Chain);
+            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetShield(this, 3);
 			SwitchWeapon(eActiveWeaponSlot.Standard);
 			RefreshSpecDependantSkills(false);
 			SetSpells();

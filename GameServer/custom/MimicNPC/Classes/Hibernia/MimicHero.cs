@@ -13,23 +13,23 @@ namespace DOL.GS.Scripts
             MimicSpec = MimicManager.Random(this);
             DistributeSkillPoints();
 
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
 
             if (MimicSpec.SpecName == "HybridHero")
             {
-                SetMeleeWeapon(MimicSpec.WeaponTypeTwo);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo);
             }
 
-            SetShield(3);
+            MimicEquipment.SetShield(this, 3);
 
             //SetRangedWeapon(eObjectType.Fired);
 
             if (Level >= 15)
-                SetArmor(eObjectType.Scale);
+                MimicEquipment.SetArmor(this, eObjectType.Scale);
             else
-                SetArmor(eObjectType.Reinforced);
+                MimicEquipment.SetArmor(this, eObjectType.Reinforced);
 
-            SetJewelry();
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

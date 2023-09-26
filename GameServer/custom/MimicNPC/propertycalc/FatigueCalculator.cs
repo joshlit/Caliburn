@@ -29,7 +29,7 @@ namespace DOL.GS.Scripts
             {
                 MimicNPC mimic = living as MimicNPC;
 
-                int endurance = mimic.DBMaxEndurance;
+                int endurance = 100;
                 endurance += (int)(endurance * (Math.Min(15, living.ItemBonus[(int)property]) * .01));
                 return endurance;
             }

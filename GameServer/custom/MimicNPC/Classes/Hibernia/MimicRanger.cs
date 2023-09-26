@@ -13,10 +13,10 @@ namespace DOL.GS.Scripts
             MimicSpec = new RangerSpec();
 
             DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne, true);
-            SetRangedWeapon(eObjectType.RecurvedBow);
-            SetArmor(eObjectType.Reinforced);
-            SetJewelry();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
+            MimicEquipment.SetRangedWeapon(this, eObjectType.RecurvedBow);
+            MimicEquipment.SetArmor(this, eObjectType.Reinforced);
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

@@ -13,11 +13,11 @@ namespace DOL.GS.Scripts
             MimicSpec = new PaladinSpec();
 
             DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-            SetMeleeWeapon(MimicSpec.WeaponTypeTwo, false, MimicSpec.DamageType);
-            SetArmor(eObjectType.Plate);
-            SetShield(3);
-            SetJewelry();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, false, MimicSpec.DamageType);
+            MimicEquipment.SetArmor(this, eObjectType.Plate);
+            MimicEquipment.SetShield(this, 3);
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

@@ -13,12 +13,12 @@ namespace DOL.GS.Scripts
             MimicSpec = new ShadowbladeSpec();
 
             DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-            SetMeleeWeapon(MimicSpec.WeaponTypeTwo, false, 0, eHand.leftHand);
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, false, 0, eHand.leftHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
             //SetRangedWeapon(eObjectType.CompositeBow);
-            SetArmor(eObjectType.Leather);
-            SetJewelry();
+            MimicEquipment.SetArmor(this, eObjectType.Leather);
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

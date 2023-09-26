@@ -103,9 +103,9 @@ namespace DOL.GS.Scripts
             int petCount = 0;
 
             // TODO: Find a way to remove `ToList` call.
-            foreach (GameObject attacker in living.attackComponent.Attackers.ToList())
+            foreach (GameLiving attacker in living.attackComponent.Attackers.Keys)
             {
-                if (attacker is GamePlayer)
+                if (attacker is GamePlayer || attacker is MimicNPC)
                     epicScaleFactor -= 0.04;
                 else if (attacker is GameSummonedPet && petCount <= petCap)
                 {

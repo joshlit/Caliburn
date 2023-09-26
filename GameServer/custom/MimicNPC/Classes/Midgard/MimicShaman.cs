@@ -19,11 +19,11 @@ namespace DOL.GS.Scripts
             MimicSpec = new ShamanSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-			SetShield(1);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
+			MimicEquipment.SetShield(this, 1);
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Chain);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Chain);
+			MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

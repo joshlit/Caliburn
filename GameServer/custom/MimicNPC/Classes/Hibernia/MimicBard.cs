@@ -21,11 +21,11 @@ namespace DOL.GS.Scripts
             MimicSpec = new BardSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-			SetShield(1);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+			MimicEquipment.SetShield(this, 1);
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Reinforced);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Reinforced);
+			MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

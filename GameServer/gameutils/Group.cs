@@ -217,18 +217,18 @@ namespace DOL.GS
 			GameEventMgr.Notify(GroupEvent.MemberJoined, this, new MemberJoinedEventArgs(living));
 
 
-			//use this to track completely solo characters
-			const string customKey = "grouped_char";
-			var hasGrouped = DOLDB<DbCoreCharacterXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
+			////use this to track completely solo characters
+			//const string customKey = "grouped_char";
+			//var hasGrouped = DOLDB<DbCoreCharacterXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
 
-			if (hasGrouped == null)
-			{
-				DbCoreCharacterXCustomParam groupedChar = new DbCoreCharacterXCustomParam();
-				groupedChar.DOLCharactersObjectId = player.ObjectId;
-				groupedChar.KeyName = customKey;
-				groupedChar.Value = "1";
-				GameServer.Database.AddObject(groupedChar);
-			}
+			//if (hasGrouped == null)
+			//{
+			//	DbCoreCharacterXCustomParam groupedChar = new DbCoreCharacterXCustomParam();
+			//	groupedChar.DOLCharactersObjectId = player.ObjectId;
+			//	groupedChar.KeyName = customKey;
+			//	groupedChar.Value = "1";
+			//	GameServer.Database.AddObject(groupedChar);
+			//}
 
 			// Part of the hack to make friendly pets untargetable (or targetable again) with TAB on a PvP server.
 			// We could also check for non controlled pets (turrets for example) around the player, but it isn't very important.

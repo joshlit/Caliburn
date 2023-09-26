@@ -19,11 +19,11 @@ namespace DOL.GS.Scripts
 			MimicSpec = new ScoutSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-			SetRangedWeapon(eObjectType.Longbow);
-			SetShield(1);
-			SetArmor(eObjectType.Studded);
-			SetJewelry();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow);
+            MimicEquipment.SetShield(this, 1);
+            MimicEquipment.SetArmor(this, eObjectType.Studded);
+            MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

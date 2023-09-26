@@ -32,7 +32,7 @@ namespace DOL.GS
         /// The chance for a critical hit
         /// </summary>
         /// <param name="weapon">attack weapon</param>
-        public override int AttackCriticalChance(WeaponAction action, InventoryItem weapon)
+        public override int AttackCriticalChance(WeaponAction action, DbInventoryItem weapon)
         {
             if (owner is GamePlayer || owner is MimicNPC)
             {
@@ -75,7 +75,7 @@ namespace DOL.GS
         /// Returns the damage type of the current attack
         /// </summary>
         /// <param name="weapon">attack weapon</param>
-        public override eDamageType AttackDamageType(InventoryItem weapon)
+        public override eDamageType AttackDamageType(DbInventoryItem weapon)
         {
             if (owner is GamePlayer || owner is MimicNPC || owner is CommanderPet)
             {
@@ -92,7 +92,7 @@ namespace DOL.GS
                     case eObjectType.CompositeBow:
                     case eObjectType.RecurvedBow:
                     case eObjectType.Fired:
-                    InventoryItem ammo = p == null ? m.rangeAttackComponent.Ammo : p.rangeAttackComponent.Ammo;
+                    DbInventoryItem ammo = p == null ? m.rangeAttackComponent.Ammo : p.rangeAttackComponent.Ammo;
 
                     if (ammo == null)
                         return (eDamageType)weapon.Type_Damage;
@@ -128,7 +128,7 @@ namespace DOL.GS
             {
                 if (owner is GamePlayer || owner is MimicNPC)
                 {
-                    InventoryItem weapon = owner.ActiveWeapon;
+                    DbInventoryItem weapon = owner.ActiveWeapon;
 
                     if (weapon == null)
                         return 0;
@@ -175,7 +175,7 @@ namespace DOL.GS
 
                         range = Math.Max(32, range * owner.GetModified(eProperty.ArcheryRange) * 0.01);
 
-                        InventoryItem ammo = mimic is null ? player.rangeAttackComponent.Ammo : mimic.rangeAttackComponent.Ammo;
+                        DbInventoryItem ammo = mimic is null ? player.rangeAttackComponent.Ammo : mimic.rangeAttackComponent.Ammo;
 
                         if (ammo != null)
                             switch ((ammo.SPD_ABS >> 2) & 0x3)
@@ -231,7 +231,7 @@ namespace DOL.GS
         /// Gets the current attackspeed of this living in milliseconds
         /// </summary>
         /// <returns>effective speed of the attack. average if more than one weapon.</returns>
-        public override int AttackSpeed(InventoryItem mainWeapon, InventoryItem leftWeapon = null)
+        public override int AttackSpeed(DbInventoryItem mainWeapon, DbInventoryItem leftWeapon = null)
         {
             if (owner is GamePlayer || owner is MimicNPC)
             {
@@ -366,7 +366,7 @@ namespace DOL.GS
             }
         }
 
-        public override double AttackDamage(InventoryItem weapon, out double damageCap)
+        public override double AttackDamage(DbInventoryItem weapon, out double damageCap)
         {
             double effectiveness = 1;
             damageCap = 0;
@@ -381,7 +381,7 @@ namespace DOL.GS
                 if (weapon.Item_Type == Slot.RANGED)
                 {
                     damageCap *= CalculateTwoHandedDamageModifier(weapon);
-                    InventoryItem ammo = player.rangeAttackComponent.Ammo;
+                    DbInventoryItem ammo = player.rangeAttackComponent.Ammo;
 
                     if (ammo != null)
                     {
@@ -439,7 +439,7 @@ namespace DOL.GS
                 if (weapon.Item_Type == Slot.RANGED)
                 {
                     damageCap *= CalculateTwoHandedDamageModifier(weapon);
-                    InventoryItem ammo = mimic.rangeAttackComponent.Ammo;
+                    DbInventoryItem ammo = mimic.rangeAttackComponent.Ammo;
 
                     if (ammo != null)
                     {
@@ -528,7 +528,7 @@ namespace DOL.GS
         /// <summary>
         /// Called whenever a single attack strike is made
         /// </summary>
-        public override AttackData MakeAttack(WeaponAction action, GameObject target, InventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield)
+        public override AttackData MakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield)
         {
             if (owner is GamePlayer playerOwner)
             {
@@ -610,8 +610,8 @@ namespace DOL.GS
                         {
                             List<GameObject> extraTargets = new();
                             List<GameObject> listAvailableTargets = new();
-                            InventoryItem attackWeapon = owner.ActiveWeapon;
-                            InventoryItem leftWeapon = playerOwner.Inventory?.GetItem(eInventorySlot.LeftHandWeapon);
+                            DbInventoryItem attackWeapon = owner.ActiveWeapon;
+                            DbInventoryItem leftWeapon = playerOwner.Inventory?.GetItem(eInventorySlot.LeftHandWeapon);
 
                             int numTargetsCanHit = style.ID switch
                             {
@@ -670,7 +670,7 @@ namespace DOL.GS
                                 // TODO: Figure out why Shield Swipe is handled differently here.
                                 if (IsNotShieldSwipe)
                                 {
-                                    weaponAction = new WeaponAction(playerOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
+                                    weaponAction = new MimicWeaponAction(playerOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
                                     weaponAction.Execute();
                                 }
                                 else
@@ -748,8 +748,8 @@ namespace DOL.GS
                         {
                             List<GameObject> extraTargets = new();
                             List<GameObject> listAvailableTargets = new();
-                            InventoryItem attackWeapon = owner.ActiveWeapon;
-                            InventoryItem leftWeapon = mimicOwner.Inventory?.GetItem(eInventorySlot.LeftHandWeapon);
+                            DbInventoryItem attackWeapon = owner.ActiveWeapon;
+                            DbInventoryItem leftWeapon = mimicOwner.Inventory?.GetItem(eInventorySlot.LeftHandWeapon);
 
                             int numTargetsCanHit = style.ID switch
                             {
@@ -809,7 +809,7 @@ namespace DOL.GS
                                 // TODO: Figure out why Shield Swipe is handled differently here.
                                 if (IsNotShieldSwipe)
                                 {
-                                    weaponAction = new WeaponAction(mimicOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
+                                    weaponAction = new MimicWeaponAction(mimicOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
                                     weaponAction.Execute();
                                 }
                                 else
@@ -839,7 +839,7 @@ namespace DOL.GS
         /// attacktimer and should not be called manually
         /// </summary>
         /// <returns>the object where we collect and modifiy all parameters about the attack</returns>
-        public override AttackData LivingMakeAttack(WeaponAction action, GameObject target, InventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS = false)
+        public override AttackData LivingMakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS = false)
         {
             AttackData ad = new()
             {
@@ -957,9 +957,6 @@ namespace DOL.GS
                 return ad;
             }
 
-            // Add ourself to the target's attackers list. Should be done before any enemy reaction for accurate calculation.
-            ad.Target.attackComponent.AddAttacker(owner);
-
             // Calculate our attack result and attack damage.
             ad.AttackResult = ad.Target.attackComponent.CalculateEnemyAttackResult(action, ad, weapon);
 
@@ -982,16 +979,16 @@ namespace DOL.GS
                 case eAttackResult.HitStyle:
                 {
                     double damage = AttackDamage(weapon, out double damageCap) * effectiveness;
-                    InventoryItem armor = null;
+                    DbInventoryItem armor = null;
 
                     if (ad.Target.Inventory != null)
                         armor = ad.Target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
 
-                    InventoryItem weaponForSpecModifier = null;
+                    DbInventoryItem weaponForSpecModifier = null;
 
                     if (weapon != null)
                     {
-                        weaponForSpecModifier = new InventoryItem();
+                        weaponForSpecModifier = new DbInventoryItem();
                         weaponForSpecModifier.Object_Type = weapon.Object_Type;
                         weaponForSpecModifier.SlotPosition = weapon.SlotPosition;
 
@@ -1096,9 +1093,9 @@ namespace DOL.GS
                 {
                     // Reduce endurance by half the style's cost if we missed.
                     if (ad.Style != null && playerOwner != null && weapon != null)
-                        playerOwner.Endurance -= StyleProcessor.CalculateEnduranceCost(playerOwner, ad.Style, weapon.SPD_ABS) / 2;
+                        playerOwner.Endurance -= MimicStyleProcessor.CalculateEnduranceCost(playerOwner, ad.Style, weapon.SPD_ABS) / 2;
                     else if (ad.Style != null && mimicOwner != null && weapon != null)
-                        mimicOwner.Endurance -= StyleProcessor.CalculateEnduranceCost(mimicOwner, ad.Style, weapon.SPD_ABS) / 2;
+                        mimicOwner.Endurance -= MimicStyleProcessor.CalculateEnduranceCost(mimicOwner, ad.Style, weapon.SPD_ABS) / 2;
 
                     break;
                 }
@@ -1486,7 +1483,7 @@ namespace DOL.GS
             return baseWeaponSkill;
         }
 
-        public override double CalculateSpecModifier(GameLiving target, InventoryItem weapon)
+        public override double CalculateSpecModifier(GameLiving target, DbInventoryItem weapon)
         {
             double specModifier = 0;
 
@@ -1546,14 +1543,14 @@ namespace DOL.GS
             return absorb >= 1 ? double.MaxValue : armorFactor / (1 - absorb);
         }
 
-        public override double CalculateTargetResistance(GameLiving target, eDamageType damageType, InventoryItem armor)
+        public static new double CalculateTargetResistance(GameLiving target, eDamageType damageType, DbInventoryItem armor)
         {
             eProperty resistType = target.GetResistTypeForDamage(damageType);
             double damageModifier = 1.0;
 
             // Against NPC targets this just doubles the resists. Applying only to player targets as a fix.
             // TODO: Figure out why and fix the mess that resists are.
-            if (target is GamePlayer)
+            if (target is GamePlayer || target is MimicNPC)
                 damageModifier *= 1.0 - (target.GetResist(damageType) + SkillBase.GetArmorResist(armor, damageType)) * 0.01;
 
             damageModifier *= 1.0 - target.GetDamageResist(resistType) * 0.01;
@@ -1563,7 +1560,6 @@ namespace DOL.GS
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         public static new double CalculateTargetConversion(GameLiving target, double damage)
         {
-            log.Info("CalledCalc");
             if (target is not GamePlayer && target is not MimicNPC)
                 return 1.0;
 
@@ -1603,7 +1599,7 @@ namespace DOL.GS
 
         public override bool CheckBlock(AttackData ad, double attackerConLevel)
         {
-            double blockChance = owner.TryBlock(ad, attackerConLevel, m_attackers.Count);
+            double blockChance = owner.TryBlock(ad, attackerConLevel, Attackers.Count);
             ad.BlockChance = blockChance;
             double ranBlockNum = Util.CryptoNextDouble() * 10000;
             ranBlockNum = Math.Floor(ranBlockNum);
@@ -1674,23 +1670,25 @@ namespace DOL.GS
                 !guard.GuardSource.IsWithinRadius(guard.GuardTarget, GuardAbilityHandler.GUARD_DISTANCE))
                 return false;
 
-            InventoryItem leftHand = guard.GuardSource.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-            InventoryItem rightHand = guard.GuardSource.ActiveWeapon;
+            DbInventoryItem leftHand = guard.GuardSource.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+            DbInventoryItem rightHand = guard.GuardSource.ActiveWeapon;
 
             if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int)eObjectType.Shield) && guard.GuardSource is not GameNPC)
                 return false;
 
             // TODO: Insert actual formula for guarding here, this is just a guessed one based on block.
             int guardLevel = guard.GuardSource.GetAbilityLevel(Abilities.Guard);
-            double guardchance;
 
-            if (guard.GuardSource is GameNPC)
-                guardchance = guard.GuardSource.GetModified(eProperty.BlockChance) * 0.001;
+            double guardChance;
+
+            if (guard.GuardSource is GameNPC && guard.GuardSource is not MimicNPC)
+                guardChance = guard.GuardSource.GetModified(eProperty.BlockChance);
             else
-                guardchance = guard.GuardSource.GetModified(eProperty.BlockChance) * 0.001 * (leftHand.Quality * 0.01);
+                guardChance = guard.GuardSource.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double)leftHand.MaxCondition);
 
-            guardchance += guardLevel * 5 * 0.01; // 5% additional chance to guard with each Guard level.
-            guardchance += attackerConLevel * 0.05;
+            guardChance *= 0.001;
+            guardChance += guardLevel * 5 * 0.01; // 5% additional chance to guard with each Guard level.
+            guardChance += attackerConLevel * 0.05;
             int shieldSize = 1;
 
             if (leftHand != null)
@@ -1698,30 +1696,35 @@ namespace DOL.GS
                 shieldSize = Math.Max(leftHand.Type_Damage, 1);
 
                 if (guardSource is GamePlayer || guardSource is MimicNPC)
-                    guardchance += (double)(leftHand.Level - 1) / 50 * 0.15; // Up to 15% extra block chance based on shield level.
+                    guardChance += (double)(leftHand.Level - 1) / 50 * 0.15; // Up to 15% extra block chance based on shield level.
             }
 
-            if (m_attackers.Count > shieldSize)
-                guardchance *= shieldSize / (double)m_attackers.Count;
+            if (Attackers.Count > shieldSize)
+                guardChance *= shieldSize / (double)Attackers.Count;
 
-            if (guardchance < 0.01)
-                guardchance = 0.01;
-            //else if (ad.Attacker is GamePlayer && guardchance > 0.6)
-            // guardchance = 0.6;
-            else if (shieldSize == 1 && guardchance > 0.8)
-                guardchance = 0.8;
-            else if (shieldSize == 2 && guardchance > 0.9)
-                guardchance = 0.9;
-            else if (shieldSize == 3 && guardchance > 0.99)
-                guardchance = 0.99;
+            // Reduce chance by attacker's defense penetration.
+            guardChance *= 1 - ad.Attacker.GetAttackerDefensePenetration(ad.Attacker, ad.Weapon) / 100;
+
+            if (guardChance < 0.01)
+                guardChance = 0.01;
+            else if (guardChance > Properties.BLOCK_CAP && ad.Attacker is GamePlayer && ad.Target is GamePlayer)
+                guardChance = Properties.BLOCK_CAP;
+
+            /// Possibly intended to be applied in RvR only.
+            if (shieldSize == 1 && guardChance > 0.8)
+                guardChance = 0.8;
+            else if (shieldSize == 2 && guardChance > 0.9)
+                guardChance = 0.9;
+            else if (shieldSize == 3 && guardChance > 0.99)
+                guardChance = 0.99;
 
             if (ad.AttackType == AttackData.eAttackType.MeleeDualWield)
-                guardchance /= 2;
+                guardChance *= 0.5;
 
             double ranBlockNum = Util.CryptoNextDouble() * 10000;
             ranBlockNum = Math.Floor(ranBlockNum);
             ranBlockNum /= 100;
-            guardchance *= 100;
+            guardChance *= 100;
 
             double? blockDouble = null;
 
@@ -1733,14 +1736,14 @@ namespace DOL.GS
             double? blockOutput = (blockDouble != null) ? blockDouble * 100 : ranBlockNum;
 
             if (guard.GuardSource is GamePlayer blockAttk && blockAttk.UseDetailedCombatLog)
-                blockAttk.Out.SendMessage($"Chance to guard: {guardchance} rand: {blockOutput} GuardSuccess? {guardchance > blockOutput}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+                blockAttk.Out.SendMessage($"Chance to guard: {guardChance} rand: {blockOutput} GuardSuccess? {guardChance > blockOutput}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
             if (guard.GuardTarget is GamePlayer blockTarg && blockTarg.UseDetailedCombatLog)
-                blockTarg.Out.SendMessage($"Chance to be guarded: {guardchance} rand: {blockOutput} GuardSuccess? {guardchance > blockOutput}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+                blockTarg.Out.SendMessage($"Chance to be guarded: {guardChance} rand: {blockOutput} GuardSuccess? {guardChance > blockOutput}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
             if (blockDouble == null || Properties.OVERRIDE_DECK_RNG)
             {
-                if (guardchance > ranBlockNum)
+                if (guardChance > ranBlockNum)
                 {
                     ad.Target = guard.GuardSource;
                     return true;
@@ -1748,7 +1751,7 @@ namespace DOL.GS
             }
             else
             {
-                if (guardchance > blockOutput)
+                if (guardChance > blockOutput)
                 {
                     ad.Target = guard.GuardSource;
                     return true;
@@ -1761,7 +1764,7 @@ namespace DOL.GS
         /// <summary>
         /// Returns the result of an enemy attack
         /// </summary>
-        public override eAttackResult CalculateEnemyAttackResult(WeaponAction action, AttackData ad, InventoryItem attackerWeapon)
+        public override eAttackResult CalculateEnemyAttackResult(WeaponAction action, AttackData ad, DbInventoryItem attackerWeapon)
         {
             if (owner.EffectList.CountOfType<NecromancerShadeEffect>() > 0)
                 return eAttackResult.NoValidTarget;
@@ -1886,7 +1889,7 @@ namespace DOL.GS
                 if (lastAttackData != null && lastAttackData.AttackResult != eAttackResult.HitStyle)
                     lastAttackData = null;
 
-                double evadeChance = owner.TryEvade(ad, lastAttackData, attackerConLevel, m_attackers.Count);
+                double evadeChance = owner.TryEvade(ad, lastAttackData, attackerConLevel, Attackers.Count);
                 ad.EvadeChance = evadeChance;
                 double randomEvadeNum = Util.CryptoNextDouble() * 10000;
                 randomEvadeNum = Math.Floor(randomEvadeNum);
@@ -1926,7 +1929,7 @@ namespace DOL.GS
 
                 if (ad.IsMeleeAttack)
                 {
-                    double parryChance = owner.TryParry(ad, lastAttackData, attackerConLevel, m_attackers.Count);
+                    double parryChance = owner.TryParry(ad, lastAttackData, attackerConLevel, Attackers.Count);
                     ad.ParryChance = parryChance;
                     double ranParryNum = Util.CryptoNextDouble() * 10000;
                     ranParryNum = Math.Floor(ranParryNum);
@@ -2092,7 +2095,7 @@ namespace DOL.GS
             return bonusCap;
         }
 
-        public override int CalculateMeleeCriticalDamage(AttackData ad, WeaponAction action, InventoryItem weapon)
+        public override int CalculateMeleeCriticalDamage(AttackData ad, WeaponAction action, DbInventoryItem weapon)
         {
             if (!Util.Chance(AttackCriticalChance(action, weapon)))
                 return 0;
@@ -2152,7 +2155,7 @@ namespace DOL.GS
             }
         }
 
-        public override int GetMissChance(WeaponAction action, AttackData ad, AttackData lastAD, InventoryItem weapon)
+        public override int GetMissChance(WeaponAction action, AttackData ad, AttackData lastAD, DbInventoryItem weapon)
         {
             // No miss if the target is sitting or for Volley attacks.
             if (owner is GamePlayer player && player.IsSitting || (owner is MimicNPC mimic && mimic.IsSitting) || action.RangedAttackType == eRangedAttackType.Volley)
@@ -2187,7 +2190,7 @@ namespace DOL.GS
 
                 if (ad.Target.Inventory != null)
                 {
-                    InventoryItem armor = ad.Target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
+                    DbInventoryItem armor = ad.Target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
 
                     if (armor != null)
                         armorBonus = armor.Bonus;
@@ -2204,7 +2207,7 @@ namespace DOL.GS
 
                 if (ad.Target.Inventory != null)
                 {
-                    InventoryItem armor = ad.Target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
+                    DbInventoryItem armor = ad.Target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
 
                     if (armor != null)
                         armorBonus = armor.Bonus;
@@ -2244,7 +2247,7 @@ namespace DOL.GS
 
             if (action.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
             {
-                InventoryItem ammo = ad.Attacker.rangeAttackComponent.Ammo;
+                DbInventoryItem ammo = ad.Attacker.rangeAttackComponent.Ammo;
 
                 if (ammo != null)
                 {

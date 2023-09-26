@@ -1,4 +1,6 @@
-﻿using DOL.GS.Commands;
+﻿using DOL.GS.API;
+using DOL.GS.Commands;
+using DOL.GS.PacketHandler;
 using log4net;
 using System;
 using System.Collections.Generic;
@@ -192,12 +194,11 @@ namespace DOL.GS.Scripts
                         if (groupMembers[0].Group == null)
                         {
                             groupMembers[0].Group = new Group(groupMembers[0]);
-                            groupMembers[0].Group.AddMember(groupMembers[0]);
+                            //groupMembers[0].Group.AddMember(groupMembers[0]);
                         }
 
                         foreach (GameLiving living in groupMembers)
                         {
-
                             if (living.Group == null)
                                 groupMembers[0].Group.AddMember(living);
                         }
@@ -208,9 +209,9 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mimiccombat",
+       "&mimicc",
        ePrivLevel.Player,
-       "/mimiccombat - Set universal combat prevention on/off")]
+       "/mimic - Set universal combat prevention on/off")]
     public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -232,6 +233,42 @@ namespace DOL.GS.Scripts
                     break;
                 }
             }
+        }
+    }
+
+    [CmdAttribute(
+       "&equip",
+       ePrivLevel.Player,
+       "/equip - Get a set of armor and weapons. WeaponSpec, ArmorType")]
+    public class EquipCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            if (args.Length > 0)
+            {
+                string weapon = args[1];
+                string armor = args[2];
+
+                MimicEquipment.SetMeleeWeapon(client.Player, weapon);
+                MimicEquipment.SetArmor(client.Player, MimicEquipment.GetObjectType(armor));
+                MimicEquipment.SetJewelry(client.Player);
+            }
+        }
+    }
+
+    [CmdAttribute(
+       "&effects",
+       ePrivLevel.Player,
+       "/effects - Get a list of current effects.")]
+    public class EffectsCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            //client.Player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
         }
     }
 }

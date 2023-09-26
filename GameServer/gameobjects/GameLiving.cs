@@ -3287,9 +3287,9 @@ namespace DOL.GS
 
 		#region Components
 
-		public AttackComponent attackComponent;
+		public MimicAttackComponent attackComponent;
 		public RangeAttackComponent rangeAttackComponent;
-		public StyleComponent styleComponent;
+		public MimicStyleComponent styleComponent;
 		public CastingComponent castingComponent;
 		public EffectListComponent effectListComponent;
 		public MovementComponent movementComponent;
@@ -4670,9 +4670,9 @@ namespace DOL.GS
 		/// </summary>
 		public GameLiving() : base()
 		{
-			attackComponent = new AttackComponent(this);
+			attackComponent = new MimicAttackComponent(this);
 			rangeAttackComponent = new RangeAttackComponent(this);
-			styleComponent = new StyleComponent(this);
+			styleComponent = new MimicStyleComponent(this);
 			castingComponent = CastingComponent.Create(this);
 			effectListComponent = new EffectListComponent(this);
 			movementComponent = MovementComponent.Create(this);

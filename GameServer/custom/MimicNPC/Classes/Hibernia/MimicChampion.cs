@@ -13,13 +13,13 @@ namespace DOL.GS.Scripts
             MimicSpec = new ChampionSpec();
 
             DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-            SetArmor(eObjectType.Scale);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetArmor(this, eObjectType.Scale);
 
             if (!MimicSpec.is2H)
-                SetShield(2);
+                MimicEquipment.SetShield(this, 2);
 
-            SetJewelry();
+            MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

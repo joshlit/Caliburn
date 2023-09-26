@@ -151,16 +151,16 @@ namespace DOL.GS.Scripts
         {
             bool clearOldStyles = false;
 
-            if (_attackData != null)
+            if (_lastAttackData != null)
             {
-                switch (_attackData.AttackResult)
+                switch (_lastAttackData.AttackResult)
                 {
                     case eAttackResult.Fumbled:
                     {
                         // Skip this attack if the last one fumbled.
                         _styleComponent.NextCombatStyle = null;
                         _styleComponent.NextCombatBackupStyle = null;
-                        _attackData.AttackResult = eAttackResult.Missed;
+                        _lastAttackData.AttackResult = eAttackResult.Missed;
                         _interval = _attackComponent.AttackSpeed(_weapon) * 2;
                         return false;
                     }
@@ -200,11 +200,19 @@ namespace DOL.GS.Scripts
             }
 
             // Damage is doubled on sitting players, but only with melee weapons; arrows and magic do normal damage.
-            if (_target is GamePlayer playerTarget && playerTarget.IsSitting)
+            if (_target is GamePlayer playerTarget && playerTarget.IsSitting ||
+                _target is MimicNPC mimicTarget && mimicTarget.IsSitting)
                 _effectiveness *= 2;
 
             _interruptDuration = mainHandAttackSpeed;
             return true;
+        }
+
+        protected override void PerformMeleeAttack()
+        {
+            _attackComponent.weaponAction = new MimicWeaponAction(_mimicOwner, _target, _weapon, _leftWeapon, _effectiveness, _interruptDuration, _combatStyle);
+            _attackComponent.weaponAction.Execute();
+            _lastAttackData = _mimicOwner.TempProperties.GetProperty<AttackData>("LastAttackData", null);
         }
 
         protected override bool PrepareRangedAttack()

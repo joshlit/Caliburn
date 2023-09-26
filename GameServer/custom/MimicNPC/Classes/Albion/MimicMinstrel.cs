@@ -19,11 +19,10 @@ namespace DOL.GS.Scripts
 			MimicSpec = new MinstrelSpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-            SetArmor(eObjectType.Chain);
-			SetShield(1);
-
-            SetJewelry();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetArmor(this, eObjectType.Chain);
+            MimicEquipment.SetShield(this, 1);
+            MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

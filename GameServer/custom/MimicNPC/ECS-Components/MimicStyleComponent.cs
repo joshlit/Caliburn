@@ -5,13 +5,10 @@ using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
 using log4net;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DOL.GS
 {
@@ -127,7 +124,7 @@ namespace DOL.GS
                 return null;
 
             AttackData lastAttackData = _owner.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
-            InventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int) eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
+            DbInventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int) eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
             return MimicStyleProcessor.CanUseStyle(lastAttackData, _owner, NextCombatStyle, weapon) ? NextCombatStyle : NextCombatBackupStyle ?? AutomaticBackupStyle ?? NextCombatStyle;
         }
 
@@ -309,7 +306,7 @@ namespace DOL.GS
                             }
                         }
 
-                        if (!Util.IsEmpty(message))
+                        if (!string.IsNullOrEmpty(message))
                             p.Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_SystemWindow);
                     }
                 }

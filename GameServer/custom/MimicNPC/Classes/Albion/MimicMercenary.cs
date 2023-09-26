@@ -19,10 +19,10 @@ namespace DOL.GS.Scripts
 			MimicSpec = new MercenarySpec();
 
 			DistributeSkillPoints();
-			SetMeleeWeapon(MimicSpec.WeaponTypeOne, true);
-            SetArmor(eObjectType.Chain);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
+            MimicEquipment.SetArmor(this, eObjectType.Chain);
             //SetRangedWeapon(eObjectType.Fired);
-            SetJewelry();
+            MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{

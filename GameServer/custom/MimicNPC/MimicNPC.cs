@@ -38,8 +38,6 @@ namespace DOL.GS.Scripts
 {
     public class MimicNPC : GameNPC
     {
-        private const int SECONDS_TO_QUIT_ON_LINKDEATH = 60;
-
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         public MimicSpec MimicSpec = new MimicSpec();
@@ -105,6 +103,312 @@ namespace DOL.GS.Scripts
             }));
         }
 
+        public override bool Interact(GamePlayer player)
+        {
+            if (!base.Interact(player))
+                return false;
+
+            player.Out.SendMessage("[Prevent Combat]\n [Group]\n [Spells] [Misc Spells]\n [Styles]\n [Spec] [Stats]\n [Hood] [Weapon] [Helm] [Torso] [Legs] [Arms] [Hands] [Boots]\n [Delete]", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+            return true;
+        }
+        
+        public override bool WhisperReceive(GameLiving source, string str)
+        {
+            if (!base.WhisperReceive(source, str))
+                return false;
+
+            GamePlayer player = source as GamePlayer;
+
+            if (player == null)
+                return false;
+
+            switch (str)
+            {
+                case "Prevent Combat":
+                {
+                    if (Brain is MimicBrain mimicBrain)
+                        mimicBrain.PreventCombat = !mimicBrain.PreventCombat;
+
+                    break;
+                }
+
+                case "Group":
+
+                if (Group != null && Group.GetMembersInTheGroup().Count < 8)
+                {
+                    Group.AddMember(player);
+                    break;
+                }
+
+                if (player.Group == null)
+                {
+                    player.Group = new Group(player);
+                    player.Group.AddMember(player);
+                }
+                else
+                {
+                    if (player.Group.GetMembersInTheGroup().Contains(this))
+                        break;
+
+                    //((MimicBrain)Brain).GroupMembers = player.Group.GetMembersInTheGroup();
+                }
+
+                player.Group.AddMember(this);
+
+                Follow(player, movementComponent.FollowMinDistance, movementComponent.FollowMaxDistance);
+
+                //if (Brain is not MimicControlledBrain)
+                //    SetOwnBrain(new MimicControlledBrain(player));
+
+                break;
+
+                case "Spells":
+                {
+                    string message = string.Empty;
+
+                    foreach (Spell spell in Spells)
+                    {
+                        message += spell.Name + " " + spell.Level + "\n";
+                    }
+                    SendReply(player, message);
+
+                    break;
+                }
+
+                case "Misc Spells":
+                {
+                    string message = string.Empty;
+
+                    if (CanCastMiscSpells)
+                    {
+                        foreach (Spell spell in MiscSpells)
+                        {
+                            message += spell.Name + " " + spell.Level + "\n";
+                        }
+                        SendReply(player, message);
+                    }
+
+                    break;
+                }
+
+                case "Styles":
+                {
+                    string message = string.Empty;
+
+                    foreach (Style style in Styles)
+                    {
+                        message += style.Name + " " + style.Level + "\n";
+                    }
+                    SendReply(player, message);
+
+                    break;
+                }
+
+                case "Stats":
+                SendReply(player, string.Format("Level: {0}\n Str: {1}\n Con: {2}\n Dex: {3}\n Qui: {4}\n Int: {5}\n Pie: {6}\n Emp: {7}\n Cha: {8}\n HP: {9}\n AF: {10}\n, End: {11}\n",
+                    Level,
+                    Strength,
+                    Constitution,
+                    Dexterity,
+                    Quickness,
+                    Intelligence,
+                    Piety,
+                    Empathy,
+                    Charisma,
+                    Health,
+                    EffectiveOverallAF,
+                    Endurance)); 
+                break;
+
+                case "Spec":
+                {
+                    string message = string.Empty;
+
+                    var specs = GetSpecList();
+
+                    foreach (Specialization spec in specs)
+                    {
+                        message += spec.Name + ": " + spec.Level + " \n";
+                    }
+
+                    SendReply(player, message + DisplayedWeaponSkill);
+
+                    break;
+                }
+
+                case "Hood":
+                IsCloakHoodUp = !IsCloakHoodUp; BroadcastLivingEquipmentUpdate(); break;
+
+                case "Helm":
+                {
+                    DbInventoryItem item = Inventory.GetItem(eInventorySlot.HeadArmor);
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+
+                        if (Inventory.AllItems.Contains(item))
+                            log.Debug("Still has that shit.");
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Torso":
+                {
+                    DbInventoryItem item = Inventory.GetItem(eInventorySlot.TorsoArmor);
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Legs":
+                {
+                    DbInventoryItem item = Inventory.GetItem(eInventorySlot.LegsArmor);
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Arms":
+                {
+                    DbInventoryItem item = Inventory.GetItem(eInventorySlot.ArmsArmor);
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Hands":
+                {
+                    DbInventoryItem item = Inventory.GetItem(eInventorySlot.HandsArmor);
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Boots":
+                {
+                    DbInventoryItem item = Inventory.GetItem(eInventorySlot.FeetArmor);
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Weapon":
+                {
+                    DbInventoryItem item = Inventory.GetItem(Inventory.FindFirstFullSlot(eInventorySlot.DistanceWeapon, eInventorySlot.RightHandWeapon));
+
+                    if (item != null)
+                    {
+                        Inventory.RemoveItem(item);
+
+                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
+                        {
+                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
+                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
+                        }
+                    }
+
+                    BroadcastLivingEquipmentUpdate();
+                    break;
+                }
+
+                case "Get Group":
+                {
+                    string message = string.Empty;
+
+                    if (Group != null)
+                        message = Group.GetMembersInTheGroup().Count.ToString();
+
+                    SendReply(player, message);
+                    break;
+                }
+
+                case "Delete":
+                {
+                    //if (ControlledBody != null)
+                    //{
+                    //    ControlledBody.Delete();
+                    //}
+
+                    Delete();
+
+                    break;
+                }
+
+                default: break;
+            }
+
+            return true;
+        }
+
+        private void SendReply(GamePlayer player, string msg)
+        {
+            player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+        }
+
         public void DistributeSkillPoints()
         {
             if (Level > 1)
@@ -116,7 +420,7 @@ namespace DOL.GS.Scripts
                 {
                     Specialization spec = GetSpecializationByName(specName);
 
-                    autoTrainSpecPoints += GetAutoTrainPoints(spec, 1);
+                    autoTrainSpecPoints += GetAutoTrainPoints(spec, 2);
                 }
                  
                 log.Info("totalSpecPoints: " + totalSpecPoints);
@@ -483,239 +787,6 @@ namespace DOL.GS.Scripts
             return list;
         }
 
-
-        public override bool Interact(GamePlayer player)
-        {
-            if (!base.Interact(player))
-                return false;
-
-            player.Out.SendMessage("[Group], [Spec], [Stats], [Hood], [Weapon], [Helm], [Torso], [Legs], [Arms], [Hands], [Boots], [Delete]", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
-            return true;
-        }
-
-        public override bool WhisperReceive(GameLiving source, string str)
-        {
-            if (!base.WhisperReceive(source, str))
-                return false;
-
-            GamePlayer player = source as GamePlayer;
-
-            if (player == null)
-                return false;
-
-            switch (str)
-            {
-                case "Save":
-
-                case "Group":
-
-                if (player.Group == null)
-                {
-                    player.Group = new Group(player);
-                    player.Group.AddMember(player);
-                }
-                else
-                {
-                    if (player.Group.GetMembersInTheGroup().Contains(this))
-                        break;
-
-                    //((MimicBrain)Brain).GroupMembers = player.Group.GetMembersInTheGroup();
-                }
-
-                player.Group.AddMember(this);
-
-                //if (Brain is not MimicControlledBrain)
-                //    SetOwnBrain(new MimicControlledBrain(player));
-
-                break;
-
-                case "Stats":
-                SendReply(player, string.Format("Level: {0} Str: {1} Con: {2} Dex: {3} Qui: {4} Int: {5} Pie: {6} Emp: {7} Cha: {8} HP: {9} AF: {10}",
-                    Level,
-                    Strength,
-                    Constitution,
-                    Dexterity,
-                    Quickness,
-                    Intelligence,
-                    Piety,
-                    Empathy,
-                    Charisma,
-                    Health,
-                    EffectiveOverallAF)); break;
-
-                case "Spec":
-                {
-                    string message = string.Empty;
-
-                    var specs = GetSpecList();
-
-                    foreach (Specialization spec in specs)
-                    {
-                        message += spec.Name + ": " + spec.Level + " \n";
-                    }
-
-                    SendReply(player, message + DisplayedWeaponSkill);
-
-                    break;
-                }
-
-                case "Hood":
-                IsCloakHoodUp = !IsCloakHoodUp; BroadcastLivingEquipmentUpdate(); break;
-
-                case "Helm":
-                {
-                    InventoryItem item = Inventory.GetItem(eInventorySlot.HeadArmor);
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-
-                        if (Inventory.AllItems.Contains(item))
-                            log.Debug("Still has that shit.");
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Torso":
-                {
-                    InventoryItem item = Inventory.GetItem(eInventorySlot.TorsoArmor);
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Legs":
-                {
-                    InventoryItem item = Inventory.GetItem(eInventorySlot.LegsArmor);
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Arms":
-                {
-                    InventoryItem item = Inventory.GetItem(eInventorySlot.ArmsArmor);
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Hands":
-                {
-                    InventoryItem item = Inventory.GetItem(eInventorySlot.HandsArmor);
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Boots":
-                {
-                    InventoryItem item = Inventory.GetItem(eInventorySlot.FeetArmor);
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Weapon":
-                {
-                    InventoryItem item = Inventory.GetItem(Inventory.FindFirstFullSlot(eInventorySlot.DistanceWeapon, eInventorySlot.RightHandWeapon));
-
-                    if (item != null)
-                    {
-                        Inventory.RemoveItem(item);
-
-                        if (!(player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item)))
-                        {
-                            player.SendPrivateMessage(player, "No room in your backpack you twat.");
-                            Inventory.AddItem((eInventorySlot)item.SlotPosition, item);
-                        }
-                    }
-
-                    BroadcastLivingEquipmentUpdate();
-                    break;
-                }
-
-                case "Delete":
-                {
-                    //if (ControlledBody != null)
-                    //{
-                    //    ControlledBody.Delete();
-                    //}
-
-                    Delete();
-
-                    break;
-                }
-
-                default: break;
-            }
-
-            return true;
-        }
-
         public void SetLevel(byte level)
         {
             Level = level;
@@ -777,327 +848,6 @@ namespace DOL.GS.Scripts
             }
         }
 
-        public eObjectType GetObjectType(string weapon)
-        {
-            eObjectType objectType = 0;
-
-            switch (weapon)
-            {
-                case "Staff": objectType = eObjectType.Staff; break;
-
-                case "Slash": objectType = eObjectType.SlashingWeapon; break;
-                case "Thrust": objectType = eObjectType.ThrustWeapon; break;
-                case "Crush": objectType = eObjectType.CrushingWeapon; break;
-                case "Flexible": objectType = eObjectType.Flexible; break;
-                case "Polearm": objectType = eObjectType.PolearmWeapon; break;
-                case "Two Handed": objectType = eObjectType.TwoHandedWeapon; break;
-
-                case "Blades": objectType = eObjectType.Blades; break;
-                case "Piercing": objectType = eObjectType.Piercing; break;
-                case "Blunt": objectType = eObjectType.Blunt; break;
-                case "Large Weapons": objectType = eObjectType.LargeWeapons; break;
-                case "Celtic Spear": objectType = eObjectType.CelticSpear; break;
-                case "Scythe": objectType = eObjectType.Scythe; break;
-
-                case "Sword": objectType = eObjectType.Sword; break;
-                case "Axe": objectType = eObjectType.Axe; break;
-                case "Hammer": objectType = eObjectType.Hammer; break;
-                case "Hand to Hand": objectType = eObjectType.HandToHand; break;
-            }
-
-            return objectType;
-        }
-
-        public bool SetMeleeWeapon(string weapType, bool dualWield = false, eWeaponDamageType damageType = 0, eHand hand = eHand.None)
-        {
-            eObjectType objectType = GetObjectType(weapType);
-
-            int min = Math.Max(0, Level - 6);
-            int max = Math.Min(50, Level + 4);
-
-            IList<ItemTemplate> itemList;
-
-            itemList = GameServer.Database.SelectObjects<ItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
-                                                                       DB.Column("Level").IsLessOrEqualTo(max).And(
-                                                                       DB.Column("Object_Type").IsEqualTo((int)objectType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)Realm)).And(
-                                                                       DB.Column("IsPickable").IsEqualTo(1)))));
-
-            if (dualWield)
-            {
-                List<ItemTemplate> leftHandItems = new List<ItemTemplate>();
-
-                foreach (ItemTemplate item in itemList)
-                {
-                    if (item.Item_Type == Slot.LEFTHAND)
-                        leftHandItems.Add(item);
-                }
-
-                if (leftHandItems.Count > 0)
-                    AddItem(leftHandItems[Util.Random(leftHandItems.Count - 1)]);
-            }
-
-            if (hand != eHand.None)
-            {
-                List<ItemTemplate> itemsToKeep = new List<ItemTemplate>();
-
-                foreach (ItemTemplate item in itemList)
-                {
-                    if (item.Hand == (int)hand)
-                        itemsToKeep.Add(item);
-                }
-
-                if (itemsToKeep.Count > 0)
-                {
-                    AddItem(itemsToKeep[Util.Random(itemsToKeep.Count - 1)]);
-
-                    return true;
-                }
-                else
-                    return false;
-            }
-
-            if (objectType != eObjectType.TwoHandedWeapon && objectType != eObjectType.PolearmWeapon && objectType != eObjectType.Staff)
-            {
-                foreach (ItemTemplate template in itemList)
-                {
-                    if (template.Item_Type == Slot.LEFTHAND)
-                        template.Item_Type = Slot.RIGHTHAND;
-                }
-            }
-
-            if ((int)damageType != 0)
-            {
-                List<ItemTemplate> itemsToKeep = new List<ItemTemplate>();
-
-                foreach (ItemTemplate item in itemList)
-                {
-                    if (item.Type_Damage == (int)damageType)
-                    {
-                        itemsToKeep.Add(item);
-                    }
-                }
-
-                if (itemsToKeep.Count > 0)
-                {
-                    ItemTemplate template = itemsToKeep[Util.Random(itemsToKeep.Count - 1)];
-                    return AddItem(template);
-                }
-
-                return false;
-            }
-            else if (itemList.Count > 0)
-            {
-                ItemTemplate template = itemList[Util.Random(itemList.Count - 1)];
-
-                return AddItem(template);
-            }
-            else
-            {
-                log.Debug("Could not find any fucking items for this peice of shit.");
-                return false;
-            }
-        }
-
-        public bool SetRangedWeapon(eObjectType weapType)
-        {
-            int min = Math.Max(1, Level - 6);
-            int max = Math.Min(51, Level + 3);
-
-            IList<ItemTemplate> itemList;
-            itemList = GameServer.Database.SelectObjects<ItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
-                                                                       DB.Column("Level").IsLessOrEqualTo(max).And(
-                                                                       DB.Column("Object_Type").IsEqualTo((int)weapType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)Realm)).And(
-                                                                       DB.Column("IsPickable").IsEqualTo(1)))));
-
-            if (itemList.Count > 0)
-            {
-                AddItem(itemList[Util.Random(itemList.Count - 1)]);
-
-                return true;
-            }
-            else
-            {
-                log.Debug("No Ranged weapon.");
-                return false;
-            }
-        }
-
-        public void SetShield(int shieldSize)
-        {
-            int min = Math.Max(1, Level - 6);
-            int max = Math.Min(51, Level + 3);
-
-            IList<ItemTemplate> itemList;
-
-            itemList = GameServer.Database.SelectObjects<ItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
-                                                                       DB.Column("Level").IsLessOrEqualTo(max).And(
-                                                                       DB.Column("Object_Type").IsEqualTo((int)eObjectType.Shield).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)Realm)).And(
-                                                                       DB.Column("Type_Damage").IsEqualTo(shieldSize).And(
-                                                                       DB.Column("IsPickable").IsEqualTo(1))))));
-
-            ItemTemplate item = itemList[Util.Random(itemList.Count - 1)];
-
-            AddItem(item);
-        }
-
-        public void SetArmor(eObjectType armorType)
-        {
-            int min = Math.Max(1, Level - 6);
-            int max = Math.Min(51, Level + 3);
-
-            IList<ItemTemplate> itemList;
-
-            List<ItemTemplate> armsList = new List<ItemTemplate>();
-            List<ItemTemplate> handsList = new List<ItemTemplate>();
-            List<ItemTemplate> legsList = new List<ItemTemplate>();
-            List<ItemTemplate> feetList = new List<ItemTemplate>();
-            List<ItemTemplate> torsoList = new List<ItemTemplate>();
-            List<ItemTemplate> helmList = new List<ItemTemplate>();
-
-            itemList = GameServer.Database.SelectObjects<ItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
-                                                                       DB.Column("Level").IsLessOrEqualTo(max).And(
-                                                                       DB.Column("Object_Type").IsEqualTo((int)armorType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)Realm)).And(
-                                                                       DB.Column("IsPickable").IsEqualTo(1)))));
-
-            foreach (ItemTemplate template in itemList)
-            {
-                if (template.Item_Type == Slot.ARMS)
-                    armsList.Add(template);
-                else if (template.Item_Type == Slot.HANDS)
-                    handsList.Add(template);
-                else if (template.Item_Type == Slot.LEGS)
-                    legsList.Add(template);
-                else if (template.Item_Type == Slot.FEET)
-                    feetList.Add(template);
-                else if (template.Item_Type == Slot.TORSO)
-                    torsoList.Add(template);
-                else if (template.Item_Type == Slot.HELM)
-                    helmList.Add(template);
-            }
-
-            AddItem(armsList[Util.Random(armsList.Count - 1)]);
-            AddItem(handsList[Util.Random(handsList.Count - 1)]);
-            AddItem(legsList[Util.Random(legsList.Count - 1)]);
-            AddItem(feetList[Util.Random(feetList.Count - 1)]);
-            AddItem(torsoList[Util.Random(torsoList.Count - 1)]);
-            AddItem(helmList[Util.Random(helmList.Count - 1)]);
-        }
-
-        public void SetJewelry()
-        {
-            int min = Math.Max(1, Level - 30);
-            int max = Math.Min(51, Level + 1);
-
-            IList<ItemTemplate> itemList;
-            List<ItemTemplate> cloakList = new List<ItemTemplate>();
-            List<ItemTemplate> jewelryList = new List<ItemTemplate>();
-            List<ItemTemplate> ringList = new List<ItemTemplate>();
-            List<ItemTemplate> wristList = new List<ItemTemplate>();
-            List<ItemTemplate> neckList = new List<ItemTemplate>();
-            List<ItemTemplate> waistList = new List<ItemTemplate>();
-
-            itemList = GameServer.Database.SelectObjects<ItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
-                                                                       DB.Column("Level").IsLessOrEqualTo(max).And(
-                                                                       DB.Column("Object_Type").IsEqualTo((int)eObjectType.Magical).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)Realm)).And(
-                                                                       DB.Column("IsPickable").IsEqualTo(1)))));
-
-            foreach (ItemTemplate template in itemList)
-            {
-                if (template.Item_Type == Slot.CLOAK)
-                    cloakList.Add(template);
-                else if (template.Item_Type == Slot.JEWELRY)
-                    jewelryList.Add(template);
-                else if (template.Item_Type == Slot.LEFTRING || template.Item_Type == Slot.RIGHTRING)
-                    ringList.Add(template);
-                else if (template.Item_Type == Slot.LEFTWRIST || template.Item_Type == Slot.RIGHTWRIST)
-                    wristList.Add(template);
-                else if (template.Item_Type == Slot.NECK)
-                    neckList.Add(template);
-                else if (template.Item_Type == Slot.WAIST)
-                    waistList.Add(template);
-            }
-
-            List<List<ItemTemplate>> masterList = new List<List<ItemTemplate>>
-            {
-                cloakList,
-                jewelryList,
-                neckList,
-                waistList
-            };
-
-            foreach (List<ItemTemplate> list in masterList)
-            {
-                if (list.Count > 0)
-                {
-                    AddItem(list[Util.Random(list.Count - 1)]);
-                }
-            }
-
-            for (int i = 0; i < 2; i++)
-            {
-                if (ringList.Count > 0)
-                {
-                    AddItem(ringList[Util.Random(ringList.Count - 1)]);
-                }
-
-                if (wristList.Count > 0)
-                {
-                    AddItem(wristList[Util.Random(wristList.Count - 1)]);
-                }
-            }
-
-            if (Inventory.GetItem(eInventorySlot.Cloak) == null)
-            {
-                ItemTemplate cloak = GameServer.Database.FindObjectByKey<ItemTemplate>("cloak");
-                int color = Util.Random(500);
-                log.Debug("Color: " + color);
-                cloak.Color = color;
-                AddItem(cloak);
-            }
-
-            IsCloakHoodUp = Util.RandomBool();
-        }
-
-        public bool AddItem(ItemTemplate itemTemplate)
-        {
-            if (itemTemplate == null)
-            {
-                log.Debug("itemTemplate in AddItem is null");
-                return false;
-            }
-
-            InventoryItem item = GameInventoryItem.Create(itemTemplate);
-
-            if (item != null)
-            {
-                if (itemTemplate.Item_Type == Slot.LEFTRING || itemTemplate.Item_Type == Slot.RIGHTRING)
-                {
-                    return Inventory.AddItem(Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
-                }
-                else if (itemTemplate.Item_Type == Slot.LEFTWRIST || itemTemplate.Item_Type == Slot.RIGHTWRIST)
-                {
-                    return Inventory.AddItem(Inventory.FindFirstEmptySlot(eInventorySlot.LeftBracer, eInventorySlot.RightBracer), item);
-                }
-                else
-                    return Inventory.AddItem((eInventorySlot)item.Item_Type, item);
-            }
-            else
-            {
-                log.Debug("Item failed to be created.");
-                return false;
-            }
-        }
-
-        private void SendReply(GamePlayer player, string msg)
-        {
-            player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
-        }
-
         private readonly object m_LockObject = new object();
         public int Regen { get; set; }
         public int Endchant { get; set; }
@@ -1127,7 +877,7 @@ namespace DOL.GS.Scripts
         /// based on!
         /// (renamed and private, cause if derive is needed overwrite PlayerCharacter)
         /// </summary>
-        protected DOLCharacters m_dbCharacter;
+        protected DbCoreCharacter m_dbCharacter;
 
         /// <summary>
         /// The guild id this character belong to
@@ -1293,7 +1043,7 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// The character the player is based on
         /// </summary>
-        internal DOLCharacters DBCharacter
+        internal DbCoreCharacter DBCharacter
         {
             get { return m_dbCharacter; }
         }
@@ -2200,7 +1950,7 @@ namespace DOL.GS.Scripts
         /// <param name="forced">if true, will release even if not dead</param>
         public virtual void Release(eReleaseType releaseCommand, bool forced)
         {
-            DOLCharacters character = DBCharacter;
+            DbCoreCharacter character = DBCharacter;
             if (character == null) return;
 
             // check if valid housebind
@@ -2211,7 +1961,7 @@ namespace DOL.GS.Scripts
             }
 
             //battlegrounds caps
-            Battleground bg = GameServer.KeepManager.GetBattleground(CurrentRegionID);
+            DbBattleground bg = GameServer.KeepManager.GetBattleground(CurrentRegionID);
             if (bg != null && releaseCommand == eReleaseType.RvR)
             {
                 if (Level > bg.MaxLevel)
@@ -2942,7 +2692,7 @@ namespace DOL.GS.Scripts
             int oldstat = GetBaseStat(stat);
             base.ChangeBaseStat(stat, val);
             short newstat = (short)GetBaseStat(stat);
-            //DOLCharacters character = DBCharacter; // to call it only once, if in future there will be some special code to get the character
+            //DbCoreCharacter character = DBCharacter; // to call it only once, if in future there will be some special code to get the character
             // Graveen: always positive and not null. This allows /player stats to substract values safely
             if (newstat < 1) newstat = 1;
             if (oldstat != newstat)
@@ -6329,12 +6079,12 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            InventoryItem[] oldActiveSlots = new InventoryItem[4];
-            InventoryItem[] newActiveSlots = new InventoryItem[4];
-            InventoryItem rightHandSlot = Inventory.GetItem(eInventorySlot.RightHandWeapon);
-            InventoryItem leftHandSlot = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-            InventoryItem twoHandSlot = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
-            InventoryItem distanceSlot = Inventory.GetItem(eInventorySlot.DistanceWeapon);
+            DbInventoryItem[] oldActiveSlots = new DbInventoryItem[4];
+            DbInventoryItem[] newActiveSlots = new DbInventoryItem[4];
+            DbInventoryItem rightHandSlot = Inventory.GetItem(eInventorySlot.RightHandWeapon);
+            DbInventoryItem leftHandSlot = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+            DbInventoryItem twoHandSlot = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
+            DbInventoryItem distanceSlot = Inventory.GetItem(eInventorySlot.DistanceWeapon);
 
             // save old active weapons
             // simple active slot logic:
@@ -6557,7 +6307,7 @@ namespace DOL.GS.Scripts
                     // decrease condition of hitted armor piece
                     if (ad.ArmorHitLocation != eArmorSlot.NOTSET)
                     {
-                        InventoryItem item = Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
+                        DbInventoryItem item = Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
 
                         if (item != null)
                         {
@@ -6573,7 +6323,7 @@ namespace DOL.GS.Scripts
                 }
                 case eAttackResult.Blocked:
                 {
-                    InventoryItem reactiveItem = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+                    DbInventoryItem reactiveItem = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
                     if (reactiveItem != null && reactiveItem.Object_Type == (int)eObjectType.Shield)
                     {
                         TryReactiveEffect(reactiveItem, ad.Attacker);
@@ -6618,7 +6368,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         /// <param name="reactiveItem"></param>
         /// <param name="target"></param>
-        protected virtual void TryReactiveEffect(InventoryItem reactiveItem, GameLiving target)
+        protected virtual void TryReactiveEffect(DbInventoryItem reactiveItem, GameLiving target)
         {
             if (reactiveItem != null)
             {
@@ -6723,7 +6473,7 @@ namespace DOL.GS.Scripts
             {
                 int eaf = 0;
                 int abs = 0;
-                foreach (InventoryItem item in Inventory.VisibleItems)
+                foreach (DbInventoryItem item in Inventory.VisibleItems)
                 {
                     double factor = 0;
                     switch (item.Item_Type)
@@ -6864,7 +6614,7 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// determines current weaponspeclevel
         /// </summary>
-        public override int WeaponSpecLevel(InventoryItem weapon)
+        public override int WeaponSpecLevel(DbInventoryItem weapon)
         {
             if (weapon == null)
                 return 0;
@@ -6950,7 +6700,7 @@ namespace DOL.GS.Scripts
             return res;
         }
 
-        public virtual String GetWeaponSpec(InventoryItem weapon)
+        public virtual String GetWeaponSpec(DbInventoryItem weapon)
         {
             if (weapon == null)
                 return null;
@@ -6969,7 +6719,7 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// determines current weaponspeclevel
         /// </summary>
-        public int WeaponBaseSpecLevel(InventoryItem weapon)
+        public int WeaponBaseSpecLevel(DbInventoryItem weapon)
         {
             if (weapon == null)
                 return 0;
@@ -7001,7 +6751,7 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// Gets the weaponskill of weapon
         /// </summary>
-        public override double GetWeaponSkill(InventoryItem weapon)
+        public override double GetWeaponSkill(DbInventoryItem weapon)
         {
             if (weapon == null)
                 return 0;
@@ -7016,7 +6766,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         /// <param name="weapon"></param>
         /// <returns></returns>
-        public override int GetWeaponStat(InventoryItem weapon)
+        public override int GetWeaponStat(DbInventoryItem weapon)
         {
             if (weapon != null)
             {
@@ -7054,7 +6804,7 @@ namespace DOL.GS.Scripts
         public override double GetArmorAF(eArmorSlot slot)
         {
             if (slot == eArmorSlot.NOTSET) return 0;
-            InventoryItem item = Inventory.GetItem((eInventorySlot)slot);
+            DbInventoryItem item = Inventory.GetItem((eInventorySlot)slot);
             if (item == null) return 0;
             double eaf = item.DPS_AF + BaseBuffBonusCategory[(int)eProperty.ArmorFactor]; // base AF buff
 
@@ -7091,7 +6841,7 @@ namespace DOL.GS.Scripts
             if (slot == eArmorSlot.NOTSET)
                 return 0;
 
-            InventoryItem item = Inventory.GetItem((eInventorySlot)slot);
+            DbInventoryItem item = Inventory.GetItem((eInventorySlot)slot);
 
             if (item == null)
                 return 0;
@@ -7115,12 +6865,12 @@ namespace DOL.GS.Scripts
             }
         }
 
-        /// <summary>
+        //// <summary>
         /// Gets the weapondamage of currently used weapon
         /// Used to display weapon damage in stats, 16.5dps = 1650
         /// </summary>
         /// <param name="weapon">the weapon used for attack</param>
-        public override double WeaponDamage(InventoryItem weapon)
+        public override double WeaponDamage(DbInventoryItem weapon)
         {
             if (weapon == null)
                 return 0;
@@ -7128,7 +6878,7 @@ namespace DOL.GS.Scripts
             return ApplyWeaponQualityAndConditionToDamage(weapon, WeaponDamageWithoutQualityAndCondition(weapon));
         }
 
-        public double WeaponDamageWithoutQualityAndCondition(InventoryItem weapon)
+        public double WeaponDamageWithoutQualityAndCondition(DbInventoryItem weapon)
         {
             if (weapon == null)
                 return 0;
@@ -7149,7 +6899,7 @@ namespace DOL.GS.Scripts
             return Dps * 0.1;
         }
 
-        public double ApplyWeaponQualityAndConditionToDamage(InventoryItem weapon, double damage)
+        public double ApplyWeaponQualityAndConditionToDamage(DbInventoryItem weapon, double damage)
         {
             return damage * weapon.Quality * 0.01 * weapon.Condition / weapon.MaxCondition;
         }
@@ -7626,7 +7376,7 @@ namespace DOL.GS.Scripts
 
             if (HCFlag)
             {
-                DOLCharacters cha = DOLDB<DOLCharacters>.SelectObject(DB.Column("Name").IsEqualTo(Name));
+                DbCoreCharacter cha = DOLDB<DbCoreCharacter>.SelectObject(DB.Column("Name").IsEqualTo(Name));
                 if (cha == null) return;
                 //Client.Out.SendPlayerQuit(true);
                 //GameServer.Database.DeleteObject(cha);
@@ -7637,26 +7387,18 @@ namespace DOL.GS.Scripts
         {
             if (Group != null)
             {
-                foreach (GamePlayer player in Group.GetPlayersInTheGroup())
+                foreach (GameLiving living in Group.GetMembersInTheGroup())
                 {
-                    if (enemy.attackComponent.Attackers.Contains(player))
+                    if (living == this)
                         continue;
 
-                    if (this.IsWithinRadius(player, WorldMgr.MAX_EXPFORKILL_DISTANCE))
-                    {
-                        Notify(GameLivingEvent.EnemyKilled, player, new EnemyKilledEventArgs(enemy));
-                    }
+                    if (enemy.attackComponent.Attackers.ContainsKey(living))
+                        continue;
 
-                    if (player.attackComponent.Attackers.Contains(enemy))
-                        player.attackComponent.RemoveAttacker(enemy);
-
-                    if (player.ControlledBrain != null && player.ControlledBrain.Body.attackComponent.Attackers.Contains(enemy))
-                        player.ControlledBrain.Body.attackComponent.RemoveAttacker(enemy);
+                    if (IsWithinRadius(living, WorldMgr.MAX_EXPFORKILL_DISTANCE))
+                        Notify(GameLivingEvent.EnemyKilled, living, new EnemyKilledEventArgs(enemy));
                 }
             }
-
-            if (ControlledBrain != null && ControlledBrain.Body.attackComponent.Attackers.Contains(enemy))
-                ControlledBrain.Body.attackComponent.RemoveAttacker(enemy);
 
             if (CurrentZone.IsRvR)
             {
@@ -8209,7 +7951,7 @@ namespace DOL.GS.Scripts
         protected virtual void OnItemEquipped(DOLEvent e, object sender, EventArgs arguments)
         {
             if (arguments is ItemEquippedArgs == false) return;
-            InventoryItem item = ((ItemEquippedArgs)arguments).Item;
+            DbInventoryItem item = ((ItemEquippedArgs)arguments).Item;
             if (item == null) return;
 
             if (item is IGameInventoryItem)
@@ -8426,7 +8168,7 @@ namespace DOL.GS.Scripts
         protected virtual void OnItemUnequipped(DOLEvent e, object sender, EventArgs arguments)
         {
             if (arguments is ItemUnequippedArgs == false) return;
-            InventoryItem item = ((ItemUnequippedArgs)arguments).Item;
+            DbInventoryItem item = ((ItemUnequippedArgs)arguments).Item;
             int prevSlot = (int)((ItemUnequippedArgs)arguments).PreviousSlotPosition;
             if (item == null) return;
 
@@ -8605,7 +8347,7 @@ namespace DOL.GS.Scripts
             }
 
             //log.Debug("VisibleActiveWeaponSlots= " + VisibleActiveWeaponSlots);
-            foreach (InventoryItem item in Inventory.EquippedItems)
+            foreach (DbInventoryItem item in Inventory.EquippedItems)
             {
                 if (item == null)
                     continue;

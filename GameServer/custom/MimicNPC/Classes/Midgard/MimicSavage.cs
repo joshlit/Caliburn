@@ -21,13 +21,13 @@ namespace DOL.GS.Scripts
 			DistributeSkillPoints();
 
 			if (MimicSpec.WeaponTypeOne == "Hand to Hand")
-				SetMeleeWeapon(MimicSpec.WeaponTypeOne, true);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
 			else
-				SetMeleeWeapon(MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
+				MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
 
 			//SetRangedWeapon(eObjectType.Fired);
-			SetArmor(eObjectType.Studded);
-			SetJewelry();
+			MimicEquipment.SetArmor(this, eObjectType.Studded);
+			MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
             //{

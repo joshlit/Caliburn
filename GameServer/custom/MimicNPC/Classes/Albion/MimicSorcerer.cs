@@ -19,9 +19,9 @@ namespace DOL.GS.Scripts
 			MimicSpec = new SorcererSpec();
 			
 			DistributeSkillPoints();
-            SetMeleeWeapon(MimicSpec.WeaponTypeOne);
-            SetArmor(eObjectType.Cloth);
-			SetJewelry();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetArmor(this, eObjectType.Cloth);
+            MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
 			//{
