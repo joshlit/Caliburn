@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicPaladin(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassPaladin(), level, position)
+        public MimicPaladin(byte level) : base(new ClassPaladin(), level)
         {
             MimicSpec = new PaladinSpec();
 

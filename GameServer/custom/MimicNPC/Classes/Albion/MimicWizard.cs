@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicWizard(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassWizard(), level, position)
+		public MimicWizard(byte level) : base(new ClassWizard(), level)
 		{
 			MimicSpec = new WizardSpec();
 

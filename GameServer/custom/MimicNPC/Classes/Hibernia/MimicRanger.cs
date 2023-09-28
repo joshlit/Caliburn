@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicRanger(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassRanger(), level, position)
+        public MimicRanger(byte level) : base(new ClassRanger(), level)
         {
             MimicSpec = new RangerSpec();
 
@@ -63,8 +63,8 @@ namespace DOL.GS.Scripts
                 case 0:
                 case 1:
                 Add(WeaponTypeOne, 32, 0.4f);
-                Add("Archery", 35, 0.9f);
-                //Add("Pathfinding", 40, 0.5f);
+                Add("Recurve Bow", 35, 0.9f);
+                Add("Pathfinding", 40, 0.5f);
                 Add("Celtic Dual", 29, 0.3f);
                 Add("Stealth", 35, 0.2f);
                 break;
@@ -72,8 +72,8 @@ namespace DOL.GS.Scripts
                 case 2:
                 case 3:
                 Add(WeaponTypeOne, 35, 0.4f);
-                Add("Archery", 35, 0.9f);
-                //Add("Pathfinding", 36, 0.5f);
+                Add("Recurve Bow", 35, 0.9f);
+                Add("Pathfinding", 36, 0.5f);
                 Add("Celtic Dual", 31, 0.3f);
                 Add("Stealth", 35, 0.2f);
                 break;
@@ -81,8 +81,8 @@ namespace DOL.GS.Scripts
                 case 4:
                 case 5:
                 Add(WeaponTypeOne, 27, 0.4f);
-                Add("Archery", 45, 0.9f);
-                //Add("Pathfinding", 40, 0.5f);
+                Add("Recurve Bow", 45, 0.9f);
+                Add("Pathfinding", 40, 0.5f);
                 Add("Celtic Dual", 19, 0.3f);
                 Add("Stealth", 35, 0.2f);
                 break;

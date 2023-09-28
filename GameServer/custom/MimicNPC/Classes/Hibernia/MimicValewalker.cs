@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicValewalker(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassValewalker(), level, position)
+        public MimicValewalker(byte level) : base(new ClassValewalker(), level)
         {
             MimicSpec = new ValewalkerSpec();
 

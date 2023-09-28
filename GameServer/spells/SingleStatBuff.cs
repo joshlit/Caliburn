@@ -1,6 +1,7 @@
 using System;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerClass;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -54,6 +55,35 @@ namespace DOL.GS.Spells
 
                         if (playerCaster.UseDetailedCombatLog && m_caster.GetModified(eProperty.DebuffEffectivness) > 0)
                             playerCaster.Out.SendMessage($"debuff effectiveness: {m_caster.GetModified(eProperty.DebuffEffectivness)}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+                    }
+                    else
+                    {
+                        Effectiveness = 1.0; // Non list casters debuffs. Reaver curses, Champ debuffs etc.
+                        Effectiveness *= 1.0 + m_caster.GetModified(eProperty.DebuffEffectivness) * 0.01;
+                    }
+                }
+            }
+            else if (Caster is MimicNPC mimicCaster)
+            {
+                if (mimicCaster.CharacterClass.ID != (int)eCharacterClass.Savage && Spell.Target != eSpellTarget.ENEMY)
+                {
+                    if (mimicCaster.CharacterClass.ClassType != eClassType.ListCaster)
+                    {
+                        Effectiveness = 0.75; // This section is for self bulfs, cleric buffs etc.
+                        Effectiveness += (specLevel - 1.0) * 0.5 / Spell.Level;
+                        Effectiveness = Math.Max(0.75, Effectiveness);
+                        Effectiveness = Math.Min(1.25, Effectiveness);
+                    }
+                }
+                else if (Spell.Target == eSpellTarget.ENEMY)
+                {
+                    Effectiveness = 0.75; // This section is for list casters stat debuffs.
+                    if (mimicCaster.CharacterClass.ClassType == eClassType.ListCaster)
+                    {
+                        Effectiveness += (specLevel - 1.0) * 0.5 / Spell.Level;
+                        Effectiveness = Math.Max(0.75, Effectiveness);
+                        Effectiveness = Math.Min(1.25, Effectiveness);
+                        Effectiveness *= 1.0 + m_caster.GetModified(eProperty.DebuffEffectivness) * 0.01;
                     }
                     else
                     {
@@ -216,6 +246,9 @@ namespace DOL.GS.Spells
             get
             {
                 if (Caster is GamePlayer c && (c.CharacterClass is ClassRanger || c.CharacterClass is ClassHunter) && (SpellLine.KeyName.ToLower().Equals("beastcraft") || SpellLine.KeyName.ToLower().Equals("pathfinding")))
+                    return eBuffBonusCategory.BaseBuff;
+
+                if (Caster is MimicNPC m && (m.CharacterClass is ClassRanger || m.CharacterClass is ClassHunter) && (SpellLine.KeyName.ToLower().Equals("beastcraft") || SpellLine.KeyName.ToLower().Equals("pathfinding")))
                     return eBuffBonusCategory.BaseBuff;
 
                 if (Spell.Target == eSpellTarget.SELF)

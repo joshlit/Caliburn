@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicBlademaster(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassBlademaster(), level, position)
+		public MimicBlademaster(byte level) : base(new ClassBlademaster(), level)
 		{
 			MimicSpec = new BlademasterSpec();
 

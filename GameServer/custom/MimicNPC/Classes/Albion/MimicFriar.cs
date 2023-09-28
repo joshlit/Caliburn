@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicFriar(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassFriar(), level, position)
+        public MimicFriar(byte level) : base(new ClassFriar(), level)
         {
             MimicSpec = new FriarSpec();
 

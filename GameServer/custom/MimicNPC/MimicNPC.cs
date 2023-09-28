@@ -42,61 +42,24 @@ namespace DOL.GS.Scripts
 
         public MimicSpec MimicSpec = new MimicSpec();
 
-        public MimicNPC(GameLiving owner, ICharacterClass cClass, byte level = 0, Point3D position = null)
+        public int Kills;
+
+        public MimicNPC(ICharacterClass cClass, byte level)
         {
-            if (position == null)
-            {
-                X = owner.X;
-                Y = owner.Y;
-                Z = owner.Z;
-                Heading = owner.Heading;
-            }
-            else
-            {
-                X = position.X;
-                Y = position.Y;
-                Z = position.Z;
-                Heading = 0x0;
-            }
-
-            CurrentRegionID = owner.CurrentRegionID;
-
-            Gender = Util.RandomBool() ? Gender = eGender.Female : Gender = eGender.Male;
-
-            MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
-
             Inventory = new MimicNPCInventory(this);
-
+            MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;          
+ 
             SetCharacterClass(cClass.ID);
-            SetRaceAndName(cClass, owner);
+            SetRaceAndName();
+            SetLevel(level);       
+            RefreshItemBonuses();
 
-            if (level == 0)
-                level = owner.Level;
-
-            Level = 1;
-            Experience = 0;
-
-            SetLevel(level);
-
-            ChangeBaseStat(CharacterClass.PrimaryStat, 10);
-            ChangeBaseStat(CharacterClass.SecondaryStat, 10);
-            ChangeBaseStat(CharacterClass.TertiaryStat, 10);
-
-            log.Info("PrimaryStat: " + CharacterClass.PrimaryStat);
-            log.Info("SecondaryStat: " + CharacterClass.SecondaryStat);
-            log.Info("TertiaryStat: " + CharacterClass.TertiaryStat);
+            MaxEndurance = GetModified(eProperty.Fatigue);
+            Mana = GetModified(eProperty.MaxMana);
 
             SetOwnBrain(new MimicBrain());
 
-            lock (m_respawnTimerLock)
-            {
-                if (m_respawnTimer != null)
-                {
-                    m_respawnTimer.Stop();
-                    m_respawnTimer = null;
-                }
-            }
-
+            RespawnInterval = 0;
             m_combatTimer = new ECSGameTimer(this, new ECSGameTimer.ECSTimerCallback(_ =>
             {
                 return 0;
@@ -108,7 +71,13 @@ namespace DOL.GS.Scripts
             if (!base.Interact(player))
                 return false;
 
-            player.Out.SendMessage("[Prevent Combat]\n [Group]\n [Spells] [Misc Spells]\n [Styles]\n [Spec] [Stats]\n [Hood] [Weapon] [Helm] [Torso] [Legs] [Arms] [Hands] [Boots]\n [Delete]", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+            player.Out.SendMessage("[Prevent Combat]\n " +
+                "[Group]\n " +
+                "[Spells] [Inst Harmful] [Harmful Spells] [Inst Misc] [Misc Spells] [Inst Heal] [Heal Spells]\n " +
+                "[Styles] [Abilities]\n " +
+                "[Spec] [Stats]\n " +
+                "[Hood] [Weapon] [Helm] [Torso] [Legs] [Arms] [Hands] [Boots]\n " +
+                "[Delete]", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
             return true;
         }
         
@@ -168,9 +137,57 @@ namespace DOL.GS.Scripts
 
                     foreach (Spell spell in Spells)
                     {
-                        message += spell.Name + " " + spell.Level + "\n";
+                        message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
                     }
                     SendReply(player, message);
+
+                    break;
+                }
+
+                case "Inst Harmful":
+                {
+                    string message = string.Empty;
+
+                    if (CanCastInstantHarmfulSpells)
+                    {
+                        foreach (Spell spell in InstantHarmfulSpells)
+                        {
+                            message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
+                        }
+                        SendReply(player, message);
+                    }
+
+                    break;
+                }
+
+                case "Harmful":
+                {
+                    string message = string.Empty;
+
+                    if (CanCastHarmfulSpells)
+                    {
+                        foreach (Spell spell in InstantHarmfulSpells)
+                        {
+                            message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
+                        }
+                        SendReply(player, message);
+                    }
+
+                    break;
+                }
+
+                case "Inst Misc":
+                {
+                    string message = string.Empty;
+
+                    if (CanCastInstantMiscSpells)
+                    {
+                        foreach (Spell spell in InstantMiscSpells)
+                        {
+                            message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
+                        }
+                        SendReply(player, message);
+                    }
 
                     break;
                 }
@@ -183,7 +200,39 @@ namespace DOL.GS.Scripts
                     {
                         foreach (Spell spell in MiscSpells)
                         {
-                            message += spell.Name + " " + spell.Level + "\n";
+                            message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
+                        }
+                        SendReply(player, message);
+                    }
+
+                    break;
+                }
+
+                case "Inst Heal":
+                {
+                    string message = string.Empty;
+
+                    if (CanCastInstantHealSpells)
+                    {
+                        foreach (Spell spell in InstantHealSpells)
+                        {
+                            message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
+                        }
+                        SendReply(player, message);
+                    }
+
+                    break;
+                }
+
+                case "Heal Spells":
+                {
+                    string message = string.Empty;
+
+                    if (CanCastHealSpells)
+                    {
+                        foreach (Spell spell in HealSpells)
+                        {
+                            message += spell.Name + " " + spell.Level + " " + spell.SpellType + "\n";
                         }
                         SendReply(player, message);
                     }
@@ -204,8 +253,22 @@ namespace DOL.GS.Scripts
                     break;
                 }
 
+                case "Abilities":
+                {
+                    string message = string.Empty;
+
+                    foreach (Ability ability in GetAllAbilities())
+                    {
+                        message += ability.Name + " " + ability.Level + "\n";
+                    }
+                    SendReply(player, message);
+
+                    break;
+                }
+
                 case "Stats":
-                SendReply(player, string.Format("Level: {0}\n Str: {1}\n Con: {2}\n Dex: {3}\n Qui: {4}\n Int: {5}\n Pie: {6}\n Emp: {7}\n Cha: {8}\n HP: {9}\n AF: {10}\n, End: {11}\n",
+                SendReply(player, string.Format("Level: {0}\n Str: {1}\n Con: {2}\n Dex: {3}\n Qui: {4}\n Int: {5}\n Pie: {6}\n Emp: {7}\n Cha: {8}\n" +
+                    " HP: {9}\n AF: {10}\n, End: {11}\n Power: {12}\n",
                     Level,
                     Strength,
                     Constitution,
@@ -217,7 +280,8 @@ namespace DOL.GS.Scripts
                     Charisma,
                     Health,
                     EffectiveOverallAF,
-                    Endurance)); 
+                    MaxEndurance,
+                    Mana));
                 break;
 
                 case "Spec":
@@ -375,23 +439,13 @@ namespace DOL.GS.Scripts
                     break;
                 }
 
-                case "Get Group":
-                {
-                    string message = string.Empty;
-
-                    if (Group != null)
-                        message = Group.GetMembersInTheGroup().Count.ToString();
-
-                    SendReply(player, message);
-                    break;
-                }
-
                 case "Delete":
                 {
-                    //if (ControlledBody != null)
-                    //{
-                    //    ControlledBody.Delete();
-                    //}
+                    if (ControlledBrain != null)
+                    {
+                        if (ControlledBrain.Body != null)
+                            ControlledBrain.Body.Delete();
+                    }
 
                     Delete();
 
@@ -418,13 +472,19 @@ namespace DOL.GS.Scripts
 
                 foreach (string specName in CharacterClass.GetAutotrainableSkills())
                 {
+                    if (specName == "Archery")
+                        continue;
+
                     Specialization spec = GetSpecializationByName(specName);
 
-                    autoTrainSpecPoints += GetAutoTrainPoints(spec, 2);
+                    if (spec != null)
+                        autoTrainSpecPoints += GetAutoTrainPoints(spec, 3);
+                    else
+                        log.Info("spec for autotrain is null.");
                 }
                  
-                log.Info("totalSpecPoints: " + totalSpecPoints);
-                log.Info("AutoTrain points: " + autoTrainSpecPoints);
+                //log.Info("totalSpecPoints: " + totalSpecPoints);
+                //log.Info("AutoTrain points: " + autoTrainSpecPoints);
                 //log.Info("Total:  " + totalSpecPoints + autoTrainSpecPoints);
 
                 while (true)
@@ -524,8 +584,8 @@ namespace DOL.GS.Scripts
 
             List<Spell> result = GetHighestLevelSpells(spells);
 
-            foreach (Spell spell in result)
-                log.Info(spell.Name + " " + spell.Level);
+            //foreach (Spell spell in result)
+            //    log.Info(spell.Name + " " + spell.Level);
 
             if (result.Count > 0)
                 Spells = result;
@@ -574,8 +634,8 @@ namespace DOL.GS.Scripts
 
             List<Spell> result = GetHighestLevelSpells(spells);
 
-            foreach (Spell spell in result)
-                log.Info(spell.Name + " " + spell.Level);
+            //foreach (Spell spell in result)
+            //    log.Info(spell.Name + " " + spell.Level);
 
             if (result.Count > 0)
                 Spells = result;
@@ -616,7 +676,7 @@ namespace DOL.GS.Scripts
                     result.Add(currentSpell);
                 }
             }
-
+            
             return result;
         }
 
@@ -795,30 +855,15 @@ namespace DOL.GS.Scripts
             RespecAllLines();
         }
 
-        public void SetRaceAndName(ICharacterClass cClass, GameLiving owner)
+        public void SetRaceAndName()
         {
-            List<PlayerRace> raceList = new List<PlayerRace>(cClass.EligibleRaces);
+            PlayerRace playerRace = CharacterClass.EligibleRaces[Util.Random(CharacterClass.EligibleRaces.Count - 1)];
 
-            int removeIndex = -1;
-            for (int i = 0; i < raceList.Count; i++)
-            {
-                if (raceList[i] == PlayerRace.Korazh || raceList[i] == PlayerRace.Deifrang || raceList[i] == PlayerRace.Graoch)
-                {
-                    removeIndex = i;
-                    break;
-                }
-            }
-
-            if (removeIndex > -1)
-                raceList.RemoveAt(removeIndex);
-
-            PlayerRace playerRace = raceList[Util.Random(raceList.Count - 1)];
-
+            Gender = Util.RandomBool() ? Gender = eGender.Female : Gender = eGender.Male;
             Race = (short)playerRace.ID;
             Model = (ushort)playerRace.GetModel(Gender);
             Size = (byte)Util.Random(45, 60);
-            Name = string.Format("{0} {1}", ((eRace)Race).ToString("F"), Gender == 0 ? cClass.BaseName : cClass.FemaleName);
-
+            
             Dictionary<eStat, int> statDict;
             GlobalConstants.STARTING_STATS_DICT.TryGetValue((eRace)Race, out statDict);
 
@@ -830,6 +875,9 @@ namespace DOL.GS.Scripts
             ChangeBaseStat(eStat.PIE, (short)statDict[eStat.PIE]);
             ChangeBaseStat(eStat.EMP, (short)statDict[eStat.EMP]);
             ChangeBaseStat(eStat.CHR, (short)statDict[eStat.CHR]);
+            ChangeBaseStat(CharacterClass.PrimaryStat, 10);
+            ChangeBaseStat(CharacterClass.SecondaryStat, 10);
+            ChangeBaseStat(CharacterClass.TertiaryStat, 10);
 
             foreach (KeyValuePair<eRealm, List<eCharacterClass>> keyValuePair in GlobalConstants.STARTING_CLASSES_DICT)
             {
@@ -846,6 +894,8 @@ namespace DOL.GS.Scripts
                 case eRealm.Hibernia: Faction = MimicManager.hib; break;
                 case eRealm.Midgard: Faction = MimicManager.mid; break;
             }
+
+            Name = MimicNames.GetName(Gender, Realm);
         }
 
         private readonly object m_LockObject = new object();
@@ -3358,7 +3408,8 @@ namespace DOL.GS.Scripts
         public virtual string RaceName
         {
             //get { return this.RaceToTranslatedName(Race, Gender); }
-            get { return string.Format("!{0} - {1}!", ((eRace)Race).ToString("F"), Gender.ToString("F")); }
+            //get { return string.Format("!{0} - {1}!", ((eRace)Race).ToString("F"), Gender.ToString("F")); }
+            get { return ((eRace)Race).ToString("F"); }
         }
 
         ///// <summary>
@@ -7080,13 +7131,6 @@ namespace DOL.GS.Scripts
 
             TargetObject = null;
 
-            //if (IsOnHorse)
-            //    IsOnHorse = false;
-
-            //// cancel task if active
-            //if (Task != null && Task.TaskActive)
-            //    Task.ExpireTask();
-
             string playerMessage;
             string publicMessage;
             ushort messageDistance = WorldMgr.DEATH_MESSAGE_DISTANCE;
@@ -7102,55 +7146,41 @@ namespace DOL.GS.Scripts
             {
                 if (realmDeath)
                 {
-                    playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledLocation", GetName(0, true), location);
-                    publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledLocation", GetName(0, true), location);
+                    playerMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledLocation", GetName(0, true), location);
+                    publicMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledLocation", GetName(0, true), location);
                 }
                 else
                 {
-                    playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.Killed", GetName(0, true));
-                    publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.Killed", GetName(0, true));
+                    playerMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.Killed", GetName(0, true));
+                    publicMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.Killed", GetName(0, true));
                 }
             }
             else
             {
-                //if (DuelTarget == killer)
-                //{
-                //    m_releaseType = eReleaseType.Duel;
-                //    messageDistance = WorldMgr.YELL_DISTANCE;
-                //    playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DuelDefeated", GetName(0, true), killer.GetName(1, false));
-                //    publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DuelDefeated", GetName(0, true), killer.GetName(1, false));
-                //}
-                //else
-                //{
-                //    messageDistance = 0;
-                //    if (realmDeath)
-                //    {
-                //        playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
-                //        publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
-                //    }
-                //    else
-                //    {
-                //        playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
-                //        publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
-                //    }
+                messageDistance = 0;
+                if (realmDeath)
+                {
+                    if (killer is MimicNPC mimic)
+                    {
+                        mimic.Kills++;
+                        mimic.KillStreak++;
+                        
+                        if (MimicBattlegrounds.Running)
+                        {
+                            MimicBattlegrounds.UpdateBattleStats(this);
+                            KillStreak = 0;
+                        }
+                    }
 
-                //    if (ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
-                //        ConquestService.ConquestManager.AddContributor(this);
-                //}
+                    playerMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
+                    publicMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
+                }
+                else
+                {
+                    playerMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
+                    publicMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
+                }
             }
-
-            //if (HCFlag)
-            //{
-            //    playerMessage = "[HC Lv" + Level + "] " + playerMessage;
-            //    publicMessage = "[HC Lv" + Level + "] " + publicMessage;
-
-            //    if (Properties.DISCORD_ACTIVE && !string.IsNullOrEmpty(Properties.DISCORD_WEBHOOK_ID))
-            //    {
-            //        BroadcastDeathOnDiscord(publicMessage, Name, LastName, CharacterClass.Name, Level, PlayedTime);
-            //    }
-            //}
-
-            KillStreak = 0;
 
             //DuelStop();
 
@@ -7163,7 +7193,7 @@ namespace DOL.GS.Scripts
             }
             else
             {
-                switch ((eRealm)killer.Realm)
+                switch (killer.Realm)
                 {
                     case eRealm.Albion: messageType = eChatType.CT_KilledByAlb; break;
                     case eRealm.Midgard: messageType = eChatType.CT_KilledByMid; break;
@@ -7172,41 +7202,28 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            //if (killer is GamePlayer && killer != this)
-            //{
-            //    ((GamePlayer)killer).Out.SendMessage(LanguageMgr.GetTranslation(((GamePlayer)killer).Client.Account.Language, "GamePlayer.Die.YouKilled", GetName(0, false)), eChatType.CT_PlayerDied, eChatLoc.CL_SystemWindow);
-            //    ((GamePlayer)killer).Out.SendMessage(playerMessage, messageType, eChatLoc.CL_SystemWindow);
-            //}
+            if (killer is GamePlayer && killer != this)
+            {
+                ((GamePlayer)killer).Out.SendMessage(LanguageMgr.GetTranslation(((GamePlayer)killer).Client.Account.Language, "GamePlayer.Die.YouKilled", GetName(0, false)), eChatType.CT_PlayerDied, eChatLoc.CL_SystemWindow);
+                ((GamePlayer)killer).Out.SendMessage(playerMessage, messageType, eChatLoc.CL_SystemWindow);
+            }
 
-            //ArrayList players = new ArrayList();
-            //if (messageDistance == 0)
-            //{
-            //    foreach (GameClient client in WorldMgr.GetClientsOfRegion(CurrentRegionID))
-            //    {
-            //        players.Add(client.Player);
-            //    }
-            //}
-            //else
-            //{
-            //    foreach (GamePlayer player in GetPlayersInRadius(messageDistance))
-            //    {
-            //        if (player == null) continue;
-            //        players.Add(player);
-            //    }
-            //}
+            List<GamePlayer> players;
 
-            //foreach (GamePlayer player in players)
-            //{
-            //    // on normal server type send messages only to the killer and dead players realm
-            //    // check for gameplayer is needed because killers realm don't see deaths by guards
-            //    if (
-            //        (player != killer) && (
-            //            (killer != null && killer is GamePlayer && GameServer.ServerRules.IsSameRealm((GamePlayer)killer, player, true))
-            //            || (GameServer.ServerRules.IsSameRealm(this, player, true))
-            //            || (ServerProperties.Properties.DEATH_MESSAGES_ALL_REALMS && (killer is GamePlayer || killer is GameKeepGuard))) //Only show Player/Guard kills if shown to all realms
-            //    )
-            //       player.Out.SendMessage(publicMessage, messageType, eChatLoc.CL_SystemWindow);
-            //}
+            if (messageDistance == 0)
+                players = ClientService.GetPlayersOfRegion(CurrentRegion);
+            else
+                players = GetPlayersInRadius(messageDistance);
+
+            foreach (GamePlayer player in players)
+            {
+                // on normal server type send messages only to the killer and dead players realm
+                // check for gameplayer is needed because killers realm don't see deaths by guards
+                if (player.Realm == Realm
+                    || (ServerProperties.Properties.DEATH_MESSAGES_ALL_REALMS && (killer is GamePlayer || killer is MimicNPC || killer is GameKeepGuard))) //Only show Player/Guard kills if shown to all realms
+                
+                    player.Out.SendMessage(publicMessage, messageType, eChatLoc.CL_SystemWindow);
+            }
 
             //Dead ppl. dismount ...
             //if (Steed != null)
@@ -7245,21 +7262,13 @@ namespace DOL.GS.Scripts
                 m_releasePhase = 0;
                 m_deathTick = GameLoop.GameLoopTime; // we use realtime, because timer window is realtime
 
-               // Out.SendTimerWindow(LanguageMgr.GetTranslation(Client.Account.Language, "System.ReleaseTimer"), (m_automaticRelease ? RELEASE_MINIMUM_WAIT : RELEASE_TIME));
                 m_releaseTimer = new ECSGameTimer(this);
                 m_releaseTimer.Callback = new ECSGameTimer.ECSTimerCallback(ReleaseTimerCallback);
                 m_releaseTimer.Start(1000);
 
-               // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.ReleaseToReturn"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
-
+ 
                 // clear target object so no more actions can used on this target, spells, styles, attacks...
                 TargetObject = null;
-
-                foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                {
-                    if (player == null) continue;
-                    //player.Out.SendPlayerDied(this, killer);
-                }
 
                 // first penalty is 5% of expforlevel, second penalty comes from release
                 int xpLossPercent;
@@ -7278,7 +7287,6 @@ namespace DOL.GS.Scripts
                     switch (GameServer.Instance.Configuration.ServerType)
                     {
                         case EGameServerType.GST_Normal:
-                      //  Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeadRVR"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
                         xpLossPercent = 0;
                         m_deathtype = eDeathType.RvR;
                         break;
@@ -7336,7 +7344,7 @@ namespace DOL.GS.Scripts
                 //GameEventMgr.AddHandler(this, GamePlayerEvent.Revive, new DOLEventHandler(OnRevive));
             }
 
-            if (this.ControlledBrain != null)
+            if (ControlledBrain != null)
                 CommandNpcRelease();
 
             //if (this.SiegeWeapon != null)
@@ -7365,22 +7373,9 @@ namespace DOL.GS.Scripts
             //    DeathTime = PlayedTime;
 
             CancelAllConcentrationEffects();
-            //effectListComponent.CancelAll();
+            effectListComponent.CancelAll();
 
             IsSwimming = false;
-
-            //if (PredatorManager.PlayerIsActive(this))
-            //{
-            //    PredatorManager.RemoveActivePlayer(this);
-            //}
-
-            if (HCFlag)
-            {
-                DbCoreCharacter cha = DOLDB<DbCoreCharacter>.SelectObject(DB.Column("Name").IsEqualTo(Name));
-                if (cha == null) return;
-                //Client.Out.SendPlayerQuit(true);
-                //GameServer.Database.DeleteObject(cha);
-            }
         }
 
         public override void EnemyKilled(GameLiving enemy)
@@ -7889,7 +7884,7 @@ namespace DOL.GS.Scripts
         {
             if (Inventory.InventoryWeight > MaxEncumberance)
             {
-                IsOverencumbered = true;
+                //IsOverencumbered = true;
                // Out.SendUpdateMaxSpeed();
              //   if (MaxSpeed == 0)
                  //   Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PropertyCalc.MaxSpeed.YouAreEncumbered"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -7898,7 +7893,7 @@ namespace DOL.GS.Scripts
             }
             else if (IsOverencumbered)
             {
-                IsOverencumbered = false;
+                //IsOverencumbered = false;
                 //Out.SendUpdateMaxSpeed();
             }
             //Out.SendEncumberance();
@@ -7908,7 +7903,7 @@ namespace DOL.GS.Scripts
         {
             //Out.SendCharStatsUpdate();
             //Out.SendUpdateWeaponAndArmorStats();
-            UpdateEncumberance();
+            //UpdateEncumberance();
             //UpdatePlayerStatus();
             base.UpdateHealthManaEndu();
         }
@@ -8351,13 +8346,13 @@ namespace DOL.GS.Scripts
             {
                 if (item == null)
                     continue;
+
                 // skip weapons. only active weapons should fire equip event, done in player.SwitchWeapon
                 bool add = true;
                 if (slotToLoad != "")
                 {
                     switch (item.SlotPosition)
                     {
-
                         case Slot.TWOHAND:
                         if (slotToLoad.Contains("twoHandSlot") == false)
                         {
@@ -8388,7 +8383,9 @@ namespace DOL.GS.Scripts
                     }
                 }
 
-                if (!add) continue;
+                if (!add) 
+                    continue;
+
                 if (item is IGameInventoryItem)
                 {
                     //(item as IGameInventoryItem).CheckValid(this);
@@ -9148,14 +9145,15 @@ namespace DOL.GS.Scripts
         /// <param name="controlledNpc"></param>
         public override void SetControlledBrain(IControlledBrain controlledBrain)
         {
-            try
-            {
-                CharacterClass.SetControlledBrain(controlledBrain);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Caught exception when trying to set controlled pet brain: {e}");
-            }
+            if (controlledBrain == ControlledBrain)
+                return;
+            //if (controlledBrain.Owner != this)
+                //throw new ArgumentException("ControlledNpc with wrong owner is set (mimic=" + Name + ", owner=" + controlledBrain.Owner.Name + ")", "controlledNpc");
+
+            if (ControlledBrain == null)
+                InitControlledBrainArray(1);
+
+            ControlledBrain = controlledBrain;
         }
 
         /// <summary>

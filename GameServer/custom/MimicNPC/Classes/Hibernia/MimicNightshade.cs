@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicNightshade(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassNightshade(), level, position)
+        public MimicNightshade(byte level) : base(new ClassNightshade(), level)
         {
             MimicSpec = new NightshadeSpec();
 

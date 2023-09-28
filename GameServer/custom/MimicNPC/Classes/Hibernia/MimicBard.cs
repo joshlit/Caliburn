@@ -16,7 +16,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicBard(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassBard(), level, position)
+		public MimicBard(byte level) : base(new ClassBard(), level)
 		{
             MimicSpec = new BardSpec();
 

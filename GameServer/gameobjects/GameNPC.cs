@@ -2836,7 +2836,7 @@ namespace DOL.GS
 				if (killer != null)
 				{
 					if (killer is GameNPC pet && pet.Brain is IControlledBrain petBrain)
-						killer = petBrain.GetPlayerOwner();
+						killer = petBrain.GetLivingOwner();
 
 					Diagnostics.StartPerfCounter($"ReaperService-NPC-ProcessDeath-DropLoot-NPC({hashCode})");
 
@@ -3747,6 +3747,7 @@ namespace DOL.GS
 						if (InstantHealSpells == null)
 							InstantHealSpells = new List<Spell>(1);
 						InstantHealSpells.Add(spell);
+						log.Info("HealType for instant: " + spell.SpellType);
 					}
 					else
 					{

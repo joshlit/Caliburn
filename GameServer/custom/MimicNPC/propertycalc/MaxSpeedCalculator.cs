@@ -125,72 +125,72 @@ namespace DOL.GS.Scripts
 
                 speed *= horseSpeed;
             }
-            //else if (living is MimicNPC mimic)
-            //{
-            //    //double horseSpeed = player.IsOnHorse ? player.ActiveHorse.Speed * 0.01 : 1.0;
+            else if (living is MimicNPC mimic)
+            {
+                //double horseSpeed = player.IsOnHorse ? player.ActiveHorse.Speed * 0.01 : 1.0;
 
-            //    //if (speed > horseSpeed)
-            //    //    horseSpeed = 1.0;
+                //if (speed > horseSpeed)
+                //    horseSpeed = 1.0;
 
-            //    if (ServerProperties.Properties.ENABLE_PVE_SPEED)
-            //    {
-            //        // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
-            //        if (speed == 1 && !mimic.InCombat && !mimic.IsStealthed && !mimic.CurrentRegion.IsRvR)
-            //            speed *= 1.25; // New run speed is 125% when no buff.
-            //    }
+                if (ServerProperties.Properties.ENABLE_PVE_SPEED)
+                {
+                    // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
+                    if (speed == 1 && !mimic.InCombat && !mimic.IsStealthed && !mimic.CurrentRegion.IsRvR)
+                        speed *= 1.25; // New run speed is 125% when no buff.
+                }
 
-            //    if (mimic.IsOverencumbered && mimic.Client.Account.PrivLevel < 2 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
-            //    {
-            //        double Enc = mimic.Encumberance; // Calculating player.Encumberance is a bit slow with all those locks, don't call it much.
+                //if (mimic.IsOverencumbered && mimic.Client.Account.PrivLevel < 2 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
+                //{
+                //    double Enc = mimic.Encumberance; // Calculating player.Encumberance is a bit slow with all those locks, don't call it much.
 
-            //        if (Enc > mimic.MaxEncumberance)
-            //        {
-            //            speed *= (((mimic.MaxSpeedBase * 1.0 / GamePlayer.PLAYER_BASE_SPEED) * (-Enc)) / (mimic.MaxEncumberance * 0.35f)) + (mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) + ((mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) * mimic.MaxEncumberance / (mimic.MaxEncumberance * 0.35));
+                //    if (Enc > mimic.MaxEncumberance)
+                //    {
+                //        speed *= (((mimic.MaxSpeedBase * 1.0 / GamePlayer.PLAYER_BASE_SPEED) * (-Enc)) / (mimic.MaxEncumberance * 0.35f)) + (mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) + ((mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) * mimic.MaxEncumberance / (mimic.MaxEncumberance * 0.35));
 
-            //            if (speed <= 0)
-            //                speed = 0;
-            //        }
-            //        else
-            //            mimic.IsOverencumbered = false;
-            //    }
-            //    if (mimic.IsStealthed)
-            //    {
-            //        AtlasOF_MasteryOfStealth mos = mimic.GetAbility<AtlasOF_MasteryOfStealth>();
-            //        //GameSpellEffect bloodrage = SpellHandler.FindEffectOnTarget(player, "BloodRage");
-            //        //VanishEffect vanish = player.EffectList.GetOfType<VanishEffect>();
-            //        double stealthSpec = mimic.GetModifiedSpecLevel(Specs.Stealth);
+                //        if (speed <= 0)
+                //            speed = 0;
+                //    }
+                //    else
+                //        mimic.IsOverencumbered = false;
+                //}
+                if (mimic.IsStealthed)
+                {
+                    AtlasOF_MasteryOfStealth mos = mimic.GetAbility<AtlasOF_MasteryOfStealth>();
+                    //GameSpellEffect bloodrage = SpellHandler.FindEffectOnTarget(player, "BloodRage");
+                    //VanishEffect vanish = player.EffectList.GetOfType<VanishEffect>();
+                    double stealthSpec = mimic.GetModifiedSpecLevel(Specs.Stealth);
 
-            //        if (stealthSpec > mimic.Level)
-            //            stealthSpec = mimic.Level;
+                    if (stealthSpec > mimic.Level)
+                        stealthSpec = mimic.Level;
 
-            //        speed *= 0.3 + (stealthSpec + 10) * 0.3 / (mimic.Level + 10);
+                    speed *= 0.3 + (stealthSpec + 10) * 0.3 / (mimic.Level + 10);
 
-            //        //if (vanish != null)
-            //        //    speed *= vanish.SpeedBonus;
+                    //if (vanish != null)
+                    //    speed *= vanish.SpeedBonus;
 
-            //        if (mos != null)
-            //            speed *= 1 + mos.GetAmountForLevel(mos.Level) / 100.0;
+                    if (mos != null)
+                        speed *= 1 + mos.GetAmountForLevel(mos.Level) / 100.0;
 
-            //        //if (bloodrage != null)
-            //        //    speed *= 1 + (bloodrage.Spell.Value * 0.01); // 25 * 0.01 = 0.25 (a.k 25%) value should be 25.5
+                    //if (bloodrage != null)
+                    //    speed *= 1 + (bloodrage.Spell.Value * 0.01); // 25 * 0.01 = 0.25 (a.k 25%) value should be 25.5
 
-            //        if (mimic.effectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
-            //            speed *= 2;
-            //    }
+                    if (mimic.effectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
+                        speed *= 2;
+                }
 
-            //    //if (GameRelic.IsPlayerCarryingRelic(mimic))
-            //    //{
-            //    //    if (speed > 1.0)
-            //    //        speed = 1.0;
+                //if (GameRelic.IsPlayerCarryingRelic(mimic))
+                //{
+                //    if (speed > 1.0)
+                //        speed = 1.0;
 
-            //    //    horseSpeed = 1.0;
-            //    //}
+                //    horseSpeed = 1.0;
+                //}
 
-            //    if (mimic.IsSprinting)
-            //        speed *= 1.3;
+                if (mimic.IsSprinting)
+                    speed *= 1.3;
 
-            //    //speed *= horseSpeed;
-            //}
+                //speed *= horseSpeed;
+            }
             else if (living is GameNPC npc)
             {
                 IControlledBrain brain = npc.Brain as IControlledBrain;
@@ -202,8 +202,8 @@ namespace DOL.GS.Scripts
                         GameLiving owner = brain.Owner;
                         if (owner != null && owner == brain.Body.FollowTarget)
                         {
-                            if (owner is GameNPC && owner is not MimicNPC)
-                                owner = brain.GetPlayerOwner();
+                            if (owner is GameNPC)
+                                owner = brain.GetLivingOwner();
 
                             int distance = brain.Body.GetDistanceTo(owner);
 
@@ -213,7 +213,7 @@ namespace DOL.GS.Scripts
                             if (living is NecromancerPet && distance > 700)
                                 speed *= 1.25;
 
-                            double ownerSpeedAdjust = (double) owner.MaxSpeed / owner.MaxSpeedBase;
+                            double ownerSpeedAdjust = (double)owner.MaxSpeed / owner.MaxSpeedBase;
 
                             if (ownerSpeedAdjust > 1.0)
                                 speed *= ownerSpeedAdjust;
@@ -224,6 +224,11 @@ namespace DOL.GS.Scripts
                                     speed *= 3.0;
 
                                 if (playerOwner.IsSprinting)
+                                    speed *= 1.4;
+                            }
+                            else if (owner is MimicNPC mimicOwner)
+                            {
+                                if (mimicOwner.IsSprinting)
                                     speed *= 1.4;
                             }
                         }

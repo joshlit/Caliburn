@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicEnchanter(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassEnchanter(), level, position)
+        public MimicEnchanter(byte level) : base(new ClassEnchanter(), level)
         {
             MimicSpec = MimicManager.Random(this);
 

@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicTheurgist(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassTheurgist(), level, position)
+		public MimicTheurgist(byte level) : base(new ClassTheurgist(), level)
 		{
 			MimicSpec = new TheurgistSpec();
 

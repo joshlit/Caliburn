@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicEldritch(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassEldritch(), level, position)
+        public MimicEldritch(byte level) : base(new ClassEldritch(), level)
         {
             MimicSpec = MimicManager.Random(this);
 

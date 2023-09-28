@@ -2052,7 +2052,8 @@ namespace DOL.GS
                 {
                     if (playerOwner != null || owner is MimicNPC)
                     {
-                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.BlowPenetrated"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+                        if (playerOwner != null)
+                            playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.BlowPenetrated"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                         EffectService.RequestImmediateCancelEffect(bladeturn);
                     }
                 }
@@ -2165,17 +2166,17 @@ namespace DOL.GS
             missChance -= ad.Attacker.GetModified(eProperty.ToHitBonus);
 
             // PVE group miss rate.
-            if (owner is GameNPC && owner is not MimicNPC && ad.Attacker is GamePlayer or MimicNPC && ad.Attacker.Group != null && (int)(0.90 * ad.Attacker.Group.Leader.Level) >= ad.Attacker.Level && ad.Attacker.IsWithinRadius(ad.Attacker.Group.Leader, 3000))
-                missChance -= (int)(5 * ad.Attacker.Group.Leader.GetConLevel(owner));
-            else if (owner is GameNPC || ad.Attacker is GameNPC && ad.Attacker is not MimicNPC && owner is not MimicNPC)
-            {
-                GameLiving misscheck = ad.Attacker;
+            //if (owner is GameNPC && owner is not MimicNPC && ad.Attacker is GamePlayer or MimicNPC && ad.Attacker.Group != null && (int)(0.90 * ad.Attacker.Group.Leader.Level) >= ad.Attacker.Level && ad.Attacker.IsWithinRadius(ad.Attacker.Group.Leader, 3000))
+            //    missChance -= (int)(5 * ad.Attacker.Group.Leader.GetConLevel(owner));
+            //else if (owner is GameNPC || ad.Attacker is GameNPC && ad.Attacker is not MimicNPC && owner is not MimicNPC)
+            //{
+            //    GameLiving misscheck = ad.Attacker;
 
-                if (ad.Attacker is GameSummonedPet petAttacker && petAttacker.Level < petAttacker.Owner.Level)
-                    misscheck = petAttacker.Owner;
+            //    if (ad.Attacker is GameSummonedPet petAttacker && petAttacker.Level < petAttacker.Owner.Level)
+            //        misscheck = petAttacker.Owner;
 
-                missChance += (int)(5 * misscheck.GetConLevel(owner));
-            }
+            //    missChance += (int)(5 * misscheck.GetConLevel(owner));
+            //}
 
             // Experimental miss rate adjustment for number of attackers.
             if ((owner is GamePlayer && ad.Attacker is GamePlayer && ad.Attacker is MimicNPC && owner is MimicNPC) == false)

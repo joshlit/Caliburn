@@ -139,6 +139,7 @@ namespace DOL.GS.Scripts
                 {
                     itemBonus = itemCap;
                 }
+
                 if (poolBonus > poolCap)
                     poolBonus = poolCap;
 

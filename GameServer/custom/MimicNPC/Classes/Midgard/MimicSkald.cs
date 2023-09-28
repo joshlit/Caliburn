@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicSkald(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassSkald(), level, position)
+		public MimicSkald(byte level) : base(new ClassSkald(), level)
 		{
 			MimicSpec = new SkaldSpec();
 

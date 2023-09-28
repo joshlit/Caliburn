@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicScout(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassScout(), level, position)
+        public MimicScout(byte level) : base(new ClassScout(), level)
 		{
 			MimicSpec = new ScoutSpec();
 
@@ -68,14 +68,14 @@ namespace DOL.GS.Scripts
             {
                 case 0:
                 Add(WeaponTypeOne, 29, 0.6f);
-                Add("Archery", 44, 0.8f);
+                Add("Longbows", 44, 0.8f);
                 Add("Shields", 42, 0.7f);
                 Add("Stealth", 35, 0.1f);
                 break;
 
                 case 1:
                 Add(WeaponTypeOne, 29, 0.7f);
-                Add("Archery", 50, 0.8f);
+                Add("Longbows", 50, 0.8f);
                 Add("Shields", 35, 0.6f);
                 Add("Stealth", 35, 0.1f);
                 break;

@@ -1,4 +1,5 @@
-﻿using DOL.GS.API;
+﻿using DOL.AI.Brain;
+using DOL.GS.API;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using log4net;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,10 +50,8 @@ namespace DOL.GS.Scripts
                 {
                     level = byte.Parse(args[2]);
 
-                    if (level < 1 || level > 255)
+                    if (level < 1 || level > 50)
                         level = 1;
-
-                    log.Info("Level: " + level);
                 }
                 else
                 {
@@ -72,7 +72,8 @@ namespace DOL.GS.Scripts
                 {
                     eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), args[1]);
 
-                    MimicManager.AddMimicToWorld(mclass, client.Player, level, position);
+                    MimicNPC mimic = MimicManager.GetMimic(mclass, level);
+                    MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
                 }
             }
         }
@@ -81,30 +82,37 @@ namespace DOL.GS.Scripts
     [CmdAttribute(
        "&mimicgroup",
        ePrivLevel.Player,
-       "/mimicgroup - To summon a group of mimics from a realm")]
+       "/mimicgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
     public class SummonMimicGroupCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         public void OnCommand(GameClient client, string[] args)
         {
-            if (args.Length > 0)
+            if (args.Length >= 2)
             {
                 args[1] = args[1].ToLower();
+                log.Info("args[1]: " + args[1]);
 
-                byte level = 1;
-
-                if (args.Length > 2)
+                byte groupSize = 8;
+                if (args.Length >= 3)
                 {
-                    level = byte.Parse(args[2]);
+                    groupSize = byte.Parse(args[2]);
 
-                    if (level < 1 || level > 255)
+                    if (groupSize < 1 || groupSize > 8)
+                        groupSize = 8;
+                }
+
+                byte level;
+                if (args.Length >= 4)
+                {
+                    level = byte.Parse(args[3]);
+
+                    if (level < 1 || level > 50)
                         level = 1;
                 }
                 else
-                {
                     level = client.Player.Level;
-                }
 
                 Point3D position = null;
 
@@ -125,17 +133,16 @@ namespace DOL.GS.Scripts
                     {
                         case "albion":
                         {
-                            for (int i = 0; i < 8; i++)
+                            for (int i = 0; i < groupSize; i++)
                             {
-                                eMimicClasses mimicClass = (eMimicClasses)Util.Random(11);
-
                                 int randomX = Util.Random(-100, 100);
                                 int randomY = Util.Random(-100, 100);
 
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.AddMimicToWorld(mimicClass, client.Player, level, position, true);
+                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Albion);
+                                MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
                                     groupMembers.Add(mimic);
@@ -146,7 +153,7 @@ namespace DOL.GS.Scripts
 
                         case "hibernia":
                         {
-                            for (int i = 0; i < 8; i++)
+                            for (int i = 0; i < groupSize; i++)
                             {
                                 eMimicClasses mimicClass = (eMimicClasses)Util.Random(12, 22);
 
@@ -156,7 +163,8 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.AddMimicToWorld(mimicClass, client.Player, level, position, true);
+                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Hibernia);
+                                MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
                                     groupMembers.Add(mimic);
@@ -167,7 +175,7 @@ namespace DOL.GS.Scripts
 
                         case "midgard":
                         {
-                            for (int i = 0; i < 8; i++)
+                            for (int i = 0; i < groupSize; i++)
                             {
                                 eMimicClasses mimicClass = (eMimicClasses)Util.Random(23, 33);
 
@@ -177,7 +185,8 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.AddMimicToWorld(mimicClass, client.Player, level, position, true);
+                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Midgard);
+                                MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
                                     groupMembers.Add(mimic);
@@ -194,13 +203,18 @@ namespace DOL.GS.Scripts
                         if (groupMembers[0].Group == null)
                         {
                             groupMembers[0].Group = new Group(groupMembers[0]);
-                            //groupMembers[0].Group.AddMember(groupMembers[0]);
+                            groupMembers[0].Group.AddMember(groupMembers[0]);
                         }
 
                         foreach (GameLiving living in groupMembers)
                         {
                             if (living.Group == null)
+                            {
                                 groupMembers[0].Group.AddMember(living);
+
+                                MimicBrain brain = ((MimicNPC)living).Brain as MimicBrain;
+                                brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+                            }
                         }
                     }
                 }
@@ -209,9 +223,9 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mimicc",
+       "&mc",
        ePrivLevel.Player,
-       "/mimic - Set universal combat prevention on/off")]
+       "/mc - Set universal combat prevention on/off")]
     public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -269,6 +283,37 @@ namespace DOL.GS.Scripts
         public void OnCommand(GameClient client, string[] args)
         {
             //client.Player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+        }
+    }
+
+    [CmdAttribute(
+      "&mimicbattle",
+      ePrivLevel.Player,
+      "/mimicbattle - Call mimics to Thid")]
+    public class MimicBattleCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            MimicBattlegrounds.Start(client.Player);
+        }
+    }
+
+    [CmdAttribute(
+      "&mbstats",
+      ePrivLevel.Player,
+      "/mbstats - Get stats on Thid.")]
+    public class MimicBattleStatsCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            if (MimicBattlegrounds.Running)
+            {
+                MimicBattlegrounds.MimicBattlegroundStats(client.Player);
+            }
         }
     }
 }

@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicShaman(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassShaman(), level, position)
+		public MimicShaman(byte level) : base(new ClassShaman(), level)
 		{
             MimicSpec = new ShamanSpec();
 

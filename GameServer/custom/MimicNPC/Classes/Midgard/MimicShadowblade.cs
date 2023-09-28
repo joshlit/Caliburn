@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicShadowblade(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassShadowblade(), level, position)
+        public MimicShadowblade(byte level) : base(new ClassShadowblade(), level)
         {
             MimicSpec = new ShadowbladeSpec();
 

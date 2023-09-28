@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicMentalist(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassMentalist(), level, position)
+        public MimicMentalist(byte level) : base(new ClassMentalist(), level)
         {
             MimicSpec = MimicManager.Random(this);
 

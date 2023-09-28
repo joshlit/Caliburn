@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicMinstrel(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassMinstrel(), level, position)
+		public MimicMinstrel(byte level) : base(new ClassMinstrel(), level)
 		{
 			MimicSpec = new MinstrelSpec();
 

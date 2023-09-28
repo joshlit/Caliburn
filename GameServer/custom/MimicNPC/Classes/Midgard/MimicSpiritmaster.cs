@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicSpiritmaster(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassSpiritmaster(), level, position)
+		public MimicSpiritmaster(byte level) : base(new ClassSpiritmaster(), level)
 		{
 			MimicSpec = new SpiritmasterSpec();
 

@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicBerserker(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassBerserker(), level, position)
+		public MimicBerserker(byte level) : base(new ClassBerserker(), level)
 		{
 			MimicSpec = new BerserkerSpec();
 

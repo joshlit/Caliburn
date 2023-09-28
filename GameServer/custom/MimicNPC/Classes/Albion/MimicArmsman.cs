@@ -7,7 +7,7 @@ namespace DOL.GS.Scripts
 {
     public class MimicArmsman : MimicNPC
     {
-        public MimicArmsman(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassArmsman(), level, position)
+        public MimicArmsman(byte level) : base(new ClassArmsman(), level)
         {
             MimicSpec = new ArmsmanSpec();
 

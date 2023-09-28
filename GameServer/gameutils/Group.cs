@@ -362,18 +362,19 @@ namespace DOL.GS
 			// Update all members
 			if (MemberCount > 1 && LivingLeader == living)
 			{
-				var newLeader = m_groupMembers.OfType<GamePlayer>().First();
+                LivingLeader = m_groupMembers.First();
+    //            var newLeader = m_groupMembers.OfType<GamePlayer>().First();
 
-				if (newLeader != null)
-				{
-					LivingLeader = newLeader;
-					SendMessageToGroupMembers(string.Format("{0} is the new group leader.", Leader.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				}
-				else
-				{
-					// Set aother Living Leader.
-					LivingLeader = m_groupMembers.First();
-				}
+				//if (newLeader != null)
+				//{
+				//	LivingLeader = newLeader;
+				//	SendMessageToGroupMembers(string.Format("{0} is the new group leader.", Leader.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				//}
+				//else
+				//{
+				//	// Set aother Living Leader.
+				//	LivingLeader = m_groupMembers.First();
+				//}
 			}
 
 			UpdateGroupIndexes();

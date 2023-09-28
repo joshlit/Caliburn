@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
+using DOL.Database;
 using DOL.GS;
 using DOL.GS.API;
 using DOL.GS.Effects;
@@ -25,6 +28,8 @@ namespace DOL.AI.Brain
     public class MimicBrain : ABrain, IOldAggressiveBrain
     {
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public override bool IsActive => Body != null && Body.IsAlive && Body.ObjectState == GameObject.eObjectState.Active;
 
         public const int MAX_AGGRO_DISTANCE = 3600;
         public const int MAX_AGGRO_LIST_DISTANCE = 6000;
@@ -222,10 +227,7 @@ namespace DOL.AI.Brain
         {
             get
             {
-                if (Body is GameMerchant or GameTrainer or GameHastener)
-                    return 5000; //Merchants and other special NPCs don't need to think that often
-
-                return Math.Max(500, 1500 - (AggroLevel / 10 * 100));
+                return 1500;
             }
         }
 
@@ -330,7 +332,7 @@ namespace DOL.AI.Brain
                     {
                         if (Body.TargetObject is GameLiving target)
                         {
-                            if (Body.AttackRange > Body.GetDistanceTo(new Point3D(target.X, target.Y, target.Z)) &&
+                            if (Body.AttackRange < Body.GetDistanceTo(new Point3D(target.X, target.Y, target.Z)) &&
                                 GameServer.ServerRules.IsAllowedToAttack(Body, target, true))
                             {
                                 EffectService.RequestStartEffect(new BerserkECSGameEffect(new ECSGameEffectInitParams()));
@@ -685,7 +687,7 @@ namespace DOL.AI.Brain
             GameLiving realTarget = target;
 
             if (realTarget is GameNPC npcTarget && npcTarget.Brain is IControlledBrain npcTargetBrain)
-                realTarget = npcTargetBrain.GetPlayerOwner();
+                realTarget = npcTargetBrain.GetLivingOwner();
 
             // Only attack if green+ to target
             if (realTarget.IsObjectGreyCon(Body))
@@ -694,9 +696,12 @@ namespace DOL.AI.Brain
             // If this npc have Faction return the AggroAmount to Player
             if (Body.Faction != null)
             {
+                if (realTarget is GameNPC && realTarget is not MimicNPC && PvPMode)
+                    return false;
+
                 if (realTarget is GamePlayer && realTarget.Realm != Body.Realm)
                     return true;
-                else if (realTarget is GameNPC realTargetNpc && Body.Faction.EnemyFactions.Contains(realTargetNpc.Faction) && !PvPMode)
+                else if (realTarget is GameNPC realTargetNpc && Body.Faction.EnemyFactions.Contains(realTargetNpc.Faction))
                     return true;
             }
 
@@ -959,26 +964,17 @@ namespace DOL.AI.Brain
 
             if (type == eCheckSpellType.Defensive)
             {
-                // Check instant spells, but only cast one of each type to prevent spamming
+                // Check instant heals
                 if (Body.CanCastInstantHealSpells)
                 {
                     foreach (Spell spell in Body.InstantHealSpells)
                     {
-                        if (CheckDefensiveSpells(spell))
+                        if (CheckInstantDefensiveSpells(spell))
                             break;
                     }
                 }
 
-                if (Body.CanCastInstantMiscSpells)
-                {
-                    foreach (Spell spell in Body.InstantMiscSpells)
-                    {
-                        if (CheckDefensiveSpells(spell))
-                            break;
-                    }
-                }
-
-                // Check spell lists, prioritizing healing
+                // Check Healing spells
                 if (Body.CanCastHealSpells)
                 {
                     foreach (Spell spell in Body.HealSpells)
@@ -1002,20 +998,6 @@ namespace DOL.AI.Brain
                         }
                     }
                 }
-                //else if (Body.TargetObject is GameLiving living && living.IsAlive)
-                //{
-                //    if (Body.CanCastHarmfulSpells)
-                //    {
-                //        foreach (Spell spell in Body.HarmfulSpells)
-                //        {
-                //            if (CheckOffensiveSpells(spell))
-                //            {
-                //                casted = true;
-                //                break;
-                //            }
-                //        }
-                //    }
-                //}
 
                 return casted || Body.IsCasting;
             }
@@ -1026,7 +1008,16 @@ namespace DOL.AI.Brain
                 {
                     foreach (Spell spell in Body.InstantHarmfulSpells)
                     {
-                        if (CheckInstantSpells(spell))
+                        if (CheckInstantOffensiveSpells(spell))
+                            break;
+                    }
+                }
+
+                if (Body.CanCastInstantMiscSpells)
+                {
+                    foreach (Spell spell in Body.InstantMiscSpells)
+                    {
+                        if (CheckInstantDefensiveSpells(spell))
                             break;
                     }
                 }
@@ -1065,7 +1056,10 @@ namespace DOL.AI.Brain
                 return false;
 
             // Make sure the spell isn't disabled.
-            return !spell.HasRecastDelay || Body.GetSkillDisabledDuration(spell) <= 0;
+            if (spell.HasRecastDelay || Body.GetSkillDisabledDuration(spell) > 0)
+                return false;
+
+            return true;
         }
 
         /// <summary>
@@ -1084,20 +1078,49 @@ namespace DOL.AI.Brain
             {
                 #region Summon
 
+                case eSpellType.SummonMinion:
                 case eSpellType.SummonUnderhill:
                 case eSpellType.SummonDruidPet:
-                case eSpellType.SummonCommander:
-                case eSpellType.SummonHunterPet:
+                case eSpellType.SummonCommander:             
                 case eSpellType.SummonSimulacrum:
                 case eSpellType.SummonSpiritFighter:
+                if (Body.ControlledBrain != null)
+                    break;
+ 
+                if (Body.ControlledNpcList == null)
+                    Body.InitControlledBrainArray(1);
+                else
                 {
-                    if (Body.ControlledBrain == null)
+                    IControlledBrain[] icb = Body.ControlledNpcList;
+                    int numberofpets = 0;
+
+                    for (int i = 0; i < icb.Length; i++)
                     {
-                        Body.TargetObject = Body;
+                        if (icb[i] != null)
+                            numberofpets++;
                     }
+
+                    if (numberofpets >= icb.Length)
+                        break;
                 }
+
+                Body.TargetObject = Body;
                 break;
 
+                case eSpellType.PetSpell:
+                {
+                    break;
+                    if (Body.ControlledBrain != null)
+                    {
+                        if (Body.ControlledBrain.Body != null)
+                        {
+                            if (spell.Target == eSpellTarget.PET && !LivingHasEffect(Body.ControlledBrain.Body, spell))
+                                Body.TargetObject = Body.ControlledBrain.Body;
+                        }
+                    }
+                    break;
+                }
+                
                 #endregion
 
                 #region Pulse
@@ -1105,7 +1128,7 @@ namespace DOL.AI.Brain
                 case eSpellType.SpeedEnhancement:
                 if (!Body.InCombat && Roam && !LivingHasEffect(Body, spell))
                     Body.TargetObject = Body;
-                 break;
+                break;
 
                 #endregion
 
@@ -1147,12 +1170,6 @@ namespace DOL.AI.Brain
                 case eSpellType.ParryBuff:
                 case eSpellType.PowerHealthEnduranceRegenBuff:
                 case eSpellType.PowerRegenBuff:
-                case eSpellType.SavageCombatSpeedBuff:
-                case eSpellType.SavageCrushResistanceBuff:
-                case eSpellType.SavageDPSBuff:
-                case eSpellType.SavageParryBuff:
-                case eSpellType.SavageSlashResistanceBuff:
-                case eSpellType.SavageThrustResistanceBuff:
                 case eSpellType.SpiritResistBuff:
                 case eSpellType.StrengthBuff:
                 case eSpellType.StrengthConstitutionBuff:
@@ -1304,11 +1321,7 @@ namespace DOL.AI.Brain
                 //underhill ally heals at half the normal threshold 'will heal seriously injured groupmates'
                 int healThreshold = this.Body.Name.Contains("underhill") ? DOL.GS.ServerProperties.Properties.NPC_HEAL_THRESHOLD / 2 : DOL.GS.ServerProperties.Properties.NPC_HEAL_THRESHOLD;
 
-                if (Body.Name.Contains("empyrean"))
-                {
-                    healThreshold = this.Body.Name.Contains("empyrean") ? DOL.GS.ServerProperties.Properties.CHARMED_NPC_HEAL_THRESHOLD : DOL.GS.ServerProperties.Properties.NPC_HEAL_THRESHOLD;
-                }
-
+                
                 if (spellTarget == "SELF")
                 {
                     if (bodyPercent < healThreshold && !LivingHasEffect(Body, spell))
@@ -1390,13 +1403,16 @@ namespace DOL.AI.Brain
                 case eSpellType.Resurrect:
                 break;
 
+                case eSpellType.LifeTransfer:
+                break;;
+
                 default:
                 log.Warn($"CheckDefensiveSpells() encountered an unknown spell type [{spell.SpellType}] for {Body?.Name}");
                 break;
             }
 
             if (Body?.TargetObject != null)
-                casted = Body.CastSpell(spell, m_mobSpellLine, true);
+                casted = Body.CastSpell(spell, m_mobSpellLine, false);
 
             return casted;
         }
@@ -1441,11 +1457,70 @@ namespace DOL.AI.Brain
             return casted;
         }
 
+
+        protected virtual bool CheckInstantDefensiveSpells(Spell spell)
+        {
+            if (spell.HasRecastDelay && Body.GetSkillDisabledDuration(spell) > 0)
+                return false;
+
+            GameObject lastTarget = Body.TargetObject;
+            Body.TargetObject = null;
+
+            switch (spell.SpellType)
+            {
+                #region Combat Spells
+
+                case eSpellType.CombatHeal:
+                case eSpellType.DamageAdd:
+                case eSpellType.ArmorFactorBuff:
+                case eSpellType.DexterityQuicknessBuff:
+                case eSpellType.EnduranceRegenBuff:
+                case eSpellType.CombatSpeedBuff:
+                case eSpellType.AblativeArmor:
+                case eSpellType.Bladeturn:
+                case eSpellType.OffensiveProc:
+                case eSpellType.SavageCombatSpeedBuff:
+                case eSpellType.SavageCrushResistanceBuff:
+                case eSpellType.SavageDPSBuff:
+                case eSpellType.SavageParryBuff:
+                case eSpellType.SavageSlashResistanceBuff:
+                case eSpellType.SavageThrustResistanceBuff:
+                case eSpellType.MatterResistBuff:
+                case eSpellType.ColdResistBuff:
+                case eSpellType.HeatResistBuff:
+                case eSpellType.EnergyResistBuff:
+                case eSpellType.SpiritResistBuff:
+                case eSpellType.BodyResistBuff:
+                case eSpellType.SummonHunterPet:
+                if (!LivingHasEffect(Body, spell))
+                {
+                    Body.TargetObject = Body;
+                }
+
+                break;
+
+                #endregion
+            }
+
+            if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && !(LivingHasEffect(living, spell)))))
+            {
+                Body.CastSpell(spell, m_mobSpellLine);
+                Body.TargetObject = lastTarget;
+                return true;
+            }
+
+            Body.TargetObject = lastTarget;
+            return false;
+        }
+
         /// <summary>
         /// Checks Instant Spells.  Handles Taunts, shouts, stuns, etc.
         /// </summary>
-        protected virtual bool CheckInstantSpells(Spell spell)
+        protected virtual bool CheckInstantOffensiveSpells(Spell spell)
         {
+            if (spell.HasRecastDelay && Body.GetSkillDisabledDuration(spell) > 0)
+                return false;
+
             GameObject lastTarget = Body.TargetObject;
             Body.TargetObject = null;
 
@@ -1474,30 +1549,13 @@ namespace DOL.AI.Brain
                     Body.TargetObject = lastTarget;
                 }
                 break;
+
                 #endregion
-
-                #region Combat Spells
-                case eSpellType.CombatHeal:
-                case eSpellType.DamageAdd:
-                case eSpellType.ArmorFactorBuff:
-                case eSpellType.DexterityQuicknessBuff:
-                case eSpellType.EnduranceRegenBuff:
-                case eSpellType.CombatSpeedBuff:
-                case eSpellType.AblativeArmor:
-                case eSpellType.Bladeturn:
-                case eSpellType.OffensiveProc:
-                    if (!LivingHasEffect(Body, spell))
-                    {
-                        Body.TargetObject = Body;
-                    }
-
-                    break;
-                    #endregion
             }
 
             if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && !(LivingHasEffect(living, spell)))))
             {
-                Body.CastSpell(spell, m_mobSpellLine);
+                Body.CastSpell(spell, m_mobSpellLine, true);
                 Body.TargetObject = lastTarget;
                 return true;
             }
@@ -1537,10 +1595,11 @@ namespace DOL.AI.Brain
                 return false;
             }
 
-            if (EffectListService.GetPulseEffectOnTarget(target, spell) != null)
+            ECSGameEffect pulseEffect = EffectListService.GetPulseEffectOnTarget(target, spell);
+
+            if (pulseEffect != null)
                 return true;
             
-
             eEffect spellEffect = EffectService.GetEffectFromSpell(spell, m_mobSpellLine.IsBaseLine);
             ECSGameEffect effect = EffectListService.GetEffectOnTarget(target, spellEffect);
 

@@ -16,6 +16,7 @@ namespace DOL.GS.Scripts
 
     public enum eMimicClasses
     {
+        Random = -2,
         None = -1,
 
         Armsman = 0,
@@ -27,7 +28,7 @@ namespace DOL.GS.Scripts
         Minstrel,
         Paladin,
         Reaver,
-        //Scout,
+        Scout,
         Sorcerer,
         Theurgist,
         Wizard,
@@ -41,14 +42,14 @@ namespace DOL.GS.Scripts
         Hero,
         Mentalist,
         Nightshade,
-        //Ranger,
+        Ranger,
         Valewalker,
         Warden,
 
         Berserker,
         Bonedancer,
         Healer,
-        //Hunter,
+        Hunter,
         Runemaster,
         Savage,
         Shadowblade,
@@ -63,13 +64,35 @@ namespace DOL.GS.Scripts
     {
         None = -1,
 
-        
+        Bard = 0,
+        Blademaster,
+        Champion,
+        Druid,
+        Eldritch,
+        Enchanter,
+        Hero,
+        Mentalist,
+        Nightshade,
+        Ranger,
+        Valewalker,
+        Warden,
     }
 
     public enum eMimicClassesMid
     {
         None = -1,
 
-        
+        Berserker = 0,
+        Bonedancer,
+        Healer,
+        Hunter,
+        Runemaster,
+        Savage,
+        Shadowblade,
+        Shaman,
+        Skald,
+        Spiritmaster,
+        Thane,
+        Warrior
     }
 }

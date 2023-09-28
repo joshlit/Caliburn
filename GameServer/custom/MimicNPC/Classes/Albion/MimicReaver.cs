@@ -13,7 +13,7 @@ namespace DOL.GS.Scripts
 {
 	public class MimicReaver : MimicNPC
 	{
-		public MimicReaver(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassReaver(), level, position)
+		public MimicReaver(byte level) : base(new ClassReaver(), level)
 		{
             MimicSpec = new ReaverSpec();
             

@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicCabalist(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassCabalist(), level, position)
+		public MimicCabalist(byte level) : base(new ClassCabalist(), level)
 		{
             MimicSpec = MimicManager.Random(this);
 

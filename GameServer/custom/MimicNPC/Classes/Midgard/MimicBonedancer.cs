@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicBonedancer(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassBonedancer(), level, position)
+		public MimicBonedancer(byte level) : base(new ClassBonedancer(), level)
 		{
 			MimicSpec = new BonedancerSpec();
 

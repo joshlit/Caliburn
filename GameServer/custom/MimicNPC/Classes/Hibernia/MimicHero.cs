@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicHero(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassHero(), level, position)
+        public MimicHero(byte level) : base(new ClassHero(), level)
         {
             MimicSpec = MimicManager.Random(this);
             DistributeSkillPoints();

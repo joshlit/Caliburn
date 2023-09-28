@@ -14,52 +14,173 @@ using DOL.AI.Brain;
 using System.Security.Policy;
 using DOL.Database;
 using log4net.Core;
+using System.Collections;
+using System.Drawing.Text;
+using System.Reflection.Emit;
+using DOL.GS.API;
 
 namespace DOL.GS.Scripts
 {
-    #region Spec
+    #region Battlegrounds
 
-    public class MimicSpec
+    public static class MimicBattlegrounds
     {
-        public static string SpecName;
-        public string WeaponTypeOne;
-        public string WeaponTypeTwo;
-        public eWeaponDamageType DamageType = 0;
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        //public static BattleGroundTimer battleTimer;
 
-        public bool is2H;
+        public static List<MimicNPC> albMimics = new List<MimicNPC>();
+        public static List<MimicNPC> hibMimics = new List<MimicNPC>();
+        public static List<MimicNPC> midMimics = new List<MimicNPC>();
 
-        public List<SpecLine> SpecLines = new List<SpecLine>();
+        public static Point3D albThidSpawnPoint = new Point3D(37200, 51200, 3950);
+        public static Point3D hibThidSpawnPoint = new Point3D(19820, 19305, 4050);
+        public static Point3D midThidSpawnPoint = new Point3D(53300, 26100, 4270);
+     
+        public static bool Running;
 
-        public MimicSpec()
-        { }
+        private static readonly List<BattleStats> battleStats = new List<BattleStats>();
 
-        protected void Add(string name, uint cap, float ratio)
+        private static ushort thidRegion = 252;
+        private static int maxMimics = 128;
+        private static int totalMimics = 0;
+
+        public static void Start(GamePlayer player)
         {
-            SpecLines.Add(new SpecLine(name, cap, ratio));
+            if (player.CurrentRegion.ID == thidRegion)
+            {
+                Running = true;
+
+                for (int i = 0; i < maxMimics; i++)
+                {
+                    byte level = (byte)Util.Random(20, 24);
+                    eRealm randomRealm = (eRealm)Util.Random(1, 3);
+
+                    if (randomRealm == eRealm.Albion)
+                    {
+                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Albion);
+                        MimicManager.AddMimicToWorld(mimic, albThidSpawnPoint, thidRegion);
+
+                        albMimics.Add(mimic);
+                    }
+                    else if (randomRealm == eRealm.Hibernia)
+                    {
+                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Hibernia);
+                        MimicManager.AddMimicToWorld(mimic, hibThidSpawnPoint, thidRegion);
+
+                        hibMimics.Add(mimic);
+                    }
+                    else if (randomRealm == eRealm.Midgard)
+                    {
+                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Midgard);
+                        MimicManager.AddMimicToWorld(mimic, midThidSpawnPoint, thidRegion);
+
+                        midMimics.Add(mimic);
+                    }  
+                }
+
+                totalMimics = albMimics.Count + hibMimics.Count + midMimics.Count;
+                log.Info("Alb: " + albMimics.Count);
+                log.Info("Hib: " + hibMimics.Count);
+                log.Info("Mid: " + midMimics.Count);
+                log.Info("Total Mimics: " + totalMimics);
+            }
         }
-    }
 
-    public struct SpecLine
-    {
-        public string SpecName;
-        public uint SpecCap;
-        public float levelRatio;
-
-        public SpecLine(string name, uint cap, float ratio)
+        public static void UpdateBattleStats(MimicNPC mimic)
         {
-            SpecName = name;
-            SpecCap = cap;
-            levelRatio = ratio;
+            battleStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak));
         }
 
-        public void SetName(string name)
+        public static void MimicBattlegroundStats(GamePlayer player)
         {
-            SpecName = name;
+            List<MimicNPC> currentMimics = GetMasterList();
+            List<BattleStats> currentStats = new List<BattleStats>();
+
+            foreach (MimicNPC mimic in currentMimics)
+                currentStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak));
+
+            List<BattleStats> masterStatList = new List<BattleStats>();
+            masterStatList.AddRange(currentStats);
+
+            lock (battleStats)
+            {
+                masterStatList.AddRange(battleStats);
+            }
+
+            List<BattleStats> sortedList;
+
+            sortedList = masterStatList.OrderByDescending(obj => obj.TotalKills)
+                                      .ThenByDescending(obj => obj.KillStreak)
+                                      .ToList();
+
+            string message = string.Empty;
+
+            int index = 0;
+            foreach (BattleStats stat in sortedList)
+            {
+                message = string.Format("{0}. Race: {1} - Class: {2} - Kills: {3} - KillStreak: {4}\n",
+                    index++,
+                    stat.Race,
+                    stat.ClassName,
+                    stat.TotalKills,
+                    stat.KillStreak);
+            }
+
+            player.Out.SendMessage(message, PacketHandler.eChatType.CT_System, PacketHandler.eChatLoc.CL_PopupWindow);
+        }
+
+        public static List<MimicNPC> GetMasterList()
+        {
+            List<MimicNPC> masterList = new List<MimicNPC>();
+
+            lock (albMimics)
+            {
+                foreach (MimicNPC mimic in albMimics)
+                {
+                    if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
+                        masterList.Add(mimic);
+                }
+            }
+
+            lock (hibMimics)
+            {
+                foreach (MimicNPC mimic in hibMimics)
+                {
+                    if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
+                        masterList.Add(mimic);
+                }
+            }
+
+            lock (midMimics)
+            {
+                foreach (MimicNPC mimic in midMimics)
+                {
+                    if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
+                        masterList.Add(mimic);
+                }
+            }
+
+            return masterList;
+        }
+
+        private struct BattleStats
+        {
+            public string Race;
+            public string ClassName;
+            public int TotalKills;
+            public int KillStreak;
+
+            public BattleStats(string race, string className, int totalKills, int killStreak)
+            {
+                Race = race;
+                ClassName = className;
+                TotalKills = totalKills;
+                KillStreak = killStreak;
+            }
         }
     }
 
     #endregion
-
     public static class MimicManager
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -109,54 +230,93 @@ namespace DOL.GS.Scripts
 
         #endregion
 
-        public static MimicNPC AddMimicToWorld(eMimicClasses mimicClass, GamePlayer player, byte level, Point3D position, bool preventCombat = true)
+        public static bool AddMimicToWorld(MimicNPC mimic, Point3D position, ushort region)
+        {
+            if (mimic != null)
+            {
+                mimic.X = position.X;
+                mimic.Y = position.Y;
+                mimic.Z = position.Z;
+
+                mimic.CurrentRegionID = region;
+
+                if (mimic.AddToWorld())
+                {
+                    MimicNPCs.Add(mimic);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static MimicNPC GetMimic(eMimicClasses mimicClass, byte level, eRealm realm = 0, bool preventCombat = false)
         {
             if (mimicClass == eMimicClasses.None)
                 return null;
 
             MimicNPC mimic = null;
 
+            if (mimicClass == eMimicClasses.Random && realm != eRealm.None)
+            {
+                int randomIndex = 0;
+
+                if (realm == eRealm.Albion)
+                    randomIndex = Util.Random(12);
+                else if (realm == eRealm.Hibernia)
+                    randomIndex = Util.Random(13, 24);
+                else if (realm == eRealm.Midgard)
+                    randomIndex = Util.Random(25, 36);
+
+                mimicClass = (eMimicClasses)randomIndex;
+            }
+            else if (mimicClass == eMimicClasses.Random && realm == eRealm.None)
+            {
+                int randomIndex = Util.Random(36);
+                mimicClass = (eMimicClasses)randomIndex;
+            }
+
             switch (mimicClass)
             {
-                case eMimicClasses.Armsman: mimic = new MimicArmsman(player, level, position); break;
-                case eMimicClasses.Mercenary: mimic = new MimicMercenary(player, level, position); break;
-                case eMimicClasses.Reaver: mimic = new MimicReaver(player, level, position); break;
-                case eMimicClasses.Paladin: mimic = new MimicPaladin(player, level, position); break;
-                case eMimicClasses.Friar: mimic = new MimicFriar(player, level, position); break;
-                case eMimicClasses.Cleric: mimic = new MimicCleric(player, level, position); break;
-                case eMimicClasses.Minstrel: mimic = new MimicMinstrel(player, level, position); break;
-                case eMimicClasses.Infiltrator: mimic = new MimicInfiltrator(player, level, position); break;
-                //case eMimicClasses.Scout: mimic = new MimicScout(player, level, position); break;
-                case eMimicClasses.Wizard: mimic = new MimicWizard(player, level, position); break;
-                case eMimicClasses.Theurgist: mimic = new MimicTheurgist(player, level, position); break;
-                case eMimicClasses.Sorcerer: mimic = new MimicSorcerer(player, level, position); break;
-                case eMimicClasses.Cabalist: mimic = new MimicCabalist(player, level, position); break;
+                case eMimicClasses.Armsman: mimic = new MimicArmsman(level); break;
+                case eMimicClasses.Cabalist: mimic = new MimicCabalist(level); break;
+                case eMimicClasses.Cleric: mimic = new MimicCleric(level); break;
+                case eMimicClasses.Friar: mimic = new MimicFriar(level); break;
+                case eMimicClasses.Infiltrator: mimic = new MimicInfiltrator(level); break;
+                case eMimicClasses.Mercenary: mimic = new MimicMercenary(level); break;
+                case eMimicClasses.Minstrel: mimic = new MimicMinstrel(level); break;
+                case eMimicClasses.Paladin: mimic = new MimicPaladin(level); break;
+                case eMimicClasses.Reaver: mimic = new MimicReaver(level); break;
+                case eMimicClasses.Scout: mimic = new MimicScout(level); break;
+                case eMimicClasses.Sorcerer: mimic = new MimicSorcerer(level); break;
+                case eMimicClasses.Theurgist: mimic = new MimicTheurgist(level); break;
+                case eMimicClasses.Wizard: mimic = new MimicWizard(level); break;
 
-                case eMimicClasses.Bard: mimic = new MimicBard(player, level, position); break;
-                case eMimicClasses.Blademaster: mimic = new MimicBlademaster(player, level, position); break;
-                case eMimicClasses.Champion: mimic = new MimicChampion(player, level, position); break;
-                case eMimicClasses.Druid: mimic = new MimicDruid(player, level, position); break;
-                case eMimicClasses.Eldritch: mimic = new MimicEldritch(player, level, position); break;
-                case eMimicClasses.Enchanter: mimic = new MimicEnchanter(player, level, position); break;
-                case eMimicClasses.Hero: mimic = new MimicHero(player, level, position); break;
-                case eMimicClasses.Mentalist: mimic = new MimicMentalist(player, level, position); break;
-                case eMimicClasses.Nightshade: mimic = new MimicNightshade(player, level, position); break;
-                //case eMimicClasses.Ranger: mimic = new MimicRanger(player, level, position); break;
-                case eMimicClasses.Valewalker: mimic = new MimicValewalker(player, level, position); break;
-                case eMimicClasses.Warden: mimic = new MimicWarden(player, level, position); break;
+                case eMimicClasses.Bard: mimic = new MimicBard(level); break;
+                case eMimicClasses.Blademaster: mimic = new MimicBlademaster(level); break;
+                case eMimicClasses.Champion: mimic = new MimicChampion(level); break;
+                case eMimicClasses.Druid: mimic = new MimicDruid(level); break;
+                case eMimicClasses.Eldritch: mimic = new MimicEldritch(level); break;
+                case eMimicClasses.Enchanter: mimic = new MimicEnchanter(level); break;
+                case eMimicClasses.Hero: mimic = new MimicHero(level); break;
+                case eMimicClasses.Mentalist: mimic = new MimicMentalist(level); break;
+                case eMimicClasses.Nightshade: mimic = new MimicNightshade(level); break;
+                case eMimicClasses.Ranger: mimic = new MimicRanger(level); break;
+                case eMimicClasses.Valewalker: mimic = new MimicValewalker(level); break;
+                case eMimicClasses.Warden: mimic = new MimicWarden(level); break;
 
-                case eMimicClasses.Berserker: mimic = new MimicBerserker(player, level, position); break;
-                case eMimicClasses.Bonedancer: mimic = new MimicBonedancer(player, level, position); break;
-                case eMimicClasses.Healer: mimic = new MimicHealer(player, level, position); break;
-                //case eMimicClasses.Hunter: mimic = new MimicHunter(player, level, position); break;
-                case eMimicClasses.Runemaster: mimic = new MimicRunemaster(player, level, position); break;
-                case eMimicClasses.Savage: mimic = new MimicSavage(player, level, position); break;
-                case eMimicClasses.Shadowblade: mimic = new MimicShadowblade(player, level, position); break;
-                case eMimicClasses.Shaman: mimic = new MimicShaman(player, level, position); break;
-                case eMimicClasses.Skald: mimic = new MimicSkald(player, level, position); break;
-                case eMimicClasses.Spiritmaster: mimic = new MimicSpiritmaster(player, level, position); break;
-                case eMimicClasses.Thane: mimic = new MimicThane(player, level, position); break;
-                case eMimicClasses.Warrior: mimic = new MimicWarrior(player, level, position); break;
+                case eMimicClasses.Berserker: mimic = new MimicBerserker(level); break;
+                case eMimicClasses.Bonedancer: mimic = new MimicBonedancer(level); break;
+                case eMimicClasses.Healer: mimic = new MimicHealer(level); break;
+                case eMimicClasses.Hunter: mimic = new MimicHunter(level); break;
+                case eMimicClasses.Runemaster: mimic = new MimicRunemaster(level); break;
+                case eMimicClasses.Savage: mimic = new MimicSavage(level); break;
+                case eMimicClasses.Shadowblade: mimic = new MimicShadowblade(level); break;
+                case eMimicClasses.Shaman: mimic = new MimicShaman(level); break;
+                case eMimicClasses.Skald: mimic = new MimicSkald(level); break;
+                case eMimicClasses.Spiritmaster: mimic = new MimicSpiritmaster(level); break;
+                case eMimicClasses.Thane: mimic = new MimicThane(level); break;
+                case eMimicClasses.Warrior: mimic = new MimicWarrior(level); break;
             }
 
             if (mimic != null)
@@ -166,15 +326,13 @@ namespace DOL.GS.Scripts
                     MimicBrain mimicBrain = mimic.Brain as MimicBrain;
 
                     if (mimicBrain != null)
-                        mimicBrain.PreventCombat = true;
+                        mimicBrain.PreventCombat = preventCombat;
                 }
 
-                mimic.AddToWorld();   
-
-                MimicNPCs.Add(mimic);
+                return mimic;
             }
 
-            return mimic;
+            return null;
         }
 
         public static void SetPreventCombat(bool preventCombat)
@@ -228,6 +386,8 @@ namespace DOL.GS.Scripts
         }
     }
 
+    #region Equipment
+
     public static class MimicEquipment
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -237,7 +397,7 @@ namespace DOL.GS.Scripts
             eObjectType objectType = GetObjectType(weapType);
 
             int min = Math.Max(0, living.Level - 6);
-            int max = Math.Min(50, living.Level + 4);
+            int max = Math.Min(51, living.Level + 4);
 
             IList<DbItemTemplate> itemList;
 
@@ -553,7 +713,50 @@ namespace DOL.GS.Scripts
         }
     }
 
-    //public static list<>
+    #endregion
+
+    #region Spec
+
+    public class MimicSpec
+    {
+        public static string SpecName;
+        public string WeaponTypeOne;
+        public string WeaponTypeTwo;
+        public eWeaponDamageType DamageType = 0;
+
+        public bool is2H;
+
+        public List<SpecLine> SpecLines = new List<SpecLine>();
+
+        public MimicSpec()
+        { }
+
+        protected void Add(string name, uint cap, float ratio)
+        {
+            SpecLines.Add(new SpecLine(name, cap, ratio));
+        }
+    }
+
+    public struct SpecLine
+    {
+        public string SpecName;
+        public uint SpecCap;
+        public float levelRatio;
+
+        public SpecLine(string name, uint cap, float ratio)
+        {
+            SpecName = name;
+            SpecCap = cap;
+            levelRatio = ratio;
+        }
+
+        public void SetName(string name)
+        {
+            SpecName = name;
+        }
+    }
+
+    #endregion
 
     public class SetupMimicsEvent
     {
@@ -566,17 +769,59 @@ namespace DOL.GS.Scripts
                 log.Info("MimicNPCs Initialized.");
             else
                 log.Error("MimicNPCs Failed to Initialize.");
-
-            //if (log.IsInfoEnabled)
-            //    if (log.IsInfoEnabled)
-            //        log.Info("MimicNPCS initialized: " + good);
         }
 
-        [ScriptUnloadedEvent]
-        public static void OnScriptUnload(DOLEvent e, object sender, EventArgs args)
+        //[ScriptUnloadedEvent]
+        //public static void OnScriptUnload(DOLEvent e, object sender, EventArgs args)
+        //{
+        //if (gameMimicNPC != null)
+        //    gameMimicNPC.Delete();
+        //}
+    }
+
+    // Just a quick way to get names...
+    public static class MimicNames
+    {
+        const string albMaleNames = "Gareth,Lancelot,Cedric,Tristan,Percival,Gawain,Arthur,Merlin,Galahad,Ector,Uther,Mordred,Bors,Lionel,Agravain,Bedivere,Kay,Lamorak,Erec,Gaheris,Caradoc,Pellinore,Loholt,Leodegrance,Aglovale,Tor,Ywain,Uri,Cador,Elayne,Tristram,Cei,Gavain,Kei,Launcelot,Meleri,Isolde,Dindrane,Ragnelle,Lunete,Morgause,Yseult,Bellicent,Brangaine,Blanchefleur,Enid,Vivian,Laudine,Selivant,Lisanor,Ganelon,Cundrie,Guinevere,Norgal,Vivienne,Clarissant,Ettard,Morgaine,Serene,Serien,Selwod,Siraldus,Corbenic,Gurnemanz,Terreban,Malory,Ettard,Dodinel,Serien,Gurnemanz,Manessen,Herzeleide,Taulat,Zerbino,Serien,Bohort,Ysabele,Karados,Dodinel,Peronell,Serenadine,Corbenic,Dinadan,Caradoc,Segwarides,Lucan,Lamorat,Enide,Parzival,Aelfric,Geraint,Lynette,Rivalin,Blanchefleur,Kaherdin,Gurnemanz,Terreban,Launceor,Clarissant,Herzeleide,Taulat,Zerbino,Serien,Bohort,Ysabele,Karados,Dodinel,Peronell,Serenadine,Corbenic,Dinadan,Caradoc,Segwarides,Lucan,Lamorat,Enide,Parzival,Aelfric,Geraint,Lynette,Rivalin,Blanchefleur,Kaherdin,Gurnemanz,Terreban,Launceor,Clarissant,Patrise,Navarre,Taulat,Iseut,Guivret,Madouc,Ygraine,Tristran,Perceval,Lanzarote,Lamorat,Ysolt,Evaine,Guenever,Elisena,Rowena,Deirdre,Maelis,Clarissant,Kaherdin,Ector,Palamedes,Yseult,Iseult,Tristan,Palomides,Brangaine,Elaine,Nimue,Laudine,Herlews,Tristram,Alundyne,Blasine,Dinas";
+        const string albFemaleNames = "Guinevere,Isolde,Morgana,Elaine,Vivienne,Nimue,Lynette,Rhiannon,Enid,Iseult,Bellicent,Brangaine,Blanchefleur,Laudine,Selivant,Lisanor,Elidor,Brisen,Linet,Serene,Serien,Selwod,Ysabele,Karados,Peronell,Serenadine,Dinadan,Clarissant,Igraine,Aelfric,Lynette,Herzeleide,Taulat,Zerbino,Iseut,Guivret,Madouc,Ygraine,Elisena,Rowena,Deirdre,Maelis,Elaine,Nimue,Herlews,Alundyne,Blasine,Dinas,Evalach,Rohais,Soredamors,Orguelleuse,Egletine,Fenice,Amide,Lionesse,Eliduc,Silvayne,Amadas,Amadis,Iaonice,Emerause,Ysabeau,Idonia,Alardin,Lessele,Evelake,Herzeleide,Carahes,Elyabel,Igrayne,Laudine,Guenloie,Isolt,Urgan,Yglais,Nimiane,Arabele,Amabel,Clarissant,Patrise,Navarre,Iseut,Guivret,Madouc,Ygraine,Elisena,Rowena,Deirdre,Maelis,Elaine,Nimue,Herlews,Alundyne,Blasine,Dinas,Evalach,Rohais,Soredamors,Orguelleuse,Egletine,Fenice,Amide,Lionesse,Eliduc,Silvayne,Amadas,Amadis,Iaonice,Emerause,Ysabeau,Idonia,Alardin,Lessele,Evelake,Herzeleide,Carahes,Elyabel,Igrayne,Laudine,Guenloie,Isolt,Urgan,Yglais,Nimiane,Arabele,Amabel";
+
+        const string hibMaleNames = "Ailill,Bran,Cairbre,Daithi,Eoghan,Faolan,Gorm,Iollan,Lughaidh,Manannan,Niall,Oisin,Pádraig,Rónán,Séadna,Tadhg,Ultán,Alastar,Bairre,Caoilte,Dáire,Énna,Fiachra,Gairm,Imleach,Jarlath,Kian,Laoiseach,Malachy,Naoise,Odhrán,Páidín,Roibéard,Seamus,Turlough,Uilleag,Alastriona,Bairrfhionn,Caoimhe,Dymphna,Éabha,Fionnuala,Gráinne,Isolt,Laoise,Máire,Niamh,Oonagh,Pádraigín,Róisín,Saoirse,Teagan,Úna,Aoife,Bríd,Caitríona,Deirdre,Éibhlin,Fia,Gormlaith,Iseult,Jennifer,Kerstin,Léan,Máighréad,Nóirín,Órlaith,Plurabelle,Ríoghnach,Siobhán,Treasa,Úrsula,Aodh,Baird,Caoimhín,Dáire,Éamon,Fearghas,Gartlach,Íomhar,József,Lochlainn,Mánus,Naois,Óisin,Páidín,Roibeárd,Seaán,Tomás,Uilliam,Ailbhe,Bairrionn,Caoilinn,Dairine,Eabhnat,Fearchara,Gormfhlaith,Ite,Juliana,Kaitlín,Laochlann,Máirtín,Nollaig,Órnait,Pála,Roise,Seaghdha,Tomaltach,Uinseann,Ailbín,Bairrionn,Caoimhín,Dairine,Eabhnat,Fearchara,Gormfhlaith,Ite,Juliana,Kaitlín,Laochlann,Máirtín,Nollaig,Órnait,Pála,Roise,Seaghdha,Tomaltach,Uinseann";
+        const string hibFemaleNames = "Aibhlinn,Brighid,Caoilfhionn,Deirdre,Éabha,Fionnuala,Gráinne,Iseult,Jennifer,Kerstin,Léan,Máire,Niamh,Oonagh,Pádraigín,Róisín,Saoirse,Teagan,Úna,Aoife,Aisling,Bláthnat,Clíodhna,Dymphna,Éidín,Fíneachán,Gormfhlaith,Íomhar,Juliana,Kaitlín,Laoise,Máighréad,Nóirín,Órlaith,Plurabelle,Ríoghnach,Siobhán,Treasa,Úrsula,Ailbhe,Bairrfhionn,Caoilinn,Dairine,Éabhnat,Fearchara,Gormlaith,Ite,Laochlann,Máirtín,Nollaig,Órnait,Pála,Roise,Seaghdha,Tomaltach,Uinseann,Ailbín,Ailis,Bláth,Dairín,Éadaoin,Fionn,Grá,Iseabal,Jacinta,Káit,Laoiseach,Máire,Nuala,Órfhlaith,Póilín,Saibh,Téadgh";
+
+        const string midMaleNames = "Agnar,Bjorn,Dagur,Eirik,Fjolnir,Geir,Haldor,Ivar,Jarl,Kjartan,Leif,Magnus,Njall,Orvar,Ragnald,Sigbjorn,Thrain,Ulf,Vifil,Arni,Bardi,Dain,Einar,Faldan,Grettir,Hogni,Ingvar,Jokul,Koll,Leiknir,Mord,Nikul,Ornolf,Ragnvald,Sigmund,Thorfinn,Ulfar,Vali,Yngvar,Asgeir,Bolli,Darri,Egill,Flosi,Gisli,Hjortur,Ingolf,Jokull,Kolbeinn,Leikur,Mordur,Nils,Orri,Ragnaldur,Sigurdur,Thormundur,Ulfur,Valur,Yngvi,Arnstein,Bardur,David,Egill,Flosi,Gisli,Hjortur,Ingolf,Jokull,Kolbeinn,Leikur,Mordur,Nils,Orri,Ragnaldur,Sigurdur,Thormundur,Ulfur,Valur,Yngvi,Arnstein,Bardur,David,Eik,Fridgeir,Grimur,Hafthor,Ivar,Jorundur,Kari,Ljotur,Mord,Nokkvi,Oddur,Rafn,Steinar,Thorir,Valgard,Yngve,Askur,Baldur,Dagr,Eirikur,Fridleif";
+        const string midFemaleNames = "Aesa,Bjorg,Dalla,Edda,Fjola,Gerd,Halla,Inga,Jora,Kari,Lina,Marna,Njola,Orna,Ragna,Sif,Thora,Ulfhild,Vika,Alva,Bodil,Dagny,Eira,Frida,Gisla,Hildur,Ingibjorg,Jofrid,Kolfinna,Leidr,Mina,Olina,Ragnheid,Sigrid,Thordis,Una,Yrsa,Asgerd,Bergthora,Eilif,Flosa,Gudrid,Hjordis,Ingimund,Jolninna,Lidgerd,Mjoll,Oddny,Ranveig,Sigrun,Thorhalla,Valdis,Alfhild,Bardis,Davida,Eilika,Fridleif,Gudrun,Hjortur,Jokulina,Kolfinna,Leiknir,Mordur,Njall,Orvar,Ragnald,Sigbjorn,Thrain,Ulf,Vifil,Arnstein,Bardur,David,Egill,Fridgeir,Grimur,Hafthor,Ivar,Jorundur,Kari,Ljotur,Mord,Nokkvi,Oddur,Rafn,Steinar,Thorir,Valgard,Yngve,Askur,Baldur,Dagr,Eirikur,Fridleif,Grimur,Halfdan,Ivarr,Kjell,Ljung,Nikul,Ornolf,Ragnvald,Sigurdur,Thormundur,Ulfur,Valur,Yngvi";
+
+        public static string GetName(eGender gender, eRealm realm)
         {
-            //if (gameMimicNPC != null)
-            //    gameMimicNPC.Delete();
+            string[] names = new string[0];
+
+            switch (realm)
+            {
+                case eRealm.Albion:
+                    if (gender == eGender.Male)
+                        names = albMaleNames.Split(',');
+                    else
+                        names = albFemaleNames.Split(',');
+                break;
+
+                case eRealm.Hibernia:
+                    if (gender == eGender.Male)
+                        names = hibMaleNames.Split(',');
+                    else
+                        names= hibFemaleNames.Split(",");
+                break;
+
+                case eRealm.Midgard:
+                if (gender == eGender.Male)
+                    names = midMaleNames.Split(',');
+                else
+                    names = midFemaleNames.Split(",");
+                break;
+            }
+
+            int randomIndex = Util.Random(names.Length - 1);
+
+            return names[randomIndex];
         }
     }
 }

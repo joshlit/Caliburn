@@ -8,16 +8,19 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicHunter(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassHunter(), level, position)
+        public MimicHunter(byte level) : base(new ClassHunter(), level)
         {
             MimicSpec = new HunterSpec();
 
             DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
             MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow);
-            MimicEquipment.SetArmor(this, eObjectType.Studded);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
             MimicEquipment.SetShield(this, 1);
+
+            if (MimicSpec.WeaponTypeOne == "Sword")
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
+                    
+            MimicEquipment.SetArmor(this, eObjectType.Studded);        
             MimicEquipment.SetJewelry(this);
 
             //foreach (InventoryItem item in Inventory.EquippedItems)
@@ -65,7 +68,7 @@ namespace DOL.GS.Scripts
                 case 0:
                 case 1:
                 Add(WeaponTypeOne, 39, 0.8f);
-                Add("Archery", 35, 0.9f);
+                Add("Composite Bow", 35, 0.9f);
                 Add("Beastcraft", 40, 0.6f);
                 Add("Stealth", 38, 0.3f);
                 break;
@@ -73,7 +76,7 @@ namespace DOL.GS.Scripts
                 case 2:
                 case 3:
                 Add(WeaponTypeOne, 39, 0.8f);
-                Add("Archery", 45, 0.9f);
+                Add("Composite Bow", 45, 0.9f);
                 Add("Beastcraft", 32, 0.6f);
                 Add("Stealth", 38, 0.3f);
                 break;

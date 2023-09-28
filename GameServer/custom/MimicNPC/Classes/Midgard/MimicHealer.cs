@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicHealer(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassHealer(), level, position)
+		public MimicHealer(byte level) : base(new ClassHealer(), level)
 		{
 			MimicSpec = MimicManager.Random(this);
 

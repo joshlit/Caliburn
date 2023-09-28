@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public MimicChampion(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassChampion(), level, position)
+        public MimicChampion(byte level) : base(new ClassChampion(), level)
         {
             MimicSpec = new ChampionSpec();
 

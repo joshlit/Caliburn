@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicCleric(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassCleric(), level, position)
+		public MimicCleric(byte level) : base(new ClassCleric(), level)
 		{
 			MimicSpec = new ClericSpec();
 

@@ -14,7 +14,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicSavage(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassSavage(), level, position)
+		public MimicSavage(byte level) : base(new ClassSavage(), level)
 		{
             MimicSpec = new SavageSpec();
 

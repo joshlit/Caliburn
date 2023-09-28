@@ -144,7 +144,7 @@ namespace DOL.AI.Brain
                 _brain.PvPMode = true;
                 _brain.Defend = true;
 
-                _brain.Body.RoamingRange = 3600;
+                _brain.Body.RoamingRange = 10000;
 
                 _brain.CheckDefensiveAbilities();
                 _brain.Body.SortSpells();
@@ -213,6 +213,8 @@ namespace DOL.AI.Brain
                 _brain.Body.StopAttack();
 
             _brain.Body.TargetObject = null;
+
+            _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
             base.Exit();
         }
 
@@ -222,38 +224,33 @@ namespace DOL.AI.Brain
             {
                 if (!_brain.Body.IsMezzed && !_brain.Body.IsStunned)
                 {
-                    if (_brain.PvPMode)
+                    if (_brain.Roam)
                     {
-                        if (_brain.Roam)
+                        if (_brain.Body.Group != null)
                         {
-                            if (_brain.Body.Group != null)
-                            {
-                                if (_brain.Body.Group.LivingLeader == _brain.Body)
-                                    _brain.FSM.SetCurrentState(eFSMStateType.ROAMING);
-                                else
-                                    _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
-                            }
-                            else
+                            if (_brain.Body.Group.LivingLeader == _brain.Body)
                                 _brain.FSM.SetCurrentState(eFSMStateType.ROAMING);
-                        }
-                        else if (_brain.Defend)
-                        {
-                            if (_brain.Body.Group != null)
-                            {
-                                if (_brain.Body.Group.LivingLeader == _brain.Body)
-                                    _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
-                                else
-                                     _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
-                            }
                             else
-                                _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+                                _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
                         }
+                        else
+                            _brain.FSM.SetCurrentState(eFSMStateType.ROAMING);
                     }
-                    else
-                        _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
-
-                    return;
+                    else if (_brain.Defend)
+                    {
+                        if (_brain.Body.Group != null)
+                        {
+                            if (_brain.Body.Group.LivingLeader == _brain.Body)
+                                _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+                            else
+                                _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                        }
+                        else
+                            _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+                    }
                 }
+
+                return;
             }
 
             if (_brain.Body.Flags.HasFlag(GameNPC.eFlags.STEALTH))
@@ -267,11 +264,11 @@ namespace DOL.AI.Brain
 
     public class MimicState_ROAMING : MimicState
     {
-        private const int ROAM_COOLDOWN = 45 * 1000;
+        private const int ROAM_COOLDOWN = 25 * 1000;
         private long _lastRoamTick = 0;
 
         private const int ROAM_CHANCE_DEFEND = 20;
-        private const int ROAM_CHANCE_ROAM = 80;     
+        private const int ROAM_CHANCE_ROAM = 90;     
 
         public MimicState_ROAMING(MimicBrain brain) : base(brain)
         {
@@ -315,14 +312,16 @@ namespace DOL.AI.Brain
                         chance = ROAM_CHANCE_DEFEND;
                 }
 
-                if (_lastRoamTick + ROAM_COOLDOWN <= GameLoop.GameLoopTime && Util.Chance(chance))
+                if (_lastRoamTick + ROAM_COOLDOWN <= GameLoop.GameLoopTime && Util.Chance(chance) && !_brain.Body.IsMoving)
                 {
-                    _brain.Body.Roam(GamePlayer.PLAYER_BASE_SPEED);
+                    _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
+                    _brain.Body.Roam(_brain.Body.MaxSpeedBase);
                     _brain.Body.FireAmbientSentence(GameNPC.eAmbientTrigger.roaming, _brain.Body);
                     _lastRoamTick = GameLoop.GameLoopTime;
-                    _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
                 }
             }
+            //else
+                //log.Info("Body is casting");
 
             _brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive);
             base.Think();

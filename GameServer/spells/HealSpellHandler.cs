@@ -4,6 +4,7 @@ using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Spells
 {
+    using DOL.GS.Scripts;
     using Effects;
 
     /// <summary>
@@ -531,7 +532,7 @@ namespace DOL.GS.Spells
             }
 
             double eff = 1.25;
-            if (Caster is GamePlayer)
+            if (Caster is GamePlayer || Caster is MimicNPC)
             {
                 double lineSpec = Caster.GetModifiedSpecLevel(m_spellLine.Spec);
                 if (lineSpec < 1)

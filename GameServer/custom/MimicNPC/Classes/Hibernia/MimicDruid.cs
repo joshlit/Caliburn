@@ -16,7 +16,7 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicDruid(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassDruid(), level, position)
+		public MimicDruid(byte level) : base(new ClassDruid(), level)
 		{
             MimicSpec = new DruidSpec();
 

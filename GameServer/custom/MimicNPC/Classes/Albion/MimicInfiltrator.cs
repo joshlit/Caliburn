@@ -14,14 +14,14 @@ namespace DOL.GS.Scripts
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicInfiltrator(GameLiving owner, byte level = 0, Point3D position = null) : base(owner, new ClassInfiltrator(), level, position)
+		public MimicInfiltrator(byte level) : base(new ClassInfiltrator(), level)
 		{
 			MimicSpec = new InfiltratorSpec();
 
 			DistributeSkillPoints();
 			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
 			MimicEquipment.SetArmor(this, eObjectType.Leather);
-			MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
+			//MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
 			MimicEquipment.SetJewelry(this);
 
 			//foreach (InventoryItem item in Inventory.EquippedItems)
