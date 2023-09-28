@@ -895,7 +895,7 @@ namespace DOL.GS.Scripts
                 case eRealm.Midgard: Faction = MimicManager.mid; break;
             }
 
-            Name = MimicNames.GetName(Gender, Realm);
+            Name = RaceName; //MimicNames.GetName(Gender, Realm);
         }
 
         private readonly object m_LockObject = new object();

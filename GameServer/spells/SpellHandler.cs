@@ -1647,24 +1647,6 @@ namespace DOL.GS.Spells
 					
 					m_caster.DisableSkills(toDisable);
 				}
-				else if (m_caster is MimicNPC)
-				{
-                    ICollection<Tuple<Skill, int>> toDisable = new List<Tuple<Skill, int>>();
-
-                    MimicNPC mp_caster = m_caster as MimicNPC;
-                    foreach (var skills in mp_caster.GetAllUsableSkills())
-                        if (skills.Item1 is Spell &&
-                            (((Spell)skills.Item1).ID == m_spell.ID || (((Spell)skills.Item1).SharedTimerGroup != 0 && (((Spell)skills.Item1).SharedTimerGroup == m_spell.SharedTimerGroup))))
-                            toDisable.Add(new Tuple<Skill, int>((Spell)skills.Item1, m_spell.RecastDelay));
-
-                    foreach (var sl in mp_caster.GetAllUsableListSpells())
-                        foreach (var sp in sl.Item2)
-                            if (sp is Spell &&
-                                (((Spell)sp).ID == m_spell.ID || (((Spell)sp).SharedTimerGroup != 0 && (((Spell)sp).SharedTimerGroup == m_spell.SharedTimerGroup))))
-                                toDisable.Add(new Tuple<Skill, int>((Spell)sp, m_spell.RecastDelay));
-
-                    m_caster.DisableSkills(toDisable);
-                }
 				else if (m_caster is GameNPC)
 					m_caster.DisableSkill(m_spell, m_spell.RecastDelay);
 			}

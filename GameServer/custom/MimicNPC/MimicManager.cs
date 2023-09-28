@@ -41,7 +41,7 @@ namespace DOL.GS.Scripts
         private static readonly List<BattleStats> battleStats = new List<BattleStats>();
 
         private static ushort thidRegion = 252;
-        private static int maxMimics = 128;
+        private static int maxMimics = 256;
         private static int totalMimics = 0;
 
         public static void Start(GamePlayer player)
@@ -83,6 +83,8 @@ namespace DOL.GS.Scripts
                 log.Info("Hib: " + hibMimics.Count);
                 log.Info("Mid: " + midMimics.Count);
                 log.Info("Total Mimics: " + totalMimics);
+
+
             }
         }
 
@@ -115,15 +117,13 @@ namespace DOL.GS.Scripts
 
             string message = string.Empty;
 
-            int index = 0;
-            foreach (BattleStats stat in sortedList)
+            for (int i = 0; i < 25; i++)
             {
-                message = string.Format("{0}. Race: {1} - Class: {2} - Kills: {3} - KillStreak: {4}\n",
-                    index++,
-                    stat.Race,
-                    stat.ClassName,
-                    stat.TotalKills,
-                    stat.KillStreak);
+                message += string.Format("{0}. Race: {1} - Class: {2} - Kills: {3} - KillStreak: {4}\n",
+                    sortedList[i].Race,
+                    sortedList[i].ClassName,
+                    sortedList[i].TotalKills,
+                    sortedList[i].KillStreak);
             }
 
             player.Out.SendMessage(message, PacketHandler.eChatType.CT_System, PacketHandler.eChatLoc.CL_PopupWindow);

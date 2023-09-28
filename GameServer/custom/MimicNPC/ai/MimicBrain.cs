@@ -1081,16 +1081,18 @@ namespace DOL.AI.Brain
                 case eSpellType.SummonMinion:
                 case eSpellType.SummonUnderhill:
                 case eSpellType.SummonDruidPet:
-                case eSpellType.SummonCommander:             
+                case eSpellType.SummonCommander:
                 case eSpellType.SummonSimulacrum:
                 case eSpellType.SummonSpiritFighter:
                 if (Body.ControlledBrain != null)
                     break;
- 
+
                 if (Body.ControlledNpcList == null)
-                    Body.InitControlledBrainArray(1);
+                    Body.SetControlledBrain(Body.ControlledBrain);
                 else
                 {
+                    //Let's check to see if the list is full - if it is, we can't cast another minion.
+                    //If it isn't, let them cast.
                     IControlledBrain[] icb = Body.ControlledNpcList;
                     int numberofpets = 0;
 
@@ -1108,32 +1110,36 @@ namespace DOL.AI.Brain
                 break;
 
                 case eSpellType.PetSpell:
+                    break;
+
+                case eSpellType.Pet:
+                break;
+                //TODO: Figure out why pet classes can't buff their pets.
+                if (Body.ControlledBrain != null)
                 {
-                    break;
-                    if (Body.ControlledBrain != null)
+                    if (Body.ControlledBrain.Body != null)
                     {
-                        if (Body.ControlledBrain.Body != null)
-                        {
-                            if (spell.Target == eSpellTarget.PET && !LivingHasEffect(Body.ControlledBrain.Body, spell))
-                                Body.TargetObject = Body.ControlledBrain.Body;
-                        }
+                        if (spell.Target == eSpellTarget.PET && !LivingHasEffect(Body.ControlledBrain.Body, spell))
+                            Body.TargetObject = Body.ControlledBrain.Body;
                     }
-                    break;
                 }
-                
+                break;
+
                 #endregion
 
                 #region Pulse
 
+                //TODO: Figure out speed spells.
                 case eSpellType.SpeedEnhancement:
-                if (!Body.InCombat && Roam && !LivingHasEffect(Body, spell))
-                    Body.TargetObject = Body;
+                //if (!Body.InCombat && Roam && !LivingHasEffect(Body, spell))
+                //    Body.TargetObject = Body;
                 break;
 
                 #endregion
 
                 #region Buffs
 
+                case eSpellType.AblativeArmor:
                 case eSpellType.AcuityBuff:
                 case eSpellType.AFHitsBuff:
                 case eSpellType.AllMagicResistBuff:
@@ -1182,7 +1188,11 @@ namespace DOL.AI.Brain
                 case eSpellType.DamageShield:
                 case eSpellType.Bladeturn:
                 {
-                    string target = (spell.Target.ToString()).ToUpper();
+                    if (spell.Target == eSpellTarget.PET)
+                        break;
+
+                    if (spell.NeedInstrument)
+                        break;
 
                     // Buff self
                     if (!LivingHasEffect(Body, spell))
@@ -1191,9 +1201,9 @@ namespace DOL.AI.Brain
                         break;
                     }
 
-                    if (target is "REALM" or "GROUP")
+                    if (Body.Group != null)
                     {
-                        if (Body.Group != null)
+                        if (spell.Target == eSpellTarget.REALM)
                         {
                             foreach (GameLiving groupMember in Body.Group.GetMembersInTheGroup())
                             {
@@ -1202,12 +1212,15 @@ namespace DOL.AI.Brain
                                     if (!LivingHasEffect(groupMember, spell) && Body.IsWithinRadius(groupMember, spell.Range))
                                     {
                                         Body.TargetObject = groupMember;
-                                        break;
                                     }
                                 }
                             }
                         }
-                    }
+                        else if (spell.Target == eSpellTarget.GROUP)
+                        {
+                            Body.TargetObject = Body;
+                        }
+                    }                    
                 }
                 break;
 
@@ -1233,7 +1246,7 @@ namespace DOL.AI.Brain
                         {
                             if (groupMember.IsDiseased && Body.IsWithinRadius(groupMember, spell.Range))
                             {
-                                Body.TargetObject =groupMember;
+                                Body.TargetObject = groupMember;
                                 break;
                             }
                         }
@@ -1321,7 +1334,7 @@ namespace DOL.AI.Brain
                 //underhill ally heals at half the normal threshold 'will heal seriously injured groupmates'
                 int healThreshold = this.Body.Name.Contains("underhill") ? DOL.GS.ServerProperties.Properties.NPC_HEAL_THRESHOLD / 2 : DOL.GS.ServerProperties.Properties.NPC_HEAL_THRESHOLD;
 
-                
+
                 if (spellTarget == "SELF")
                 {
                     if (bodyPercent < healThreshold && !LivingHasEffect(Body, spell))
@@ -1404,7 +1417,10 @@ namespace DOL.AI.Brain
                 break;
 
                 case eSpellType.LifeTransfer:
-                break;;
+                break;
+
+                case eSpellType.PetConversion:
+                break;
 
                 default:
                 log.Warn($"CheckDefensiveSpells() encountered an unknown spell type [{spell.SpellType}] for {Body?.Name}");
@@ -1412,7 +1428,10 @@ namespace DOL.AI.Brain
             }
 
             if (Body?.TargetObject != null)
+            {
+                //log.Info("Tried to cast " + spell.Name + spell.SpellType.ToString());
                 casted = Body.CastSpell(spell, m_mobSpellLine, false);
+            }
 
             return casted;
         }
