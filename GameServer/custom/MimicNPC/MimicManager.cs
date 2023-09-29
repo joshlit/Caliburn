@@ -96,7 +96,7 @@ namespace DOL.GS.Scripts
             List<MimicNPC> currentMimics = GetMasterList();
             List<BattleStats> currentStats = new List<BattleStats>();
 
-            if (currentMimics.Count > 0)
+            if (currentMimics.Any())
             {
                 foreach (MimicNPC mimic in currentMimics)
                     currentStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak, false));
@@ -409,7 +409,7 @@ namespace DOL.GS.Scripts
         {
             eObjectType objectType = GetObjectType(weapType);
 
-            int min = Math.Max(0, living.Level - 6);
+            int min = Math.Max(1, living.Level - 6);
             int max = Math.Min(51, living.Level + 4);
 
             IList<DbItemTemplate> itemList;

@@ -13,25 +13,6 @@ using System.Threading.Tasks;
 
 namespace DOL.GS.Scripts
 {
-    //[CmdAttribute(
-    //    "&pull",
-    //    ePrivLevel.Admin,
-    //    "/mpull - Pull a player to you.")]
-    //public class PullCommandHandler : AbstractCommandHandler, ICommandHandler
-    //{
-    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-    //    public void OnCommand(GameClient client, string[] args)
-    //    {
-    //        foreach (GameClient playerClient in WorldMgr.GetAllPlayingClients())
-    //        {
-    //            GamePlayer player = client.Player;
-
-    //            playerClient.Player.MoveTo(player.CurrentRegionID, player.X, player.Y, player.Z, player.Heading);
-    //        }
-    //    }
-    //}
-
     [CmdAttribute(
     "&mimic",
     ePrivLevel.Player,
@@ -44,7 +25,7 @@ namespace DOL.GS.Scripts
         {
             if (args.Length > 0)
             {
-                byte level = 1;
+                byte level;
 
                 if (args.Length > 2)
                 {
@@ -58,19 +39,20 @@ namespace DOL.GS.Scripts
                     level = client.Player.Level;
                 }
 
-                Point3D position = null;
+                Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
 
                 if (client.Player.GroundTarget != null)
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
-
-                    if (client.Player.GroundTarget.GetDistance(playerPos) < 3000)
+                    
+                    if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
                         position = new Point3D(client.Player.GroundTarget);
                 }
 
                 if (position != null)
                 {
-                    eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), args[1]);
+                    string capitalize = char.ToUpper(args[1][0]) + args[1].Substring(1);
+                    eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), capitalize);
 
                     MimicNPC mimic = MimicManager.GetMimic(mclass, level);
                     MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
@@ -92,7 +74,6 @@ namespace DOL.GS.Scripts
             if (args.Length >= 2)
             {
                 args[1] = args[1].ToLower();
-                log.Info("args[1]: " + args[1]);
 
                 byte groupSize = 8;
                 if (args.Length >= 3)
@@ -114,20 +95,20 @@ namespace DOL.GS.Scripts
                 else
                     level = client.Player.Level;
 
-                Point3D position = null;
+                Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
 
                 if (client.Player.GroundTarget != null)
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
 
-                    if (client.Player.GroundTarget.GetDistance(playerPos) < 3000)
+                    if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
                         position = new Point3D(client.Player.GroundTarget);
                 }
 
                 if (position != null)
                 {
                     List<GameLiving> groupMembers = new List<GameLiving>();
-                    MimicNPC mimic = null;
+                    MimicNPC mimic;
 
                     switch (args[1])
                     {
@@ -155,8 +136,6 @@ namespace DOL.GS.Scripts
                         {
                             for (int i = 0; i < groupSize; i++)
                             {
-                                eMimicClasses mimicClass = (eMimicClasses)Util.Random(12, 22);
-
                                 int randomX = Util.Random(-100, 100);
                                 int randomY = Util.Random(-100, 100);
 
@@ -177,8 +156,6 @@ namespace DOL.GS.Scripts
                         {
                             for (int i = 0; i < groupSize; i++)
                             {
-                                eMimicClasses mimicClass = (eMimicClasses)Util.Random(23, 33);
-
                                 int randomX = Util.Random(-100, 100);
                                 int randomY = Util.Random(-100, 100);
 
@@ -272,31 +249,30 @@ namespace DOL.GS.Scripts
     //    }
     //}
 
-    [CmdAttribute(
-       "&effects",
-       ePrivLevel.Player,
-       "/effects - Get a list of current effects.")]
-    public class EffectsCommandHandler : AbstractCommandHandler, ICommandHandler
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    //[CmdAttribute(
+    //   "&effects",
+    //   ePrivLevel.Player,
+    //   "/effects - Get a list of current effects.")]
+    //public class EffectsCommandHandler : AbstractCommandHandler, ICommandHandler
+    //{
+    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public void OnCommand(GameClient client, string[] args)
-        {
-            //client.Player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
-        }
-    }
+    //    public void OnCommand(GameClient client, string[] args)
+    //    {
+    //        client.Player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+    //    }
+    //}
 
     [CmdAttribute(
       "&mimicbattle",
       ePrivLevel.Player,
-      "/mimicbattle - Call mimics to Thid")]
+      "/mimicbattle - Call mimics to Thid. You must be in Thid atm for the command.")]
     public class MimicBattleCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
-            MimicBattlegrounds.Start(client.Player);
+            if (!MimicBattlegrounds.Running)
+                MimicBattlegrounds.Start(client.Player);
         }
     }
 
@@ -306,14 +282,10 @@ namespace DOL.GS.Scripts
       "/mbstats - Get stats on Thid.")]
     public class MimicBattleStatsCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
             if (MimicBattlegrounds.Running)
-            {
                 MimicBattlegrounds.MimicBattlegroundStats(client.Player);
-            }
         }
     }
 }

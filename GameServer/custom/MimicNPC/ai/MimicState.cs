@@ -142,7 +142,8 @@ namespace DOL.AI.Brain
                 _brain.AggroRange = 3600;
 
                 _brain.PvPMode = true;
-                _brain.Defend = true;
+                _brain.Roam = true;
+                _brain.Defend = false;
 
                 _brain.Body.RoamingRange = 15000;
 

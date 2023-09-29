@@ -38,8 +38,6 @@ namespace DOL.GS.Scripts
 {
     public class MimicNPC : GameNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicSpec MimicSpec = new MimicSpec();
         public int Kills;
 
