@@ -51,7 +51,7 @@ namespace DOL.GS
             ActiveWeaponSlot = owner.ActiveWeaponSlot;
         }
 
-        public void Execute()
+        public virtual void Execute()
         {
             AttackFinished = true;
 

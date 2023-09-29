@@ -18,6 +18,7 @@
  */
 
 using DOL.GS.Effects;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -81,8 +82,10 @@ namespace DOL.GS.Spells
 			// duration at the edges. This does NOT change the way area effect spells
 			// work against monsters, only realm enemies (i.e. enemy players and enemy realm guards).
 			double duration = base.CalculateEffectDuration(target, effectiveness);
-			if (!(target is GamePlayer) && !(target is Keeps.GameKeepGuard))
+
+			if (!(target is GamePlayer || target is MimicNPC) && !(target is Keeps.GameKeepGuard))
 				return (int)duration;
+
 			duration *= (0.5 + 0.5*effectiveness);
 			duration -= duration * target.GetResistBase(Spell.DamageType) * 0.01;
 
@@ -90,7 +93,9 @@ namespace DOL.GS.Spells
 				duration = 1;
 			else if (duration > (Spell.Duration * 4))
 				duration = (Spell.Duration * 4);
-			return (int)duration;
+
+			return
+				(int)duration;
 		}
 
 		/// <summary>

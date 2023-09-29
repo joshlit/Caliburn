@@ -1,5 +1,6 @@
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -68,6 +69,8 @@ namespace DOL.GS.Spells
                 // This is normally set in 'AttackComponent.CalculateEnemyAttackResult', but we don't call it.
                 if (ad.Target is GamePlayer playerTarget)
                     ad.ArmorHitLocation = playerTarget.CalculateArmorHitLocation(ad);
+                else if (ad.Target is MimicNPC mimicTarget)
+                    ad.ArmorHitLocation = mimicTarget.CalculateArmorHitLocation(ad);
 
                 // We need a fake weapon skill for the target's armor to have something to be compared with.
                 // Since 'damage' is already modified by intelligence, power relics, spell variance, and everything else; we can use a constant only modified by the caster's level.
@@ -92,7 +95,7 @@ namespace DOL.GS.Spells
 
             int hitChance = base.CalculateToHitChance(target);
 
-            if (Caster is GamePlayer && target is GamePlayer && target.InCombat)
+            if (Caster is GamePlayer || Caster is MimicNPC && target is GamePlayer || target is MimicNPC && target.InCombat)
             {
                 // 200 unit range restriction added in 1.84.
                 // Kept for OpenDAoC to make bolts a little friendlier.

@@ -561,7 +561,7 @@ namespace DOL.AI.Brain
             GameLiving realTarget = target;
 
             if (realTarget is GameNPC npcTarget && npcTarget.Brain is IControlledBrain npcTargetBrain)
-                realTarget = npcTargetBrain.GetPlayerOwner();
+                realTarget = npcTargetBrain.GetLivingOwner();
 
             // Only attack if green+ to target
             if (realTarget.IsObjectGreyCon(Body))
