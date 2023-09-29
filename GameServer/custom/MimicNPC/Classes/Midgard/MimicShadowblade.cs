@@ -13,35 +13,20 @@ namespace DOL.GS.Scripts
             MimicSpec = new ShadowbladeSpec();
 
             DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, false, 0, eHand.leftHand);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
-            //SetRangedWeapon(eObjectType.CompositeBow);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.leftHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
+            //MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown);
             MimicEquipment.SetArmor(this, eObjectType.Leather);
             MimicEquipment.SetJewelry(this);
-
-            //foreach (InventoryItem item in Inventory.EquippedItems)
-            //{
-            //	if (item == null)
-            //		return;
-
-            //	if (item.Quality < 90)
-            //	{
-            //		item.Quality = Util.Random(85, 100);
-            //	}
-
-            //	log.Debug("Name: " + item.Name);
-            //	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-            //	log.Debug("DPS_AF: " + item.DPS_AF);
-            //	log.Debug("SPD_ABS: " + item.SPD_ABS);
-            //}
-
+            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
 
             if (GetSpecializationByName("Left Axe").Level == 1)
                 SwitchWeapon(eActiveWeaponSlot.TwoHanded);
 
             RefreshSpecDependantSkills(false);
+            IsCloakHoodUp = Util.RandomBool();
         }
     }
 

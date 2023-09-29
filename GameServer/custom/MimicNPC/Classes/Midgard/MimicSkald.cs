@@ -19,34 +19,17 @@ namespace DOL.GS.Scripts
 			MimicSpec = new SkaldSpec();
 
 			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
 			MimicEquipment.SetShield(this, 1);
-			//SetRangedWeapon(eObjectType.Fired);
 			MimicEquipment.SetArmor(this, eObjectType.Chain);
 			MimicEquipment.SetJewelry(this);
-
-			//foreach (InventoryItem item in Inventory.EquippedItems)
-			//{
-			//	if (item == null)
-			//		return;
-
-			//	if (item.Quality < 90)
-			//	{
-			//		item.Quality = Util.Random(85, 100);
-			//	}
-
-			//	log.Debug("Name: " + item.Name);
-			//	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-			//	log.Debug("DPS_AF: " + item.DPS_AF);
-			//	log.Debug("SPD_ABS: " + item.SPD_ABS);
-			//}
-
-			SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-
+            RefreshItemBonuses();
+            SwitchWeapon(eActiveWeaponSlot.TwoHanded);
 			RefreshSpecDependantSkills(false);
 			SetSpells();
-		}
+            IsCloakHoodUp = Util.RandomBool();
+        }
 	}
 
 	public class SkaldSpec : MimicSpec

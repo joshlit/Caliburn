@@ -250,27 +250,27 @@ namespace DOL.GS.Scripts
         }
     }
 
-    [CmdAttribute(
-       "&equip",
-       ePrivLevel.Player,
-       "/equip - Get a set of armor and weapons. WeaponSpec, ArmorType")]
-    public class EquipCommandHandler : AbstractCommandHandler, ICommandHandler
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    //[CmdAttribute(
+    //   "&equip",
+    //   ePrivLevel.Player,
+    //   "/equip - Get a set of armor and weapons. WeaponSpec, ArmorType")]
+    //public class EquipCommandHandler : AbstractCommandHandler, ICommandHandler
+    //{
+    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public void OnCommand(GameClient client, string[] args)
-        {
-            if (args.Length > 0)
-            {
-                string weapon = args[1];
-                string armor = args[2];
+    //    public void OnCommand(GameClient client, string[] args)
+    //    {
+    //        if (args.Length > 0)
+    //        {
+    //            string weapon = args[1];
+    //            string armor = args[2];
 
-                MimicEquipment.SetMeleeWeapon(client.Player, weapon);
-                MimicEquipment.SetArmor(client.Player, MimicEquipment.GetObjectType(armor));
-                MimicEquipment.SetJewelry(client.Player);
-            }
-        }
-    }
+    //            MimicEquipment.SetMeleeWeapon(client.Player, weapon);
+    //            MimicEquipment.SetArmor(client.Player, MimicEquipment.GetObjectType(armor));
+    //            MimicEquipment.SetJewelry(client.Player);
+    //        }
+    //    }
+    //}
 
     [CmdAttribute(
        "&effects",

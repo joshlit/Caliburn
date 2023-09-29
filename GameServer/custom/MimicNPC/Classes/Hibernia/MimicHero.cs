@@ -1,5 +1,6 @@
 ﻿using DOL.GS.PlayerClass;
 using log4net;
+using System;
 using System.Reflection;
 
 namespace DOL.GS.Scripts
@@ -10,53 +11,31 @@ namespace DOL.GS.Scripts
 
         public MimicHero(byte level) : base(new ClassHero(), level)
         {
-            MimicSpec = MimicManager.Random(this);
+            MimicSpec = new HeroSpec();
+
             DistributeSkillPoints();
-
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
-
-            if (MimicSpec.SpecName == "HybridHero")
-            {
-                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo);
-            }
-
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand);
             MimicEquipment.SetShield(this, 3);
-
-            //SetRangedWeapon(eObjectType.Fired);
-
-            if (Level >= 15)
-                MimicEquipment.SetArmor(this, eObjectType.Scale);
-            else
-                MimicEquipment.SetArmor(this, eObjectType.Reinforced);
-
+            MimicEquipment.SetArmor(this, eObjectType.Scale);
             MimicEquipment.SetJewelry(this);
+            RefreshItemBonuses();
 
-            //foreach (InventoryItem item in Inventory.EquippedItems)
-            //{
-            //	if (item == null)
-            //		return;
+            if (MimicSpec.is2H)
+                SwitchWeapon(eActiveWeaponSlot.TwoHanded);
+            else
+                SwitchWeapon(eActiveWeaponSlot.Standard);
 
-            //	if (item.Quality < 90)
-            //	{
-            //		item.Quality = Util.Random(85, 100);
-            //	}
-
-            //	log.Debug("Name: " + item.Name);
-            //	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-            //	log.Debug("DPS_AF: " + item.DPS_AF);
-            //	log.Debug("SPD_ABS: " + item.SPD_ABS);
-            //}
-
-            SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
+            IsCloakHoodUp = Util.RandomBool();
         }
     }
 
-    public class ShieldHero : MimicSpec
+    public class HeroSpec : MimicSpec
     {
-        public ShieldHero()
+        public HeroSpec()
         {
-            SpecName = "ShieldHero";
+            SpecName = "HeroSpec";
             is2H = false;
 
             string weaponType = string.Empty;
@@ -73,67 +52,34 @@ namespace DOL.GS.Scripts
             WeaponTypeOne = weaponType;
             DamageType = 0;
 
-            int randVariance = Util.Random(2);
-
-            switch (randVariance)
-            {
-                case 0:
-                Add(weaponType, 50, 1.0f);
-                Add("Shields", 50, 0.9f);
-                Add("Parry", 28, 0.1f);
-                break;
-
-                case 1:
-                Add(weaponType, 39, 0.9f);
-                Add("Shields", 42, 1.0f);
-                Add("Parry", 50, 0.2f);
-                break;
-
-                case 2:
-                Add(weaponType, 44, 1.0f);
-                Add("Shields", 50, 0.9f);
-                Add("Parry", 37, 0.2f);
-                break;
-            }
-        }
-    }
-
-    public class HybridHero : MimicSpec
-    {
-        public HybridHero()
-        {
-            SpecName = "HybridHero";
-            is2H = true;
-
-            int randBaseWeap = Util.Random(2);
-
-            switch (randBaseWeap)
-            {
-                case 0: WeaponTypeOne = "Blades"; break;
-                case 1: WeaponTypeOne = "Piercing"; break;
-                case 2: WeaponTypeOne = "Blunt"; break;
-            }
-
-            Add(WeaponTypeOne, 39, 0.8f);
-
-            int randVariance = Util.Random(1);
-
-            if (randVariance == 0)
+            if (Util.RandomBool())
                 WeaponTypeTwo = "Celtic Spear";
             else
                 WeaponTypeTwo = "Large Weapons";
 
-            int randVariance2 = Util.Random(1);
+            int randVariance = Util.Random(5);
 
-            switch (randVariance2)
+            switch (randVariance)
             {
                 case 0:
+                Add(WeaponTypeOne, 50, 1.0f);
+                Add("Shields", 50, 0.9f);
+                Add("Parry", 28, 0.1f);
+                break;
+
+                case 2:
+                case 3:
+                is2H = true;
+                Add(WeaponTypeOne, 39, 0.8f);
                 Add(WeaponTypeTwo, 50, 1.0f);
                 Add("Shields", 42, 0.5f);
                 Add("Parry", 6, 0.1f);
                 break;
 
-                case 1:
+                case 4:
+                case 5:
+                is2H = true;
+                Add(WeaponTypeOne, 39, 0.8f);
                 Add(WeaponTypeTwo, 44, 1.0f);
                 Add("Shields", 42, 0.5f);
                 Add("Parry", 24, 0.1f);

@@ -19,31 +19,16 @@ namespace DOL.GS.Scripts
 			MimicSpec = new BlademasterSpec();
 
 			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, true);
-			//SetRangedWeapon(eObjectType.Fired);
-			MimicEquipment.SetArmor(this, eObjectType.Reinforced);
+			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
+            //SetRangedWeapon(this, eObjectType.Fired);
+            MimicEquipment.SetArmor(this, eObjectType.Reinforced);
 			MimicEquipment.SetJewelry(this);
-
-			//foreach (InventoryItem item in Inventory.EquippedItems)
-			//{
-			//	if (item == null)
-			//		return;
-
-			//	if (item.Quality < 90)
-			//	{
-			//		item.Quality = Util.Random(85, 100);
-			//	}
-
-			//	log.Debug("Name: " + item.Name);
-			//	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-			//	log.Debug("DPS_AF: " + item.DPS_AF);
-			//	log.Debug("SPD_ABS: " + item.SPD_ABS);
-			//}
-
-			SwitchWeapon(eActiveWeaponSlot.Standard);
-
+            RefreshItemBonuses();
+            SwitchWeapon(eActiveWeaponSlot.Standard);
 			RefreshSpecDependantSkills(false);
-		}
+            IsCloakHoodUp = Util.RandomBool();
+        }
 	}
 
 	public class BlademasterSpec : MimicSpec
@@ -62,15 +47,24 @@ namespace DOL.GS.Scripts
                 case 2: WeaponTypeOne = "Blunt"; break;
             }
 
-            int randVariance = Util.Random(0);
+            int randVariance = Util.Random(2);
 
 			switch (randVariance)
 			{
 				case 0:
+                case 1:
                 Add(WeaponTypeOne, 50, 0.8f);
                 Add("Celtic Dual", 50, 1.0f);
                 Add("Parry", 28, 0.2f);
 				break;
+
+                case 2:
+                Add(WeaponTypeOne, 39, 0.8f);
+                Add("Celtic Dual", 50, 1.0f);
+                Add("Shields", 42, 0.5f);
+                Add("Parry", 6, 0.1f);
+                break;
+
             }
         }
 	}

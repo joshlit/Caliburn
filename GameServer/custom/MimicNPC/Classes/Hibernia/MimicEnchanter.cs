@@ -19,30 +19,14 @@ namespace DOL.GS.Scripts
             MimicSpec = MimicManager.Random(this);
 
             DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
             MimicEquipment.SetJewelry(this);
-
-            //foreach (InventoryItem item in Inventory.EquippedItems)
-            //{
-            //	if (item == null)
-            //		return;
-
-            //	if (item.Quality < 90)
-            //	{
-            //		item.Quality = Util.Random(90, 100);
-            //	}
-
-            //	log.Debug("Name: " + item.Name);
-            //	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-            //	log.Debug("DPS_AF: " + item.DPS_AF);
-            //	log.Debug("SPD_ABS: " + item.SPD_ABS);
-            //}
-
+            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-
             RefreshSpecDependantSkills(false);
             SetCasterSpells();
+            IsCloakHoodUp = Util.RandomBool();
         }
     }
 

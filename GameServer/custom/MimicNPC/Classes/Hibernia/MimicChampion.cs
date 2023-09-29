@@ -13,29 +13,12 @@ namespace DOL.GS.Scripts
             MimicSpec = new ChampionSpec();
 
             DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand);
+            MimicEquipment.SetShield(this, 2);
             MimicEquipment.SetArmor(this, eObjectType.Scale);
-
-            if (!MimicSpec.is2H)
-                MimicEquipment.SetShield(this, 2);
-
             MimicEquipment.SetJewelry(this);
-
-            //foreach (InventoryItem item in Inventory.EquippedItems)
-            //{
-            //	if (item == null)
-            //		return;
-
-            //	if (item.Quality < 90)
-            //	{
-            //		item.Quality = Util.Random(85, 100);
-            //	}
-
-            //	log.Debug("Name: " + item.Name);
-            //	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-            //	log.Debug("DPS_AF: " + item.DPS_AF);
-            //	log.Debug("SPD_ABS: " + item.SPD_ABS);
-            //}
+            RefreshItemBonuses();
 
             if (MimicSpec.is2H)
                 SwitchWeapon(eActiveWeaponSlot.TwoHanded);
@@ -44,6 +27,7 @@ namespace DOL.GS.Scripts
 
             RefreshSpecDependantSkills(false);
             SetSpells();
+            IsCloakHoodUp = Util.RandomBool();
         }
     }
 
@@ -53,38 +37,42 @@ namespace DOL.GS.Scripts
         {
             SpecName = "ChampionSpec";
 
-            int randVariance = Util.Random(1);
+            int randBaseWeap = Util.Random(2);
+
+            switch (randBaseWeap)
+            {
+                case 0: WeaponTypeOne = "Blades"; break;
+                case 1: WeaponTypeOne = "Piercing"; break;
+                case 2: WeaponTypeOne = "Blunt"; break;
+            }
+
+            WeaponTypeTwo = "Large Weapons";
+
+            int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                {
-                    int randBaseWeap = Util.Random(2);
-
-                    switch (randBaseWeap)
-                    {
-                        case 0: WeaponTypeOne = "Blades"; break;
-                        case 1: WeaponTypeOne = "Piercing"; break;
-                        case 2: WeaponTypeOne = "Blunt"; break;
-                    }
-
-                    Add(WeaponTypeOne, 50, 0.8f);
-                    Add("Valor", 50, 1.0f);
-                    Add("Shields", 42, 0.5f);
-                    Add("Parry", 6, 0.1f);
-                    break;
-                }
+                Add(WeaponTypeOne, 39, 0.8f);
+                Add("Valor", 50, 1.0f);
+                Add("Shields", 42, 0.5f);
+                Add("Parry", 6, 0.1f);
+                break;
 
                 case 1:
-                {
-                    WeaponTypeOne = "Large Weapons";
-                    is2H = true;
+                Add(WeaponTypeOne, 50, 0.8f);
+                Add("Valor", 50, 1.0f);
+                Add("Shields", 28, 0.5f);
+                Add("Parry", 6, 0.1f);
+                break;
 
-                    Add("Valor", 50, 1.0f);
-                    Add(WeaponTypeOne, 50, 0.9f);
-                    Add("Parry", 28, 0.1f);
-                    break;
-                }
+                case 2:
+                case 3:
+                is2H = true;
+                Add(WeaponTypeTwo, 50, 0.9f);
+                Add("Valor", 50, 1.0f);
+                Add("Parry", 28, 0.1f);
+                break;
             }
         }
     }

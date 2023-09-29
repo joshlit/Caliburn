@@ -22,11 +22,11 @@ namespace DOL.AI.Brain
         public override void Exit() { }
     }
 
-    public class MimicState_FOLLOW_LEADER : MimicState
+    public class MimicState_FollowLeader : MimicState
     {
         GameLiving leader;
 
-        public MimicState_FOLLOW_LEADER(MimicBrain brain) : base(brain)
+        public MimicState_FollowLeader(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.FOLLOW_THE_LEADER;
         }
@@ -75,9 +75,9 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_IDLE : MimicState
+    public class MimicState_Idle : MimicState
     {
-        public MimicState_IDLE(MimicBrain brain) : base(brain)
+        public MimicState_Idle(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.IDLE;
         }
@@ -125,11 +125,11 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_WAKING_UP : MimicState
+    public class MimicState_WakingUp : MimicState
     {
         bool init;
 
-        public MimicState_WAKING_UP(MimicBrain brain) : base(brain)
+        public MimicState_WakingUp(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.WAKING_UP;
         }
@@ -144,7 +144,7 @@ namespace DOL.AI.Brain
                 _brain.PvPMode = true;
                 _brain.Defend = true;
 
-                _brain.Body.RoamingRange = 10000;
+                _brain.Body.RoamingRange = 15000;
 
                 _brain.CheckDefensiveAbilities();
                 _brain.Body.SortSpells();
@@ -187,13 +187,13 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_AGGRO : MimicState
+    public class MimicState_Aggro : MimicState
     {
         private const int LEAVE_WHEN_OUT_OF_COMBAT_FOR = 25000;
 
         private long _aggroTime = GameLoop.GameLoopTime; // Used to prevent leaving on the first think tick, due to `InCombatInLast` returning false.
 
-        public MimicState_AGGRO(MimicBrain brain) : base(brain)
+        public MimicState_Aggro(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.AGGRO;
         }
@@ -262,7 +262,7 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_ROAMING : MimicState
+    public class MimicState_Roaming : MimicState
     {
         private const int ROAM_COOLDOWN = 25 * 1000;
         private long _lastRoamTick = 0;
@@ -270,7 +270,7 @@ namespace DOL.AI.Brain
         private const int ROAM_CHANCE_DEFEND = 20;
         private const int ROAM_CHANCE_ROAM = 90;     
 
-        public MimicState_ROAMING(MimicBrain brain) : base(brain)
+        public MimicState_Roaming(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.ROAMING;
         }
@@ -328,9 +328,9 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_RETURN_TO_SPAWN : MimicState
+    public class MimicState_ReturnToSpawn : MimicState
     {
-        public MimicState_RETURN_TO_SPAWN(MimicBrain brain) : base(brain)
+        public MimicState_ReturnToSpawn(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.RETURN_TO_SPAWN;
         }
@@ -380,9 +380,9 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_PATROLLING : MimicState
+    public class MimicState_Patrolling : MimicState
     {
-        public MimicState_PATROLLING(MimicBrain brain) : base(brain)
+        public MimicState_Patrolling(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.PATROLLING;
         }
@@ -417,9 +417,9 @@ namespace DOL.AI.Brain
         }
     }
 
-    public class MimicState_DEAD : MimicState
+    public class MimicState_Dead : MimicState
     {
-        public MimicState_DEAD(MimicBrain brain) : base(brain)
+        public MimicState_Dead(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.DEAD;
         }

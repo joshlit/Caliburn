@@ -19,32 +19,16 @@ namespace DOL.GS.Scripts
 			MimicSpec = new ScoutSpec();
 
 			DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow);
             MimicEquipment.SetShield(this, 1);
             MimicEquipment.SetArmor(this, eObjectType.Studded);
             MimicEquipment.SetJewelry(this);
-
-			//foreach (InventoryItem item in Inventory.EquippedItems)
-			//{
-			//	if (item == null)
-			//		return;
-
-			//	if (item.Quality < 90)
-			//	{
-			//		item.Quality = Util.Random(90, 100);
-			//	}
-
-			//	log.Debug("Name: " + item.Name);
-			//	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-			//	log.Debug("DPS_AF: " + item.DPS_AF);
-			//	log.Debug("SPD_ABS: " + item.SPD_ABS);
-			//}
-
-			SwitchWeapon(eActiveWeaponSlot.Distance);
-
+            RefreshItemBonuses();
+            SwitchWeapon(eActiveWeaponSlot.Distance);
 			RefreshSpecDependantSkills(false);
-		}
+            IsCloakHoodUp = Util.RandomBool();
+        }
 	}
 
     public class ScoutSpec : MimicSpec

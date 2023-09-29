@@ -18,14 +18,16 @@ namespace DOL.GS.Scripts
             MimicSpec = new ReaverSpec();
             
 			DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
-            MimicEquipment.SetArmor(this, eObjectType.Chain);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetShield(this, 3);
-			SwitchWeapon(eActiveWeaponSlot.Standard);
+            MimicEquipment.SetArmor(this, eObjectType.Chain);
+            MimicEquipment.SetJewelry(this);     
+            RefreshItemBonuses();
+            SwitchWeapon(eActiveWeaponSlot.Standard);
 			RefreshSpecDependantSkills(false);
 			SetSpells();
-		}
+            IsCloakHoodUp = Util.RandomBool();
+        }
 	}
 
     public class ReaverSpec : MimicSpec

@@ -19,34 +19,16 @@ namespace DOL.GS.Scripts
 			MimicSpec = new BerserkerSpec();
 
 			DistributeSkillPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, false, 0, eHand.leftHand);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
-
-            //SetRangedWeapon(eObjectType.Fired);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.leftHand);
             MimicEquipment.SetArmor(this, eObjectType.Studded);
 			MimicEquipment.SetJewelry(this);
-
-			//foreach (InventoryItem item in Inventory.EquippedItems)
-			//{
-			//	if (item == null)
-			//		return;
-
-			//	if (item.Quality < 90)
-			//	{
-			//		item.Quality = Util.Random(85, 100);
-			//	}
-
-			//	log.Debug("Name: " + item.Name);
-			//	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-			//	log.Debug("DPS_AF: " + item.DPS_AF);
-			//	log.Debug("SPD_ABS: " + item.SPD_ABS);
-			//}
-
-			SwitchWeapon(eActiveWeaponSlot.Standard);
-
+            RefreshItemBonuses();
+            SwitchWeapon(eActiveWeaponSlot.Standard);
 			RefreshSpecDependantSkills(false);
-		}
+            IsCloakHoodUp = Util.RandomBool();
+        }
 	}
 
 	public class BerserkerSpec : MimicSpec

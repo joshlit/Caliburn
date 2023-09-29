@@ -12,31 +12,13 @@ namespace DOL.GS.Scripts
             MimicSpec = new ArmsmanSpec();
 
             DistributeSkillPoints();
-            
-            if (GetSpecializationByName("Shields").Level > 1)
-                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne);
-
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, false, MimicSpec.DamageType);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand, MimicSpec.DamageType);
             MimicEquipment.SetArmor(this, eObjectType.Plate);
             //SetRangedWeapon(eObjectType.Crossbow);
             MimicEquipment.SetShield(this, 3);
             MimicEquipment.SetJewelry(this);
-
-            //foreach (InventoryItem item in Inventory.EquippedItems)
-            //{
-            //    if (item == null)
-            //        return;
-
-            //    if (item.Quality <= 85)
-            //    {
-            //        item.Quality = Util.Random(85, 100);
-            //    }
-
-            //log.Debug("Name: " + item.Name);
-            //            log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-            //            log.Debug("DPS_AF: " + item.DPS_AF);
-            //log.Debug("SPD_ABS: " + item.SPD_ABS);
-            //}
+            RefreshItemBonuses();
 
             if (MimicSpec.is2H)
                 SwitchWeapon(eActiveWeaponSlot.TwoHanded);
@@ -44,6 +26,7 @@ namespace DOL.GS.Scripts
                 SwitchWeapon(eActiveWeaponSlot.Standard);
 
             RefreshSpecDependantSkills(false);
+            IsCloakHoodUp = Util.RandomBool();
         }
     }
 

@@ -14,35 +14,21 @@ namespace DOL.GS.Scripts
 
             DistributeSkillPoints();
             MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.twoHand);
-            MimicEquipment.SetShield(this, 1);
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
 
             if (MimicSpec.WeaponTypeOne == "Sword")
-                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, false, 0, eHand.oneHand);
-                    
+            {
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+                MimicEquipment.SetShield(this, 1);
+            }
+
             MimicEquipment.SetArmor(this, eObjectType.Studded);        
             MimicEquipment.SetJewelry(this);
-
-            //foreach (InventoryItem item in Inventory.EquippedItems)
-            //{
-            //	if (item == null)
-            //		return;
-
-            //	if (item.Quality < 90)
-            //	{
-            //		item.Quality = Util.Random(85, 100);
-            //	}
-
-            //	log.Debug("Name: " + item.Name);
-            //	log.Debug("Slot: " + Enum.GetName(typeof(eInventorySlot), item.SlotPosition));
-            //	log.Debug("DPS_AF: " + item.DPS_AF);
-            //	log.Debug("SPD_ABS: " + item.SPD_ABS);
-            //}
-
+            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Distance);
-
             RefreshSpecDependantSkills(false);
             SetSpells();
+            IsCloakHoodUp = Util.RandomBool();
         }
     }
 

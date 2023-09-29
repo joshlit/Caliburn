@@ -41,7 +41,6 @@ namespace DOL.GS.Scripts
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         public MimicSpec MimicSpec = new MimicSpec();
-
         public int Kills;
 
         public MimicNPC(ICharacterClass cClass, byte level)
@@ -52,11 +51,9 @@ namespace DOL.GS.Scripts
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
             SetLevel(level);       
-            RefreshItemBonuses();
-
-            MaxEndurance = GetModified(eProperty.Fatigue);
-            Mana = GetModified(eProperty.MaxMana);
-
+            
+            //MaxEndurance = GetModified(eProperty.Fatigue);
+            
             SetOwnBrain(new MimicBrain());
 
             RespawnInterval = 0;
@@ -124,7 +121,8 @@ namespace DOL.GS.Scripts
 
                 player.Group.AddMember(this);
 
-                Follow(player, movementComponent.FollowMinDistance, movementComponent.FollowMaxDistance);
+                //Probably not needed with FSM
+                //Follow(player, movementComponent.FollowMinDistance, movementComponent.FollowMaxDistance);
 
                 //if (Brain is not MimicControlledBrain)
                 //    SetOwnBrain(new MimicControlledBrain(player));
@@ -657,6 +655,7 @@ namespace DOL.GS.Scripts
 
                 if (matchingItem == null || currentSpell.Level > matchingItem.Level)
                 {
+                    //TODO: Some spells meet this critera but shouldn't be removed. All Healer spells have various conflict, Thane DD spells, Skald DD spells are some.
                     //if (currentSpell.SpellType == "Heal")
                     //{
                     //    if (matchingItem != null && matchingItem.Level != 46 && )

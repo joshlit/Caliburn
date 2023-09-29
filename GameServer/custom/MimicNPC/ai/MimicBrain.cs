@@ -48,14 +48,14 @@ namespace DOL.AI.Brain
         public MimicBrain() : base()
         {
             FSM = new FSM();
-            FSM.Add(new MimicState_IDLE(this));
-            FSM.Add(new MimicState_WAKING_UP(this));
-            FSM.Add(new MimicState_AGGRO(this));
-            FSM.Add(new MimicState_RETURN_TO_SPAWN(this));
-            FSM.Add(new MimicState_PATROLLING(this));
-            FSM.Add(new MimicState_ROAMING(this));
-            FSM.Add(new MimicState_DEAD(this));
-            FSM.Add(new MimicState_FOLLOW_LEADER(this));
+            FSM.Add(new MimicState_Idle(this));
+            FSM.Add(new MimicState_WakingUp(this));
+            FSM.Add(new MimicState_Aggro(this));
+            FSM.Add(new MimicState_ReturnToSpawn(this));
+            FSM.Add(new MimicState_Patrolling(this));
+            FSM.Add(new MimicState_Roaming(this));
+            FSM.Add(new MimicState_Dead(this));
+            FSM.Add(new MimicState_FollowLeader(this));
 
             FSM.SetCurrentState(eFSMStateType.WAKING_UP);
         }
@@ -1212,6 +1212,7 @@ namespace DOL.AI.Brain
                                     if (!LivingHasEffect(groupMember, spell) && Body.IsWithinRadius(groupMember, spell.Range))
                                     {
                                         Body.TargetObject = groupMember;
+                                        break;
                                     }
                                 }
                             }
@@ -1441,6 +1442,9 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual bool CheckOffensiveSpells(Spell spell)
         {
+            if (spell.SpellType == eSpellType.Charm)
+                return false;
+
             if (spell.Target is not eSpellTarget.ENEMY or eSpellTarget.AREA or eSpellTarget.CONE)
                 return false;
 
@@ -1469,7 +1473,9 @@ namespace DOL.AI.Brain
                     if (spell.CastTime > 0)
                         Body.StopFollowing();
                     else if (Body.FollowTarget != Body.TargetObject)
+                    {
                         Body.Follow(Body.TargetObject, GameNPC.STICK_MINIMUM_RANGE, GameNPC.STICK_MAXIMUM_RANGE);
+                    }
                 }
             }
 
@@ -1499,9 +1505,10 @@ namespace DOL.AI.Brain
                 case eSpellType.Bladeturn:
                 case eSpellType.OffensiveProc:
                 case eSpellType.SavageCombatSpeedBuff:
-                case eSpellType.SavageCrushResistanceBuff:
                 case eSpellType.SavageDPSBuff:
                 case eSpellType.SavageParryBuff:
+                case eSpellType.SavageEvadeBuff:
+                case eSpellType.SavageCrushResistanceBuff:
                 case eSpellType.SavageSlashResistanceBuff:
                 case eSpellType.SavageThrustResistanceBuff:
                 case eSpellType.MatterResistBuff:
@@ -1511,6 +1518,31 @@ namespace DOL.AI.Brain
                 case eSpellType.SpiritResistBuff:
                 case eSpellType.BodyResistBuff:
                 case eSpellType.SummonHunterPet:
+
+                if (((MimicNPC)Body).CharacterClass.ID == (int)eCharacterClass.Savage)
+                {
+                    if (Body.HealthPercent < 10)
+                        break;
+
+                    bool cast = false;
+
+                    if (spell.SpellType == eSpellType.SavageCrushResistanceBuff)
+                    {
+                        cast = CheckSavageResistSpell(eDamageType.Crush);
+                    }
+                    else if (spell.SpellType == eSpellType.SavageSlashResistanceBuff)
+                    {
+                        cast = CheckSavageResistSpell(eDamageType.Slash);
+                    }
+                    else if (spell.SpellType == eSpellType.SavageThrustResistanceBuff)
+                    {
+                        cast = CheckSavageResistSpell(eDamageType.Thrust);
+                    }
+
+                    if (!cast)
+                        break;
+                }
+
                 if (!LivingHasEffect(Body, spell))
                 {
                     Body.TargetObject = Body;
@@ -1580,6 +1612,17 @@ namespace DOL.AI.Brain
             }
 
             Body.TargetObject = lastTarget;
+            return false;
+        }
+
+        protected virtual bool CheckSavageResistSpell(eDamageType damageType)
+        {
+            foreach (var attacker in Body.attackComponent.Attackers)
+            {
+                if ((int)damageType == attacker.Key.ActiveWeapon.Type_Damage)
+                    return true;
+            }
+
             return false;
         }
 

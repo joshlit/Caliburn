@@ -83,14 +83,12 @@ namespace DOL.GS.Scripts
                 log.Info("Hib: " + hibMimics.Count);
                 log.Info("Mid: " + midMimics.Count);
                 log.Info("Total Mimics: " + totalMimics);
-
-
             }
         }
 
         public static void UpdateBattleStats(MimicNPC mimic)
         {
-            battleStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak));
+            battleStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak, true));
         }
 
         public static void MimicBattlegroundStats(GamePlayer player)
@@ -98,8 +96,11 @@ namespace DOL.GS.Scripts
             List<MimicNPC> currentMimics = GetMasterList();
             List<BattleStats> currentStats = new List<BattleStats>();
 
-            foreach (MimicNPC mimic in currentMimics)
-                currentStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak));
+            if (currentMimics.Count > 0)
+            {
+                foreach (MimicNPC mimic in currentMimics)
+                    currentStats.Add(new BattleStats(mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, mimic.KillStreak, false));
+            }
 
             List<BattleStats> masterStatList = new List<BattleStats>();
             masterStatList.AddRange(currentStats);
@@ -109,21 +110,31 @@ namespace DOL.GS.Scripts
                 masterStatList.AddRange(battleStats);
             }
 
-            List<BattleStats> sortedList;
+            List<BattleStats> sortedList = masterStatList.OrderByDescending(obj => obj.TotalKills)
+                                                         .ThenByDescending(obj => obj.KillStreak)
+                                                         .ToList();
 
-            sortedList = masterStatList.OrderByDescending(obj => obj.TotalKills)
-                                      .ThenByDescending(obj => obj.KillStreak)
-                                      .ToList();
+            string message = "----------------------------------------\n\n";
+            int index = Math.Min(25, sortedList.Count);
 
-            string message = string.Empty;
-
-            for (int i = 0; i < 25; i++)
+            if (sortedList.Any())
             {
-                message += string.Format("{0}. Race: {1} - Class: {2} - Kills: {3} - KillStreak: {4}\n",
-                    sortedList[i].Race,
-                    sortedList[i].ClassName,
-                    sortedList[i].TotalKills,
-                    sortedList[i].KillStreak);
+                for (int i = 0; i < index; i++)
+                {
+                    string stats = string.Format("{0}. {1} - {2} - Kills: {3} - KillStreak: {4}",
+                        i + 1,
+                        sortedList[i].Race,
+                        sortedList[i].ClassName,
+                        sortedList[i].TotalKills,
+                        sortedList[i].KillStreak);
+
+                    if (sortedList[i].IsDead)
+                        stats += " - DEAD";
+
+                    stats += "\n\n";
+
+                    message += stats;
+                }
             }
 
             player.Out.SendMessage(message, PacketHandler.eChatType.CT_System, PacketHandler.eChatLoc.CL_PopupWindow);
@@ -169,13 +180,15 @@ namespace DOL.GS.Scripts
             public string ClassName;
             public int TotalKills;
             public int KillStreak;
+            public bool IsDead;
 
-            public BattleStats(string race, string className, int totalKills, int killStreak)
+            public BattleStats(string race, string className, int totalKills, int killStreak, bool dead)
             {
                 Race = race;
                 ClassName = className;
                 TotalKills = totalKills;
                 KillStreak = killStreak;
+                IsDead = dead;
             }
         }
     }
@@ -193,11 +206,12 @@ namespace DOL.GS.Scripts
 
         #region Spec
 
+        // TODO: Will likley need to be able to tell caster specs apart for AI purposes since they operate so differently. Will bring them into here, or use some sort of enum.
+
         // Albion
         static Type[] cabalistSpecs = { typeof(MatterCabalist), typeof(BodyCabalist), typeof(SpiritCabalist) };
 
         // Hibernia
-        static Type[] heroSpecs = { typeof(ShieldHero), typeof(HybridHero) };
         static Type[] eldritchSpecs = { typeof(SunEldritch), typeof(ManaEldritch), typeof(VoidEldritch) };
         static Type[] enchanterSpecs = { typeof(ManaEnchanter), typeof(LightEnchanter) };
         static Type[] mentalistSpecs = { typeof(LightMentalist), typeof(ManaMentalist), typeof(MentalismMentalist) };
@@ -216,7 +230,6 @@ namespace DOL.GS.Scripts
                 case MimicMercenary: return Activator.CreateInstance(typeof(MercenarySpec)) as MimicSpec;
 
                 // Hibernia
-                case MimicHero: return Activator.CreateInstance(heroSpecs[Util.Random(heroSpecs.Length - 1)]) as MimicSpec;
                 case MimicEldritch: return Activator.CreateInstance(eldritchSpecs[Util.Random(eldritchSpecs.Length - 1)]) as MimicSpec;
                 case MimicEnchanter: return Activator.CreateInstance(enchanterSpecs[Util.Random(enchanterSpecs.Length - 1)]) as MimicSpec;
                 case MimicMentalist: return Activator.CreateInstance(mentalistSpecs[Util.Random(mentalistSpecs.Length - 1)]) as MimicSpec;
@@ -392,7 +405,7 @@ namespace DOL.GS.Scripts
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public static bool SetMeleeWeapon(GameLiving living, string weapType, bool dualWield = false, eWeaponDamageType damageType = 0, eHand hand = eHand.None)
+        public static void SetMeleeWeapon(GameLiving living, string weapType, eHand hand, eWeaponDamageType damageType = 0)
         {
             eObjectType objectType = GetObjectType(weapType);
 
@@ -406,84 +419,55 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Object_Type").IsEqualTo((int)objectType).And(
                                                                        DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
-
-            if (dualWield)
+            if (itemList.Any())
             {
-                List<DbItemTemplate> leftHandItems = new List<DbItemTemplate>();
-
-                foreach (DbItemTemplate item in itemList)
+                // This allows for left handed weapons to be equipped to the right hand. Prevents Twohanded midgard weapons from being selected.
+                if (hand == eHand.oneHand)
                 {
-                    if (item.Item_Type == Slot.LEFTHAND)
-                        leftHandItems.Add(item);
-                }
+                    List<DbItemTemplate> oneHandItemsToKeep = new List<DbItemTemplate>();
 
-                if (leftHandItems.Count > 0)
-                    AddItem(living, leftHandItems[Util.Random(leftHandItems.Count - 1)]);
-            }
-
-            if (hand != eHand.None)
-            {
-                List<DbItemTemplate> itemsToKeep = new List<DbItemTemplate>();
-
-                foreach (DbItemTemplate item in itemList)
-                {
-                    if (item.Hand == (int)hand)
-                        itemsToKeep.Add(item);
-                }
-
-                if (itemsToKeep.Count > 0)
-                {
-                    AddItem(living, itemsToKeep[Util.Random(itemsToKeep.Count - 1)]);
-
-                    return true;
-                }
-                else
-                    return false;
-            }
-
-            if (objectType != eObjectType.TwoHandedWeapon && objectType != eObjectType.PolearmWeapon && objectType != eObjectType.Staff)
-            {
-                foreach (DbItemTemplate template in itemList)
-                {
-                    if (template.Item_Type == Slot.LEFTHAND)
-                        template.Item_Type = Slot.RIGHTHAND;
-                }
-            }
-
-            if ((int)damageType != 0)
-            {
-                List<DbItemTemplate> itemsToKeep = new List<DbItemTemplate>();
-
-                foreach (DbItemTemplate item in itemList)
-                {
-                    if (item.Type_Damage == (int)damageType)
+                    foreach (DbItemTemplate item in itemList)
                     {
-                        itemsToKeep.Add(item);
+                        if (item.Hand != (int)eHand.twoHand)
+                            oneHandItemsToKeep.Add(item);
+                    }
+
+                    if (oneHandItemsToKeep.Any())
+                    {
+                        DbItemTemplate oneHandItemTemplate = oneHandItemsToKeep[Util.Random(oneHandItemsToKeep.Count - 1)];
+                        AddItem(living, oneHandItemTemplate, hand);
+
+                        return;
                     }
                 }
 
-                if (itemsToKeep.Count > 0)
+                List<DbItemTemplate> itemsToKeep = new List<DbItemTemplate>();
+
+                foreach (DbItemTemplate item in itemList)
                 {
-                    DbItemTemplate template = itemsToKeep[Util.Random(itemsToKeep.Count - 1)];
-                    return AddItem(living, template);
+                    // Only used for Armsman and Paladin to ensure twohand weapon matches one handed spec.
+                    if (damageType != 0)
+                    {
+                        if (item.Hand == (int)hand && item.Type_Damage == (int)damageType)
+                            itemsToKeep.Add(item);
+                    }
+                    else if (item.Hand == (int)hand)
+                        itemsToKeep.Add(item);
+
+                    if (itemsToKeep.Any())
+                    {
+                        DbItemTemplate itemTemplate = itemsToKeep[Util.Random(itemsToKeep.Count - 1)];
+                        AddItem(living, itemTemplate, hand);
+
+                        return;
+                    }
                 }
-
-                return false;
-            }
-            else if (itemList.Count > 0)
-            {
-                DbItemTemplate template = itemList[Util.Random(itemList.Count - 1)];
-
-                return AddItem(living, template);
             }
             else
-            {
-                log.Debug("Could not find any fucking items for this peice of shit.");
-                return false;
-            }
+                log.Info("No melee weapon found for " + living.Name);
         }
 
-        public static bool SetRangedWeapon(GameLiving living, eObjectType weapType)
+        public static void SetRangedWeapon(GameLiving living, eObjectType weapType)
         {
             int min = Math.Max(1, living.Level - 6);
             int max = Math.Min(51, living.Level + 3);
@@ -495,17 +479,15 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
 
-            if (itemList.Count > 0)
+            if (itemList.Any())
             {
-                AddItem(living, itemList[Util.Random(itemList.Count - 1)]);
-
-                return true;
+                DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
+                AddItem(living, itemTemplate);
+                
+                return;
             }
             else
-            {
-                log.Debug("No Ranged weapon.");
-                return false;
-            }
+                log.Info("No Ranged weapon found for " + living.Name);
         }
 
         public static void SetShield(GameLiving living, int shieldSize)
@@ -522,9 +504,15 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Type_Damage").IsEqualTo(shieldSize).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1))))));
 
-            DbItemTemplate item = itemList[Util.Random(itemList.Count - 1)];
+            if (itemList.Any())
+            {
+                DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
+                AddItem(living, itemTemplate);
 
-            AddItem(living, item);
+                return;
+            }
+            else
+                log.Info("No Shield found for " + living.Name);
         }
 
         public static void SetArmor(GameLiving living, eObjectType armorType)
@@ -547,28 +535,45 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
 
-            foreach (DbItemTemplate template in itemList)
+            if (itemList.Any())
             {
-                if (template.Item_Type == Slot.ARMS)
-                    armsList.Add(template);
-                else if (template.Item_Type == Slot.HANDS)
-                    handsList.Add(template);
-                else if (template.Item_Type == Slot.LEGS)
-                    legsList.Add(template);
-                else if (template.Item_Type == Slot.FEET)
-                    feetList.Add(template);
-                else if (template.Item_Type == Slot.TORSO)
-                    torsoList.Add(template);
-                else if (template.Item_Type == Slot.HELM)
-                    helmList.Add(template);
-            }
+                foreach (DbItemTemplate template in itemList)
+                {
+                    if (template.Item_Type == Slot.ARMS)
+                        armsList.Add(template);
+                    else if (template.Item_Type == Slot.HANDS)
+                        handsList.Add(template);
+                    else if (template.Item_Type == Slot.LEGS)
+                        legsList.Add(template);
+                    else if (template.Item_Type == Slot.FEET)
+                        feetList.Add(template);
+                    else if (template.Item_Type == Slot.TORSO)
+                        torsoList.Add(template);
+                    else if (template.Item_Type == Slot.HELM)
+                        helmList.Add(template);
+                }
 
-            AddItem(living, armsList[Util.Random(armsList.Count - 1)]);
-            AddItem(living, handsList[Util.Random(handsList.Count - 1)]);
-            AddItem(living, legsList[Util.Random(legsList.Count - 1)]);
-            AddItem(living, feetList[Util.Random(feetList.Count - 1)]);
-            AddItem(living, torsoList[Util.Random(torsoList.Count - 1)]);
-            AddItem(living, helmList[Util.Random(helmList.Count - 1)]);
+                List<List<DbItemTemplate>> masterList = new List<List<DbItemTemplate>>
+                {
+                    armsList,
+                    handsList,
+                    legsList,
+                    feetList,
+                    torsoList,
+                    helmList
+                };
+
+                foreach(List<DbItemTemplate> list in masterList)
+                {
+                    if (list.Any())
+                    {
+                        DbItemTemplate itemTemplate = list[Util.Random(list.Count - 1)];
+                        AddItem(living, itemTemplate);
+                    }
+                }
+            }
+            else
+                log.Info("No armor found for " + living.Name);
         }
 
         public static void SetJewelry(GameLiving living)
@@ -589,90 +594,99 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Object_Type").IsEqualTo((int)eObjectType.Magical).And(
                                                                        DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
-
-            foreach (DbItemTemplate template in itemList)
+            if (itemList.Any())
             {
-                if (template.Item_Type == Slot.CLOAK)
-                    cloakList.Add(template);
-                else if (template.Item_Type == Slot.JEWELRY)
-                    jewelryList.Add(template);
-                else if (template.Item_Type == Slot.LEFTRING || template.Item_Type == Slot.RIGHTRING)
-                    ringList.Add(template);
-                else if (template.Item_Type == Slot.LEFTWRIST || template.Item_Type == Slot.RIGHTWRIST)
-                    wristList.Add(template);
-                else if (template.Item_Type == Slot.NECK)
-                    neckList.Add(template);
-                else if (template.Item_Type == Slot.WAIST)
-                    waistList.Add(template);
-            }
+                foreach (DbItemTemplate template in itemList)
+                {
+                    if (template.Item_Type == Slot.CLOAK)
+                        cloakList.Add(template);
+                    else if (template.Item_Type == Slot.JEWELRY)
+                        jewelryList.Add(template);
+                    else if (template.Item_Type == Slot.LEFTRING || template.Item_Type == Slot.RIGHTRING)
+                        ringList.Add(template);
+                    else if (template.Item_Type == Slot.LEFTWRIST || template.Item_Type == Slot.RIGHTWRIST)
+                        wristList.Add(template);
+                    else if (template.Item_Type == Slot.NECK)
+                        neckList.Add(template);
+                    else if (template.Item_Type == Slot.WAIST)
+                        waistList.Add(template);
+                }
 
-            List<List<DbItemTemplate>> masterList = new List<List<DbItemTemplate>>
-            {
+                List<List<DbItemTemplate>> masterList = new List<List<DbItemTemplate>>
+                {
                 cloakList,
                 jewelryList,
                 neckList,
                 waistList
-            };
+                };
 
-            foreach (List<DbItemTemplate> list in masterList)
-            {
-                if (list.Count > 0)
+                foreach (List<DbItemTemplate> list in masterList)
                 {
-                    AddItem(living, list[Util.Random(list.Count - 1)]);
-                }
-            }
-
-            for (int i = 0; i < 2; i++)
-            {
-                if (ringList.Count > 0)
-                {
-                    AddItem(living, ringList[Util.Random(ringList.Count - 1)]);
+                    if (list.Any())
+                    {
+                        DbItemTemplate itemTemplate = list[Util.Random(list.Count - 1)];
+                        AddItem(living, itemTemplate);
+                    }
                 }
 
-                if (wristList.Count > 0)
+                // Add two rings and bracelets
+                for (int i = 0; i < 2; i++)
                 {
-                    AddItem(living, wristList[Util.Random(wristList.Count - 1)]);
+                    if (ringList.Any())
+                    {
+                        DbItemTemplate itemTemplate = ringList[Util.Random(ringList.Count - 1)];
+                        AddItem(living, itemTemplate);
+                    }
+
+                    if (wristList.Any())
+                    {
+                        DbItemTemplate itemTemplate = wristList[Util.Random(wristList.Count - 1)];
+                        AddItem(living, itemTemplate);
+                    }
+                }
+
+                // Not sure this is needed what were you thinking past self?
+                if (living.Inventory.GetItem(eInventorySlot.Cloak) == null)
+                {
+                    DbItemTemplate cloak = GameServer.Database.FindObjectByKey<DbItemTemplate>("cloak");
+                    AddItem(living, cloak);
                 }
             }
-
-            if (living.Inventory.GetItem(eInventorySlot.Cloak) == null)
-            {
-                DbItemTemplate cloak = GameServer.Database.FindObjectByKey<DbItemTemplate>("cloak");
-                int color = Util.Random(500);
-                log.Debug("Color: " + color);
-                cloak.Color = color;
-                AddItem(living, cloak);
-            }
+            else
+                log.Info("No jewelry of any kind found for " + living.Name);
         }
 
-        private static bool AddItem(GameLiving living, DbItemTemplate itemTemplate)
+        private static void AddItem(GameLiving living, DbItemTemplate itemTemplate, eHand hand = eHand.None)
         {
             if (itemTemplate == null)
-            {
-                log.Debug("itemTemplate in AddItem is null");
-                return false;
-            }
+                log.Info("itemTemplate in AddItem is null");
 
             DbInventoryItem item = GameInventoryItem.Create(itemTemplate);
 
             if (item != null)
             {
+                log.Info("Item is called " + item.Name + " it is slot " + item.Item_Type);
+
                 if (itemTemplate.Item_Type == Slot.LEFTRING || itemTemplate.Item_Type == Slot.RIGHTRING)
                 {
-                    return living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
+                    living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
+                    return;
                 }
                 else if (itemTemplate.Item_Type == Slot.LEFTWRIST || itemTemplate.Item_Type == Slot.RIGHTWRIST)
                 {
-                    return living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftBracer, eInventorySlot.RightBracer), item);
+                    living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftBracer, eInventorySlot.RightBracer), item);
+                    return;
+                }
+                else if (itemTemplate.Item_Type == Slot.LEFTHAND && itemTemplate.Object_Type != (int)eObjectType.Shield && hand == eHand.oneHand)
+                {
+                    living.Inventory.AddItem(eInventorySlot.RightHandWeapon, item);
+                    return;
                 }
                 else
-                    return living.Inventory.AddItem((eInventorySlot)item.Item_Type, item);
+                    living.Inventory.AddItem((eInventorySlot)itemTemplate.Item_Type, item);
             }
             else
-            {
-                log.Debug("Item failed to be created.");
-                return false;
-            }
+                log.Info("Item failed to be created for " + living.Name);
         }
 
         public static eObjectType GetObjectType(string obj)
@@ -707,6 +721,9 @@ namespace DOL.GS.Scripts
                 case "Studded": objectType = eObjectType.Studded; break;
                 case "Chain": objectType = eObjectType.Chain; break;
                 case "Plate": objectType = eObjectType.Plate; break;
+
+                case "Reinforced": objectType = eObjectType.Reinforced; break;
+                case "Scale": objectType = eObjectType.Scale; break;
             }
 
             return objectType;
