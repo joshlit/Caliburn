@@ -70,7 +70,9 @@ namespace DOL.GS.Scripts
 
                 if (position != null)
                 {
-                    eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), args[1]);
+                    string capitalize = char.ToUpper(args[1][0]) + args[1].Substring(1);
+
+                    eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), capitalize);
 
                     MimicNPC mimic = MimicManager.GetMimic(mclass, level);
                     MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);

@@ -665,8 +665,6 @@ namespace DOL.GS.Scripts
 
             if (item != null)
             {
-                log.Info("Item is called " + item.Name + " it is slot " + item.Item_Type);
-
                 if (itemTemplate.Item_Type == Slot.LEFTRING || itemTemplate.Item_Type == Slot.RIGHTRING)
                 {
                     living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
