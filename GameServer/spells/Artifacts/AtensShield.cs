@@ -58,7 +58,7 @@ namespace DOL.GS.Spells
 		{
 			get
 			{
-				m_goldenTridentofFlame = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Golden_Trident_of_Flame");
+				m_goldenTridentofFlame = GameServer.Database.FindObjectByKey<DbItemTemplate>("Golden_Trident_of_Flame");
 				if (m_goldenTridentofFlame == null)
 				{
 					if (log.IsWarnEnabled) log.Warn("Could not find Golden_Trident_of_Flame, loading it ...");
@@ -107,7 +107,7 @@ namespace DOL.GS.Spells
 		{
 			get
 			{
-				m_goldenTridentofFlame = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Golden_Trident_of_FlameM");
+				m_goldenTridentofFlame = GameServer.Database.FindObjectByKey<DbItemTemplate>("Golden_Trident_of_FlameM");
 				if (m_goldenTridentofFlame == null)
 				{
 					if (log.IsWarnEnabled) log.Warn("Could not find Golden_Trident_of_Flame, loading it ...");
@@ -156,7 +156,7 @@ namespace DOL.GS.Spells
 		{
 			get
 			{
-				m_goldenTridentofFlame = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Golden_Trident_of_FlameH");
+				m_goldenTridentofFlame = GameServer.Database.FindObjectByKey<DbItemTemplate>("Golden_Trident_of_FlameH");
 				if (m_goldenTridentofFlame == null)
 				{
 					if (log.IsWarnEnabled) log.Warn("Could not find Golden_Trident_of_Flame, loading it ...");

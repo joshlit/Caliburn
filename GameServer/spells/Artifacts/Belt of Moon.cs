@@ -80,7 +80,7 @@ namespace DOL.GS.Spells
 		{
 			get
 			{
-				m_MoonMace = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Mace");
+				m_MoonMace = GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Mace");
 				if (m_MoonMace == null)
 				{
 					if (log.IsWarnEnabled) log.Warn("Could not find Moon_Mace, loading it ...");
@@ -128,7 +128,7 @@ namespace DOL.GS.Spells
 		{
             get
             {
-                m_MoonMace = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Mace");
+                m_MoonMace = GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Mace");
                 if (m_MoonMace == null)
                 {
                     if (log.IsWarnEnabled) log.Warn("Could not find Moon_Mace, loading it ...");
@@ -176,7 +176,7 @@ namespace DOL.GS.Spells
 		{
             get
             {
-                m_MoonMace = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Mace");
+                m_MoonMace = GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Mace");
                 if (m_MoonMace == null)
                 {
                     if (log.IsWarnEnabled) log.Warn("Could not find Moon_Mace, loading it ...");
@@ -226,7 +226,7 @@ namespace DOL.GS.Spells
         {
             get
             {
-                m_MoonStaff = (DbItemTemplate)GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Staff");
+                m_MoonStaff = GameServer.Database.FindObjectByKey<DbItemTemplate>("Moon_Staff");
                 if (m_MoonStaff == null)
                 {
                     if (log.IsWarnEnabled) log.Warn("Could not find Moon_Staff, loading it ...");

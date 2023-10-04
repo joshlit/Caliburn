@@ -27,13 +27,21 @@ namespace DOL.GS.Spells
     [SpellHandlerAttribute("StarsProc")]
     public class StarsProc : SpellHandler
     {
-        public override bool CheckBeginCast(GameLiving selectedTarget)
-        {
-            return base.CheckBeginCast(selectedTarget);
-        }
-
+        private StarsProc subHandler1;
+        private StarsProc subHandler2;
+        
         public override bool StartSpell(GameLiving target)
         {
+            if (Spell.SubSpellID != 0 && SkillBase.GetSpellByID(Spell.SubSpellID) != null)
+            {
+                subHandler1 = ScriptMgr.CreateSpellHandler(Caster, SkillBase.GetSpellByID(Spell.SubSpellID), SkillBase.GetSpellLine("Mob Spells")) as StarsProc;
+
+                if (subHandler1 != null && subHandler1.Spell.SubSpellID != 0 && SkillBase.GetSpellByID(subHandler1.Spell.SubSpellID) != null)
+                {
+                    subHandler2 = ScriptMgr.CreateSpellHandler(Caster, SkillBase.GetSpellByID(subHandler1.Spell.SubSpellID), SkillBase.GetSpellLine("Mob Spells")) as StarsProc;
+                }
+            }
+            
             foreach (GameLiving targ in SelectTargets(target))
             {
                 DealDamage(targ);
@@ -44,16 +52,40 @@ namespace DOL.GS.Spells
         
         private void DealDamage(GameLiving target)
         {
-            int ticksToTarget = m_caster.GetDistanceTo(target) * 100 / 85; // 85 units per 1/10s
+           Target = target;
+           subHandler1.Target = target;
+           subHandler2.Target = target;
+            
+            FireBolt(Caster, target, this);
+            new ECSGameTimer(Caster, CastBolt2).Start(100);
+            new ECSGameTimer(Caster, CastBolt3).Start(200);
+        }
+
+        private int CastBolt2(ECSGameTimer timer)
+        {
+            FireBolt(Caster, Target, subHandler1);
+            return 0;
+        }
+
+        private int CastBolt3(ECSGameTimer timer)
+        {
+            FireBolt(Caster, Target, subHandler2);
+            return 0;
+        }
+        
+        private void FireBolt(GameLiving caster, GameLiving target, StarsProc handler)
+        {
+            if (handler == null) return;
+            int ticksToTarget = caster.GetDistanceTo(target) * 100 / 85; // 85 units per 1/10s
             int delay = 1 + ticksToTarget / 100;
             foreach (GamePlayer player in target.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
             {
-                player.Out.SendSpellEffectAnimation(m_caster, target, m_spell.ClientEffect, (ushort)(delay), false, 1);
+                player.Out.SendSpellEffectAnimation(caster, target, handler.Spell.ClientEffect, (ushort)(delay), false, 1);
             }
-            BoltOnTargetAction bolt = new BoltOnTargetAction(Caster, target, this);
+            BoltOnTargetAction bolt = new BoltOnTargetAction(caster, target, handler);
             bolt.Start(1 + ticksToTarget);
         }
-        
+
         public override void FinishSpellCast(GameLiving target)
         {
             if (target is Keeps.GameKeepDoor || target is Keeps.GameKeepComponent)
@@ -93,13 +125,6 @@ namespace DOL.GS.Spells
                 m_handler.SendDamageMessages(ad);
                 m_handler.DamageTarget(ad, false);
 
-                //if (m_handler.Spell.SubSpellID != 0) Spell subspell = m_handler.SkillBase.GetSpellByID(m_handler.Spell.SubSpellID);
-                if (m_handler.Spell.SubSpellID != 0 && SkillBase.GetSpellByID(m_handler.Spell.SubSpellID) != null)
-                {
-                    ISpellHandler spellhandler = ScriptMgr.CreateSpellHandler(caster, SkillBase.GetSpellByID(m_handler.Spell.SubSpellID), SkillBase.GetSpellLine("Mob Spells"));
-                    spellhandler.StartSpell(target);
-                }
-
                 target.StartInterruptTimer(target.SpellInterruptDuration, AttackData.eAttackType.Spell, caster);
                 return 0;
             }
@@ -116,62 +141,9 @@ namespace DOL.GS.Spells
             return 0;
         }
 
-        public override void OnEffectStart(GameSpellEffect effect)
-        {
-            base.OnEffectStart(effect);            
-            effect.Owner.DebuffCategory[(int)eProperty.Dexterity] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Strength] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Constitution] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Acuity] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Piety] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Empathy] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Quickness] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Intelligence] += (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Charisma] += (int)m_spell.Value;   
-            effect.Owner.DebuffCategory[(int)eProperty.ArmorAbsorption] += (int)m_spell.Value; 
-            effect.Owner.DebuffCategory[(int)eProperty.MagicAbsorption] += (int)m_spell.Value; 
-            
-            if(effect.Owner is GamePlayer)
-            {
-                GamePlayer player = effect.Owner as GamePlayer;  
-                if(m_spell.LifeDrainReturn>0) if(player.CharacterClass.ID!=(byte)eCharacterClass.Necromancer) player.Model=(ushort)m_spell.LifeDrainReturn;
-                player.Out.SendCharStatsUpdate();
-                player.UpdateEncumberance();
-                player.UpdatePlayerStatus();
-                player.Out.SendUpdatePlayer();             	
-            }
-        }
-
-        public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
-        {
-            effect.Owner.DebuffCategory[(int)eProperty.Dexterity] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Strength] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Constitution] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Acuity] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Piety] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Empathy] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Quickness] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Intelligence] -= (int)m_spell.Value;
-            effect.Owner.DebuffCategory[(int)eProperty.Charisma] -= (int)m_spell.Value;        
-            effect.Owner.DebuffCategory[(int)eProperty.ArmorAbsorption] -= (int)m_spell.Value; 
-            effect.Owner.DebuffCategory[(int)eProperty.MagicAbsorption] -= (int)m_spell.Value; 
-
-            if(effect.Owner is GamePlayer)
-            {
-                GamePlayer player = effect.Owner as GamePlayer;  
-                if(player.CharacterClass.ID!=(byte)eCharacterClass.Necromancer) player.Model = player.CreationModel;
-                player.Out.SendCharStatsUpdate();
-                player.UpdateEncumberance();
-                player.UpdatePlayerStatus();
-                player.Out.SendUpdatePlayer();
-            }
-
-            return base.OnEffectExpires(effect, noMessages);
-        }
-
         public override void ApplyEffectOnTarget(GameLiving target)
         {
-            base.ApplyEffectOnTarget(target);
+            new BandOfStarsMorphECSEffect(new ECSGameEffectInitParams(target, Spell.Duration, 1, this));
             if (target.Realm == 0 || Caster.Realm == 0)
             {
                 target.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
