@@ -40,24 +40,24 @@ namespace DOL.GS
             : base()
         {
         }
-        public ItemChargeGem(ItemTemplate template)
+        public ItemChargeGem(DbItemTemplate template)
             : base(template)
         {
         }
 
-        public ItemChargeGem(ItemUnique template)
+        public ItemChargeGem(DbItemUnique template)
             : base(template)
         {
         }
 
-        public ItemChargeGem(InventoryItem item)
+        public ItemChargeGem(DbInventoryItem item)
             : base(item)
         {
             OwnerID = item.OwnerID;
             ObjectId = item.ObjectId;
         }
 
-        public override bool Combine(GamePlayer player, InventoryItem targetItem)
+        public override bool Combine(GamePlayer player, DbInventoryItem targetItem)
         {
 
             if (true)
@@ -83,7 +83,7 @@ namespace DOL.GS
                     return false;
                 }
 
-                ItemUnique unique = new ItemUnique(targetItem.Template);
+                DbItemUnique unique = new DbItemUnique(targetItem.Template);
 
                 if (this.SpellID == 0)
                 {
@@ -140,7 +140,7 @@ namespace DOL.GS
                 player.Inventory.RemoveItem(targetItem);
                 player.Inventory.RemoveCountFromStack(this, 1);
 
-                InventoryItem newInventoryItem = GameInventoryItem.Create(unique as ItemTemplate);
+                DbInventoryItem newInventoryItem = GameInventoryItem.Create(unique as DbItemTemplate);
                 if (targetItem.IsCrafted)
                     newInventoryItem.IsCrafted = true;
                 if (targetItem.Creator != "")
@@ -150,7 +150,7 @@ namespace DOL.GS
                 newInventoryItem.Count = 1;
 
                 player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, newInventoryItem);
-                player.Out.SendInventoryItemsUpdate(new InventoryItem[] { newInventoryItem });
+                player.Out.SendInventoryItemsUpdate(new DbInventoryItem[] { newInventoryItem });
 
                 player.SaveIntoDatabase();
 

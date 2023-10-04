@@ -9097,82 +9097,57 @@ namespace DOL.GS
             lock (Inventory)
             {
                 var items = Inventory.GetItemRange(eInventorySlot.MinEquipable, eInventorySlot.LastBackpack);
-                foreach (InventoryItem invItem in items)
+                bool removedSomething = false;
+                foreach (DbInventoryItem invItem in items)
                 {
                     if (player.CurrentRegion.IsNightTime)
                     {
 
-                        if (invItem.Id_nb.Equals("Sun_Crush"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Slash"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Thrust"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Flex"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_TwoHanded"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Polearm"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Bow"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Staff"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_MFist"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_MStaff"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Axe"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_LeftAxe"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Claw"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_2HCrush"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_2HAxe"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_MStaff"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_FlexScythe"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        if (invItem.Id_nb.Equals("Sun_Spear"))
-                            player.Inventory.RemoveItem(invItem);
-
-                        player.Out.SendMessage("The power of Belt of Sun has left you!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        return;
+                        switch (invItem.Id_nb)
+                        {
+                            case "Sun_Crush":
+                            case "Sun_Slash":
+                            case "Sun_Thrust":
+                            case "Sun_Flex":
+                            case "Sun_TwoHanded":
+                            case "Sun_Polearm":
+                            case "Sun_Bow":
+                            case "Sun_Staff":
+                            case "Sun_MFist":
+                            case "Sun_Axe":
+                            case "Sun_LeftAxe":
+                            case "Sun_Claw":
+                            case "Sun_2HCrush":
+                            case "Sun_2HAxe":
+                            case "Sun_MStaff":
+                            case "Sun_FlexScythe":
+                            case "Sun_Spear":
+                                removedSomething = true;
+                                player.Inventory.RemoveItem(invItem);
+                                break;
+                        }
                     }
+                    else
+                    {
+                        switch (invItem.Id_nb)
+                        {
+                            case "Moon_Mace":
+                            case "Moon_MaceM":
+                            case "Moon_MaceH":
+                            case "Moon_Staff":
+                                removedSomething = true;
+                                player.Inventory.RemoveItem(invItem);
+                                break;
+                        }
+                    }
+                }
 
-                    if (invItem.Id_nb.Equals("Moon_Mace"))
-                        player.Inventory.RemoveItem(invItem);
-
-                    if (invItem.Id_nb.Equals("Moon_MaceM"))
-                        player.Inventory.RemoveItem(invItem);
-
-                    if (invItem.Id_nb.Equals("Moon_MaceH"))
-                        player.Inventory.RemoveItem(invItem);
-
-                    if (invItem.Id_nb.Equals("Moon_Staff"))
-                        player.Inventory.RemoveItem(invItem);
-                    
-                    player.Out.SendMessage("The power of the Belt of Moon has left you!",eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                if (removedSomething)
+                {
+                    if(player.CurrentRegion.IsNightTime)
+                        player.Out.SendMessage("The power of Belt of Sun has left you!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    else
+                        player.Out.SendMessage("The power of the Belt of Moon has left you!",eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 }
             }
         }

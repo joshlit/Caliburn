@@ -6,7 +6,7 @@ using DOL.GS.Keeps;
 
 namespace DOL.GS.ServerRules;
 
-[ServerRules(eGameServerType.GST_Casual)]
+[ServerRules(EGameServerType.GST_Casual)]
 public class CoopWithRvr : AbstractServerRules
 {
     private static AbstractServerRules pveServerRules = new PvEServerRules();
@@ -43,9 +43,9 @@ public class CoopWithRvr : AbstractServerRules
                 => SelectRuleSet(caster).IsAllowedToCastSpell(caster, target, spell, spellLine);
     public override bool IsAllowedToSpeak(GamePlayer source, string communicationType)
                 => SelectRuleSet(source).IsAllowedToSpeak(source, communicationType);
-    public override bool IsAllowedToBind(GamePlayer player, BindPoint point)
+    public override bool IsAllowedToBind(GamePlayer player, DbBindPoint point)
                 => SelectRuleSet(player).IsAllowedToBind(player, point);
-    public override bool IsAllowedToCraft(GamePlayer player, ItemTemplate item)
+    public override bool IsAllowedToCraft(GamePlayer player, DbItemTemplate item)
                 => SelectRuleSet(player).IsAllowedToCraft(player, item);
     public override bool IsAllowedToClaim(GamePlayer player, Region region)
                 => SelectRuleSet(player).IsAllowedToClaim(player, region);
@@ -55,7 +55,7 @@ public class CoopWithRvr : AbstractServerRules
                 => SelectRuleSet(player).ReasonForDisallowMounting(player);
     public override bool CanTakeFallDamage(GamePlayer player)
                 => SelectRuleSet(player).CanTakeFallDamage(player);
-    public override bool CheckAbilityToUseItem(GameLiving living, ItemTemplate item)
+    public override bool CheckAbilityToUseItem(GameLiving living, DbItemTemplate item)
                 => SelectRuleSet(living).CheckAbilityToUseItem(living, item);
     public override int GetObjectSpecLevel(GamePlayer player, eObjectType objectType)
                 => SelectRuleSet(player).GetObjectSpecLevel(player, objectType);

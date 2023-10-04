@@ -17,7 +17,7 @@ namespace DOL.GS {
         {
             //WhereClause realmFilter = DB.Column("Realm").IsEqualTo((byte)playerRealm).Or(DB.Column("Realm").IsEqualTo(0)).Or(DB.Column("Realm").IsNull());
             SpellLine line = SkillBase.GetSpellLine(GlobalSpellsLines.Item_Effects);
-            List<DBLineXSpell> procsChargesLineXSpells = GameServer.Database.SelectObjects<DBLineXSpell>(DB.Column("LineName").IsEqualTo("Item Effects")).ToList();
+            List<DbLineXSpell> procsChargesLineXSpells = GameServer.Database.SelectObjects<DbLineXSpell>(DB.Column("LineName").IsEqualTo("Item Effects")).ToList();
             ProcsChargesSpellIds = procsChargesLineXSpells.Select(a => a.SpellID).Where(SpellID =>
             {
 
@@ -59,7 +59,7 @@ namespace DOL.GS {
                 }
                 if (Util.Chance(80)) return loot;
 
-                ItemUnique tmp = new ItemUnique();
+                DbItemUnique tmp = new DbItemUnique();
                 tmp.Name = "Stat Gem";
                 tmp.Model = 117;
                 tmp.Object_Type = 200;

@@ -57,11 +57,11 @@ namespace DOL.GS.Scripts
         public static void ScriptLoaded(DOLEvent e, object sender, EventArgs args)
         {
             #region Add Seals to Item Templates
-                ItemTemplate item;
-                item = GameServer.Database.FindObjectByKey<ItemTemplate>("glowing_dreaded_seal");
+                DbItemTemplate item;
+                item = GameServer.Database.FindObjectByKey<DbItemTemplate>("glowing_dreaded_seal");
                 if (item == null)
                 {
-                    item = new ItemTemplate();
+                    item = new DbItemTemplate();
                     item.AllowAdd = true;
                     item.AllowUpdate = true;
                     item.Id_nb = "glowing_dreaded_seal";
@@ -95,10 +95,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + item.Id_nb);
                 }
 
-                item = GameServer.Database.FindObjectByKey<ItemTemplate>("sanguine_dreaded_seal");
+                item = GameServer.Database.FindObjectByKey<DbItemTemplate>("sanguine_dreaded_seal");
                 if (item == null)
                 {
-                    item = new ItemTemplate();
+                    item = new DbItemTemplate();
                     item.AllowAdd = true;
                     item.AllowUpdate = true;
                     item.Id_nb = "sanguine_dreaded_seal";
@@ -131,10 +131,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + item.Id_nb);
                 }
 
-                item = GameServer.Database.FindObjectByKey<ItemTemplate>("lambent_dreaded_seal");
+                item = GameServer.Database.FindObjectByKey<DbItemTemplate>("lambent_dreaded_seal");
                 if (item == null)
                 {
-                    item = new ItemTemplate();
+                    item = new DbItemTemplate();
                     item.AllowAdd = true;
                     item.AllowUpdate = true;
                     item.Id_nb = "lambent_dreaded_seal";
@@ -168,10 +168,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + item.Id_nb);
                 }
 
-                item = GameServer.Database.FindObjectByKey<ItemTemplate>("lambent_dreaded_seal2");
+                item = GameServer.Database.FindObjectByKey<DbItemTemplate>("lambent_dreaded_seal2");
                 if (item == null)
                 {
-                    item = new ItemTemplate();
+                    item = new DbItemTemplate();
                     item.AllowAdd = true;
                     item.AllowUpdate = true;
                     item.Id_nb = "lambent_dreaded_seal2";
@@ -205,10 +205,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + item.Id_nb);
                 }
 
-                item = GameServer.Database.FindObjectByKey<ItemTemplate>("fulgent_dreaded_seal");
+                item = GameServer.Database.FindObjectByKey<DbItemTemplate>("fulgent_dreaded_seal");
                 if (item == null)
                 {
-                    item = new ItemTemplate();
+                    item = new DbItemTemplate();
                     item.AllowAdd = true;
                     item.AllowUpdate = true;
                     item.Id_nb = "fulgent_dreaded_seal";
@@ -242,10 +242,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + item.Id_nb);
                 }
 
-                item = GameServer.Database.FindObjectByKey<ItemTemplate>("effulgent_dreaded_seal");
+                item = GameServer.Database.FindObjectByKey<DbItemTemplate>("effulgent_dreaded_seal");
                 if (item == null)
                 {
-                    item = new ItemTemplate();
+                    item = new DbItemTemplate();
                     item.AllowAdd = true;
                     item.AllowUpdate = true;
                     item.Id_nb = "effulgent_dreaded_seal";
@@ -282,12 +282,12 @@ namespace DOL.GS.Scripts
                 #endregion Add Seals to Item Templates
             #region Alb Crafting
                 // add to Crafted Item Table
-                DBCraftedItem seal;
+                DbCraftedItem seal;
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("lambent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("lambent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "lambent_dreaded_seal";
                     seal.CraftedItemID = "4894"; // Hib Crafting
@@ -300,10 +300,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("lambent_dreaded_seal2");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("lambent_dreaded_seal2");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "lambent_dreaded_seal2";
                     seal.CraftedItemID = "4895"; // Hib Crafting
@@ -316,10 +316,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("fulgent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("fulgent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "fulgent_dreaded_seal";
                     seal.CraftedItemID = "4896"; // Hib Crafting
@@ -332,10 +332,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("effulgent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("effulgent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "effulgent_dreaded_seal";
                     seal.CraftedItemID = "4897"; // Hib Crafting
@@ -350,10 +350,10 @@ namespace DOL.GS.Scripts
                 #endregion Alb Crafting
             #region Mid Crafting
                 // add to Crafted Item Table
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("lambent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("lambent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "lambent_dreaded_seal";
                     seal.CraftedItemID = "11834"; // Hib Crafting
@@ -366,10 +366,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("lambent_dreaded_seal2");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("lambent_dreaded_seal2");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "lambent_dreaded_seal2";
                     seal.CraftedItemID = "11835"; // Hib Crafting
@@ -382,10 +382,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("fulgent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("fulgent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "fulgent_dreaded_seal";
                     seal.CraftedItemID = "11836"; // Hib Crafting
@@ -398,10 +398,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("effulgent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("effulgent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "effulgent_dreaded_seal";
                     seal.CraftedItemID = "11837"; // Hib Crafting
@@ -416,10 +416,10 @@ namespace DOL.GS.Scripts
                 #endregion Mid Crafting
             #region Hib Crafting 
                 // add to Crafted Item Table
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("lambent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("lambent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "lambent_dreaded_seal";
                     seal.CraftedItemID = "16564"; // Hib Crafting
@@ -432,10 +432,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("lambent_dreaded_seal2");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("lambent_dreaded_seal2");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "lambent_dreaded_seal2";
                     seal.CraftedItemID = "16565"; // Hib Crafting
@@ -448,10 +448,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("fulgent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("fulgent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "fulgent_dreaded_seal";
                     seal.CraftedItemID = "16566"; // Hib Crafting
@@ -464,10 +464,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + seal.Id_nb);
                 }
 
-                seal = GameServer.Database.FindObjectByKey<DBCraftedItem>("effulgent_dreaded_seal");
+                seal = GameServer.Database.FindObjectByKey<DbCraftedItem>("effulgent_dreaded_seal");
                 if (seal == null)
                 {
-                    seal = new DBCraftedItem();
+                    seal = new DbCraftedItem();
                     seal.AllowAdd = true;
                     seal.Id_nb = "effulgent_dreaded_seal";
                     seal.CraftedItemID = "16567"; // Hib Crafting
@@ -482,11 +482,11 @@ namespace DOL.GS.Scripts
                 #endregion Hib Crafting
             #region All Realm Crafted X
                 // add to Crafted X Item Table
-                DBCraftedXItem sealx;
-                sealx = GameServer.Database.FindObjectByKey<DBCraftedXItem>("lambent_dreaded_seal");
+                DbCraftedXItem sealx;
+                sealx = GameServer.Database.FindObjectByKey<DbCraftedXItem>("lambent_dreaded_seal");
                 if (sealx == null)
                 {
-                    sealx = new DBCraftedXItem();
+                    sealx = new DbCraftedXItem();
                     sealx.AllowAdd = true;
                     sealx.CraftedItemId_nb = "lambent_dreaded_seal";
                     sealx.IngredientId_nb = "glowing_dreaded_seal";
@@ -498,10 +498,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + sealx.CraftedItemId_nb);
                 }
 
-                sealx = GameServer.Database.FindObjectByKey<DBCraftedXItem>("lambent_dreaded_seal2");
+                sealx = GameServer.Database.FindObjectByKey<DbCraftedXItem>("lambent_dreaded_seal2");
                 if (sealx == null)
                 {
-                    sealx = new DBCraftedXItem();
+                    sealx = new DbCraftedXItem();
                     sealx.AllowAdd = true;
                     sealx.CraftedItemId_nb = "lambent_dreaded_seal2";
                     sealx.IngredientId_nb = "sanguine_dreaded_seal";
@@ -513,10 +513,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + sealx.CraftedItemId_nb);
                 }
 
-                sealx = GameServer.Database.FindObjectByKey<DBCraftedXItem>("fulgent_dreaded_seal");
+                sealx = GameServer.Database.FindObjectByKey<DbCraftedXItem>("fulgent_dreaded_seal");
                 if (sealx == null)
                 {
-                    sealx = new DBCraftedXItem();
+                    sealx = new DbCraftedXItem();
                     sealx.AllowAdd = true;
                     sealx.CraftedItemId_nb = "fulgent_dreaded_seal";
                     sealx.IngredientId_nb = "lambent_dreaded_seal";
@@ -528,10 +528,10 @@ namespace DOL.GS.Scripts
                         log.Debug("Added " + sealx.CraftedItemId_nb);
                 }
 
-                sealx = GameServer.Database.FindObjectByKey<DBCraftedXItem>("effulgent_dreaded_seal");
+                sealx = GameServer.Database.FindObjectByKey<DbCraftedXItem>("effulgent_dreaded_seal");
                 if (sealx == null)
                 {
-                    sealx = new DBCraftedXItem();
+                    sealx = new DbCraftedXItem();
                     sealx.AllowAdd = true;
                     sealx.CraftedItemId_nb = "effulgent_dreaded_seal";
                     sealx.IngredientId_nb = "fulgent_dreaded_seal";
@@ -562,7 +562,7 @@ namespace DOL.GS.Scripts
             return true;
         }
 
-        public override bool ReceiveItem(GameLiving source, InventoryItem item)
+        public override bool ReceiveItem(GameLiving source, DbInventoryItem item)
         {
             GamePlayer player = source as GamePlayer;
             int Level = player.Level;

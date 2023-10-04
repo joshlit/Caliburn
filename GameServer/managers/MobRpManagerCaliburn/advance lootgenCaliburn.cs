@@ -96,7 +96,7 @@ namespace DOL.GS.Scripts
         private static int AddName(GameClient client, string[] args)
         {
 
-            LootGenerator advgen = new LootGenerator();
+            DbLootGenerator advgen = new DbLootGenerator();
             advgen.MobName = args[2];
             advgen.LootGeneratorClass = "DOL.GS.AdvancedGen" + args[3] + "";
             GameServer.Database.AddObject(advgen);
@@ -106,7 +106,7 @@ namespace DOL.GS.Scripts
 
         private static int AddGuild(GameClient client, string[] args)
         {
-            LootGenerator advgen = new LootGenerator();
+            DbLootGenerator advgen = new DbLootGenerator();
             advgen.MobGuild = args[2];
             advgen.LootGeneratorClass = "DOL.GS.AdvancedGen" + args[3] + "";
             client.Out.SendMessage("Mob Guild, " + args[2] + " has been added to advanced lootgen", eChatType.CT_Advise, eChatLoc.CL_ChatWindow);
@@ -117,7 +117,7 @@ namespace DOL.GS.Scripts
         private static int AddRegion(GameClient client, string[] args)
         {
 
-            LootGenerator advgen = new LootGenerator();
+            DbLootGenerator advgen = new DbLootGenerator();
             advgen.RegionID = byte.Parse(args[2]);
             advgen.LootGeneratorClass = "DOL.GS.AdvancedGen" + args[3] + "";
             GameServer.Database.AddObject(advgen);
@@ -128,7 +128,7 @@ namespace DOL.GS.Scripts
 
         private void RemoveName(GameClient client, string[] args)
         {
-            LootGenerator advgen = (LootGenerator)GameServer.Database.SelectObject<LootGenerator>(DB.Column("MobName").IsEqualTo(args[2]));
+            DbLootGenerator advgen = (DbLootGenerator)GameServer.Database.SelectObject<DbLootGenerator>(DB.Column("MobName").IsEqualTo(args[2]));
 
             if (advgen == null)
             {
@@ -146,7 +146,7 @@ namespace DOL.GS.Scripts
 
         private void RemoveGuild(GameClient client, string[] args)
         {
-            LootGenerator advgen = (LootGenerator)GameServer.Database.SelectObject<LootGenerator>(DB.Column("MobGuild").IsEqualTo(args[2]));
+            DbLootGenerator advgen = (DbLootGenerator)GameServer.Database.SelectObject<DbLootGenerator>(DB.Column("MobGuild").IsEqualTo(args[2]));
 
             if (advgen == null)
             {
@@ -164,7 +164,7 @@ namespace DOL.GS.Scripts
 
         private void RemoveRegion(GameClient client, string[] args)
         {
-            LootGenerator advgen = (LootGenerator)GameServer.Database.SelectObject<LootGenerator>(DB.Column("RegionID").IsEqualTo(byte.Parse(args[2])));
+            DbLootGenerator advgen = (DbLootGenerator)GameServer.Database.SelectObject<DbLootGenerator>(DB.Column("RegionID").IsEqualTo(byte.Parse(args[2])));
 
             if (advgen == null)
             {
