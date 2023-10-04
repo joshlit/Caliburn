@@ -52,7 +52,7 @@ namespace DOL.GS
 				}
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -224,7 +224,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_LifedrianPulse == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 10;
@@ -236,7 +236,7 @@ namespace DOL.AI.Brain
 					spell.Range = 1500;
 					spell.Radius = 440;
 					spell.SpellID = 11898;
-					spell.Target = eSpellTarget.Area.ToString();
+					spell.Target = eSpellTarget.AREA.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;

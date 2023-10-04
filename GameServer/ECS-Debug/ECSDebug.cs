@@ -327,14 +327,14 @@ namespace DOL.GS.Commands
         "&charstats",
         ePrivLevel.GM,
         "Shows normally hidden character stats.")]
-    public class AtlasCharStatsCommandHandler : AbstractCommandHandler, ICommandHandler
+    public class CharStatsCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
         {
             List<string> messages = new();
             string header = "Hidden Character Stats";
             GamePlayer player = client.Player;
-            InventoryItem lefthand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+            DbInventoryItem lefthand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
 
             // Block chance.
             if (player.HasAbility(Abilities.Shield))

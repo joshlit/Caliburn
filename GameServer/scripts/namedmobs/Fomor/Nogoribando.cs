@@ -178,7 +178,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Boss_SC_Debuff == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 0;
@@ -191,7 +191,7 @@ namespace DOL.AI.Brain
 					spell.Range = 1500;
 					spell.Radius = 350;
 					spell.SpellID = 11837;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.StrengthConstitutionDebuff.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -208,7 +208,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Boss_Haste_Buff == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 35;

@@ -1,28 +1,10 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Reflection;
 using DOL.Database;
 using log4net;
-using System.Collections.Generic;
 
 namespace DOL.GS
 {
@@ -76,10 +58,10 @@ namespace DOL.GS
 			if (log.IsInfoEnabled)
 				log.Info("Loading LootGenerators...");
 
-			IList<LootGenerator> m_lootGenerators;
+			IList<DbLootGenerator> m_lootGenerators;
 			try
 			{
-				m_lootGenerators = GameServer.Database.SelectAllObjects<LootGenerator>();
+				m_lootGenerators = GameServer.Database.SelectAllObjects<DbLootGenerator>();
 			}
 			catch (Exception e)
 			{
@@ -90,7 +72,7 @@ namespace DOL.GS
 
 			if (m_lootGenerators != null) // did we find any loot generators
 			{
-				foreach (LootGenerator dbGenerator in m_lootGenerators)
+				foreach (DbLootGenerator dbGenerator in m_lootGenerators)
 				{
 					ILootGenerator generator = GetGeneratorInCache(dbGenerator);
 					if (generator == null)
@@ -146,7 +128,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="dbGenerator"></param>
 		/// <param name="generator"></param>
-		private static void PutGeneratorInCache(LootGenerator dbGenerator, ILootGenerator generator)
+		private static void PutGeneratorInCache(DbLootGenerator dbGenerator, ILootGenerator generator)
 		{
 			m_ClassGenerators[dbGenerator.LootGeneratorClass + dbGenerator.ExclusivePriority] = generator;
 		}
@@ -156,7 +138,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="dbGenerator"></param>
 		/// <returns></returns>
-		private static ILootGenerator GetGeneratorInCache(LootGenerator dbGenerator)
+		private static ILootGenerator GetGeneratorInCache(DbLootGenerator dbGenerator)
 		{
 			if (m_ClassGenerators[dbGenerator.LootGeneratorClass + dbGenerator.ExclusivePriority] != null)
 			{
@@ -183,7 +165,7 @@ namespace DOL.GS
 				return;
 
 			// Loot Generator Name Indexed
-			if (!Util.IsEmpty(mobname))
+			if (!string.IsNullOrEmpty(mobname))
 			{	
 				
 				try 
@@ -210,7 +192,7 @@ namespace DOL.GS
 			}
 
 			// Loot Generator Guild Indexed
-			if (!Util.IsEmpty(mobguild))
+			if (!string.IsNullOrEmpty(mobguild))
 			{
 				
 				try 
@@ -237,7 +219,7 @@ namespace DOL.GS
 			}
 
 			// Loot Generator Faction Indexed
-			if (!Util.IsEmpty(mobfaction))
+			if (!string.IsNullOrEmpty(mobfaction))
 			{
 
 				try
@@ -281,7 +263,7 @@ namespace DOL.GS
 				}
 			}
 
-			if (Util.IsEmpty(mobname) && Util.IsEmpty(mobguild) && Util.IsEmpty(mobfaction) && mobregion == 0)
+			if (string.IsNullOrEmpty(mobname) && string.IsNullOrEmpty(mobguild) && string.IsNullOrEmpty(mobfaction) && mobregion == 0)
 			{
 				m_globalGenerators.Remove(generator);
 			}
@@ -303,7 +285,7 @@ namespace DOL.GS
 				return;
 
 			// Loot Generator Name Indexed
-			if (!Util.IsEmpty(mobname))
+			if (!string.IsNullOrEmpty(mobname))
 			{
 				// Parse CSV
 				try {
@@ -328,7 +310,7 @@ namespace DOL.GS
 			}
 
 			// Loot Generator Guild Indexed
-			if (!Util.IsEmpty(mobguild))
+			if (!string.IsNullOrEmpty(mobguild))
 			{
 				// Parse CSV
 				try {
@@ -353,7 +335,7 @@ namespace DOL.GS
 			}
 
 			// Loot Generator Mob Faction Indexed
-			if (!Util.IsEmpty(mobfaction))
+			if (!string.IsNullOrEmpty(mobfaction))
 			{
 				// Parse CSV
 				try
@@ -399,7 +381,7 @@ namespace DOL.GS
 				regionList.Add(generator);
 			}
 
-			if (Util.IsEmpty(mobname) && Util.IsEmpty(mobguild) && Util.IsEmpty(mobfaction) && mobregion == 0)
+			if (string.IsNullOrEmpty(mobname) && string.IsNullOrEmpty(mobguild) && string.IsNullOrEmpty(mobfaction) && mobregion == 0)
 			{
 				m_globalGenerators.Add(generator);
 			}
@@ -428,7 +410,7 @@ namespace DOL.GS
 		/// <param name="mob"></param>
 		/// <param name="killer"></param>
 		/// <returns></returns>
-		public static ItemTemplate[] GetLoot(GameNPC mob, GameObject killer)
+		public static DbItemTemplate[] GetLoot(GameNPC mob, GameObject killer)
 		{
 			LootList lootList = null;
 			IList generators = GetLootGenerators(mob);
@@ -450,7 +432,7 @@ namespace DOL.GS
 			if (lootList != null)
 				return lootList.GetLoot();
 			else
-				return new ItemTemplate[0];
+				return new DbItemTemplate[0];
 		}
 
 		/// <summary>

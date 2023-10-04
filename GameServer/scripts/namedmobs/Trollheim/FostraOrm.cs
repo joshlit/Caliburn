@@ -1,8 +1,8 @@
 ﻿using System;
 using DOL.AI.Brain;
 using DOL.Database;
-using DOL.GS;
 using DOL.Events;
+using DOL.GS;
 
 namespace DOL.GS
 {
@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -111,7 +111,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_OrmDot == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 0;
@@ -129,7 +129,7 @@ namespace DOL.AI.Brain
 					spell.Frequency = 30;
 					spell.Range = 500;
 					spell.SpellID = 11853;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DamageOverTime.ToString();
 					spell.DamageType = (int)eDamageType.Body;
 					spell.Uninterruptible = true;
@@ -146,7 +146,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_OrmDisease == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 0;

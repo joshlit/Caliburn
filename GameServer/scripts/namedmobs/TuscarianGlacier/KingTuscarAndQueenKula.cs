@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
-using DOL.GS.Styles;
 using DOL.GS.ServerProperties;
+using DOL.GS.Styles;
 
 namespace DOL.GS
 {
@@ -107,7 +107,7 @@ namespace DOL.GS
             }
         }
         #endregion
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
@@ -232,7 +232,7 @@ namespace DOL.GS
             {
                 if (m_Cold_DD == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 2;
@@ -243,7 +243,7 @@ namespace DOL.GS
                     spell.Name = "Thor's Might";
                     spell.Range = 2500;
                     spell.SpellID = 11892;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -473,7 +473,7 @@ namespace DOL.AI.Brain
             {
                 if (m_mezSpell == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 5;
@@ -485,7 +485,7 @@ namespace DOL.AI.Brain
                     spell.Range = 1500;
                     spell.SpellID = 11750;
                     spell.Duration = 80;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = "Mesmerize";
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -503,7 +503,7 @@ namespace DOL.AI.Brain
             {
                 if (m_RootSpell == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 5;
@@ -516,7 +516,7 @@ namespace DOL.AI.Brain
                     spell.Range = 1500;
                     spell.SpellID = 11751;
                     spell.Duration = 80;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.SpeedDecrease.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -613,7 +613,7 @@ namespace DOL.GS
             }
         }
         #endregion
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
@@ -750,7 +750,7 @@ namespace DOL.GS
             {
                 if (m_Hammers_aoe == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 3;
@@ -762,7 +762,7 @@ namespace DOL.GS
                     spell.Radius = 500;
                     spell.Range = 350;
                     spell.SpellID = 11752;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -780,7 +780,7 @@ namespace DOL.GS
             {
                 if (m_Thunder_aoe == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 2;
@@ -792,7 +792,7 @@ namespace DOL.GS
                     spell.Radius = 500;
                     spell.Range = 350;
                     spell.SpellID = 11753;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -810,7 +810,7 @@ namespace DOL.GS
             {
                 if (m_Hammers_aoe2 == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 5;
@@ -822,7 +822,7 @@ namespace DOL.GS
                     spell.Radius = 500;
                     spell.Range = 350;
                     spell.SpellID = 11890;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -840,7 +840,7 @@ namespace DOL.GS
             {
                 if (m_Thunder_aoe2 == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 5;
@@ -852,7 +852,7 @@ namespace DOL.GS
                     spell.Radius = 500;
                     spell.Range = 350;
                     spell.SpellID = 11891;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -870,7 +870,7 @@ namespace DOL.GS
             {
                 if (m_Bleed == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 2;
@@ -886,7 +886,7 @@ namespace DOL.GS
                     spell.Frequency = 30;
                     spell.Range = 350;
                     spell.SpellID = 11754;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.StyleBleeding.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;

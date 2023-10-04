@@ -15,7 +15,7 @@ namespace DOL.GS
 		protected String[] m_deathAnnounce;
 		public MidGjalpinulva() : base() 
 		{
-			m_deathAnnounce = new String[] { "A soul - piercing howl echoes throughout the land, and then all is quiet." };
+			m_deathAnnounce = new String[] { "A soul-piercing howl echoes throughout the land, and then all is quiet." };
 		}
 
 		[ScriptLoadedEvent]
@@ -171,7 +171,7 @@ namespace DOL.GS
 
 			return base.HasAbility(keyName);
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -256,15 +256,18 @@ namespace DOL.GS
 			base.AddToWorld();
 			return true;
 		}
-        public override void EnemyKilled(GameLiving enemy)
-        {
-			if(enemy != null && enemy is GamePlayer)
-            {
-				GamePlayer player = (GamePlayer)enemy;
-				player.Out.SendMessage(Name + " says, 'Your soul now belongs to the " + Name, eChatType.CT_Say,eChatLoc.CL_ChatWindow);
-            }
-            base.EnemyKilled(enemy);
-        }
+
+		public override void EnemyKilled(GameLiving enemy)
+		{
+			if (enemy is GamePlayer player)
+			{
+				foreach (GamePlayer otherPlayer in ClientService.GetPlayersOfZone(CurrentZone))
+					otherPlayer.Out.SendMessage($"{Name} shouts, 'Your soul now belongs to me, {player.CharacterClass.Name}!'", eChatType.CT_Say, eChatLoc.CL_ChatWindow);
+			}
+
+			base.EnemyKilled(enemy);
+		}
+
 		public override bool IsVisibleToPlayers => true;//this make dragon think all the time, no matter if player is around or not
 	}
 }
@@ -414,26 +417,24 @@ namespace DOL.AI.Brain
 				{
 					if (Body.attackComponent.AttackState && Body.IsCasting)//make sure it stop all actions
 						Body.attackComponent.StopAttack();
+
 					ClearAggroList();
 				}
+
 				IsRestless = true;//start roam
 				_lastRoamIndex = 0;
 				LockEndRoute = false;
-				foreach (GameClient client in WorldMgr.GetClientsOfZone(Body.CurrentZone.ID))//from current zone
+
+				foreach (GamePlayer player in ClientService.GetPlayersOfZone(Body.CurrentZone))
 				{
-					if (client == null) break;
-					if (client.Player == null) continue;
-					if (client.IsPlaying)
-					{
-						client.Out.SendSoundEffect(2467, 0, 0, 0, 0, 0);//play sound effect for every player in boss currentregion
-						client.Out.SendMessage("A booming voice echoes through the canyons, I grow restless.Who has dared to enter my domain ? " +
-							"I shall freeze their flesh and grind their bones to dust!", eChatType.CT_Broadcast, eChatLoc.CL_ChatWindow);
-					}
+					player.Out.SendSoundEffect(2467, 0, 0, 0, 0, 0);//play sound effect for every player in boss currentregion
+					player.Out.SendMessage("A booming voice echoes through the canyons, 'I grow restless. Who has dared to enter my domain? I shall freeze their flesh and grind their bones to dust!'", eChatType.CT_Broadcast, eChatLoc.CL_ChatWindow);
 				}
+
 				Body.Flags = GameNPC.eFlags.FLYING;//make dragon fly mode
 				ResetChecks = false;//reset it so can reset bools at end of path
 				LockIsRestless = true;
-			}			
+			}
 
 			if (IsRestless)
 				DragonFlyingPath();//make dragon follow the path
@@ -860,7 +861,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Dragon_DD2 == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 0;
@@ -889,7 +890,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Dragon_DD == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 0;
@@ -918,7 +919,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Dragon_PBAOE == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 6;
 					spell.RecastDelay = 0;
@@ -947,7 +948,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Dragon_Stun == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 0;
@@ -976,7 +977,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Dragon_Debuff == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 0;
@@ -1340,7 +1341,7 @@ namespace DOL.GS
 				default: return 20;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}

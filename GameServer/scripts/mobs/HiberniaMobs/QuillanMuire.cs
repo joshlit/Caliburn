@@ -1,5 +1,4 @@
-﻿using DOL.AI;
-using DOL.AI.Brain;
+﻿using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS;
 
@@ -77,7 +76,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_QuillanMuire_DD == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3.5;
 					spell.RecastDelay = Util.Random(10, 15);
@@ -88,7 +87,7 @@ namespace DOL.AI.Brain
 					spell.Name = "Energy Blast";
 					spell.Range = 1500;
 					spell.SpellID = 11948;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -106,7 +105,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_QuillanMuire_DD2 == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3.5;
 					spell.RecastDelay = Util.Random(8, 12);
@@ -117,7 +116,7 @@ namespace DOL.AI.Brain
 					spell.Name = "Energy Blast";
 					spell.Range = 1500;
 					spell.SpellID = 11949;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -264,7 +263,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_MuireHerbalistHeal == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 3;
@@ -291,7 +290,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_MuireHerbalist_Buff_STR == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 0;

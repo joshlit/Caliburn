@@ -305,7 +305,7 @@ namespace DOL.GS
 			{
 				if (m_Barrel_aoe == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 0;
@@ -317,7 +317,7 @@ namespace DOL.GS
 					spell.Radius = 1000;
 					spell.Range = 1000;
 					spell.SpellID = 11880;
-					spell.Target = eSpellTarget.Area.ToString();
+					spell.Target = eSpellTarget.AREA.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;

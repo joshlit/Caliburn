@@ -43,7 +43,7 @@ namespace DOL.GS.PlayerClass
 
 		public override ushort MaxPulsingSpells
 		{
-			get { return 2; } //atlas down to 1
+			get { return 2; }
 		}
 
 		public override List<PlayerRace> EligibleRaces => new List<PlayerRace>()

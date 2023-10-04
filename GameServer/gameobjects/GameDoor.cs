@@ -68,7 +68,7 @@ namespace DOL.GS
         {
             base.LoadFromDatabase(obj);
 
-            DBDoor dbDoor = obj as DBDoor;
+            DbDoor dbDoor = obj as DbDoor;
 
             if (dbDoor == null)
                 return;
@@ -95,7 +95,7 @@ namespace DOL.GS
             Flag = dbDoor.Flags;
 
             // Open mile gates on PVE and PVP server types.
-            if (CurrentRegion.IsFrontier && (GameServer.Instance.Configuration.ServerType is eGameServerType.GST_PvE or eGameServerType.GST_PvP))
+            if (CurrentRegion.IsFrontier && (GameServer.Instance.Configuration.ServerType is EGameServerType.GST_PvE or EGameServerType.GST_PvP))
                 State = eDoorState.Open;
 
             AddToWorld();
@@ -104,13 +104,13 @@ namespace DOL.GS
 
         public override void SaveIntoDatabase()
         {
-            DBDoor obj = null;
+            DbDoor obj = null;
 
             if (InternalID != null)
-                obj = GameServer.Database.FindObjectByKey<DBDoor>(InternalID);
+                obj = GameServer.Database.FindObjectByKey<DbDoor>(InternalID);
 
             if (obj == null)
-                obj = new DBDoor();
+                obj = new DbDoor();
 
             obj.Name = Name;
             obj.InternalID = DoorID;

@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -129,7 +129,7 @@ namespace DOL.GS
 			{
 				if (m_ValnirLifeDrain == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 2;
@@ -140,7 +140,7 @@ namespace DOL.GS
 					spell.Name = "Lifedrain";
 					spell.Range = 400;
 					spell.SpellID = 11903;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -264,7 +264,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Valnir_Dot == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 20;
@@ -301,7 +301,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_ValnirDisease == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 40;
@@ -347,7 +347,7 @@ namespace DOL.GS
 				default: return 20;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -456,7 +456,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_ValnirAddLifeDrain == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3.5;
 					spell.RecastDelay = 0;
@@ -467,7 +467,7 @@ namespace DOL.AI.Brain
 					spell.Name = "Lifedrain";
 					spell.Range = 1800;
 					spell.SpellID = 11902;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;

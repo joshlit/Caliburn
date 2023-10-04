@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using DOL.Database;
 using DOL.Events;
 using DOL.GS.Effects;
@@ -7,7 +6,6 @@ using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Spells
 {
-
     [SpellHandler("ValkyrieOffensiveProc")]
     public class ValkyrieOffensiveProcSpellHandler : SpellHandler
     {
@@ -62,7 +60,7 @@ namespace DOL.GS.Spells
                 if (sender is GamePlayer)
                 {
                     GamePlayer player = (GamePlayer)sender;
-                    InventoryItem leftWeapon = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+                    DbInventoryItem leftWeapon = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
                     // if we can use left weapon, we have currently a weapon in left hand and we still have endurance,
                     // we can assume that we are using the two weapons.
                     if (player.attackComponent.CanUseLefthandedWeapon && leftWeapon != null && leftWeapon.Object_Type != (int)eObjectType.Shield)
@@ -78,9 +76,9 @@ namespace DOL.GS.Spells
                 ISpellHandler handler = ScriptMgr.CreateSpellHandler((GameLiving)sender, m_procSpell, SkillBase.GetSpellLine(GlobalSpellsLines.Reserved_Spells));
                 if (handler != null)
                 {
-                    if (m_procSpell.Target == "Enemy")
+                    if (m_procSpell.Target == eSpellTarget.ENEMY)
                         handler.StartSpell(ad.Target);
-                    else if (m_procSpell.Target == "Self")
+                    else if (m_procSpell.Target == eSpellTarget.SELF)
                         handler.StartSpell(ad.Attacker);
                 }
             }

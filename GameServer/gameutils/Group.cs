@@ -219,11 +219,11 @@ namespace DOL.GS
 
 			//use this to track completely solo characters
 			const string customKey = "grouped_char";
-			var hasGrouped = DOLDB<DOLCharactersXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
+			var hasGrouped = DOLDB<DbCoreCharacterXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
 
 			if (hasGrouped == null)
 			{
-				DOLCharactersXCustomParam groupedChar = new DOLCharactersXCustomParam();
+				DbCoreCharacterXCustomParam groupedChar = new DbCoreCharacterXCustomParam();
 				groupedChar.DOLCharactersObjectId = player.ObjectId;
 				groupedChar.KeyName = customKey;
 				groupedChar.Value = "1";
@@ -232,7 +232,7 @@ namespace DOL.GS
 
 			// Part of the hack to make friendly pets untargetable (or targetable again) with TAB on a PvP server.
 			// We could also check for non controlled pets (turrets for example) around the player, but it isn't very important.
-			if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
+			if (GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvP)
 			{
 				IControlledBrain controlledBrain = player.ControlledBrain;
 				Guild playerGuild = player.Guild;
@@ -306,7 +306,7 @@ namespace DOL.GS
 
 				// Part of the hack to make friendly pets untargetable (or targetable again) with TAB on a PvP server.
 				// We could also check for non controlled pets (turrets for example) around the player, but it isn't very important.
-				if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
+				if (GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvP)
 				{
 					IControlledBrain controlledBrain = player.ControlledBrain;
 					Guild playerGuild = player.Guild;

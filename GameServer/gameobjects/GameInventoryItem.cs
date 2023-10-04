@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -31,7 +12,7 @@ namespace DOL.GS
     /// <summary>
     /// This class represents an inventory item
     /// </summary>
-    public class GameInventoryItem : InventoryItem, IGameInventoryItem, ITranslatableObject {
+    public class GameInventoryItem : DbInventoryItem, IGameInventoryItem, ITranslatableObject {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         protected GamePlayer m_owner = null;
@@ -41,17 +22,17 @@ namespace DOL.GS
         {
         }
 
-        public GameInventoryItem(ItemTemplate template)
+        public GameInventoryItem(DbItemTemplate template)
             : base(template)
         {
         }
 
-        public GameInventoryItem(ItemUnique template)
+        public GameInventoryItem(DbItemUnique template)
             : base(template)
         {
         }
 
-        public GameInventoryItem(InventoryItem item)
+        public GameInventoryItem(DbInventoryItem item)
             : base(item)
         {
             OwnerID = item.OwnerID;
@@ -94,7 +75,7 @@ namespace DOL.GS
         public virtual bool CanPersist
         {
             get {
-                if (Id_nb == InventoryItem.BLANK_ITEM)
+                if (Id_nb == DbInventoryItem.BLANK_ITEM)
                     return false;
 
                 return true;
@@ -121,7 +102,7 @@ namespace DOL.GS
         /// <param name="item"></param>
         /// <returns></returns>
         [Obsolete("Use Create() instead")]
-        public static GameInventoryItem Create<T>(ItemTemplate item)
+        public static GameInventoryItem Create<T>(DbItemTemplate item)
         {
             return Create(item);
         }
@@ -134,7 +115,7 @@ namespace DOL.GS
         /// <param name="item"></param>
         /// <returns></returns>
         [Obsolete("Use Create() instead")]
-        public static GameInventoryItem Create<T>(InventoryItem item)
+        public static GameInventoryItem Create<T>(DbInventoryItem item)
         {
             return Create(item);
         }
@@ -145,18 +126,18 @@ namespace DOL.GS
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public static GameInventoryItem Create(ItemTemplate item)
+        public static GameInventoryItem Create(DbItemTemplate item)
         {
             string classType = item.ClassType;
-            var itemUnique = item as ItemUnique;
+            var itemUnique = item as DbItemUnique;
 
             if (!string.IsNullOrEmpty(classType))
             {
                 GameInventoryItem gameItem;
                 if (itemUnique != null)
-                    gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, ItemUnique>(classType, itemUnique);
+                    gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, DbItemUnique>(classType, itemUnique);
                 else
-                    gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, ItemTemplate>(classType, item);
+                    gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, DbItemTemplate>(classType, item);
 
                 if (gameItem != null)
                     return gameItem;
@@ -177,13 +158,13 @@ namespace DOL.GS
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public static GameInventoryItem Create(InventoryItem item)
+        public static GameInventoryItem Create(DbInventoryItem item)
         {
             string classType = item.Template.ClassType;
 
             if (!string.IsNullOrEmpty(classType))
             {
-                GameInventoryItem gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, InventoryItem>(classType, item);
+                GameInventoryItem gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, DbInventoryItem>(classType, item);
 
                 if (gameItem != null)
                     return gameItem;
@@ -377,7 +358,7 @@ namespace DOL.GS
         /// <param name="player"></param>
         /// <param name="targetItem"></param>
         /// <returns>true if combine is handled here</returns>
-        public virtual bool Combine(GamePlayer player, InventoryItem targetItem)
+        public virtual bool Combine(GamePlayer player, DbInventoryItem targetItem)
         {
             return false;
         }
@@ -542,7 +523,7 @@ namespace DOL.GS
 
         protected virtual void WriteUsableClasses(IList<string> output, GameClient client)
         {
-            if (Util.IsEmpty(AllowedClasses, true))
+            if (string.IsNullOrEmpty(AllowedClasses))
                 return;
 
             output.Add(LanguageMgr.GetTranslation(client.Account.Language, "DetailDisplayHandler.WriteUsableClasses.UsableBy"));
@@ -1427,14 +1408,14 @@ namespace DOL.GS
             delve.Add("--- Technical Information ---");
             delve.Add("");
 
-            if (Template is ItemUnique)
+            if (Template is DbItemUnique)
             {
                 delve.Add("  Item Unique: " + Id_nb);
             }
             else
             {
                 delve.Add("Item Template: " + Id_nb);
-                delve.Add("Allow Updates: " + (Template as ItemTemplate).AllowUpdate);
+                delve.Add("Allow Updates: " + (Template as DbItemTemplate).AllowUpdate);
             }
 
             delve.Add("");

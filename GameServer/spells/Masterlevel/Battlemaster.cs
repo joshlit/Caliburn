@@ -200,7 +200,7 @@ namespace DOL.GS.Spells
                 if (sender is GamePlayer)
                 {
                     GamePlayer player = (GamePlayer)sender;
-                    InventoryItem leftWeapon = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+                    DbInventoryItem leftWeapon = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
                     // if we can use left weapon, we have currently a weapon in left hand and we still have endurance,
                     // we can assume that we are using the two weapons.
                     if (player.attackComponent.CanUseLefthandedWeapon && leftWeapon != null && leftWeapon.Object_Type != (int)eObjectType.Shield)
@@ -218,32 +218,43 @@ namespace DOL.GS.Spells
                 ISpellHandler handler = ScriptMgr.CreateSpellHandler((GameLiving)sender, m_procSpell, m_procSpellLine);
                 if (handler != null)
                 {
-                    if (m_procSpell.Target.ToLower() == "enemy")
-                        handler.StartSpell(ad.Target);
-                    else if (m_procSpell.Target.ToLower() == "self")
-                        handler.StartSpell(ad.Attacker);
-                    else if (m_procSpell.Target.ToLower() == "group")
+                    switch (m_procSpell.Target)
                     {
-                        GamePlayer player = Caster as GamePlayer;
-                        if (Caster is GamePlayer)
+                        case eSpellTarget.ENEMY:
                         {
-                            if (player.Group != null)
+                            handler.StartSpell(ad.Target);
+                            break;
+                        }
+                        case eSpellTarget.SELF:
+                        {
+                            handler.StartSpell(ad.Attacker);
+                            break;
+                        }
+                        case eSpellTarget.GROUP:
+                        {
+                            if (Caster is GamePlayer player)
                             {
-                                foreach (GameLiving groupPlayer in player.Group.GetMembersInTheGroup())
+                                if (player.Group != null)
                                 {
-                                    if (player.IsWithinRadius(groupPlayer, m_procSpell.Range))
+                                    foreach (GameLiving groupPlayer in player.Group.GetMembersInTheGroup())
                                     {
-                                        handler.StartSpell(groupPlayer);
+                                        if (player.IsWithinRadius(groupPlayer, m_procSpell.Range))
+                                        {
+                                            handler.StartSpell(groupPlayer);
+                                        }
                                     }
                                 }
+                                else
+                                    handler.StartSpell(player);
                             }
-                            else
-                                handler.StartSpell(player);
+
+                            break;
                         }
-                    }
-                    else
-                    {
-                        log.Warn("Skipping " + m_procSpell.Target + " proc " + m_procSpell.Name + " on " + ad.Target.Name + "; Realm = " + ad.Target.Realm);
+                        default:
+                        {
+                            log.Warn("Skipping " + m_procSpell.Target + " proc " + m_procSpell.Name + " on " + ad.Target.Name + "; Realm = " + ad.Target.Realm);
+                            break;
+                        }
                     }
                 }
             }
@@ -267,7 +278,7 @@ namespace DOL.GS.Spells
             {
                 if (Disarm_Weapon == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.Uninterruptible = true;
@@ -301,7 +312,7 @@ namespace DOL.GS.Spells
                 return false;
             }
 
-			InventoryItem weapon = null;
+			DbInventoryItem weapon = null;
 
             //assign the weapon the player is using, it can be a twohanded or a standard slot weapon
 			if (player.ActiveWeaponSlot.ToString() == "TwoHanded") 
@@ -347,7 +358,7 @@ namespace DOL.GS.Spells
         
         public override void DamageTarget(AttackData ad, bool showEffectAnimation)
         {
-            InventoryItem weapon = null;
+            DbInventoryItem weapon = null;
             weapon = ad.Weapon;
 
             if (showEffectAnimation && ad.Target != null)
@@ -374,7 +385,7 @@ namespace DOL.GS.Spells
                         resultByte = 2;
                         if (ad.Target != null && ad.Target.Inventory != null)
                         {
-                            InventoryItem lefthand = ad.Target.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+                            DbInventoryItem lefthand = ad.Target.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
                             if (lefthand != null && lefthand.Object_Type == (int)eObjectType.Shield)
                             {
                                 defendersWeapon = lefthand.Model;
@@ -422,7 +433,7 @@ namespace DOL.GS.Spells
         public override void SendDamageMessages(AttackData ad)
         {
 			GameObject target = ad.Target;
-			InventoryItem weapon = ad.Weapon;
+			DbInventoryItem weapon = ad.Weapon;
             GamePlayer player = Caster as GamePlayer;
 
 			switch (ad.AttackResult)
@@ -525,7 +536,7 @@ namespace DOL.GS.Spells
             if (player == null)
                 return null;
 
-            InventoryItem weapon = null;
+            DbInventoryItem weapon = null;
 
             if (player.ActiveWeaponSlot.ToString() == "TwoHanded")
                 weapon = player.Inventory.GetItem((eInventorySlot)12);
@@ -569,7 +580,7 @@ namespace DOL.GS.Spells
                 if (target is GamePlayer)
                     ad.ArmorHitLocation = ((GamePlayer)target).CalculateArmorHitLocation(ad);
 
-                InventoryItem armor = null;
+                DbInventoryItem armor = null;
                 if (target.Inventory != null)
                     armor = target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
 

@@ -48,7 +48,7 @@ namespace DOL.GS
                 }
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -251,7 +251,7 @@ namespace DOL.AI.Brain
             {
                 if (m_BlackLady_DD == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 3.5;
                     spell.RecastDelay = Util.Random(6,12);
@@ -263,7 +263,7 @@ namespace DOL.AI.Brain
                     spell.Radius = 350;
                     spell.Range = 1800;
                     spell.SpellID = 11787;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;

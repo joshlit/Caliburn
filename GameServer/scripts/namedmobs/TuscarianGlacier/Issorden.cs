@@ -1,11 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
 using DOL.GS;
-using System.Collections.Generic;
 using DOL.GS.PacketHandler;
-using System.Collections;
 
 namespace DOL.GS
 {
@@ -24,7 +22,7 @@ namespace DOL.GS
                 default: return 70;// dmg reduction for rest resists
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
@@ -205,7 +203,7 @@ namespace DOL.AI.Brain
             {
                 if (m_IssoRoot == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 30;
@@ -235,7 +233,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Isso_Bolt == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 2;
                     spell.RecastDelay = 0;
@@ -246,7 +244,7 @@ namespace DOL.AI.Brain
                     spell.Name = "Frost Sphere";
                     spell.Range = 1800;
                     spell.SpellID = 11921;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.Bolt.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;

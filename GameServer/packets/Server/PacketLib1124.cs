@@ -1,23 +1,4 @@
-﻿/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -74,7 +55,7 @@ namespace DOL.GS.PacketHandler
 		{
 			using (GSTCPPacketOut pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.EquipmentUpdate)))
 			{
-				ICollection<InventoryItem> items = null;
+				ICollection<DbInventoryItem> items = null;
 				if (living.Inventory != null)
 					items = living.Inventory.VisibleItems;
 
@@ -87,7 +68,7 @@ namespace DOL.GS.PacketHandler
 				if (items != null)
 				{
 					pak.WriteByte((byte)items.Count);
-					foreach (InventoryItem item in items)
+					foreach (DbInventoryItem item in items)
 					{
 						ushort model = (ushort)(item.Model & 0x1FFF);
 						int slot = item.SlotPosition;
@@ -244,11 +225,11 @@ namespace DOL.GS.PacketHandler
 					LanguageDataObject translation = LanguageMgr.GetTranslation(m_gameClient, npc);
 					if (translation != null)
 					{
-						if (!Util.IsEmpty(((DBLanguageNPC)translation).Name))
-							name = ((DBLanguageNPC)translation).Name;
+						if (!string.IsNullOrEmpty(((DbLanguageGameNpc)translation).Name))
+							name = ((DbLanguageGameNpc)translation).Name;
 
-						if (!Util.IsEmpty(((DBLanguageNPC)translation).GuildName))
-							guildName = ((DBLanguageNPC)translation).GuildName;
+						if (!string.IsNullOrEmpty(((DbLanguageGameNpc)translation).GuildName))
+							guildName = ((DbLanguageGameNpc)translation).GuildName;
 					}
 
 					if (name.Length + add.Length + 2 > 47) // clients crash with too long names
@@ -277,7 +258,7 @@ namespace DOL.GS.PacketHandler
 
 			// Hack to make NPCs untargetable with TAB on a PvP server. There might be a better way to do it.
 			// Relies on 'SendObjectGuildID' not to be called after this.
-			if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
+			if (GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvP)
 			{
 				if (npc.Brain is IControlledBrain npcBrain)
 					SendPetFakeFriendlyGuildID(npc, npcBrain);
@@ -710,12 +691,12 @@ namespace DOL.GS.PacketHandler
 				LanguageDataObject translation = LanguageMgr.GetTranslation(m_gameClient, siegeWeapon);
 				if (translation != null)
 				{
-					if (!Util.IsEmpty(((DBLanguageNPC)translation).Name))
-						name = ((DBLanguageNPC)translation).Name;
+					if (!string.IsNullOrEmpty(((DbLanguageGameNpc)translation).Name))
+						name = ((DbLanguageGameNpc)translation).Name;
 				}
 
 				//pak.WritePascalString(name + " (" + siegeWeapon.CurrentState.ToString() + ")");
-				foreach (InventoryItem item in siegeWeapon.Ammo)
+				foreach (DbInventoryItem item in siegeWeapon.Ammo)
 				{
 					if (item == null)
 					{
@@ -775,6 +756,7 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(m_gameClient.MajorBuild); // last seen : 0x44 0x05
 				pak.WriteByte(m_gameClient.MinorBuild);
 				SendTCP(pak);
+				m_gameClient.PacketProcessor.ProcessTcpQueue();
 			}
 		}
 
@@ -862,7 +844,7 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		protected override void WriteItemData(GSTCPPacketOut pak, InventoryItem item)
+		protected override void WriteItemData(GSTCPPacketOut pak, DbInventoryItem item)
 		{
 			if (item == null)
 			{
@@ -1030,7 +1012,7 @@ namespace DOL.GS.PacketHandler
 			pak.WritePascalString(name);
 		}
 
-		protected override void WriteTemplateData(GSTCPPacketOut pak, ItemTemplate template, int count)
+		protected override void WriteTemplateData(GSTCPPacketOut pak, DbItemTemplate template, int count)
 		{
 			if (template == null)
 			{

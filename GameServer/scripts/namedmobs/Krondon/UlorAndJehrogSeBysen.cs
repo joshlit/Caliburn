@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -178,7 +178,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Ulor_DD == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 0;
@@ -190,7 +190,7 @@ namespace DOL.AI.Brain
 					spell.Range = 1500;
 					spell.Radius = 200;
 					spell.SpellID = 11886;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.DamageType = (int)eDamageType.Body;
 					m_Ulor_DD = new Spell(spell, 70);
@@ -206,7 +206,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Ulor_DebuffBody == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 2;
 					spell.RecastDelay = 15;
@@ -223,7 +223,7 @@ namespace DOL.AI.Brain
 					spell.Message4 = "{0}'s physical vulnerability fades.";
 					spell.Range = 1500;
 					spell.SpellID = 11888;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.BodyResistDebuff.ToString();
 					spell.DamageType = (int)eDamageType.Body;
 					m_Ulor_DebuffBody = new Spell(spell, 70);
@@ -239,7 +239,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Ulor_aoedot == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 20;
@@ -258,7 +258,7 @@ namespace DOL.AI.Brain
 					spell.Range = 1500;
 					spell.Radius = 350;
 					spell.SpellID = 11887;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DamageOverTime.ToString();
 					spell.DamageType = (int)eDamageType.Matter;
 					m_Ulor_aoedot = new Spell(spell, 70);
@@ -293,7 +293,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}

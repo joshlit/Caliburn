@@ -14,7 +14,7 @@ namespace DOL.GS.RealmAbilities
 
 		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		public AtlasOF_FirstAid(DBAbility dba, int level) : base(dba, level) { }
+		public AtlasOF_FirstAid(DbAbility dba, int level) : base(dba, level) { }
 
 		public override int MaxLevel { get { return 3; } }
         public override int CostForUpgrade(int currentLevel) { return AtlasRAHelpers.GetCommonUpgradeCostFor3LevelsRA(currentLevel); }
@@ -35,7 +35,7 @@ namespace DOL.GS.RealmAbilities
 			// Minor % based Self Heal -  30 / lvl
 			// healAmount = ((currentLevelAbility * 30) * currentCharMaxHealth) / 100;
 			
-			// 300hp at Lv50 per ability level https://www.atlasfreeshard.com/tickets/first-aid-cost-too-low.3947/
+			// 300hp at Lv50 per ability level as per 1.65
 			// scaled to player level
 			GamePlayer player = living as GamePlayer;
 			var scaleLevel = (double)player.Level / 50;

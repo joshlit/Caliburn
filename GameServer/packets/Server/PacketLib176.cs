@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System.Collections.Generic;
 using System.Reflection;
 using DOL.Database;
@@ -141,13 +122,13 @@ namespace DOL.GS.PacketHandler
 					{
 						if (obj is WorldInventoryItem)
 						{
-							//if (!Util.IsEmpty(((DBLanguageItem)translation).Name))
+							//if (!string.IsNullOrEmpty(((DBLanguageItem)translation).Name))
 							//    name = ((DBLanguageItem)translation).Name;
 						}
 						else
 						{
-							if (!Util.IsEmpty(((DBLanguageGameObject)translation).Name))
-								name = ((DBLanguageGameObject)translation).Name;
+							if (!string.IsNullOrEmpty(((DbLanguageGameObject)translation).Name))
+								name = ((DbLanguageGameObject)translation).Name;
 						}
 					}
 				}
@@ -179,7 +160,7 @@ namespace DOL.GS.PacketHandler
 							pak.WriteByte((byte)(updatedSlot - (int)eInventorySlot.Consignment_First + (int)eInventorySlot.HousingInventory_First));
 						else
 							pak.WriteByte((byte)(updatedSlot));
-						InventoryItem item = null;
+						DbInventoryItem item = null;
 						item = m_gameClient.Player.Inventory.GetItem((eInventorySlot)updatedSlot);
 
 						if (item == null)
@@ -290,7 +271,7 @@ namespace DOL.GS.PacketHandler
 
 			using (GSTCPPacketOut pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.EquipmentUpdate)))
 			{
-				ICollection<InventoryItem> items = null;
+				ICollection<DbInventoryItem> items = null;
 				if (living.Inventory != null)
 					items = living.Inventory.VisibleItems;
 
@@ -301,7 +282,7 @@ namespace DOL.GS.PacketHandler
 				if (items != null)
 				{
 					pak.WriteByte((byte)items.Count);
-					foreach (InventoryItem item in items)
+					foreach (DbInventoryItem item in items)
 					{
 						ushort model = (ushort)(item.Model & 0x1FFF);
 						int slot = item.SlotPosition;

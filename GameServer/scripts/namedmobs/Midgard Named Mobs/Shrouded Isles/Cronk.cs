@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -97,7 +97,7 @@ namespace DOL.GS
 			{
 				if (m_CronkDD == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 20;
@@ -123,7 +123,7 @@ namespace DOL.GS
 			{
 				if (m_DebuffDQ == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = Util.Random(25, 45);
@@ -136,7 +136,7 @@ namespace DOL.GS
 					spell.Range = 1500;
 					spell.Radius = 350;
 					spell.SpellID = 11882;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DexterityQuicknessDebuff.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -178,7 +178,6 @@ namespace DOL.AI.Brain
 				}
 			}
 			base.Think();
-		}		
+		}
 	}
 }
-

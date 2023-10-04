@@ -60,7 +60,7 @@ namespace DOL.GS.Housing
             CheckNPCTemplates();
         }
 
-        public static long GetLotPrice(DBHouse house)
+        public static long GetLotPrice(DbHouse house)
         {
             TimeSpan diff = (DateTime.Now - house.CreationTime);
 
@@ -92,7 +92,7 @@ namespace DOL.GS.Housing
 
         public static MerchantTradeItems GetNpcShopItems(GamePlayer player)
         {
-            var allRealmsTypes = new[] { eGameServerType.GST_PvE, eGameServerType.GST_PvP };
+            var allRealmsTypes = new[] { EGameServerType.GST_PvE, EGameServerType.GST_PvP };
 
             if (allRealmsTypes.Contains(GameServer.Instance.Configuration.ServerType))
             {
@@ -320,7 +320,7 @@ namespace DOL.GS.Housing
 
         private static void CheckMerchantItems(string merchantid, ICollection<string> itemids)
         {
-            var merchantitems = DOLDB<MerchantItem>.SelectObjects(DB.Column("ItemListID").IsEqualTo(merchantid));
+            var merchantitems = DOLDB<DbMerchantItem>.SelectObjects(DB.Column("ItemListID").IsEqualTo(merchantid));
 
             int slot = 0;
             foreach (string itemid in itemids)
@@ -331,7 +331,7 @@ namespace DOL.GS.Housing
                     continue;
                 }
 
-                var newitem = new MerchantItem
+                var newitem = new DbMerchantItem
                 {
                     ItemListID = merchantid,
                     ItemTemplateID = itemid,
@@ -347,13 +347,13 @@ namespace DOL.GS.Housing
         private static void CheckItemTemplate(string name, string id, int model, int objtype, int copper, int dps, int spd,
                                               int bonus, int weight, int realm)
         {
-            var templateitem = GameServer.Database.FindObjectByKey<ItemTemplate>(id);
+            var templateitem = GameServer.Database.FindObjectByKey<DbItemTemplate>(id);
             if (templateitem != null)
             {
                 return;
             }
 
-            templateitem = new ItemTemplate
+            templateitem = new DbItemTemplate
             {
                 Name = name,
                 Model = model,
@@ -423,7 +423,7 @@ namespace DOL.GS.Housing
                 return;
             }
 
-            DBNpcTemplate dbTemplate = new DBNpcTemplate
+            DbNpcTemplate dbTemplate = new DbNpcTemplate
             {
                 Name = name,
                 TemplateId = templateID,

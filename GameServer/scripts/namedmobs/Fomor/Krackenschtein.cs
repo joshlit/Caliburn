@@ -252,7 +252,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Boss_Bolt == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 2;
 					spell.RecastDelay = 0;
@@ -263,7 +263,7 @@ namespace DOL.AI.Brain
 					spell.Damage = 250;
 					spell.Range = 1800;
 					spell.SpellID = 11835;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.Bolt.ToString();
 					spell.DamageType = (int)eDamageType.Cold;
 					spell.Uninterruptible = true;
@@ -280,7 +280,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Boss_PBAOE == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = Util.Random(4,8);
@@ -292,7 +292,7 @@ namespace DOL.AI.Brain
 					spell.Range = 500;
 					spell.Radius = 1000;
 					spell.SpellID = 11836;
-					spell.Target = eSpellTarget.Area.ToString();
+					spell.Target = eSpellTarget.AREA.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.DamageType = (int)eDamageType.Energy;
 					spell.Uninterruptible = true;

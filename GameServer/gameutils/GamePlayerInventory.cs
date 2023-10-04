@@ -1,25 +1,6 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using DOL.Database;
 using DOL.Events;
 using DOL.GS.PacketHandler;
@@ -69,9 +50,9 @@ namespace DOL.GS
 					// in addition, a player with a housing vault may still have an item in cache that may have been
 					// removed by another player with the appropriate house permission.  - Tolakram
 					var filterBySlot = DB.Column("SlotPosition").IsLessOrEqualTo((int)eInventorySlot.LastVault).Or(DB.Column("SlotPosition").IsGreaterOrEqualTo(500).And(DB.Column("SlotPosition").IsLessThan(600)));
-					var items = DOLDB<InventoryItem>.SelectObjects(DB.Column("OwnerID").IsEqualTo(inventoryID).And(filterBySlot));
+					var items = DOLDB<DbInventoryItem>.SelectObjects(DB.Column("OwnerID").IsEqualTo(inventoryID).And(filterBySlot));
 
-					foreach (InventoryItem item in items)
+					foreach (DbInventoryItem item in items)
 					{
 						try
 						{
@@ -115,7 +96,7 @@ namespace DOL.GS
 
 							if (playerItem.CheckValid(m_player))
 							{
-								m_items.Add(itemSlot, playerItem as InventoryItem);
+								m_items.Add(itemSlot, playerItem as DbInventoryItem);
 							}
 							else
 							{
@@ -160,7 +141,7 @@ namespace DOL.GS
 						if (slot >= eInventorySlot.RightHandWeapon && slot <= eInventorySlot.DistanceWeapon)
 							continue;
 
-						InventoryItem item;
+						DbInventoryItem item;
 
 						if (m_items.TryGetValue(slot, out item))
 						{
@@ -195,7 +176,7 @@ namespace DOL.GS
 					{
 						try
 						{
-							InventoryItem currentItem = item.Value;
+							DbInventoryItem currentItem = item.Value;
 
 							if (currentItem == null)
 								continue;
@@ -244,7 +225,7 @@ namespace DOL.GS
 
 								// Check database to make sure player still owns this item before saving
 
-								InventoryItem checkItem = GameServer.Database.FindObjectByKey<InventoryItem>(currentItem.ObjectId);
+								DbInventoryItem checkItem = GameServer.Database.FindObjectByKey<DbInventoryItem>(currentItem.ObjectId);
 
 								if (checkItem == null || checkItem.OwnerID != m_player.InternalID)
 								{
@@ -292,17 +273,17 @@ namespace DOL.GS
 		/// <param name="slot"></param>
 		/// <param name="item"></param>
 		/// <returns></returns>
-		public override bool AddItem(eInventorySlot slot, InventoryItem item)
+		public override bool AddItem(eInventorySlot slot, DbInventoryItem item)
 		{
 			return AddItem(slot, item, true);
 		}
 
-		public override bool AddTradeItem(eInventorySlot slot, InventoryItem item)
+		public override bool AddTradeItem(eInventorySlot slot, DbInventoryItem item)
 		{
 			return AddItem(slot, item, false);
 		}
 
-		protected bool AddItem(eInventorySlot slot, InventoryItem item, bool addObject)
+		protected bool AddItem(eInventorySlot slot, DbInventoryItem item, bool addObject)
 		{
 			int savePosition = item.SlotPosition;
 			string saveOwnerID = item.OwnerID;
@@ -358,12 +339,12 @@ namespace DOL.GS
 			return true;
 		}
 
-		public override bool RemoveItem(InventoryItem item)
+		public override bool RemoveItem(DbInventoryItem item)
 		{
 			return RemoveItem(item, true);
 		}
 
-		public override bool RemoveTradeItem(InventoryItem item)
+		public override bool RemoveTradeItem(DbInventoryItem item)
 		{
 			return RemoveItem(item, false);
 		}
@@ -373,7 +354,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="item">the item to remove</param>
 		/// <returns>true if successfull</returns>
-		protected bool RemoveItem(InventoryItem item, bool deleteObject)
+		protected bool RemoveItem(DbInventoryItem item, bool deleteObject)
 		{
 			if (item == null)
 				return false;
@@ -469,7 +450,7 @@ namespace DOL.GS
 		/// <param name="item"></param>
 		/// <param name="count"></param>
 		/// <returns></returns>
-		public override bool AddCountToStack(InventoryItem item, int count)
+		public override bool AddCountToStack(DbInventoryItem item, int count)
 		{
 			if (item != null && item.OwnerID != m_player.InternalID)
 			{
@@ -488,7 +469,7 @@ namespace DOL.GS
 		/// <param name="item">the item to remove</param>
 		/// <param name="count">the count of items to be removed from the stack</param>
 		/// <returns>true one item removed</returns>
-		public override bool RemoveCountFromStack(InventoryItem item, int count)
+		public override bool RemoveCountFromStack(DbInventoryItem item, int count)
 		{
 			if (item != null && item.OwnerID != m_player.InternalID)
 			{
@@ -579,7 +560,7 @@ namespace DOL.GS
 			}
 
 			bool valid = true;
-			InventoryItem fromItem, toItem;
+			DbInventoryItem fromItem, toItem;
 			eInventorySlot[] updatedSlots;
 
 			lock (m_items) // Mannen 10:56 PM 10/30/2006 - Fixing every lock(this)
@@ -654,19 +635,19 @@ namespace DOL.GS
 
 				// TODO test & remove the following
 				// graveen = fix for allowedclasses is empty or null
-				if (fromItem != null && Util.IsEmpty(fromItem.AllowedClasses))
+				if (fromItem != null && string.IsNullOrEmpty(fromItem.AllowedClasses))
 				{
-					fromItem.AllowedClasses = "0";
+					fromItem.AllowedClasses = "";
 				}
 
-				if (toItem != null && Util.IsEmpty(toItem.AllowedClasses))
+				if (toItem != null && string.IsNullOrEmpty(toItem.AllowedClasses))
 				{
-					toItem.AllowedClasses = "0";
+					toItem.AllowedClasses = "";
 				}
 
                 bool noactiveslot = false;
                 //Andraste - Vico / fixing a bugexploit : when player switch from his char slot to an inventory slot, allowedclasses were not checked
-                if (valid && fromItem.AllowedClasses != "0")
+                if (valid && !string.IsNullOrEmpty(fromItem.AllowedClasses))
                 {
 
                     if (toSlot >= eInventorySlot.MaxEquipable)
@@ -693,7 +674,7 @@ namespace DOL.GS
                     }
                 }
 
-                if (valid && toItem != null && toItem.AllowedClasses != "0")
+                if (valid && toItem != null && !string.IsNullOrEmpty(toItem.AllowedClasses))
                 {
 
                     if (toSlot >= eInventorySlot.MaxEquipable)
@@ -1196,7 +1177,7 @@ namespace DOL.GS
 		/// <param name="fromItem">First Item</param>
 		/// <param name="toItem">Second Item</param>
 		/// <returns>true if items combined successfully</returns>
-		protected override bool CombineItems(InventoryItem fromItem, InventoryItem toItem)
+		protected override bool CombineItems(DbInventoryItem fromItem, DbInventoryItem toItem)
 		{
 			if (toItem == null ||
 			    fromItem.SlotPosition < (int) eInventorySlot.FirstBackpack ||
@@ -1234,8 +1215,8 @@ namespace DOL.GS
 		/// <returns>true if items stacked successfully</returns>
 		protected override bool StackItems(eInventorySlot fromSlot, eInventorySlot toSlot, int itemCount)
 		{
-			InventoryItem fromItem;
-			InventoryItem toItem;
+			DbInventoryItem fromItem;
+			DbInventoryItem toItem;
 
 			m_items.TryGetValue(fromSlot, out fromItem);
 			m_items.TryGetValue(toSlot, out toItem);
@@ -1267,7 +1248,7 @@ namespace DOL.GS
 
 			if (toItem == null && fromItem.Count > itemCount)
 			{
-				var newItem = (InventoryItem) fromItem.Clone();
+				var newItem = (DbInventoryItem) fromItem.Clone();
 				m_items[toSlot] = newItem;
 				newItem.Count = itemCount;
 				newItem.SlotPosition = (int) toSlot;
@@ -1289,8 +1270,8 @@ namespace DOL.GS
 		/// <returns>true if items exchanged successfully</returns>
 		protected override bool ExchangeItems(eInventorySlot fromSlot, eInventorySlot toSlot)
 		{
-			InventoryItem fromItem;
-			InventoryItem toItem;
+			DbInventoryItem fromItem;
+			DbInventoryItem toItem;
 
 			m_items.TryGetValue(fromSlot, out fromItem);
 			m_items.TryGetValue(toSlot, out toItem);
@@ -1303,13 +1284,13 @@ namespace DOL.GS
 
 			}
 
-			if (fromItem != null && fromItem.Id_nb != InventoryItem.BLANK_ITEM)
+			if (fromItem != null && fromItem.Id_nb != DbInventoryItem.BLANK_ITEM)
 			{
 				if (GameServer.Database.SaveObject(fromItem) == false)
 				{
 				}
 			}
-			if (toItem != null && toItem != fromItem && toItem.Id_nb != InventoryItem.BLANK_ITEM)
+			if (toItem != null && toItem != fromItem && toItem.Id_nb != DbInventoryItem.BLANK_ITEM)
 			{
 				if (GameServer.Database.SaveObject(toItem) == false)
 				{
@@ -1393,11 +1374,11 @@ namespace DOL.GS
 			get
 			{
 				var weight = 0;
-				IList<InventoryItem> items;
+				IList<DbInventoryItem> items;
 
 				lock (m_items) // Mannen 10:56 PM 10/30/2006 - Fixing every lock(this)
 				{
-					items = new List<InventoryItem>(m_items.Values);
+					items = new List<DbInventoryItem>(m_items.Values);
 				}
 				
 				foreach (var item in items)
@@ -1417,7 +1398,7 @@ namespace DOL.GS
 
 		#region Dyes
 
-		protected virtual bool DyeItem(InventoryItem dye, InventoryItem objectToDye)
+		protected virtual bool DyeItem(DbInventoryItem dye, DbInventoryItem objectToDye)
 		{
 			bool canApply = false;
 			//TODO should not be tested via model

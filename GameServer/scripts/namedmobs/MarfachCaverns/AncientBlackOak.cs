@@ -2,6 +2,7 @@
 using DOL.Database;
 using DOL.GS;
 using DOL.GS.PacketHandler;
+
 namespace DOL.GS
 {
     public class AncientBlackOak : GameEpicBoss
@@ -77,7 +78,7 @@ namespace DOL.GS
                 }
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -130,7 +131,7 @@ namespace DOL.GS
             {
                 if (m_OakDD == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 2;
@@ -143,7 +144,7 @@ namespace DOL.GS
                     spell.Value = 60;
                     spell.Radius = 800;
                     spell.SpellID = 11790;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DamageSpeedDecreaseNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -203,6 +204,3 @@ namespace DOL.AI.Brain
         }
     }
 }
-
-
-

@@ -44,7 +44,7 @@ namespace DOL.GS.DailyQuest.Midgard
 		{
 		}
 
-		public MegalocerosKillQuestMid(GamePlayer questingPlayer, DBQuest dbQuest) : base(questingPlayer, dbQuest)
+		public MegalocerosKillQuestMid(GamePlayer questingPlayer, DbQuest dbQuest) : base(questingPlayer, dbQuest)
 		{
 		}
 		
@@ -282,7 +282,7 @@ namespace DOL.GS.DailyQuest.Midgard
 
 			if (response == 0x00)
 			{
-				player.Out.SendMessage("Thank you for helping Atlas.", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+				player.Out.SendMessage("Thank you for your help.", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
 			}
 			else
 			{

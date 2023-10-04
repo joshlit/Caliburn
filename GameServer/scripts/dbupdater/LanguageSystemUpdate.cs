@@ -1,24 +1,4 @@
-﻿/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
-using System.Collections.Generic;
-
+﻿using System.Collections.Generic;
 using DOL.Database;
 using DOL.Database.Attributes;
 using log4net;
@@ -101,16 +81,16 @@ namespace DOL.GS.DatabaseUpdate
         {
             log.Info("Updating the LanguageSystem table (this can take a few minutes)...");
 
-            if (GameServer.Database.GetObjectCount<DBLanguageSystem>() < 1 && ServerProperties.Properties.USE_DBLANGUAGE)
+            if (GameServer.Database.GetObjectCount<DbLanguageSystem>() < 1 && ServerProperties.Properties.USE_DBLANGUAGE)
             {
                 var objs = GameServer.Database.SelectAllObjects<language>();
                 if (objs.Count > 0)
                 {
-                    List<DBLanguageSystem> lngObjs = new List<DBLanguageSystem>();
+                    List<DbLanguageSystem> lngObjs = new List<DbLanguageSystem>();
 
                     foreach (language obj in objs)
                     {
-                        if (Util.IsEmpty(obj.TranslationID))
+                        if (string.IsNullOrEmpty(obj.TranslationID))
                             continue;
 
                         // This kind of row will later be readded by the LanguageMgr
@@ -118,13 +98,13 @@ namespace DOL.GS.DatabaseUpdate
                         if (obj.TranslationID.Contains("System.LanguagesName."))
                             continue;
 
-                        DBLanguageSystem lngObj = null;
+                        DbLanguageSystem lngObj = null;
 
-                        if (!Util.IsEmpty(obj.EN))
+                        if (!string.IsNullOrEmpty(obj.EN))
                         {
                             if (!ListContainsObjectData(lngObjs, "EN", obj.TranslationID)) // Ignore duplicates
                             {
-                                lngObj = new DBLanguageSystem();
+                                lngObj = new DbLanguageSystem();
                                 lngObj.TranslationId = obj.TranslationID;
                                 lngObj.Language = "EN";
                                 lngObj.Text = obj.EN;
@@ -133,11 +113,11 @@ namespace DOL.GS.DatabaseUpdate
                             }
                         }
 
-                        if (!Util.IsEmpty(obj.DE))
+                        if (!string.IsNullOrEmpty(obj.DE))
                         {
                             if (!ListContainsObjectData(lngObjs, "DE", obj.TranslationID)) // Ignore duplicates
                             {
-                                lngObj = new DBLanguageSystem();
+                                lngObj = new DbLanguageSystem();
                                 lngObj.TranslationId = obj.TranslationID;
                                 lngObj.Language = "DE";
                                 lngObj.Text = obj.DE;
@@ -146,11 +126,11 @@ namespace DOL.GS.DatabaseUpdate
                             }
                         }
 
-                        if (!Util.IsEmpty(obj.FR))
+                        if (!string.IsNullOrEmpty(obj.FR))
                         {
                             if (!ListContainsObjectData(lngObjs, "FR", obj.TranslationID)) // Ignore duplicates
                             {
-                                lngObj = new DBLanguageSystem();
+                                lngObj = new DbLanguageSystem();
                                 lngObj.TranslationId = obj.TranslationID;
                                 lngObj.Language = "FR";
                                 lngObj.Text = obj.FR;
@@ -159,11 +139,11 @@ namespace DOL.GS.DatabaseUpdate
                             }
                         }
 
-                        if (!Util.IsEmpty(obj.IT))
+                        if (!string.IsNullOrEmpty(obj.IT))
                         {
                             if (!ListContainsObjectData(lngObjs, "IT", obj.TranslationID)) // Ignore duplicates
                             {
-                                lngObj = new DBLanguageSystem();
+                                lngObj = new DbLanguageSystem();
                                 lngObj.TranslationId = obj.TranslationID;
                                 lngObj.Language = "IT";
                                 lngObj.Text = obj.IT;
@@ -175,7 +155,7 @@ namespace DOL.GS.DatabaseUpdate
                         // CU will be ignored!
                     }
 
-                    foreach (DBLanguageSystem lngObj in lngObjs)
+                    foreach (DbLanguageSystem lngObj in lngObjs)
                     {
                         GameServer.Database.AddObject(lngObj);
 
@@ -187,11 +167,11 @@ namespace DOL.GS.DatabaseUpdate
             }
         }
 
-        private bool ListContainsObjectData(List<DBLanguageSystem> list, string language, string translationId)
+        private bool ListContainsObjectData(List<DbLanguageSystem> list, string language, string translationId)
         {
             bool contains = false;
 
-            foreach (DBLanguageSystem lngObj in list)
+            foreach (DbLanguageSystem lngObj in list)
             {
                 if (lngObj.TranslationId != translationId)
                     continue;

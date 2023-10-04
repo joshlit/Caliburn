@@ -993,7 +993,7 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// The highest possible Block Rate against an Enemy (Hard Cap)
 		/// </summary>
-		[ServerProperty("rates", "block_cap", "Block Rate Cap Modifier - Edit this to change the highest possible block rate against an enemy (Hard Cap) in game e.g .60 = 60%", 0.60)]
+		[ServerProperty("rates", "block_cap", "Block Rate Cap Modifier - Edit this to change the highest possible block rate against an enemy (Hard Cap) in game e.g .60 = 60%", 1.00)]
 		public static double BLOCK_CAP;
 
 		///<summary>
@@ -2899,8 +2899,8 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("controls_automation", "allow_non_anytime_backup_styles", "If /backupstyle is enabled, can players set a non-anytime style as their backup?", false)] 
 		public static bool ALLOW_NON_ANYTIME_BACKUP_STYLES;
 
-		[ServerProperty("controls_automation", "allow_paired_spells", "Allow players to pair two spells together with /pairspell. The second spell will be attempted to be cast if the first one cannot be cast.", false)] 
-		public static bool ALLOW_PAIRED_SPELLS;
+		[ServerProperty("controls_automation", "allow_chained_actions", "Allow players to chain actions with /chainactions. They will be executed consecutively.", false)] 
+		public static bool ALLOW_CHAINED_ACTIONS;
 
 		#endregion
 
@@ -2914,12 +2914,12 @@ namespace DOL.GS.ServerProperties
 		/// Returns the ServerPropertyAttribute, the Static Field with current Value, and the according DataObject
 		/// Create a default dataObject if value wasn't found in Database
 		/// </summary>
-		public static IDictionary<string, Tuple<ServerPropertyAttribute, FieldInfo, ServerProperty>> AllDomainProperties
+		public static IDictionary<string, Tuple<ServerPropertyAttribute, FieldInfo, DbServerProperty>> AllDomainProperties
 		{
 			get
 			{
-				var result = new Dictionary<string, Tuple<ServerPropertyAttribute, FieldInfo, ServerProperty>>();
-				var allProperties = GameServer.Database.SelectAllObjects<ServerProperty>();
+				var result = new Dictionary<string, Tuple<ServerPropertyAttribute, FieldInfo, DbServerProperty>>();
+				var allProperties = GameServer.Database.SelectAllObjects<DbServerProperty>();
 				
 				foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
 				{
@@ -2938,12 +2938,12 @@ namespace DOL.GS.ServerProperties
 							
 							ServerPropertyAttribute att = (ServerPropertyAttribute)attribs[0];
 							
-							ServerProperty serverProp = allProperties.Where(p => p.Key.Equals(att.Key, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+							DbServerProperty serverProp = allProperties.Where(p => p.Key.Equals(att.Key, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
 							
 							if (serverProp == null)
 							{
 								// Init DB Object
-								serverProp = new ServerProperty();
+								serverProp = new DbServerProperty();
 								serverProp.Category = att.Category;
 								serverProp.Key = att.Key;
 								serverProp.Description = att.Description;
@@ -2960,7 +2960,7 @@ namespace DOL.GS.ServerProperties
 								serverProp.Value = serverProp.DefaultValue;
 							}
 							
-							result[att.Key] = new Tuple<ServerPropertyAttribute, FieldInfo, ServerProperty>(att, field, serverProp);
+							result[att.Key] = new Tuple<ServerPropertyAttribute, FieldInfo, DbServerProperty>(att, field, serverProp);
 						}
 					}
 				}
@@ -2976,7 +2976,7 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		/// <param name="attrib">The attribute</param>
 		/// <returns>The real property value</returns>
-		public static void Load(ServerPropertyAttribute attrib, FieldInfo field, ServerProperty prop)
+		public static void Load(ServerPropertyAttribute attrib, FieldInfo field, DbServerProperty prop)
 		{
 			string key = attrib.Key;
 			

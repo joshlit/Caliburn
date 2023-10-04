@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -161,7 +142,7 @@ namespace DOL.GS.Keeps
 		/// <summary>
 		/// Procs don't normally fire on game keep components
 		/// </summary>
-		public override bool AllowWeaponMagicalEffect(AttackData ad, InventoryItem weapon, Spell weaponSpell)
+		public override bool AllowWeaponMagicalEffect(AttackData ad, DbInventoryItem weapon, Spell weaponSpell)
 		{
 			if (weapon.Flags == 10) //Bruiser or any other item needs Itemtemplate "Flags" set to 10 to proc on keep components
 				return true;
@@ -197,7 +178,7 @@ namespace DOL.GS.Keeps
 		/// <summary>
 		/// load component from db object
 		/// </summary>
-		public virtual void LoadFromDatabase(DBKeepComponent component, AbstractGameKeep keep)
+		public virtual void LoadFromDatabase(DbKeepComponent component, AbstractGameKeep keep)
 		{
 			Region myregion = WorldMgr.GetRegion((ushort)keep.Region);
 			if (myregion == null)
@@ -245,7 +226,7 @@ namespace DOL.GS.Keeps
 				region = (CurrentRegion as BaseInstance).Skin;
 			}
 
-			Battleground bg = GameServer.KeepManager.GetBattleground(region);
+			DbBattleground bg = GameServer.KeepManager.GetBattleground(region);
 
 			this.Positions.Clear();
 
@@ -254,19 +235,19 @@ namespace DOL.GS.Keeps
 			{
 				whereClause = whereClause.And(DB.Column("ComponentRotation").IsEqualTo(ComponentHeading));
 			}
-			if (bg != null && GameServer.Instance.Configuration.ServerType != eGameServerType.GST_PvE)
+			if (bg != null && GameServer.Instance.Configuration.ServerType != EGameServerType.GST_PvE)
 			{
 				// Battlegrounds, ignore all but GameKeepDoor
 				whereClause = whereClause.And(DB.Column("ClassType").IsEqualTo("DOL.GS.Keeps.GameKeepDoor"));
 			}
-			var DBPositions = DOLDB<DBKeepPosition>.SelectObjects(whereClause);
+			var DBPositions = DOLDB<DbKeepPosition>.SelectObjects(whereClause);
 
-			foreach (DBKeepPosition position in DBPositions)
+			foreach (DbKeepPosition position in DBPositions)
 			{
-				DBKeepPosition[] list = this.Positions[position.TemplateID] as DBKeepPosition[];
+				DbKeepPosition[] list = this.Positions[position.TemplateID] as DbKeepPosition[];
 				if (list == null)
 				{
-					list = new DBKeepPosition[4];
+					list = new DbKeepPosition[4];
 					this.Positions[position.TemplateID] = list;
 				}
 
@@ -279,11 +260,11 @@ namespace DOL.GS.Keeps
 		/// </summary>
 		public virtual void FillPositions()
 		{
-			foreach (DBKeepPosition[] positionGroup in Positions.Values)
+			foreach (DbKeepPosition[] positionGroup in Positions.Values)
 			{
 				for (int i = this.Height; i >= 0; i--)
 				{
-					if (positionGroup[i] is DBKeepPosition position)
+					if (positionGroup[i] is DbKeepPosition position)
 					{
 						bool create = false;
 						string sKey = position.TemplateID + ID;
@@ -433,13 +414,13 @@ namespace DOL.GS.Keeps
 		/// </summary>
 		public override void SaveIntoDatabase()
 		{
-			DBKeepComponent obj = null;
+			DbKeepComponent obj = null;
 			bool New = false;
 			if (InternalID != null)
-				obj = GameServer.Database.FindObjectByKey<DBKeepComponent>(InternalID);
+				obj = GameServer.Database.FindObjectByKey<DbKeepComponent>(InternalID);
 			if (obj == null)
 			{
-				obj = new DBKeepComponent();
+				obj = new DbKeepComponent();
 				New = true;
 			}
 			obj.KeepID = Keep.KeepID;
@@ -475,15 +456,15 @@ namespace DOL.GS.Keeps
 				if (m_oldHealthPercent != HealthPercent)
 				{
 					m_oldHealthPercent = HealthPercent;
-					foreach (GameClient client in WorldMgr.GetClientsOfRegion(CurrentRegionID))
+
+					foreach (GamePlayer player in ClientService.GetPlayersOfRegion(CurrentRegion))
 					{
-						ClientService.UpdateObjectForPlayer(client.Player, this);
-						client.Out.SendKeepComponentDetailUpdate(this); // I knoiw this works, not sure if ObjectUpdate is needed - Tolakram
+						ClientService.UpdateObjectForPlayer(player, this);
+						player.Out.SendKeepComponentDetailUpdate(this); // I know this works, not sure if ObjectUpdate is needed - Tolakram
 					}
 				}
 			}
 		}
-
 
 		public override void ModifyAttack(AttackData attackData)
 		{
@@ -561,8 +542,8 @@ namespace DOL.GS.Keeps
 				}
 			}
 
-			foreach (GameClient client in WorldMgr.GetClientsOfRegion(this.CurrentRegionID))
-				client.Out.SendKeepComponentDetailUpdate(this);
+			foreach (GamePlayer player in ClientService.GetPlayersOfRegion(CurrentRegion))
+				player.Out.SendKeepComponentDetailUpdate(this);
 		}
 
 		public override void Delete()
@@ -582,9 +563,9 @@ namespace DOL.GS.Keeps
 		public virtual void Remove()
 		{
 			Delete();
-			DBKeepComponent obj = null;
+			DbKeepComponent obj = null;
 			if (this.InternalID != null)
-				obj = GameServer.Database.FindObjectByKey<DBKeepComponent>(this.InternalID);
+				obj = GameServer.Database.FindObjectByKey<DbKeepComponent>(this.InternalID);
 			if (obj != null)
 				GameServer.Database.DeleteObject(obj);
 
@@ -685,10 +666,8 @@ namespace DOL.GS.Keeps
 				m_oldHealthPercent = HealthPercent;
 				if (oldStatus != Status)
 				{
-					foreach (GameClient client in WorldMgr.GetClientsOfRegion(this.CurrentRegionID))
-					{
-						client.Out.SendKeepComponentDetailUpdate(this);
-					}
+					foreach (GamePlayer player in ClientService.GetPlayersOfRegion(CurrentRegion))
+						player.Out.SendKeepComponentDetailUpdate(this);
 				}
 
 				//if a tower is repaired reload the guards so they arent on the floor

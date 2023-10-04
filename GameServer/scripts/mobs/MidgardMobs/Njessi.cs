@@ -56,7 +56,7 @@ namespace DOL.GS
             {
                 if (m_NjessiDD == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.Power = 0;
@@ -84,7 +84,7 @@ namespace DOL.GS
             {
                 if (m_NjessiPoison == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 10;
@@ -102,7 +102,7 @@ namespace DOL.GS
                     spell.Frequency = 30;
                     spell.Range = 500;
                     spell.SpellID = 11934;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DamageOverTime.ToString();
                     spell.DamageType = (int)eDamageType.Body;
                     spell.Uninterruptible = true;

@@ -377,7 +377,7 @@ namespace DOL.GS
                 return false;
             return true;
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
@@ -576,7 +576,7 @@ namespace DOL.GS
 
             return base.HasAbility(keyName);
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -1376,7 +1376,7 @@ namespace DOL.GS
                 }
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -1692,7 +1692,7 @@ namespace DOL.GS
     public class MorbusSwarm : GameNPC
     {
         public MorbusSwarm() : base() { }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -1725,7 +1725,7 @@ namespace DOL.GS
             base.Die(killer);
         }
 
-        public override void AutoSetStats(Mob dbMob = null)
+        public override void AutoSetStats(DbMob dbMob = null)
         {
             if (PackageID == "MorbusBaf")
                 return;
@@ -1858,7 +1858,7 @@ namespace DOL.AI.Brain
             {
                 if (m_black_plague == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 10;
@@ -1940,7 +1940,7 @@ namespace DOL.GS
                 return;
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -2152,7 +2152,7 @@ namespace DOL.GS
                 default: return 70; // dmg reduction for rest resists
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100; 
         }
@@ -2265,15 +2265,9 @@ namespace DOL.GS
             ApocUP = true;
 
 
-            foreach (GameClient client in WorldMgr.GetClientsOfRegion(CurrentRegionID))
-            {
-                if (client == null) break;
-                if (client.Player == null) continue;
-                if (client.IsPlaying)
-                {
-                    client.Out.SendSoundEffect(2452, 0, 0, 0, 0, 0);//play sound effect for every player in boss currentregion
-                }
-            }
+            foreach (GamePlayer player in ClientService.GetPlayersOfRegion(CurrentRegion))
+                player.Out.SendSoundEffect(2452, 0, 0, 0, 0, 0);//play sound effect for every player in boss currentregion
+
             KilledEnemys = 0;
             ApocalypseBrain adds = new ApocalypseBrain();
             SetOwnBrain(adds);
@@ -2557,7 +2551,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Apoc_Gtaoe == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 3;
                     spell.RecastDelay = 0;
@@ -2589,7 +2583,7 @@ namespace DOL.GS
     public class HarbringerOfFate : GameEpicNPC
     {
         public HarbringerOfFate() : base() { }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 90;
         }
@@ -2621,7 +2615,7 @@ namespace DOL.GS
             base.Die(killer);
         }
 
-        public override void AutoSetStats(Mob dbMob = null)
+        public override void AutoSetStats(DbMob dbMob = null)
         {
             if (this.PackageID == "ApocBaf")
                 return;
@@ -2704,7 +2698,7 @@ namespace DOL.GS
     public class RainOfFire : GameEpicNPC
     {
         public RainOfFire() : base() { }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -2734,7 +2728,7 @@ namespace DOL.GS
         {
             base.Die(killer);
         }
-        public override void AutoSetStats(Mob dbMob = null)
+        public override void AutoSetStats(DbMob dbMob = null)
         {
             if (this.PackageID == "RainOfFire")
                 return;
@@ -2862,7 +2856,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Apoc_Rain_of_Fire == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 0;

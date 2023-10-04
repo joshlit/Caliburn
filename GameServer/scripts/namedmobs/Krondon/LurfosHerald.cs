@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -110,7 +110,7 @@ namespace DOL.GS
 			{
 				if (m_Weapon_Heat == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 1;
@@ -122,7 +122,7 @@ namespace DOL.GS
 					spell.Range = 500;
 					spell.Radius = 300;
 					spell.SpellID = 11885;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.DamageType = (int)eDamageType.Heat;
 					m_Weapon_Heat = new Spell(spell, 70);
@@ -138,7 +138,7 @@ namespace DOL.GS
 			{
 				if (m_Weapon_Cold == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 1;
@@ -150,7 +150,7 @@ namespace DOL.GS
 					spell.Range = 500;
 					spell.Radius = 300;
 					spell.SpellID = 11886;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.DamageType = (int)eDamageType.Cold;
 					m_Weapon_Cold = new Spell(spell, 70);

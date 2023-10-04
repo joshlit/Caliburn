@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -165,7 +165,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Boss_Mezz == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 40;
@@ -196,7 +196,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_DurvalDisease == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3;
 					spell.RecastDelay = 40;
@@ -229,7 +229,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Bubble == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 10;
@@ -257,7 +257,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_Durval_DD == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 3.5;
 					spell.RecastDelay = 0;
@@ -268,7 +268,7 @@ namespace DOL.AI.Brain
 					spell.Name = "Smite";
 					spell.Range = 1800;
 					spell.SpellID = 11913;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -282,4 +282,3 @@ namespace DOL.AI.Brain
 		#endregion
 	}
 }
-

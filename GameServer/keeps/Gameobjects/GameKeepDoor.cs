@@ -1,29 +1,9 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections;
 using DOL.Database;
 using DOL.GS.PacketHandler;
 using DOL.GS.ServerProperties;
 using log4net;
-using static DOL.GS.GameSiegeWeapon;
 
 namespace DOL.GS.Keeps
 {
@@ -262,8 +242,8 @@ namespace DOL.GS.Keeps
 			set { m_component = value; }
 		}
 
-		protected DBKeepPosition m_position;
-		public DBKeepPosition Position
+		protected DbKeepPosition m_position;
+		public DbKeepPosition Position
 		{
 			get { return m_position; }
 			set { m_position = value; }
@@ -279,7 +259,7 @@ namespace DOL.GS.Keeps
 		/// <param name="ad"></param>
 		/// <param name="weapon"></param>
 		/// <returns></returns>
-		public override bool AllowWeaponMagicalEffect(AttackData ad, InventoryItem weapon, Spell weaponSpell)
+		public override bool AllowWeaponMagicalEffect(AttackData ad, DbInventoryItem weapon, Spell weaponSpell)
 		{
 			if (weapon.Flags == 10) //Bruiser or any other item needs Itemtemplate "Flags" set to 10 to proc on keep components
 				return true;
@@ -336,30 +316,17 @@ namespace DOL.GS.Keeps
 
 		private void BroadcastRelicGateDamage()
 		{
-			var message = $"{Component.Keep.Name} is under attack!";
+			string message = $"{Component.Keep.Name} is under attack!";
 
-			foreach (GameClient cl in WorldMgr.GetClientsOfRealm(Realm))
+			foreach (GamePlayer player in ClientService.GetPlayersOfRealm(Realm))
 			{
-				if (cl.Player.ObjectState != eObjectState.Active)
-					return;
-				cl.Out.SendMessage(message, eChatType.CT_ScreenCenterSmaller, eChatLoc.CL_SystemWindow);
-				cl.Out.SendMessage(message, eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+				player.Out.SendMessage(message, eChatType.CT_ScreenCenterSmaller, eChatLoc.CL_SystemWindow);
+				player.Out.SendMessage(message, eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 			}
-			
-			/*
-			foreach (var cl in WorldMgr.GetClientsOfRealm(Realm))
-			{
-				if (cl.Player.ObjectState != eObjectState.Active) continue;
-				cl.Out.SendMessage(message, eChatType.CT_ScreenCenterSmaller, eChatLoc.CL_SystemWindow);
-				cl.Out.SendMessage(message, eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-			}*/
-			
-			if (Properties.DISCORD_ACTIVE && (!string.IsNullOrEmpty(Properties.DISCORD_RVR_WEBHOOK_ID)))
-			{
+
+			if (Properties.DISCORD_ACTIVE && !string.IsNullOrEmpty(Properties.DISCORD_RVR_WEBHOOK_ID))
 				GameRelicPad.BroadcastDiscordRelic(message, Realm, Component.Keep.Name);
-			}
 		}
-
 
 		public override void ModifyAttack(AttackData attackData)
 		{
@@ -649,7 +616,7 @@ namespace DOL.GS.Keeps
 			if (InternalID == null)
 				return;
 
-			DBDoor dbDoor = GameServer.Database.FindObjectByKey<DBDoor>(InternalID);
+			DbDoor dbDoor = GameServer.Database.FindObjectByKey<DbDoor>(InternalID);
 
 			if (dbDoor == null)
 				return;
@@ -665,7 +632,7 @@ namespace DOL.GS.Keeps
 		/// <param name="obj"></param>
 		public override void LoadFromDatabase(DataObject obj)
 		{
-			DBDoor dbDoor = obj as DBDoor;
+			DbDoor dbDoor = obj as DbDoor;
 			if (dbDoor == null)
 				return;
 
@@ -713,7 +680,7 @@ namespace DOL.GS.Keeps
 			DoorMgr.RegisterDoor(this);
 		}
 
-		public virtual void LoadFromPosition(DBKeepPosition pos, GameKeepComponent component)
+		public virtual void LoadFromPosition(DbKeepPosition pos, GameKeepComponent component)
 		{
 			m_templateID = pos.TemplateID;
 			m_component = component;
@@ -740,7 +707,7 @@ namespace DOL.GS.Keeps
 			}
 		}
 
-		public void MoveToPosition(DBKeepPosition position) { }
+		public void MoveToPosition(DbKeepPosition position) { }
 
 		public int GenerateDoorID()
 		{

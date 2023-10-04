@@ -23,7 +23,7 @@ namespace DOL.GS
                 default: return 70;// dmg reduction for rest resists
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
@@ -268,7 +268,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Icelord_SC_Debuff == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 30;
@@ -298,7 +298,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Icelord_Haste_Debuff == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 30;
@@ -327,7 +327,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Icelord_Bolt == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 2;
                     spell.RecastDelay = 0;
@@ -338,7 +338,7 @@ namespace DOL.AI.Brain
                     spell.Name = "Frost Sphere";
                     spell.Range = 1800;
                     spell.SpellID = 11749;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.Bolt.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -356,7 +356,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Icelord_dd == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 3;
                     spell.RecastDelay = 0;
@@ -367,7 +367,7 @@ namespace DOL.AI.Brain
                     spell.Name = "Frost Strike";
                     spell.Range = 1800;
                     spell.SpellID = 11750;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -400,7 +400,7 @@ namespace DOL.GS
                 default: return 70;// dmg reduction for rest resists
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
@@ -717,7 +717,7 @@ namespace DOL.AI.Brain
             {
                 if (m_DebuffDQ == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 0;
@@ -730,7 +730,7 @@ namespace DOL.AI.Brain
                     spell.Range = 1500;
                     spell.Radius = 350;
                     spell.SpellID = 11932;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DexterityQuicknessDebuff.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -747,7 +747,7 @@ namespace DOL.AI.Brain
             {
                 if (m_GuthlacRoot == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 0;
@@ -776,7 +776,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Icelord_dd == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 3;
                     spell.RecastDelay = Util.Random(8,15);
@@ -789,7 +789,7 @@ namespace DOL.AI.Brain
                     spell.Name = "Rune of Mazing";
                     spell.Range = 1800;
                     spell.SpellID = 11930;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DamageSpeedDecreaseNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -915,7 +915,7 @@ namespace DOL.GS
             {
                 if (m_GuthlacIceSpike_aoe == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 20;
@@ -927,7 +927,7 @@ namespace DOL.GS
                     spell.Radius = 3000; //very big radius to make them feel pain lol
                     spell.Range = 0;
                     spell.SpellID = 11751;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DirectDamageNoVariance.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;

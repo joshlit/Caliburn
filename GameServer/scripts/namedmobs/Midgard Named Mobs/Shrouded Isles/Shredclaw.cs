@@ -26,7 +26,7 @@ namespace DOL.GS
 				default: return 30;// dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -101,7 +101,7 @@ namespace DOL.GS
 			{
 				if (m_ShredclawPoison == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 2;
@@ -119,7 +119,7 @@ namespace DOL.GS
 					spell.Frequency = 30;
 					spell.Range = 500;
 					spell.SpellID = 11880;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DamageOverTime.ToString();
 					spell.DamageType = (int)eDamageType.Body;
 					spell.Uninterruptible = true;
@@ -136,7 +136,7 @@ namespace DOL.GS
 			{
 				if (m_ShredclawBleed == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = 2;
@@ -152,7 +152,7 @@ namespace DOL.GS
 					spell.Frequency = 30;
 					spell.Range = 350;
 					spell.SpellID = 11781;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.StyleBleeding.ToString();
 					spell.Uninterruptible = true;
 					spell.MoveCast = true;
@@ -198,4 +198,3 @@ namespace DOL.AI.Brain
 		}
 	}
 }
-

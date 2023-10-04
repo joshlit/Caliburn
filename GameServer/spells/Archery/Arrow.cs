@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using DOL.AI.Brain;
 using DOL.Database;
@@ -67,7 +48,7 @@ namespace DOL.GS.Spells
 				DealDamage(targ);
 				targetCount++;
 
-				if (Spell.Target.ToLower() == "area" && targetCount >= Spell.Value)
+				if (Spell.Target == eSpellTarget.AREA && targetCount >= Spell.Value)
 				{
 					// Volley is limited to Volley # + 2 targets.  This number is stored in Spell.Value
 					break;
@@ -184,7 +165,7 @@ namespace DOL.GS.Spells
 				if (target is GamePlayer && !target.IsStunned && !target.IsMezzed && !target.IsSitting && m_handler.Spell.LifeDrainReturn != (int)Archery.eShotType.Critical)
 				{
 					GamePlayer player = (GamePlayer)target;
-					InventoryItem lefthand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+					DbInventoryItem lefthand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
 					if (lefthand != null && (player.ActiveWeapon == null || player.ActiveWeapon.Item_Type == Slot.RIGHTHAND || player.ActiveWeapon.Item_Type == Slot.LEFTHAND))
 					{
 						if (target.IsObjectInFront(caster, 180) && lefthand.Object_Type == (int)eObjectType.Shield)
@@ -229,7 +210,8 @@ namespace DOL.GS.Spells
 							{
 								arrowBlock = true;
 								m_handler.MessageToLiving(player, "You block " + caster.GetName(0, false) + "'s arrow!", eChatType.CT_System);
-								if (m_handler.Spell.Target.ToLower() != "area")
+
+								if (m_handler.Spell.Target != eSpellTarget.AREA)
 								{
 									m_handler.MessageToCaster(player.GetName(0, true) + " blocks your arrow!", eChatType.CT_System);
 									m_handler.DamageTarget(ad, false, 0x02);
@@ -247,7 +229,7 @@ namespace DOL.GS.Spells
 					if (target is GamePlayer)
 						ad.ArmorHitLocation = ((GamePlayer)target).CalculateArmorHitLocation(ad);
 
-					InventoryItem armor = null;
+					DbInventoryItem armor = null;
 					if (target.Inventory != null)
 						armor = target.Inventory.GetItem((eInventorySlot)ad.ArmorHitLocation);
 
@@ -297,7 +279,7 @@ namespace DOL.GS.Spells
 
 					if (ad.CriticalDamage > 0)
 					{
-						if (m_handler.Spell.Target.ToLower() == "area")
+						if (m_handler.Spell.Target == eSpellTarget.AREA)
 						{
 							ad.CriticalDamage = 0;
 						}

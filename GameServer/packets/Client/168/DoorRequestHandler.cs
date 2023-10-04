@@ -99,7 +99,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 				return;
 			}
 
-			var door = DOLDB<DBDoor>.SelectObject(DB.Column("InternalID").IsEqualTo(doorID));
+			var door = DOLDB<DbDoor>.SelectObject(DB.Column("InternalID").IsEqualTo(doorID));
 			if (door != null)
 			{
 				if (doorType == 7 || doorType == 9)
@@ -118,8 +118,8 @@ namespace DOL.GS.PacketHandler.Client.v168
 							return;
 						}
 
-						if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP ||
-                            GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvE)
+						if (GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvP ||
+                            GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvE)
 						{
 							if (door.Realm != 0)
 							{
@@ -181,7 +181,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 			}
 			else
 			{
-				var door = new DBDoor();
+				var door = new DbDoor();
 				door.ObjectId = null;
 				door.InternalID = m_handlerDoorID;
 				door.Name = "door";

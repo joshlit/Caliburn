@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using DOL.Database;
 using DOL.GS.PacketHandler;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
-using Newtonsoft.Json.Linq;
 
 namespace DOL.GS
 {
@@ -122,7 +119,7 @@ namespace DOL.GS
                 return null;
 
             AttackData lastAttackData = _owner.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
-            InventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int) eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
+            DbInventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int) eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
             
             //if they've cached a style and then respecced to no longer have access, remove it
             if (AutomaticBackupStyle != null && _owner is GamePlayer player && player.WeaponBaseSpecLevel(weapon) < AutomaticBackupStyle.SpecLevelRequirement)
@@ -316,7 +313,7 @@ namespace DOL.GS
                             }
                         }
 
-                        if (!Util.IsEmpty(message))
+                        if (!string.IsNullOrEmpty(message))
                             p.Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_SystemWindow);
                     }
                 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using DOL.AI.Brain;
 using DOL.Database;
-using DOL.GS;
 using DOL.Events;
+using DOL.GS;
 
 namespace DOL.GS
 {
@@ -39,7 +39,7 @@ namespace DOL.GS
 		{
 			get { return 30000; }
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
@@ -223,7 +223,7 @@ namespace DOL.AI.Brain
 			{
 				if (m_RiftDD == null)
 				{
-					DBSpell spell = new DBSpell();
+					DbSpell spell = new DbSpell();
 					spell.AllowAdd = false;
 					spell.CastTime = 0;
 					spell.RecastDelay = Util.Random(6, 10);
@@ -234,7 +234,7 @@ namespace DOL.AI.Brain
 					spell.Damage = 300;
 					spell.Range = 1500;
 					spell.SpellID = 11852;
-					spell.Target = eSpellTarget.Enemy.ToString();
+					spell.Target = eSpellTarget.ENEMY.ToString();
 					spell.Type = eSpellType.DirectDamageNoVariance.ToString();
 					spell.DamageType = (int)eDamageType.Energy;
 					spell.Uninterruptible = true;
@@ -278,7 +278,7 @@ namespace DOL.GS
 				default: return 35; // dmg reduction for rest resists
 			}
 		}
-		public override double AttackDamage(InventoryItem weapon)
+		public override double AttackDamage(DbInventoryItem weapon)
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}

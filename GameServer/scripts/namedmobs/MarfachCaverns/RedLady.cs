@@ -208,7 +208,7 @@ namespace DOL.AI.Brain
             {
                 if (m_RedLady_DD == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 3;
                     spell.RecastDelay = Util.Random(25, 35);
@@ -227,7 +227,7 @@ namespace DOL.AI.Brain
                     spell.Radius = 350;
                     spell.Range = 1500;
                     spell.SpellID = 11790;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.DamageOverTime.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;
@@ -320,7 +320,7 @@ namespace DOL.GS
             {
                 if (m_Innocent_Disease == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 0;
@@ -332,7 +332,7 @@ namespace DOL.GS
                     spell.Radius = 100;
                     spell.Range = 1500;
                     spell.SpellID = 11789;
-                    spell.Target = eSpellTarget.Enemy.ToString();
+                    spell.Target = eSpellTarget.ENEMY.ToString();
                     spell.Type = eSpellType.Disease.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;

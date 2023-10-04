@@ -1,10 +1,11 @@
 ﻿using System;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 using DOL.GS.Styles;
+
 namespace DOL.GS
 {
     public class LadyDarra : GameEpicBoss
@@ -98,7 +99,7 @@ namespace DOL.GS
                 }
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
@@ -323,7 +324,7 @@ namespace DOL.GS
                 default: return 25; // dmg reduction for rest resists
             }
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 60;
         }
@@ -429,7 +430,7 @@ namespace DOL.AI.Brain
             {
                 if (m_Paladin_Heal == null)
                 {
-                    DBSpell spell = new DBSpell();
+                    DbSpell spell = new DbSpell();
                     spell.AllowAdd = false;
                     spell.CastTime = 0;
                     spell.RecastDelay = 5;
@@ -440,7 +441,7 @@ namespace DOL.AI.Brain
                     spell.Value = 350;
                     spell.Range = 2000;
                     spell.SpellID = 11776;
-                    spell.Target = eSpellTarget.Realm.ToString();
+                    spell.Target = eSpellTarget.REALM.ToString();
                     spell.Type = eSpellType.Heal.ToString();
                     spell.Uninterruptible = true;
                     spell.MoveCast = true;

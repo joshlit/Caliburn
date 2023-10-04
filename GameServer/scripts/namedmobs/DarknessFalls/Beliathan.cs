@@ -125,12 +125,10 @@ namespace DOL.AI.Brain
             Add.AddToWorld();
         }
 
-        public void BroadcastMessage(String message)
+        public void BroadcastMessage(string message)
         {
-            foreach (GameClient client in WorldMgr.GetClientsOfRegion(Body.CurrentRegionID))
-            {
-                client.Player.Out.SendMessage(message, eChatType.CT_Broadcast, eChatLoc.CL_SystemWindow);
-            }
+            foreach (GamePlayer player in ClientService.GetPlayersOfRegion(Body.CurrentRegion))
+                player.Out.SendMessage(message, eChatType.CT_Broadcast, eChatLoc.CL_SystemWindow);
         }
     }
 }
@@ -155,11 +153,11 @@ namespace DOL.GS
         public static void ScriptUnloaded(DOLEvent e, object sender, EventArgs args)
         {
         }
-        public override double AttackDamage(InventoryItem weapon)
+        public override double AttackDamage(DbInventoryItem weapon)
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
-        public override int AttackSpeed(InventoryItem mainWeapon, InventoryItem leftWeapon = null)
+        public override int AttackSpeed(DbInventoryItem mainWeapon, DbInventoryItem leftWeapon = null)
         {
             return base.AttackSpeed(mainWeapon, leftWeapon) * 2;
         }
