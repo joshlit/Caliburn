@@ -139,20 +139,6 @@ namespace DOL.GS.Scripts
                         speed *= 1.25; // New run speed is 125% when no buff.
                 }
 
-                //if (mimic.IsOverencumbered && mimic.Client.Account.PrivLevel < 2 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
-                //{
-                //    double Enc = mimic.Encumberance; // Calculating player.Encumberance is a bit slow with all those locks, don't call it much.
-
-                //    if (Enc > mimic.MaxEncumberance)
-                //    {
-                //        speed *= (((mimic.MaxSpeedBase * 1.0 / GamePlayer.PLAYER_BASE_SPEED) * (-Enc)) / (mimic.MaxEncumberance * 0.35f)) + (mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) + ((mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) * mimic.MaxEncumberance / (mimic.MaxEncumberance * 0.35));
-
-                //        if (speed <= 0)
-                //            speed = 0;
-                //    }
-                //    else
-                //        mimic.IsOverencumbered = false;
-                //}
                 if (mimic.IsStealthed)
                 {
                     AtlasOF_MasteryOfStealth mos = mimic.GetAbility<AtlasOF_MasteryOfStealth>();

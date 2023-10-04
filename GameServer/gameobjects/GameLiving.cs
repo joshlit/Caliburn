@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -2093,7 +2094,21 @@ namespace DOL.GS
 			}
 			else if (ad.IsSpellResisted && ad.Target is GameNPC npc)
 				npc.CancelReturnToSpawnPoint();
-		}
+
+            if (Group != null)
+            {
+                if (Group.GetMembersInTheGroup().Any())
+				{
+                    foreach (GameLiving groupMember in Group.GetMembersInTheGroup())
+					{
+						if (groupMember is MimicNPC mimic && groupMember != this)
+						{
+                            ((MimicBrain)mimic.Brain).OnGroupMemberAttacked(ad);
+						}
+					}
+                }
+            }
+        }
 
 		public void HandleDamageShields(AttackData ad)
 		{
@@ -2362,10 +2377,13 @@ namespace DOL.GS
 		/// <returns>the amount really changed</returns>
 		public virtual int ChangeEndurance(GameObject changeSource, eEnduranceChangeType enduranceChangeType, int changeAmount)
 		{
+			
 			//TODO fire event that might increase or reduce the amount
 			int oldEndurance = Endurance;
 			Endurance += changeAmount;
-			return Endurance - oldEndurance;
+
+			return 
+				Endurance - oldEndurance;
 		}
 
 		/// <summary>

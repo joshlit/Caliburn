@@ -1,8 +1,10 @@
 ﻿using DOL.AI.Brain;
 using DOL.GS.API;
+using DOL.GS.Behaviour.Actions;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using log4net;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,16 +37,14 @@ namespace DOL.GS.Scripts
                         level = 1;
                 }
                 else
-                {
                     level = client.Player.Level;
-                }
 
                 Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
 
                 if (client.Player.GroundTarget != null)
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
-                    
+
                     if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
                         position = new Point3D(client.Player.GroundTarget);
                 }
@@ -190,6 +190,8 @@ namespace DOL.GS.Scripts
                                 groupMembers[0].Group.AddMember(living);
 
                                 MimicBrain brain = ((MimicNPC)living).Brain as MimicBrain;
+                                brain.PvPMode = true;
+                                brain.Roam = true;
                                 brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
                             }
                         }
@@ -213,7 +215,7 @@ namespace DOL.GS.Scripts
             {
                 string toLower = args[1].ToLower();
 
-                switch(args[1])
+                switch (args[1])
                 {
                     case "on":
                     MimicManager.SetPreventCombat(true);
@@ -226,42 +228,6 @@ namespace DOL.GS.Scripts
             }
         }
     }
-
-    //[CmdAttribute(
-    //   "&equip",
-    //   ePrivLevel.Player,
-    //   "/equip - Get a set of armor and weapons. WeaponSpec, ArmorType")]
-    //public class EquipCommandHandler : AbstractCommandHandler, ICommandHandler
-    //{
-    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-    //    public void OnCommand(GameClient client, string[] args)
-    //    {
-    //        if (args.Length > 0)
-    //        {
-    //            string weapon = args[1];
-    //            string armor = args[2];
-
-    //            MimicEquipment.SetMeleeWeapon(client.Player, weapon);
-    //            MimicEquipment.SetArmor(client.Player, MimicEquipment.GetObjectType(armor));
-    //            MimicEquipment.SetJewelry(client.Player);
-    //        }
-    //    }
-    //}
-
-    //[CmdAttribute(
-    //   "&effects",
-    //   ePrivLevel.Player,
-    //   "/effects - Get a list of current effects.")]
-    //public class EffectsCommandHandler : AbstractCommandHandler, ICommandHandler
-    //{
-    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-    //    public void OnCommand(GameClient client, string[] args)
-    //    {
-    //        client.Player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
-    //    }
-    //}
 
     [CmdAttribute(
       "&mimicbattle",
@@ -286,6 +252,83 @@ namespace DOL.GS.Scripts
         {
             if (MimicBattlegrounds.Running)
                 MimicBattlegrounds.MimicBattlegroundStats(client.Player);
+        }
+    }
+
+    [CmdAttribute(
+        "&pull",
+        ePrivLevel.Admin,
+        "/mpull - Pull all players to you.")]
+    public class PullCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            foreach (GamePlayer player in ClientService.GetPlayers())
+            {
+                player.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
+            }
+        }
+    }
+
+    [CmdAttribute(
+        "&mlfg",
+        ePrivLevel.Player,
+        "/mlfg - Get a list of Mimics that are looking for a group.")]
+    public class LocCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+
+            if (player == null)
+                return;
+
+            var entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+            string message = string.Empty;
+
+            if (entries.Any())
+            {
+                if (args.Length < 2)
+                {
+                    int index = 1;
+                    foreach (var entry in entries)
+                    {
+                        message += index++.ToString() + " " + entry.Mimic.Name + " " + entry.Mimic.CharacterClass.Name + " " + entry.Mimic.Level + "\n";
+                    }
+                }
+                else
+                {
+                    int index = int.Parse(args[1]) - 1;
+
+                    if (index < 0 || index > entries.Count - 1)
+                        message = "Invalid input.";
+                    else
+                    {
+                        MimicNPC mimic = entries[index].Mimic;
+
+                        MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
+
+                        if (player.Group == null)
+                        {
+                            player.Group = new Group(player);
+                            player.Group.AddMember(player);
+                        }
+
+                        player.Group.AddMember(mimic);
+
+                        MimicLFGManager.Remove(player.Realm, mimic);
+                    }
+                }
+            }
+            else
+                message = "No mimics available.";
+
+            player.Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+
         }
     }
 }

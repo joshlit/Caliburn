@@ -19,6 +19,7 @@ using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
 using DOL.Language;
+using log4net;
 
 namespace DOL.AI.Brain
 {
@@ -38,6 +39,8 @@ namespace DOL.AI.Brain
         public bool PvPMode;
         public bool Defend;
         public bool Roam;
+        public bool PositionSelected;
+        public bool InPosition;
 
         // Used for AmbientBehaviour "Seeing" - maintains a list of GamePlayer in range
         public List<GamePlayer> PlayersSeen = new();
@@ -90,6 +93,25 @@ namespace DOL.AI.Brain
         public override void Think()
         {
             FSM.Think();
+        }
+
+        public void OnGroupMemberAttacked(AttackData ad)
+        {
+            switch (ad.AttackResult)
+            {
+                case eAttackResult.Blocked:
+                case eAttackResult.Evaded:
+                case eAttackResult.Fumbled:
+                case eAttackResult.HitStyle:
+                case eAttackResult.HitUnstyled:
+                case eAttackResult.Missed:
+                case eAttackResult.Parried:
+                AddToAggroList(ad.Attacker, ad.Attacker.EffectiveLevel + ad.Damage + ad.CriticalDamage);
+                break;
+            }
+
+            if (FSM.GetState(eFSMStateType.AGGRO) != FSM.GetCurrentState()) 
+                FSM.SetCurrentState(eFSMStateType.AGGRO);
         }
 
         public virtual bool CheckProximityAggro(int aggroRange)
@@ -169,7 +191,7 @@ namespace DOL.AI.Brain
             {
                 if (!CanAggroTarget(npc))
                     continue;
-
+ 
                 if (npc is GameTaxi or GameTrainingDummy)
                     continue;
 
@@ -188,7 +210,21 @@ namespace DOL.AI.Brain
                     //}
                 }
 
-                AddToAggroList(npc, 50);
+                if (!PvPMode && Body.Group != null)
+                {
+                    bool isAttacking = false;
+
+                    foreach (GameLiving groupMember in Body.Group.GetMembersInTheGroup())
+                    {
+                        if (npc.TargetObject == groupMember)
+                            isAttacking = true;
+                    }
+
+                    if (!isAttacking)
+                        return;
+                }
+
+                AddToAggroList(npc, 1);
                 return;
             }
         }
@@ -425,7 +461,7 @@ namespace DOL.AI.Brain
             if (Body.IsConfused || !Body.IsAlive || living == null)
                 return;
 
-            BringFriends(living);
+            //BringFriends(living);
 
             // Handle trigger to say sentance on first aggro.
             if (AggroTable.Count < 1)
@@ -569,10 +605,87 @@ namespace DOL.AI.Brain
             if (Body.TargetObject != null)
             {
                 if (CheckSpells(eCheckSpellType.Offensive))
-                    ((MimicNPC)Body).StopAttack();
+                    Body.StopAttack();
                 else
-                    ((MimicNPC)Body).StartAttack(Body.TargetObject);
+                {
+                    //TODO: Find a good spot to implement getting into position.
+                    //if (Body.TargetObject is GameNPC npc)
+                    //{
+                    //    if (!npc.IsMoving && !InPosition)
+                    //    {
+                    //        Point3D walkToPosition = null;
+                    //        Point3D targetsPosition = new Point3D(npc.X, npc.Y, npc.Z);
+
+                    //        if (_mimicBody.CanUseSideStyles && _mimicBody.CanUseBackStyles)
+                    //        {
+                    //            if (Util.RandomBool())
+                    //                walkToPosition = GetSidePoint(targetsPosition, npc.Heading);
+                    //            else
+                    //                walkToPosition = GetBackPoint(targetsPosition, npc.Heading);
+                    //        }
+                    //        else if (_mimicBody.CanUseSideStyles)
+                    //            walkToPosition = GetSidePoint(targetsPosition, npc.Heading);
+                    //        else if (_mimicBody.CanUseBackStyles)
+                    //            walkToPosition = GetBackPoint(targetsPosition, npc.Heading);
+
+                    //        InPosition = true;
+
+                    //        if (walkToPosition != null)
+                    //            Body.WalkTo(walkToPosition, 191);
+                    //    }
+                    //}
+
+                    Body.StartAttack(Body.TargetObject);
+                }
             }
+        }
+
+        private Point3D GetSidePoint(IPoint3D targetPosition, ushort targetHeading)
+        {
+            log.Info("Side Point");
+            int headingRadians = (int)(targetHeading * Math.PI / 180.0);
+
+            int newHeadingRadians = headingRadians + (int)(Math.PI / 2.0);
+
+            int xOffset = (int)(50 * Math.Cos(newHeadingRadians));
+            int yOffset = (int)(50 * Math.Sin(newHeadingRadians));
+
+            int newX = targetPosition.X + xOffset;
+            int newY = targetPosition.Y + yOffset;
+
+            // Debug to visualize mimics target position
+            if (Body.Group != null)
+            {
+                foreach (GamePlayer player in Body.Group.GetPlayersInTheGroup())
+                {
+                    player.Out.SendChangeGroundTarget(new Point3D(newX, newY, targetPosition.Z));
+                }
+            }
+
+            return new Point3D(newX, newY, targetPosition.Z);
+        }
+
+        private Point3D GetBackPoint(IPoint3D targetPosition, ushort targetHeading)
+        {
+            log.Info("Back Point");
+            int targetHeadingRad = (int)(targetHeading * Math.PI / 180f);
+
+            int xOffset = -(int)(50 * Math.Sin(targetHeadingRad));
+            int yOffset = (int)(50 * Math.Cos(targetHeadingRad));
+
+            int newX = targetPosition.X + xOffset;
+            int newY = targetPosition.Y + yOffset;
+
+            // Debug to visualize mimics target position
+            if (Body.Group != null)
+            {
+                foreach (GamePlayer player in Body.Group.GetPlayersInTheGroup())
+                {
+                    player.Out.SendChangeGroundTarget(new Point3D(newX, newY, targetPosition.Z));
+                }
+            }
+
+            return new Point3D(newX, newY, targetPosition.Z);
         }
 
         protected virtual void LosCheckForAggroCallback(GamePlayer player, ushort response, ushort targetOID)
@@ -666,6 +779,12 @@ namespace DOL.AI.Brain
 
             // We keep shades in aggro lists so that mobs attack them after their pet dies, but we must never return one.
             GameLiving nextTarget = aggroList.Find(x => EffectListService.GetEffectOnTarget(x.Key, eEffect.Shade) == null).Key;
+
+            // TODO: Make target selection a little more random in PvP.
+            //var random = aggroList.FindAll(x => EffectListService.GetEffectOnTarget(x.Key, eEffect.Shade) == null);
+            //GameLiving nextTarget = null;
+            //if (random.Any())
+               // nextTarget = random[Util.Random(random.Count - 1)].Key;
 
             if (nextTarget != null)
                 return nextTarget;
@@ -1578,6 +1697,7 @@ namespace DOL.AI.Brain
             switch (spell.SpellType)
             {
                 #region Enemy Spells
+
                 case eSpellType.DirectDamage:
                 case eSpellType.Lifedrain:
                 case eSpellType.DexterityDebuff:
@@ -1594,7 +1714,7 @@ namespace DOL.AI.Brain
                 case eSpellType.Stun:
                 case eSpellType.Mez:
                 case eSpellType.Taunt:
-                
+
                 if (!LivingHasEffect(lastTarget as GameLiving, spell))
                 {
                     Body.TargetObject = lastTarget;
@@ -1604,8 +1724,14 @@ namespace DOL.AI.Brain
                 #endregion
             }
 
+            ECSGameEffect pulseEffect = EffectListService.GetPulseEffectOnTarget(Body, spell);
+
+            if (pulseEffect != null)
+                return false;
+
             if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && !(LivingHasEffect(living, spell)))))
             {
+
                 Body.CastSpell(spell, m_mobSpellLine, true);
                 Body.TargetObject = lastTarget;
                 return true;
@@ -1617,10 +1743,14 @@ namespace DOL.AI.Brain
 
         protected virtual bool CheckSavageResistSpell(eDamageType damageType)
         {
-            foreach (var attacker in Body.attackComponent.Attackers)
+            if (Body.attackComponent.Attackers.Count > 0)
             {
-                if ((int)damageType == attacker.Key.ActiveWeapon.Type_Damage)
-                    return true;
+                foreach (var attacker in Body.attackComponent.Attackers)
+                {
+                    if (attacker.Key.ActiveWeapon != null)
+                        if ((int)damageType == attacker.Key.ActiveWeapon.Type_Damage)
+                            return true;
+                }
             }
 
             return false;

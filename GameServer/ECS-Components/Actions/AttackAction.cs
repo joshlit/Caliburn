@@ -45,8 +45,8 @@ namespace DOL.GS
 
         public static AttackAction Create(GameLiving gameLiving)
         {
-            //if (gameLiving is MimicNPC mimicNPC)
-            //    return new MimicAttackAction(mimicNPC);
+            if (gameLiving is MimicNPC mimicNPC)
+                return new MimicAttackAction(mimicNPC);
             if (gameLiving is GameNPC gameNpc)
                 return new NpcAttackAction(gameNpc);
             else if (gameLiving is GamePlayer gamePlayer)

@@ -357,12 +357,12 @@ namespace DOL.GS.Styles
 					// Reduce players endurance. Full endurance cost if conditions aren't met too.
 					if (player != null)
 						player.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
-					
-					if (mimic != null)
-                        mimic.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
-                }
 
-                AttackData lastAttackData = living.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+					if (mimic != null)
+						mimic.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
+				}
+
+				AttackData lastAttackData = living.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
 
                 // Did primary and backup style fail?
                 if (!CanUseStyle(lastAttackData, living, style, weapon))

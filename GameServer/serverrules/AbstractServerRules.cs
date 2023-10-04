@@ -433,7 +433,7 @@ namespace DOL.GS.ServerRules
 					return true;
 
 				// Mobs can attack mobs only if they both have a faction
-				if (defendnpc.Faction == null || attacknpc.Faction == null)
+				if ((defendnpc.Faction == null || attacknpc.Faction == null) && (defendnpc is not MimicNPC && attacknpc is not MimicNPC))
 					return false;
 			}
 

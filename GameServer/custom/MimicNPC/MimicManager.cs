@@ -18,6 +18,7 @@ using System.Collections;
 using System.Drawing.Text;
 using System.Reflection.Emit;
 using DOL.GS.API;
+using static DOL.SimpleDisposableLock;
 
 namespace DOL.GS.Scripts
 {
@@ -35,13 +36,13 @@ namespace DOL.GS.Scripts
         public static Point3D albThidSpawnPoint = new Point3D(37200, 51200, 3950);
         public static Point3D hibThidSpawnPoint = new Point3D(19820, 19305, 4050);
         public static Point3D midThidSpawnPoint = new Point3D(53300, 26100, 4270);
-     
+
         public static bool Running;
 
         private static readonly List<BattleStats> battleStats = new List<BattleStats>();
 
         private static ushort thidRegion = 252;
-        private static int maxMimics = 256;
+        private static int maxMimics = 64;
         private static int totalMimics = 0;
 
         public static void Start(GamePlayer player)
@@ -75,7 +76,7 @@ namespace DOL.GS.Scripts
                         MimicManager.AddMimicToWorld(mimic, midThidSpawnPoint, thidRegion);
 
                         midMimics.Add(mimic);
-                    }  
+                    }
                 }
 
                 totalMimics = albMimics.Count + hibMimics.Count + midMimics.Count;
@@ -378,7 +379,7 @@ namespace DOL.GS.Scripts
                         return new List<MimicNPC>(MimicNPCs);
                     }
                 }
-            }          
+            }
 
             return null;
         }
@@ -404,6 +405,35 @@ namespace DOL.GS.Scripts
     public static class MimicEquipment
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public static void SetWeaponROG(GameLiving living, eRealm realm, eCharacterClass charClass, byte level, eObjectType objectType, eInventorySlot slot, eDamageType damageType)
+        {
+            DbItemTemplate itemToCreate = new GeneratedUniqueItem(false, realm, charClass, level, objectType, slot, damageType);
+
+            GameInventoryItem item = GameInventoryItem.Create(itemToCreate);
+            living.Inventory.AddItem(slot, item);
+        }
+
+        public static void SetArmorAndJewelryROG(GameLiving living, eRealm realm, eCharacterClass charClass, byte level, eObjectType objectType)
+        {
+            for (int i = Slot.HELM; i <= Slot.RIGHTRING; i++)
+            {
+                if (i == Slot.FOREARMS || i == Slot.SHIELD)
+                    continue;
+
+                eInventorySlot slot = (eInventorySlot)i;
+                DbItemTemplate itemToCreate = new GeneratedUniqueItem(false, realm, charClass, level, objectType, slot);
+
+                GameInventoryItem item = GameInventoryItem.Create(itemToCreate);
+
+                if (i == Slot.RIGHTRING || i == Slot.LEFTRING)
+                    living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
+                else if (i == Slot.LEFTWRIST || i == Slot.RIGHTWRIST)
+                    living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftBracer, eInventorySlot.RightBracer), item);
+                else
+                    living.Inventory.AddItem(slot, item);
+            }
+        }
 
         public static void SetMeleeWeapon(GameLiving living, string weapType, eHand hand, eWeaponDamageType damageType = 0)
         {
@@ -483,7 +513,7 @@ namespace DOL.GS.Scripts
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
                 AddItem(living, itemTemplate);
-                
+
                 return;
             }
             else
@@ -563,7 +593,7 @@ namespace DOL.GS.Scripts
                     helmList
                 };
 
-                foreach(List<DbItemTemplate> list in masterList)
+                foreach (List<DbItemTemplate> list in masterList)
                 {
                     if (list.Any())
                     {
@@ -599,7 +629,10 @@ namespace DOL.GS.Scripts
                 foreach (DbItemTemplate template in itemList)
                 {
                     if (template.Item_Type == Slot.CLOAK)
+                    {
+                        template.Color = Util.Random((Enum.GetValues(typeof(eColor)).Length));
                         cloakList.Add(template);
+                    }
                     else if (template.Item_Type == Slot.JEWELRY)
                         jewelryList.Add(template);
                     else if (template.Item_Type == Slot.LEFTRING || template.Item_Type == Slot.RIGHTRING)
@@ -649,6 +682,7 @@ namespace DOL.GS.Scripts
                 if (living.Inventory.GetItem(eInventorySlot.Cloak) == null)
                 {
                     DbItemTemplate cloak = GameServer.Database.FindObjectByKey<DbItemTemplate>("cloak");
+                    cloak.Color = Util.Random((Enum.GetValues(typeof(eColor)).Length));
                     AddItem(living, cloak);
                 }
             }
@@ -665,8 +699,6 @@ namespace DOL.GS.Scripts
 
             if (item != null)
             {
-                log.Info("Item is called " + item.Name + " it is slot " + item.Item_Type);
-
                 if (itemTemplate.Item_Type == Slot.LEFTRING || itemTemplate.Item_Type == Slot.RIGHTRING)
                 {
                     living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
@@ -770,6 +802,206 @@ namespace DOL.GS.Scripts
         public void SetName(string name)
         {
             SpecName = name;
+        }
+    }
+
+    #endregion
+
+    #region LFG
+
+    public static class MimicLFGManager
+    {
+        public static List<MimicLFGEntry> LFGListAlb = new List<MimicLFGEntry>();
+        public static List<MimicLFGEntry> LFGListHib = new List<MimicLFGEntry>();
+        public static List<MimicLFGEntry> LFGListMid = new List<MimicLFGEntry>();
+
+        private static long _respawnTimeAlb = 0;
+        private static long _respawnTimeHib = 0;
+        private static long _respawnTimeMid = 0;
+
+        private static int minRespawnTime = 60000;
+        private static int maxRespawnTime = 600000;
+
+        private static int minRemoveTime = 300000;
+        private static int maxRemoveTime = 3600000;
+
+        private static int maxMimics = 20;
+
+        public static List<MimicLFGEntry> GetLFG(eRealm realm, byte level)
+        {
+            switch (realm)
+            {
+                case eRealm.Albion:
+                {
+                    if (_respawnTimeAlb == 0)
+                    {
+                        _respawnTimeAlb = GameLoop.GameLoopTime + Util.Random(minRespawnTime, maxRespawnTime);
+                        LFGListAlb = GenerateList(LFGListAlb, realm, level);
+                    }
+
+                    lock (LFGListAlb)
+                    {
+                        LFGListAlb = ValidateList(LFGListAlb);
+
+                        if (GameLoop.GameLoopTime > _respawnTimeAlb)
+                        {
+                            LFGListAlb = GenerateList(LFGListAlb, realm, level);
+                            _respawnTimeAlb = GameLoop.GameLoopTime + Util.Random(minRespawnTime, maxRespawnTime);
+                        }
+                    }
+
+                    return LFGListAlb;
+                }
+
+                case eRealm.Hibernia:
+                {
+                    if (_respawnTimeHib == 0)
+                    {
+                        _respawnTimeHib = GameLoop.GameLoopTime + Util.Random(minRespawnTime, maxRespawnTime);
+                        LFGListHib = GenerateList(LFGListHib, realm, level);
+                    }
+
+                    lock (LFGListHib)
+                    {
+                        LFGListHib = ValidateList(LFGListHib);
+
+                        if (GameLoop.GameLoopTime > _respawnTimeHib)
+                        {
+                            LFGListHib = GenerateList(LFGListHib, realm, level);
+                            _respawnTimeHib = GameLoop.GameLoopTime + Util.Random(minRespawnTime, maxRespawnTime);
+                        }
+                    }
+
+                    return LFGListHib;
+                }
+
+                case eRealm.Midgard:
+                {
+                    if (_respawnTimeMid == 0)
+                    {
+                        _respawnTimeMid = GameLoop.GameLoopTime + Util.Random(minRespawnTime, maxRespawnTime);
+                        LFGListMid = GenerateList(LFGListMid, realm, level);
+                    }
+
+                    lock (LFGListMid)
+                    {
+                        LFGListMid = ValidateList(LFGListMid);
+
+                        if (GameLoop.GameLoopTime > _respawnTimeMid)
+                        {
+                            LFGListMid = GenerateList(LFGListMid, realm, level);
+                            _respawnTimeMid = GameLoop.GameLoopTime + Util.Random(minRespawnTime, maxRespawnTime);
+                        }
+                    }
+
+                    return LFGListMid;
+                }
+            }
+
+            return null;
+        }
+
+        public static void Remove(eRealm realm, MimicNPC mimic)
+        {
+            switch(realm)
+            {
+                case eRealm.Albion:
+                if (LFGListAlb.Any())
+                {
+                    lock (LFGListAlb)
+                    {
+                        foreach (MimicLFGEntry entry in LFGListAlb)
+                        {
+                            if (entry.Mimic == mimic)
+                                entry.RemoveTime = GameLoop.GameLoopTime;
+                        }
+                    }
+                }
+                break;
+
+                case eRealm.Hibernia:
+                if (LFGListHib.Any())
+                {
+                    lock (LFGListHib)
+                    {
+                        foreach (MimicLFGEntry entry in LFGListHib)
+                        {
+                            if (entry.Mimic == mimic)
+                                entry.RemoveTime = GameLoop.GameLoopTime;
+                        }
+                    }
+                }
+                break;
+
+                case eRealm.Midgard:
+                if (LFGListMid.Any())
+                {
+                    lock (LFGListMid)
+                    {
+                        foreach (MimicLFGEntry entry in LFGListMid)
+                        {
+                            if (entry.Mimic == mimic)
+                                entry.RemoveTime = GameLoop.GameLoopTime;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+
+        private static List<MimicLFGEntry> GenerateList(List<MimicLFGEntry> entries, eRealm realm, byte level)
+        {
+            if (entries.Count < maxMimics)
+            {
+                int mimicsToAdd = maxMimics - entries.Count;
+
+                for (int i = 0; i < mimicsToAdd; i++)
+                {
+                    if (Util.Chance(35))
+                    {
+                        int levelMin = Math.Max(1, level - 3);
+                        int levelMax = Math.Min(50, level + 3);
+                        int levelRand = Util.Random(levelMin, levelMax);
+
+                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, (byte)levelRand, realm);
+
+                        entries.Add(new MimicLFGEntry(mimic, GameLoop.GameLoopTime + Util.Random(minRemoveTime, maxRemoveTime)));
+                    }
+                }
+            }
+
+            List<MimicLFGEntry> generateList = new List<MimicLFGEntry>();
+            generateList.AddRange(entries);
+
+            return generateList;
+        }
+
+        private static List<MimicLFGEntry> ValidateList(List<MimicLFGEntry> entries)
+        {
+            List<MimicLFGEntry> validList = new List<MimicLFGEntry>();
+
+            if (entries.Any())
+            {
+                foreach (MimicLFGEntry entry in entries)
+                {
+                    if (GameLoop.GameLoopTime < entry.RemoveTime)
+                        validList.Add(entry);
+                }
+            }
+
+            return validList;
+        }
+
+        public class MimicLFGEntry
+        {
+            public MimicNPC Mimic;
+            public long RemoveTime;
+
+            public MimicLFGEntry(MimicNPC mimic, long removeTime)
+            {
+                Mimic = mimic;
+                RemoveTime = removeTime;
+            }
         }
     }
 

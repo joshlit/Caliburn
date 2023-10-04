@@ -38,6 +38,9 @@ namespace DOL.GS.Scripts
 {
     public class MimicNPC : GameNPC
     {
+        public bool CanUseSideStyles { get { return StylesSide != null && StylesSide.Count > 1; } }
+        public bool CanUseBackStyles { get { return StylesBack != null && StylesBack.Count > 1; } }
+
         public MimicSpec MimicSpec = new MimicSpec();
         public int Kills;
 
@@ -48,11 +51,10 @@ namespace DOL.GS.Scripts
  
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
-            SetLevel(level);       
-            
-            //MaxEndurance = GetModified(eProperty.Fatigue);
-            
+            SetLevel(level);        
             SetOwnBrain(new MimicBrain());
+            MaxEndurance = 100;
+            Endurance = MaxEndurance;
 
             RespawnInterval = 0;
             m_combatTimer = new ECSGameTimer(this, new ECSGameTimer.ECSTimerCallback(_ =>
@@ -276,7 +278,7 @@ namespace DOL.GS.Scripts
                     Charisma,
                     Health,
                     EffectiveOverallAF,
-                    MaxEndurance,
+                    Endurance,
                     Mana));
                 break;
 
@@ -892,7 +894,23 @@ namespace DOL.GS.Scripts
                 case eRealm.Midgard: Faction = MimicManager.mid; break;
             }
 
-            Name = RaceName; //MimicNames.GetName(Gender, Realm);
+            Name = MimicNames.GetName(Gender, Realm);
+        }
+
+        public override bool AddToWorld()
+        {
+            if (!(base.AddToWorld()))
+                return false;
+
+            m_healthRegenerationTimer = new ECSGameTimer(this);
+            m_powerRegenerationTimer = new ECSGameTimer(this);
+            m_enduRegenerationTimer = new ECSGameTimer(this);
+
+            m_healthRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(HealthRegenerationTimerCallback);
+            m_powerRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(PowerRegenerationTimerCallback);
+            m_enduRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(EnduranceRegenerationTimerCallback);
+
+            return true;
         }
 
         private readonly object m_LockObject = new object();
@@ -2905,7 +2923,9 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override void StartEnduranceRegeneration()
         {
-            if (ObjectState != eObjectState.Active) return;
+            if (ObjectState != eObjectState.Active) 
+                return;
+
             if (m_enduRegenerationTimer is { IsAlive: true }) return;
             if (m_enduRegenerationTimer == null)
             {
@@ -3081,15 +3101,19 @@ namespace DOL.GS.Scripts
                         }
                     }
                 }
+
                 RegenRateAtChange = regen;
+
                 if (regen != 0)
                 {
                     ChangeEndurance(this, eEnduranceChangeType.Regenerate, regen);
                 }
             }
+
             if (!sprinting)
             {
-                if (Endurance >= MaxEndurance) selfRegenerationTimer.Stop();
+                if (Endurance >= MaxEndurance) 
+                    selfRegenerationTimer.Stop();
             }
             else
             {
@@ -3098,9 +3122,12 @@ namespace DOL.GS.Scripts
                     || Endurance - 5 <= 0)
                     Sprint(false);
             }
+
             var rate = EnduranceRegenerationPeriod;
+
             if (IsSitting)
                 rate /= 2;
+
             return rate;
         }
 
@@ -3282,52 +3309,27 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override int Endurance
         {
-            get { return DBCharacter != null ? DBCharacter.Endurance : base.Endurance; }
+            get { return base.Endurance; }
             set
             {
-                value = Math.Min(value, MaxEndurance);
-                value = Math.Max(value, 0);
-                //If it is already set, don't do anything
-                //if (Endurance == value)
-                //{
-                //    base.Endurance = value; //needed to start regeneration
-                //    return;
-                //}
-                //else
-                if (IsAlive && value < MaxEndurance)
+                m_endurance = Math.Min(value, m_maxEndurance);
+                m_endurance = Math.Max(m_endurance, 0);
+
+                if (IsAlive && m_endurance < m_maxEndurance)
+                {
                     StartEnduranceRegeneration();
+                }
 
                 int oldPercent = EndurancePercent;
-                base.Endurance = value;
-
-                if (DBCharacter != null)
-                    DBCharacter.Endurance = value;
+                //base.Endurance = value;
 
                 if (oldPercent != EndurancePercent)
                 {
                     //ogre: 1.69+ endurance is displayed on group window
                     if (Group != null)
                         Group.UpdateMember(this, false, false);
-                    //end ogre
                     //UpdatePlayerStatus();
                 }
-            }
-        }
-
-        /// <summary>
-        /// Gets/sets the objects maximum endurance
-        /// </summary>
-        public override int MaxEndurance
-        {
-            get { return GetModified(eProperty.Fatigue); }
-            set
-            {
-                //If it is already set, don't do anything
-                if (MaxEndurance == value)
-                    return;
-                base.MaxEndurance = value;
-                DBMaxEndurance = value;
-                //UpdatePlayerStatus();
             }
         }
 
@@ -6480,7 +6482,7 @@ namespace DOL.GS.Scripts
         {
             if (base.CheckRangedAttackInterrupt(attacker, attackType))
             {
-                attackComponent.attackAction.OnAimInterrupt(attacker);
+                attackComponent.attackAction?.OnAimInterrupt(attacker);
                 return true;
             }
 
@@ -6653,11 +6655,6 @@ namespace DOL.GS.Scripts
                 return eArmorSlot.FEET;
             }
         }
-
-        //public override AttackAction CreateAttackAction()
-        //{
-        //    return attackComponent.attackAction ?? MimicAttackAction.Create(this);
-        //}
 
         /// <summary>
         /// determines current weaponspeclevel

@@ -44,6 +44,13 @@ namespace DOL.AI.Brain
             else
                 _brain.FSM.SetCurrentState(eFSMStateType.IDLE);
 
+            if (_brain.PvPMode)
+            {
+                _brain.AggroRange = 3600;
+            }
+            else
+                _brain.AggroRange = 50;
+
             base.Enter();
         }
 
@@ -70,6 +77,13 @@ namespace DOL.AI.Brain
         public override void Exit()
         {
             _brain.Body.StopFollowing();
+
+            if (_brain.PvPMode)
+            {
+                _brain.AggroRange = 3600;
+            }
+            else
+                _brain.AggroRange = 50;
 
             base.Exit();
         }
@@ -141,9 +155,9 @@ namespace DOL.AI.Brain
                 _brain.AggroLevel = 100;
                 _brain.AggroRange = 3600;
 
-                _brain.PvPMode = true;
-                _brain.Roam = true;
-                _brain.Defend = false;
+                //_brain.PvPMode = false;
+                //_brain.Roam = false;
+                //_brain.Defend = false;
 
                 _brain.Body.RoamingRange = 15000;
 
@@ -221,37 +235,58 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
+            if (_brain.PvPMode)
+            {
+                if (!_brain.HasAggro)
+                {
+                    _brain.CheckProximityAggro(_brain.AggroRange);
+                }
+            }
+
             if (!_brain.HasAggro || (!_brain.Body.InCombatInLast(LEAVE_WHEN_OUT_OF_COMBAT_FOR) && _aggroTime + LEAVE_WHEN_OUT_OF_COMBAT_FOR <= GameLoop.GameLoopTime))
             {
                 if (!_brain.Body.IsMezzed && !_brain.Body.IsStunned)
                 {
-                    if (_brain.Roam)
+                    if (_brain.PvPMode)
                     {
-                        if (_brain.Body.Group != null)
+                        if (_brain.Roam)
                         {
-                            if (_brain.Body.Group.LivingLeader == _brain.Body)
+                            if (_brain.Body.Group != null)
+                            {
+                                if (_brain.Body.Group.LivingLeader == _brain.Body)
+                                    _brain.FSM.SetCurrentState(eFSMStateType.ROAMING);
+                                else
+                                    _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                            }
+                            else
                                 _brain.FSM.SetCurrentState(eFSMStateType.ROAMING);
-                            else
-                                _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
                         }
-                        else
-                            _brain.FSM.SetCurrentState(eFSMStateType.ROAMING);
+                        else if (_brain.Defend)
+                        {
+                            if (_brain.Body.Group != null)
+                            {
+                                if (_brain.Body.Group.LivingLeader == _brain.Body)
+                                    _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+                                else
+                                    _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                            }
+                            else
+                                _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+                        }
                     }
-                    else if (_brain.Defend)
+                    else
                     {
                         if (_brain.Body.Group != null)
                         {
                             if (_brain.Body.Group.LivingLeader == _brain.Body)
-                                _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+                                _brain.FSM.SetCurrentState(eFSMStateType.IDLE);
                             else
                                 _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
                         }
-                        else
-                            _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
                     }
-                }
 
-                return;
+                    return;
+                }
             }
 
             if (_brain.Body.Flags.HasFlag(GameNPC.eFlags.STEALTH))
@@ -321,8 +356,6 @@ namespace DOL.AI.Brain
                     _lastRoamTick = GameLoop.GameLoopTime;
                 }
             }
-            //else
-                //log.Info("Body is casting");
 
             _brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive);
             base.Think();
