@@ -8,7 +8,7 @@ using static DOL.GS.GameObject;
 
 namespace DOL.GS
 {
-    public class NpcMovementComponent : MovementComponent
+    public class MimicMovementComponent : MovementComponent
     {
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -24,7 +24,7 @@ namespace DOL.GS
         private short _moveOnPathSpeed;
         private long _stopAtWaypointUntil;
         private PathCalculator _pathCalculator;
-        private Action<NpcMovementComponent> _goToNextPathingNodeCallback;
+        private Action<MimicMovementComponent> _goToNextPathingNodeCallback;
 
         public new GameNPC Owner { get; private set; }
         // 'TargetPosition' is accessed from multiple threads simultaneously (from the current NPC being updated, others NPCs checking around them, and the world update thread).
@@ -44,7 +44,7 @@ namespace DOL.GS
         public bool IsAtTargetPosition => IsTargetPositionValid && TargetPosition.X == Owner.X && TargetPosition.Y == Owner.Y && TargetPosition.Z == Owner.Z;
         public bool CanRoam => ServerProperties.Properties.ALLOW_ROAM && RoamingRange != 0 && string.IsNullOrWhiteSpace(PathID);
 
-        public NpcMovementComponent(GameNPC npcOwner) : base(npcOwner)
+        public MimicMovementComponent(GameNPC npcOwner) : base(npcOwner)
         {
             Owner = npcOwner;
             _pathCalculator = new(npcOwner);
@@ -252,7 +252,7 @@ namespace DOL.GS
 
             double targetX = Owner.SpawnPoint.X + Util.Random(-maxRoamingRadius, maxRoamingRadius);
             double targetY = Owner.SpawnPoint.Y + Util.Random(-maxRoamingRadius, maxRoamingRadius);
-            WalkTo(new Point3D((int) targetX, (int) targetY, Owner.SpawnPoint.Z), speed);
+            WalkTo(new Point3D((int)targetX, (int)targetY, Owner.SpawnPoint.Z), speed);
         }
 
         protected override void UpdateTickSpeed()
@@ -340,9 +340,9 @@ namespace DOL.GS
                 return 0;
             }
 
-            double diffX = (long) FollowTarget.X - Owner.X;
-            double diffY = (long) FollowTarget.Y - Owner.Y;
-            double diffZ = (long) FollowTarget.Z - Owner.Z;
+            double diffX = (long)FollowTarget.X - Owner.X;
+            double diffY = (long)FollowTarget.Y - Owner.Y;
+            double diffZ = (long)FollowTarget.Z - Owner.Z;
             double distance = Math.Sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ);
 
             // If distance is greater then the max follow distance, stop following and return home.
@@ -388,7 +388,7 @@ namespace DOL.GS
                     {
                         targetPosition = new(newX, newY, newZ);
                         double followSpeed = Math.Max(Math.Min(MaxSpeed, Owner.GetDistance(targetPosition) * FOLLOW_SPEED_SCALAR), 50);
-                        PathTo(targetPosition, (short) followSpeed);
+                        PathTo(targetPosition, (short)followSpeed);
                         return ServerProperties.Properties.GAMENPC_FOLLOWCHECK_TIME;
                     }
                 }
@@ -414,11 +414,11 @@ namespace DOL.GS
             diffY = diffY / distance * minAllowedFollowDistance;
             diffZ = diffZ / distance * minAllowedFollowDistance;
 
-            targetPosition = new((int) (FollowTarget.X - diffX), (int) (FollowTarget.Y - diffY), (int) (FollowTarget.Z - diffZ));
+            targetPosition = new((int)(FollowTarget.X - diffX), (int)(FollowTarget.Y - diffY), (int)(FollowTarget.Z - diffZ));
 
             // Slow down out of combat pets when they're close.
             if (!Owner.InCombat && Owner.Brain is ControlledNpcBrain controlledBrain && controlledBrain.Owner == Owner.FollowTarget)
-                PathTo(targetPosition, (short) Math.Max(Math.Min(MaxSpeed, Owner.GetDistance(targetPosition) * FOLLOW_SPEED_SCALAR), 50));
+                PathTo(targetPosition, (short)Math.Max(Math.Min(MaxSpeed, Owner.GetDistance(targetPosition) * FOLLOW_SPEED_SCALAR), 50));
             else
                 PathTo(targetPosition, MaxSpeed);
 

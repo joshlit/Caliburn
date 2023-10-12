@@ -56,23 +56,22 @@ namespace DOL.GS.Scripts
                     byte level = (byte)Util.Random(20, 24);
                     eRealm randomRealm = (eRealm)Util.Random(1, 3);
 
+                    MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, randomRealm);
+
                     if (randomRealm == eRealm.Albion)
                     {
-                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Albion);
                         MimicManager.AddMimicToWorld(mimic, albThidSpawnPoint, thidRegion);
 
                         albMimics.Add(mimic);
                     }
                     else if (randomRealm == eRealm.Hibernia)
                     {
-                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Hibernia);
                         MimicManager.AddMimicToWorld(mimic, hibThidSpawnPoint, thidRegion);
 
                         hibMimics.Add(mimic);
                     }
                     else if (randomRealm == eRealm.Midgard)
                     {
-                        MimicNPC mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Midgard);
                         MimicManager.AddMimicToWorld(mimic, midThidSpawnPoint, thidRegion);
 
                         midMimics.Add(mimic);
@@ -913,7 +912,7 @@ namespace DOL.GS.Scripts
                         foreach (MimicLFGEntry entry in LFGListAlb)
                         {
                             if (entry.Mimic == mimic)
-                                entry.RemoveTime = GameLoop.GameLoopTime;
+                                entry.RemoveTime = GameLoop.GameLoopTime - 1;
                         }
                     }
                 }

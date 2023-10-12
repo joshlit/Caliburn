@@ -2352,7 +2352,7 @@ namespace DOL.GS.ServerRules
 		/// <returns>The color handling</returns>
 		public virtual byte GetColorHandling(GameClient client)
 		{
-			return 0;
+			return 2;
 		}
 
 		/// <summary>

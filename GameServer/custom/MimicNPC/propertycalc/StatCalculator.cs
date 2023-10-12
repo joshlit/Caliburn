@@ -74,7 +74,7 @@ namespace DOL.GS.Scripts
                 livingToCheck = necromancerPet.Owner ?? living;
             else
                 livingToCheck = living;
-
+            
             int baseStat = living.GetBaseStat((eStat)property);
             int itemBonus = CalcValueFromItems(livingToCheck, property);
             int buffBonus = CalcValueFromBuffs(living, property);

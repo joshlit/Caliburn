@@ -278,8 +278,6 @@ namespace DOL.GS.Scripts
         "/mlfg - Get a list of Mimics that are looking for a group.")]
     public class LocCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
             GamePlayer player = client.Player;
@@ -288,47 +286,65 @@ namespace DOL.GS.Scripts
                 return;
 
             var entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
-            string message = string.Empty;
+            string message;
 
-            if (entries.Any())
+            if (args.Length < 2)
             {
-                if (args.Length < 2)
-                {
-                    int index = 1;
-                    foreach (var entry in entries)
-                    {
-                        message += index++.ToString() + " " + entry.Mimic.Name + " " + entry.Mimic.CharacterClass.Name + " " + entry.Mimic.Level + "\n";
-                    }
-                }
+                message = BuildMessage(entries);
+            }
+            else
+            {
+                int index = int.Parse(args[1]) - 1;
+
+                if (index < 0 || index > entries.Count - 1)
+                    message = BuildMessage(entries, true);
                 else
                 {
-                    int index = int.Parse(args[1]) - 1;
+                    MimicNPC mimic = entries[index].Mimic;
 
-                    if (index < 0 || index > entries.Count - 1)
-                        message = "Invalid input.";
-                    else
+                    MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
+
+                    if (player.Group == null)
                     {
-                        MimicNPC mimic = entries[index].Mimic;
+                        player.Group = new Group(player);
+                        player.Group.AddMember(player);
+                    }
 
-                        MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
-
-                        if (player.Group == null)
-                        {
-                            player.Group = new Group(player);
-                            player.Group.AddMember(player);
-                        }
-
+                    if (player.Group.GetMembersInTheGroup().Count < ServerProperties.Properties.GROUP_MAX_MEMBER)
+                    {
                         player.Group.AddMember(mimic);
 
                         MimicLFGManager.Remove(player.Realm, mimic);
+
+                        // Send a refreshed list with new indexes to avoid using wrong indexes while leaving the dialogue open
+                        entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+
+                        message = BuildMessage(entries);
                     }
+                    else
+                        message = BuildMessage(entries, true);
                 }
             }
-            else
-                message = "No mimics available.";
 
             player.Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+        }
 
+        private string BuildMessage(List<MimicLFGManager.MimicLFGEntry> entries, bool invalid = false)
+        {
+            string message = "--------------------------------\n";
+
+            if (invalid)
+                message += "Invalid number selection or group is full\n";
+            else if (entries.Any())
+            {
+                int index = 1;
+                foreach (var entry in entries)
+                    message += index++.ToString() + " " + entry.Mimic.Name + " " + entry.Mimic.CharacterClass.Name + " " + entry.Mimic.Level + "\n";
+            }
+            else
+                message += "No Mimics available.\n";
+
+            return message;
         }
     }
 }

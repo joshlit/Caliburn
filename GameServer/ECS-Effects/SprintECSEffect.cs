@@ -1,5 +1,6 @@
 ﻿using DOL.GS.PacketHandler;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.Language;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,18 @@ namespace DOL.GS
 		int m_idleTicks = 0;
 
 		public override ushort Icon { get { return 0x199; } }
-        public override string Name { get { return LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.SprintEffect.Name"); } }
+
+        public override string Name 
+		{ 
+			get 
+			{
+				if (Owner is GamePlayer)
+					return LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.SprintEffect.Name");
+				else
+					return "Sprint";
+			} 
+		}
+
         public override bool HasPositiveEffect { get { return true; } }
         public override long GetRemainingTimeForClient(){ return 1000; }
 
@@ -43,7 +55,21 @@ namespace DOL.GS
 				OwnerPlayer.Out.SendMessage(LanguageMgr.GetTranslation(OwnerPlayer.Client.Account.Language, "GamePlayer.Sprint.PrepareSprint"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				Owner.StartEnduranceRegeneration();
 			}
+			else if (Owner is MimicNPC mimic)
+			{
+                int regen = mimic.GetModified(eProperty.EnduranceRegenerationRate);
+                var endchant = mimic.GetModified(eProperty.FatigueConsumption);
+                var cost = -5 + regen;
+
+                if (endchant > 1) 
+					cost = (int)Math.Ceiling(cost * endchant * 0.01);
+
+                mimic.Endurance += cost;
+
+                Owner.StartEnduranceRegeneration();
+            }
 		}
+
         public override void OnStopEffect()
         {
 			if (OwnerPlayer != null)
@@ -52,13 +78,15 @@ namespace DOL.GS
 				OwnerPlayer.Out.SendMessage(LanguageMgr.GetTranslation(OwnerPlayer.Client.Account.Language, "GamePlayer.Sprint.NoLongerReady"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			}
 		}
+
         public override void OnEffectPulse()
         {
 			int nextInterval;
 
 			if (Owner.IsMoving)
 				m_idleTicks = 0;
-			else m_idleTicks++;
+			else 
+				m_idleTicks++;
 
 			if (Owner.Endurance - 5 <= 0 || m_idleTicks >= 6)
 			{
@@ -68,6 +96,7 @@ namespace DOL.GS
 			else
 			{
 				nextInterval = Util.Random(600, 1400);
+
 				if (Owner.IsMoving)
 				{
 					int amount = 5;
@@ -79,6 +108,7 @@ namespace DOL.GS
 					//m_owner.Endurance -= amount;
 				}
 			}
+
 			NextTick += nextInterval;
 		}
     }

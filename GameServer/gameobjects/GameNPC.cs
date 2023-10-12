@@ -14,6 +14,7 @@ using DOL.GS.Housing;
 using DOL.GS.Movement;
 using DOL.GS.PacketHandler;
 using DOL.GS.Quests;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
@@ -3828,10 +3829,10 @@ namespace DOL.GS
 
 			Spell spellToCast = null;
 
-			if (line.KeyName == GlobalSpellsLines.Mob_Spells)
+			if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
 			{
 				// NPC spells will get the level equal to their caster
-				spellToCast = (Spell) spell.Clone();
+				spellToCast = (Spell)spell.Clone();
 				spellToCast.Level = Level;
 			}
 			else

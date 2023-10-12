@@ -3,6 +3,7 @@ using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
+using System;
 
 namespace DOL.GS
 {
@@ -64,9 +65,6 @@ namespace DOL.GS
             //}
 
             _combatStyle = _styleComponent.NPCGetStyleToUse();
-
-            if (_combatStyle != null)
-                log.Info("Style: " + _combatStyle.Name);
 
             if (!base.PrepareMeleeAttack())
                 return false;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using DOL.GS;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using log4net;
 
@@ -11,6 +12,9 @@ namespace DOL.AI.Brain
         protected static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         protected MimicBrain _brain = null;
+
+        public bool Init;
+        public bool Flee;
 
         public MimicState(MimicBrain brain) : base()
         {
@@ -69,8 +73,15 @@ namespace DOL.AI.Brain
                 _brain.Body.Follow(_brain.Body.Group.LivingLeader, _brain.Body.movementComponent.FollowMinDistance, _brain.Body.movementComponent.FollowMaxDistance);
 
             if (!_brain.Body.IsMoving)
+            {
                 _brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive);
 
+                //    if (_brain.Body.HealthPercent < 50 || (_brain.Body.MaxMana > 0 && _brain.Body.ManaPercent < 50 ) || _brain.Body.EndurancePercent < 50)
+                //    {
+                //        ((MimicNPC)_brain.Body).Sit(true);
+                //    }
+                //}
+            }
             base.Think();
         }
 
@@ -141,8 +152,6 @@ namespace DOL.AI.Brain
 
     public class MimicState_WakingUp : MimicState
     {
-        bool init;
-
         public MimicState_WakingUp(MimicBrain brain) : base(brain)
         {
             StateType = eFSMStateType.WAKING_UP;
@@ -150,21 +159,21 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (!init)
+            if (!Init)
             {
                 _brain.AggroLevel = 100;
                 _brain.AggroRange = 3600;
 
-                //_brain.PvPMode = false;
-                //_brain.Roam = false;
-                //_brain.Defend = false;
+                _brain.PvPMode = true;
+                _brain.Roam = true;
+                _brain.Defend = false;
 
-                _brain.Body.RoamingRange = 15000;
+                _brain.Body.RoamingRange = WorldMgr.VISIBILITY_DISTANCE;
 
                 _brain.CheckDefensiveAbilities();
                 _brain.Body.SortSpells();
 
-                init = true;
+                Init = true;
             }
 
             if (_brain.Body.Group != null)
@@ -229,7 +238,7 @@ namespace DOL.AI.Brain
 
             _brain.Body.TargetObject = null;
 
-            _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
+            //_brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
             base.Exit();
         }
 
@@ -242,6 +251,14 @@ namespace DOL.AI.Brain
                     _brain.CheckProximityAggro(_brain.AggroRange);
                 }
             }
+
+            //if (_brain.IsFleeing)
+            //{
+            //    if (!_brain.Body.IsWithinRadius(_brain.Body.TargetObject, 500))
+            //    {
+            //        _brain.IsFleeing = false;
+            //    }
+            //}
 
             if (!_brain.HasAggro || (!_brain.Body.InCombatInLast(LEAVE_WHEN_OUT_OF_COMBAT_FOR) && _aggroTime + LEAVE_WHEN_OUT_OF_COMBAT_FOR <= GameLoop.GameLoopTime))
             {
@@ -294,17 +311,18 @@ namespace DOL.AI.Brain
 
             _brain.AttackMostWanted();
             _brain.CheckOffensiveAbilities();
+
             base.Think();
         }
     }
 
     public class MimicState_Roaming : MimicState
     {
-        private const int ROAM_COOLDOWN = 25 * 1000;
+        private const int ROAM_COOLDOWN = 10 * 1000;
         private long _lastRoamTick = 0;
 
         private const int ROAM_CHANCE_DEFEND = 20;
-        private const int ROAM_CHANCE_ROAM = 90;     
+        private const int ROAM_CHANCE_ROAM = 99;     
 
         public MimicState_Roaming(MimicBrain brain) : base(brain)
         {
@@ -350,8 +368,8 @@ namespace DOL.AI.Brain
 
                 if (_lastRoamTick + ROAM_COOLDOWN <= GameLoop.GameLoopTime && Util.Chance(chance) && !_brain.Body.IsMoving)
                 {
-                    _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
-                    _brain.Body.Roam(_brain.Body.MaxSpeedBase);
+                    //_brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
+                    _brain.Body.Roam(_brain.Body.MaxSpeed);
                     _brain.Body.FireAmbientSentence(GameNPC.eAmbientTrigger.roaming, _brain.Body);
                     _lastRoamTick = GameLoop.GameLoopTime;
                 }

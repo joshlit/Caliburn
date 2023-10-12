@@ -57,7 +57,7 @@ namespace DOL.GS.Scripts
             else
                 WeaponTypeTwo = "Large Weapons";
 
-            int randVariance = Util.Random(5);
+            int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
@@ -67,8 +67,8 @@ namespace DOL.GS.Scripts
                 Add("Parry", 28, 0.1f);
                 break;
 
+                case 1:
                 case 2:
-                case 3:
                 is2H = true;
                 Add(WeaponTypeOne, 39, 0.8f);
                 Add(WeaponTypeTwo, 50, 1.0f);
@@ -76,8 +76,8 @@ namespace DOL.GS.Scripts
                 Add("Parry", 6, 0.1f);
                 break;
 
+                case 3:
                 case 4:
-                case 5:
                 is2H = true;
                 Add(WeaponTypeOne, 39, 0.8f);
                 Add(WeaponTypeTwo, 44, 1.0f);

@@ -22,6 +22,8 @@ using DOL.AI.Brain;
 using DOL.GS.Effects;
 using DOL.GS.PropertyCalc;
 using DOL.GS.RealmAbilities;
+using DOL.GS.SkillHandler;
+using DOL.GS.Spells;
 
 namespace DOL.GS.Scripts
 {
@@ -127,11 +129,6 @@ namespace DOL.GS.Scripts
             }
             else if (living is MimicNPC mimic)
             {
-                //double horseSpeed = player.IsOnHorse ? player.ActiveHorse.Speed * 0.01 : 1.0;
-
-                //if (speed > horseSpeed)
-                //    horseSpeed = 1.0;
-
                 if (ServerProperties.Properties.ENABLE_PVE_SPEED)
                 {
                     // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
@@ -143,16 +140,16 @@ namespace DOL.GS.Scripts
                 {
                     AtlasOF_MasteryOfStealth mos = mimic.GetAbility<AtlasOF_MasteryOfStealth>();
                     //GameSpellEffect bloodrage = SpellHandler.FindEffectOnTarget(player, "BloodRage");
-                    //VanishEffect vanish = player.EffectList.GetOfType<VanishEffect>();
+                    //VanishEffect vanish = mimic.EffectList.GetOfType<VanishEffect>();
                     double stealthSpec = mimic.GetModifiedSpecLevel(Specs.Stealth);
-
+                    
                     if (stealthSpec > mimic.Level)
                         stealthSpec = mimic.Level;
 
                     speed *= 0.3 + (stealthSpec + 10) * 0.3 / (mimic.Level + 10);
 
                     //if (vanish != null)
-                    //    speed *= vanish.SpeedBonus;
+                        //speed *= vanish.SpeedBonus;
 
                     if (mos != null)
                         speed *= 1 + mos.GetAmountForLevel(mos.Level) / 100.0;
@@ -168,14 +165,10 @@ namespace DOL.GS.Scripts
                 //{
                 //    if (speed > 1.0)
                 //        speed = 1.0;
-
-                //    horseSpeed = 1.0;
                 //}
 
                 if (mimic.IsSprinting)
-                    speed *= 1.3;
-
-                //speed *= horseSpeed;
+                    speed *= 1.3;                
             }
             else if (living is GameNPC npc)
             {

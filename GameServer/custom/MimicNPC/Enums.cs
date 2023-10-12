@@ -9,9 +9,19 @@ namespace DOL.GS.Scripts
     public enum eHand
     {
         None = -1,
+
         oneHand = 0,
         twoHand = 1,
-        leftHand = 2,
+        leftHand = 2
+    }
+
+    public enum ePositional
+    {
+        None = -1,
+
+        Back = 0,
+        Side,
+        Front
     }
 
     public enum eMimicClasses

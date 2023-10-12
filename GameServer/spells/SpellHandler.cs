@@ -22,8 +22,10 @@ namespace DOL.GS.Spells
 	/// </summary>
 	public class SpellHandler : ISpellHandler
 	{
-		// Maximum number of sub-spells to get delve info for.
-		protected const byte MAX_DELVE_RECURSION = 5;
+        public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        // Maximum number of sub-spells to get delve info for.
+        protected const byte MAX_DELVE_RECURSION = 5;
 
 		// Maximum number of Concentration spells that a single caster is allowed to cast.
 		private const int MAX_CONC_SPELLS = 20;
@@ -479,7 +481,7 @@ namespace DOL.GS.Spells
 						Target = Caster?.TargetObject as GameLiving;
 
 					// Pet spells are automatically casted on the controlled NPC, but only if the current target isn't a subpet or a turret.
-					if (((Target as GameNPC)?.Brain as IControlledBrain)?.GetPlayerOwner() != Caster && Caster.ControlledBrain?.Body != null)
+					if (((Target as GameNPC)?.Brain as IControlledBrain)?.GetLivingOwner() != Caster && Caster.ControlledBrain?.Body != null)
 						Target = Caster.ControlledBrain.Body;
 
 					break;
@@ -618,12 +620,12 @@ namespace DOL.GS.Spells
 			// Check interrupt timer.
 			if (!m_spell.Uninterruptible && !m_spell.IsInstantCast && Caster.InterruptAction > 0 && Caster.IsBeingInterrupted)
 			{
-				if (m_caster is GamePlayer)
+				if (m_caster is GamePlayer || m_caster is MimicNPC)
 				{
 					if (!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.QuickCast) &&
 						!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.MasteryOfConcentration))
 					{
-						if (!quiet)
+						if (!quiet && m_caster is GamePlayer)
 							MessageToCaster($"You must wait {(Caster.InterruptTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted);
 
 						return false;
@@ -2567,7 +2569,7 @@ namespace DOL.GS.Spells
 		/// <returns>immunity duration in milliseconds</returns>
 		public virtual int OnEffectExpires(GameSpellEffect effect, bool noMessages)
 		{
-			return 0;
+            return 0;
 		}
 
 		/// <summary>

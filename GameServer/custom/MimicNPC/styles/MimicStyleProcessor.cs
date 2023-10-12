@@ -61,6 +61,17 @@ namespace DOL.GS.Styles
 				// Required attack result.
 				eAttackResult requiredAttackResult = eAttackResult.Any;
 
+				if (living is MimicNPC)
+				{
+					if (style != null && weapon != null)
+					{
+						int fatigue = CalculateEnduranceCost(living, style, weapon.SPD_ABS);
+
+						if (living.Endurance < fatigue)
+							return false;
+					}
+				}
+
 				switch (style.AttackResultRequirement)
 				{
 					case Style.eAttackResultRequirement.Any: requiredAttackResult = eAttackResult.Any; break;

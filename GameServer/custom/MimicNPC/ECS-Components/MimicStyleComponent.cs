@@ -144,10 +144,6 @@ namespace DOL.GS
 
             AttackData lastAttackData = p.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
 
-            // Chain and defensive styles are excluded from the chance roll because they would almost never happen otherwise. 
-            // For example, an NPC blocks 10% of the time, so the default 20% style chance effectively means the defensive 
-            // style would only actually occur during 2% of of a mob's attacks. In comparison, a style chain would only happen 
-            // 0.4% of the time.
             if (p.StylesChain != null && p.StylesChain.Count > 0)
                 foreach (Style s in p.StylesChain)
                     if (MimicStyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
@@ -168,14 +164,6 @@ namespace DOL.GS
 
             if (chance)
             {
-                // All of the remaining lists are randomly picked from,
-                // as this creates more variety with each combat result.
-                // For example, a mob with both Pincer and Ice Storm
-                // styles could potentially use one or the other with
-                // each attack roll that succeeds.
-
-                // First, check positional styles (in order of back, side, front)
-                // in case the defender is facing another direction
                 if (p.StylesBack != null && p.StylesBack.Count > 0)
                 {
                     Style s = p.StylesBack[Util.Random(0, p.StylesBack.Count - 1)];
@@ -197,11 +185,15 @@ namespace DOL.GS
                         return s;
                 }
 
-                // Pick a random anytime style
+                // Pick a random anytime style 
                 if (p.StylesAnytime != null && p.StylesAnytime.Count > 0)
-                    return p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                {
+                    Style s = p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                    if (MimicStyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                        return s;
+                }
             }
-
+            
             return null;
         }
 
