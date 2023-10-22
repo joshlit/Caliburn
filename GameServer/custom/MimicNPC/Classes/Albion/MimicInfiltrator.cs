@@ -1,35 +1,29 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
+﻿using DOL.GS.PlayerClass;
 using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicInfiltrator : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicInfiltrator : MimicNPC
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicInfiltrator(byte level) : base(new ClassInfiltrator(), level)
-		{
-			MimicSpec = new InfiltratorSpec();
+        public MimicInfiltrator(byte level) : base(new ClassInfiltrator(), level)
+        {
+            MimicSpec = new InfiltratorSpec();
 
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            DistributeSkillPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
             MimicEquipment.SetArmor(this, eObjectType.Leather);
-			//MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
-			MimicEquipment.SetJewelry(this);
+            //MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
+            MimicEquipment.SetJewelry(this);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
-			RefreshSpecDependantSkills(false);
+            RefreshSpecDependantSkills(false);
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
     public class InfiltratorSpec : MimicSpec
     {

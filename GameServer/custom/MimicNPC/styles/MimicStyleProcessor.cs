@@ -61,7 +61,9 @@ namespace DOL.GS.Styles
 				// Required attack result.
 				eAttackResult requiredAttackResult = eAttackResult.Any;
 
-				if (living is MimicNPC)
+				MimicNPC mimic = living as MimicNPC;
+
+				if (mimic != null)
 				{
 					if (style != null && weapon != null)
 					{
@@ -134,16 +136,16 @@ namespace DOL.GS.Styles
 							//Back Styles
 							//60 degree since 1.62 patch
 							case Style.eOpeningPosition.Back:
-								if (!(angle > 150 && angle < 210))
-									return false;
-								break;
+							if (!(angle > 150 && angle < 210))
+								return false;
+							break;
 							// Side Styles  
 							//105 degree since 1.62 patch
 							// Atlas change: 90 degrees
 							case Style.eOpeningPosition.Side:
 								if (!(angle >= 60 && angle <= 150) && !(angle >= 210 && angle <= 300))
 									return false;
-								break;
+							break;
 							// Front Styles
 							// 90 degree
 							// Atlas change: 120 degrees

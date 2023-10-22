@@ -1,6 +1,5 @@
 ﻿using DOL.GS.PlayerClass;
 using log4net;
-using System;
 using System.Reflection;
 
 namespace DOL.GS.Scripts
@@ -14,7 +13,17 @@ namespace DOL.GS.Scripts
             DistributeSkillPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand, MimicSpec.DamageType);
-            MimicEquipment.SetArmor(this, eObjectType.Plate);
+
+            eObjectType objectType;
+
+            if (level < 5)
+                objectType = eObjectType.Studded;
+            else if (level < 10)
+                objectType = eObjectType.Chain;
+            else
+                objectType = eObjectType.Plate;
+
+            MimicEquipment.SetArmor(this, objectType);
             //SetRangedWeapon(eObjectType.Crossbow);
             MimicEquipment.SetShield(this, 3);
             MimicEquipment.SetJewelry(this);

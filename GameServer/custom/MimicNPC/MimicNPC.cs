@@ -39,6 +39,12 @@ namespace DOL.GS.Scripts
 {
     public class MimicNPC : GameNPC
     {
+        public GamePlayer Dev { get; set; }
+        public void DevOut(string message)
+        {
+            Dev.Out.SendMessage(message, eChatType.CT_Say, eChatLoc.CL_ChatWindow);
+        }
+
         public bool CanUseSideStyles { get { return StylesSide != null && StylesSide.Count > 0; } }
         public bool CanUseBackStyles { get { return StylesBack != null && StylesBack.Count > 0; } }
         public bool CanUseFrontStyle { get { return StylesFront != null && StylesFront.Count > 0; } }
@@ -78,31 +84,26 @@ namespace DOL.GS.Scripts
         public MimicNPC(ICharacterClass cClass, byte level)
         {
             Inventory = new MimicNPCInventory(this);
-            MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;         
+            MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
  
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
             SetLevel(level);
+
             MimicBrain = new MimicBrain();
+            MimicBrain.MimicBody = this;
             SetOwnBrain(MimicBrain);
             
             Endurance = MaxEndurance;
             Mana = MaxMana;
             RespawnInterval = -1;
 
-            //if (CharacterClass.ClassType == eClassType.ListCaster)
-            //    STICK_MINIMUM_RANGE = 1400;
-            //else
-            //    STICK_MINIMUM_RANGE = 75;
-
-            //if (m_respawnTimer != null)
-            //{
-
-            //}
             m_combatTimer = new ECSGameTimer(this, new ECSGameTimer.ECSTimerCallback(_ =>
             {
                 return 0;
             }));
+
+            Dev = ClientService.GetPlayers()[0];
         }
 
         public override bool Interact(GamePlayer player)
@@ -163,11 +164,12 @@ namespace DOL.GS.Scripts
                 }
                 else
                 {
-                    if (player.Group.GetMembersInTheGroup().Contains(this))
+                    if (player.Group.GetMembersInTheGroup().Contains(this) || player.Group.MemberCount > 8)
                         break;
                 }
 
                 player.Group.AddMember(this);
+                MimicBrain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
                 break;
 
                 case "Spells":
@@ -960,20 +962,20 @@ namespace DOL.GS.Scripts
                         BoltSpells = new List<Spell>(1);
                     BoltSpells.Add(spell);
                 }
-                else if (spell.SpellType == eSpellType.Mez || spell.SpellType == eSpellType.Stun || spell.SpellType == eSpellType.SpeedDecrease)
+                else if (spell.SpellType == eSpellType.Mez || spell.SpellType == eSpellType.Stun || (spell.SpellType == eSpellType.SpeedDecrease && spell.Value >= 99))
                 {
-                    if (spell.IsInstantCast)
-                    {
-                        if (InstantCrowdControlSpells == null)
-                            InstantCrowdControlSpells = new List<Spell>(1);
-                        InstantCrowdControlSpells.Add(spell);
-                    }
-                    else
-                    {
+                    //if (spell.IsInstantCast)
+                    //{
+                    //    if (InstantCrowdControlSpells == null)
+                    //        InstantCrowdControlSpells = new List<Spell>(1);
+                    //    InstantCrowdControlSpells.Add(spell);
+                    //}
+                    //else
+                    //{
                         if (CrowdControlSpells == null)
                             CrowdControlSpells = new List<Spell>(1);
                         CrowdControlSpells.Add(spell);
-                    }
+                    //}
                 }
                 else if (spell.IsHarmful)
                 {
@@ -985,27 +987,16 @@ namespace DOL.GS.Scripts
                     }
                     else
                     {
-                        log.Info("Harmful: " + spell.Name);
                         if (HarmfulSpells == null)
                             HarmfulSpells = new List<Spell>(1);
                         HarmfulSpells.Add(spell);
                     }
                 }
-                else if (spell.IsHealing)
+                else if (spell.IsHealing && !spell.IsPulsing)
                 {
-                    if (spell.IsInstantCast)
-                    {
-                        if (InstantHealSpells == null)
-                            InstantHealSpells = new List<Spell>(1);
-                        InstantHealSpells.Add(spell);
-                        log.Info("HealType for instant: " + spell.SpellType);
-                    }
-                    else
-                    {
-                        if (HealSpells == null)
-                            HealSpells = new List<Spell>(1);
-                        HealSpells.Add(spell);
-                    }
+                    if (HealSpells == null)
+                        HealSpells = new List<Spell>(1);
+                    HealSpells.Add(spell);
                 }
                 else
                 {
@@ -1023,7 +1014,7 @@ namespace DOL.GS.Scripts
                     }
                 }
             } // foreach
-
+            
             //SortedSpells = true;
         }
 
@@ -1092,10 +1083,7 @@ namespace DOL.GS.Scripts
         public override void StartAttack(GameObject target)
         {
             if (IsSitting)
-            {
-                log.Info("Stopped sitting on StartAttack.");
                 Sit(false);
-            }
 
             base.StartAttack(target);
         }  
@@ -3090,8 +3078,11 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override void StartHealthRegeneration()
         {
-            if (!IsAlive || ObjectState != eObjectState.Active) return;
-            if (m_healthRegenerationTimer is { IsAlive: true }) return;
+            if (!IsAlive || ObjectState != eObjectState.Active) 
+                return;
+
+            if (m_healthRegenerationTimer is { IsAlive: true })
+                return;
 
             if (m_healthRegenerationTimer == null)
             {
@@ -3147,7 +3138,9 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override void StopHealthRegeneration()
         {
-            if (m_healthRegenerationTimer == null) return;
+            if (m_healthRegenerationTimer == null)
+                return;
+
             m_healthRegenerationTimer.Stop();
         }
         /// <summary>
@@ -3157,7 +3150,9 @@ namespace DOL.GS.Scripts
         public override void StopPowerRegeneration()
         {
             PowerRegenStackingBonus = 0;
-            if (m_powerRegenerationTimer == null) return;
+            if (m_powerRegenerationTimer == null) 
+                return;
+
             m_powerRegenerationTimer.Stop();
         }
         /// <summary>
@@ -3166,7 +3161,9 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override void StopEnduranceRegeneration()
         {
-            if (m_enduRegenerationTimer == null) return;
+            if (m_enduRegenerationTimer == null)
+                return;
+
             m_enduRegenerationTimer.Stop();
         }
 
@@ -3178,12 +3175,7 @@ namespace DOL.GS.Scripts
         /// <returns>the new time</returns>
         protected override int HealthRegenerationTimerCallback(ECSGameTimer callingTimer)
         {
-            //// I'm not sure what the point of this is.
-            //if (Client.ClientState != GameClient.eClientState.Playing)
-            //    return HealthRegenerationPeriod;
-
             // adjust timer based on Live testing of player
-
             if (Health < MaxHealth)
             {
                 ChangeHealth(this, eHealthChangeType.Regenerate, GetModified(eProperty.HealthRegenerationRate));
@@ -3226,7 +3218,6 @@ namespace DOL.GS.Scripts
 
             if (IsSitting)
             {
-                log.Info("IsSitting Health Bonus");
                 return HealthRegenerationPeriod / 2;
             }
 
@@ -3249,8 +3240,8 @@ namespace DOL.GS.Scripts
 
             if (IsSitting)
             {
-                log.Info("IsSitting Power Bonus");
-                if (PowerRegenStackingBonus < 3) PowerRegenStackingBonus++;
+                if (PowerRegenStackingBonus < 3)
+                    PowerRegenStackingBonus++;
             }
             else
                 PowerRegenStackingBonus = 0;
@@ -9112,7 +9103,14 @@ namespace DOL.GS.Scripts
             IsSitting = sit;
 
             if (sit)
-                Emote(eEmote.Pray);
+            {
+                if (Util.RandomBool())
+                    Emote(eEmote.Drink);
+                else
+                    Emote(eEmote.Sweat);
+            }
+            else
+                Emote(eEmote.LetsGo);
         }
 
         /// <summary>

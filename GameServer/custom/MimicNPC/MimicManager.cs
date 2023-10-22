@@ -825,6 +825,7 @@ namespace DOL.GS.Scripts
         private static int maxRemoveTime = 3600000;
 
         private static int maxMimics = 20;
+        private static int chance = 20;
 
         public static List<MimicLFGEntry> GetLFG(eRealm realm, byte level)
         {
@@ -956,7 +957,7 @@ namespace DOL.GS.Scripts
 
                 for (int i = 0; i < mimicsToAdd; i++)
                 {
-                    if (Util.Chance(35))
+                    if (Util.Chance(chance))
                     {
                         int levelMin = Math.Max(1, level - 3);
                         int levelMax = Math.Min(50, level + 3);

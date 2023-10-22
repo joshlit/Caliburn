@@ -1,24 +1,20 @@
 ﻿using DOL.AI.Brain;
-using DOL.GS.API;
-using DOL.GS.Behaviour.Actions;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using log4net;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DOL.GS.Scripts
 {
+    #region Admin/GM/Debug/Cheats
+
     [CmdAttribute(
     "&mimic",
     ePrivLevel.Player,
-    "/mimic - To summon a realm mate")]
+    "/mimic - Create a mimic of a certain class at your position or ground target.")]
     public class SummonCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -243,39 +239,32 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-      "&mbstats",
+      "&msummon",
       ePrivLevel.Player,
-      "/mbstats - Get stats on Thid.")]
-    public class MimicBattleStatsCommandHandler : AbstractCommandHandler, ICommandHandler
+      "/msummon - Summons all mimics in your group.")]
+    public class MimimcSummonCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
         {
-            if (MimicBattlegrounds.Running)
-                MimicBattlegrounds.MimicBattlegroundStats(client.Player);
-        }
-    }
+            if (client.Player.Group == null)
+                return;
 
-    [CmdAttribute(
-        "&pull",
-        ePrivLevel.Admin,
-        "/mpull - Pull all players to you.")]
-    public class PullCommandHandler : AbstractCommandHandler, ICommandHandler
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-        public void OnCommand(GameClient client, string[] args)
-        {
-            foreach (GamePlayer player in ClientService.GetPlayers())
+            foreach(GameLiving groupMember in client.Player.Group.GetMembersInTheGroup())
             {
-                player.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
+                if (groupMember != client.Player)
+                    groupMember.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
             }
         }
     }
 
+    #endregion Admin/GM/Debug/Cheats
+
+    #region MimicGroup
+
     [CmdAttribute(
-        "&mlfg",
-        ePrivLevel.Player,
-        "/mlfg - Get a list of Mimics that are looking for a group.")]
+       "&mlfg",
+       ePrivLevel.Player,
+       "/mlfg - Get a list of Mimics that are looking for a group.")]
     public class LocCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
@@ -345,6 +334,109 @@ namespace DOL.GS.Scripts
                 message += "No Mimics available.\n";
 
             return message;
+        }
+    }
+
+    [CmdAttribute(
+        "&maintank",
+        ePrivLevel.Player,
+        "/maintank - Set main tank of a group.")]
+    public class MainTankCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            GameLiving target = player.TargetObject as GameLiving;
+
+            if (player.Group == null || target == null)
+                return;
+
+            player.Group.MimicGroup.SetMainTank(target);
+        }
+    }
+
+    [CmdAttribute(
+        "&mainassist",
+        ePrivLevel.Player,
+        "/mainassist - Set main assist of a group.")]
+    public class MainAssistCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            GameLiving target = player.TargetObject as GameLiving;
+
+            if (player.Group == null || target == null)
+                return;
+
+            player.Group.MimicGroup.SetMainAssist(target);
+        }
+    }
+
+    [CmdAttribute(
+        "&mcamp",
+        ePrivLevel.Player,
+        "/mcamp - Set where the group camp point is.")]
+    public class CampCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            Point3D target = client.Player.GroundTarget;
+
+            if (player.Group == null || target == null || !player.GroundTargetInView)
+                return;
+
+            player.Group.MimicGroup.SetCampPoint(target);
+
+            foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                if (groupMember is MimicNPC mimic)
+                    mimic.Brain.FSM.SetCurrentState(eFSMStateType.CAMP);
+        }
+    }
+
+    [CmdAttribute(
+        "&mcampremove",
+        ePrivLevel.Player,
+        "/mcampremove - Remove camp point.")]
+    public class CampRemoveCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+
+            if (player.Group == null)
+                return;
+
+            player.Group.MimicGroup.RemoveCampPoint();
+
+            foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+            {
+                if (groupMember is MimicNPC mimic)
+                {
+                    mimic.Brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                    mimic.MimicBrain.AggroRange = 3600;
+                }
+            }
+        }
+    }
+
+    #endregion MimicGroup
+
+    [CmdAttribute(
+      "&mbstats",
+      ePrivLevel.Player,
+      "/mbstats - Get stats on Thid.")]
+    public class MimicBattleStatsCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            if (MimicBattlegrounds.Running)
+                MimicBattlegrounds.MimicBattlegroundStats(client.Player);
         }
     }
 }

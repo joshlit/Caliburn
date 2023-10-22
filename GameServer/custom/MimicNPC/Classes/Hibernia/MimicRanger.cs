@@ -16,7 +16,14 @@ namespace DOL.GS.Scripts
             MimicEquipment.SetRangedWeapon(this, eObjectType.RecurvedBow);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
-            MimicEquipment.SetArmor(this, eObjectType.Reinforced);
+            eObjectType objectType;
+
+            if (level < 10)
+                objectType = eObjectType.Leather;
+            else
+                objectType = eObjectType.Reinforced;
+
+            MimicEquipment.SetArmor(this, objectType);
             MimicEquipment.SetJewelry(this);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);

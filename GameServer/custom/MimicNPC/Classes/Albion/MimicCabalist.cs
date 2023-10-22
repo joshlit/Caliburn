@@ -1,63 +1,57 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
+﻿using DOL.GS.PlayerClass;
 using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicCabalist : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicCabalist : MimicNPC
+    {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public MimicCabalist(byte level) : base(new ClassCabalist(), level)
-		{
+        public MimicCabalist(byte level) : base(new ClassCabalist(), level)
+        {
             MimicSpec = MimicManager.Random(this);
 
             DistributeSkillPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
-			MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelry(this);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-			RefreshSpecDependantSkills(false);
-			SetCasterSpells();
+            RefreshSpecDependantSkills(false);
+            SetCasterSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class MatterCabalist : MimicSpec
-	{
-		public MatterCabalist()
-		{
-			SpecName = "MatterCabalist";
+    public class MatterCabalist : MimicSpec
+    {
+        public MatterCabalist()
+        {
+            SpecName = "MatterCabalist";
 
             WeaponTypeOne = "Staff";
 
             int randVariance = Util.Random(3);
 
-			switch (randVariance)
-			{
-				case 0:
-				{
+            switch (randVariance)
+            {
+                case 0:
+                {
                     Add("Matter Magic", 50, 1.0f);
                     Add("Spirit Magic", 20, 0.1f);
                     break;
                 }
 
-				case 1:
-				{
-					Add("Matter Magic", 49, 1.0f);
-					Add("Spirit Magic", 22, 0.1f);
-					break;
-				}
+                case 1:
+                {
+                    Add("Matter Magic", 49, 1.0f);
+                    Add("Spirit Magic", 22, 0.1f);
+                    break;
+                }
 
-				case 2:
-				{
+                case 2:
+                {
                     Add("Matter Magic", 46, 1.0f);
                     Add("Spirit Magic", 28, 0.1f);
                     break;
@@ -65,32 +59,32 @@ namespace DOL.GS.Scripts
 
                 case 3:
                 {
-                    Add("Matter Magic", 46, 1.0f);         
+                    Add("Matter Magic", 46, 1.0f);
                     Add("Body Magic", 28, 0.1f);
                     Add("Spirit Magic", 4, 0.0f);
                     break;
                 }
             }
-		}
-	}
+        }
+    }
 
-	public class BodyCabalist : MimicSpec
-	{
-		public BodyCabalist()
-		{
-			SpecName = "BodyCabalist";
+    public class BodyCabalist : MimicSpec
+    {
+        public BodyCabalist()
+        {
+            SpecName = "BodyCabalist";
 
             WeaponTypeOne = "Staff";
 
             int randVariance = Util.Random(6);
 
-			switch (randVariance)
-			{
-				case 0:
-				{
+            switch (randVariance)
+            {
+                case 0:
+                {
                     Add("Body Magic", 50, 1.0f);
                     Add("Spirit Magic", 20, 0.1f);
-					break;
+                    break;
                 }
 
                 case 1:
@@ -138,11 +132,11 @@ namespace DOL.GS.Scripts
                     break;
                 }
             }
-		}
-	}
+        }
+    }
 
-	public class SpiritCabalist : MimicSpec
-	{
+    public class SpiritCabalist : MimicSpec
+    {
         public SpiritCabalist()
         {
             SpecName = "SpiritCabalist";
@@ -204,5 +198,5 @@ namespace DOL.GS.Scripts
                 }
             }
         }
-	}
+    }
 }

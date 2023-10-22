@@ -64,7 +64,6 @@ namespace DOL.GS.Scripts
                 Add("Shields", 42, 0.5f);
                 Add("Parry", 6, 0.1f);
                 break;
-
             }
         }
 	}

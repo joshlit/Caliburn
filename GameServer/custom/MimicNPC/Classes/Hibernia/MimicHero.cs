@@ -17,7 +17,15 @@ namespace DOL.GS.Scripts
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand);
             MimicEquipment.SetShield(this, 3);
-            MimicEquipment.SetArmor(this, eObjectType.Scale);
+
+            eObjectType objectType;
+
+            if (level < 15)
+                objectType = eObjectType.Reinforced;
+            else
+                objectType = eObjectType.Scale;
+
+            MimicEquipment.SetArmor(this, objectType);
             MimicEquipment.SetJewelry(this);
             RefreshItemBonuses();
 

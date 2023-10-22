@@ -1,12 +1,6 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
+﻿using DOL.GS.PlayerClass;
 using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+using System.Reflection;
 
 namespace DOL.GS.Scripts
 {

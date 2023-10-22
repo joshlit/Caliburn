@@ -23,8 +23,15 @@ namespace DOL.GS.Scripts
 			DistributeSkillPoints();
 			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
 			MimicEquipment.SetShield(this, 1);
-			MimicEquipment.SetArmor(this, eObjectType.Reinforced);
-			MimicEquipment.SetJewelry(this);
+            eObjectType objectType;
+
+            if (level < 15)
+                objectType = eObjectType.Leather;
+            else
+                objectType = eObjectType.Reinforced;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelry(this);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);

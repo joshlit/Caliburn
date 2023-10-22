@@ -24,6 +24,38 @@ namespace DOL.GS.Scripts
         Front
     }
 
+    public enum eQueueMessage
+    {
+        None = -1,
+
+        WaitForBuffs = 0,
+
+        LowPower,
+        OutOfPower,
+
+        LowEndurance,
+        OutOfEndurance
+    }
+
+    public enum eQueueMessageResult
+    {
+        None = -1,
+
+        Accept = 0,
+        Deny,
+        OnHold
+    }
+
+    public enum eMimicGroupRole
+    {
+        None = -1,
+
+        Leader = 0,
+        MainAssist,
+        MainTank,
+        MainCC
+    }
+
     public enum eMimicClasses
     {
         Random = -2,

@@ -2102,9 +2102,7 @@ namespace DOL.GS
                     foreach (GameLiving groupMember in Group.GetMembersInTheGroup())
 					{
 						if (groupMember is MimicNPC mimic && groupMember != this)
-						{
                             ((MimicBrain)mimic.Brain).OnGroupMemberAttacked(ad);
-						}
 					}
                 }
             }

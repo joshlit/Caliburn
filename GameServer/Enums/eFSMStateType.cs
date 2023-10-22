@@ -10,6 +10,8 @@
         PATROLLING,
         PASSIVE,
         DEAD,
-        FOLLOW_THE_LEADER
+        FOLLOW_THE_LEADER,
+        LEADER,
+        CAMP
     }
 }

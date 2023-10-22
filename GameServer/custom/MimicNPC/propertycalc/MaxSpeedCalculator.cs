@@ -68,12 +68,12 @@ namespace DOL.GS.Scripts
                 if (speed > horseSpeed)
                     horseSpeed = 1.0;
 
-                if (ServerProperties.Properties.ENABLE_PVE_SPEED)
-                {
-                    // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
-                    if (speed == 1 && !player.InCombat && !player.IsStealthed && !player.CurrentRegion.IsRvR)
-                        speed *= 1.25; // New run speed is 125% when no buff.
-                }
+                //if (ServerProperties.Properties.ENABLE_PVE_SPEED)
+                //{
+                //    // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
+                //    if (speed == 1 && !player.InCombat && !player.IsStealthed && !player.CurrentRegion.IsRvR)
+                //        speed *= 1.25; // New run speed is 125% when no buff.
+                //}
 
                 if (player.IsOverencumbered && player.Client.Account.PrivLevel < 2 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
                 {
@@ -129,12 +129,12 @@ namespace DOL.GS.Scripts
             }
             else if (living is MimicNPC mimic)
             {
-                if (ServerProperties.Properties.ENABLE_PVE_SPEED)
-                {
-                    // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
-                    if (speed == 1 && !mimic.InCombat && !mimic.IsStealthed && !mimic.CurrentRegion.IsRvR)
-                        speed *= 1.25; // New run speed is 125% when no buff.
-                }
+                //if (ServerProperties.Properties.ENABLE_PVE_SPEED)
+                //{
+                //    // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
+                //    if (speed == 1 && !mimic.InCombat && !mimic.IsStealthed && !mimic.CurrentRegion.IsRvR)
+                //        speed *= 1.25; // New run speed is 125% when no buff.
+                //}
 
                 if (mimic.IsStealthed)
                 {
@@ -235,7 +235,7 @@ namespace DOL.GS.Scripts
 
             speed = living.MaxSpeedBase * speed + 0.5; // 0.5 is to fix the rounding error when converting to int so root results in speed 2 ((191 * 0.01 = 1.91) + 0.5 = 2.41).
 
-            if (speed <= 0.5) // Fix for the rounding fix above. (???)
+            if (speed < 0) // Fix for the rounding fix above. (???)
                 return 0;
 
             return (int)speed;
