@@ -373,10 +373,8 @@ namespace DOL.AI.Brain
 
             if (!_brain.Body.InCombat)
             {
-                if (_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive))
+                if (_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive) || _brain.MimicBody.Sit(CheckStats(75)))
                     delayRoam = true;
-                else
-                    _brain.MimicBody.Sit(CheckStats(75));
                 
                 if (_brain.Body.Group != null)
                 {

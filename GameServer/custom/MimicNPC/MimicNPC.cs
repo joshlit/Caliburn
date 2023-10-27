@@ -9216,24 +9216,24 @@ namespace DOL.GS.Scripts
             }
         }
 
-        public virtual void Sit(bool sit)
+        public virtual bool Sit(bool sit)
         {
             Sprint(false);
 
             if (IsSitting == sit)
-                return;
+                return sit;
 
             if (!IsAlive)
-                return;
+                return false;
 
             if (IsStunned)
-                return;
+                return false;
 
             if (IsMezzed)
-                return;
+                return false;
 
             if (sit && (CurrentSpeed > 0 || IsStrafing))
-                return;
+                return false;
 
             // Stop attacking if the player sits down.
             if (sit && attackComponent.AttackState)
@@ -9247,9 +9247,15 @@ namespace DOL.GS.Scripts
                     Emote(eEmote.Drink);
                 else
                     Emote(eEmote.Sweat);
+
+                return true;
             }
             else
+            {
                 Emote(eEmote.LetsGo);
+
+                return false;
+            }
         }
 
         /// <summary>

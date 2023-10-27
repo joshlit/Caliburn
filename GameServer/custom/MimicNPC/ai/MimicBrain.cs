@@ -666,10 +666,7 @@ namespace DOL.AI.Brain
             if (ECS.Debug.Diagnostics.AggroDebugEnabled)
                 PrintAggroTable();
 
-            if (!PvPMode)
-                Body.TargetObject = CheckAssist();
-
-            //if (Body.TargetObject == null)
+            if (PvPMode || CheckAssist == null)
                 Body.TargetObject = CalculateNextAttackTarget();
 
             if (Body.TargetObject != null)
@@ -789,7 +786,7 @@ namespace DOL.AI.Brain
             TargetFlankPosition = null;
         }
 
-        private GameLiving CheckAssist()
+        private GameObject CheckAssist()
         {
             if (Body.Group != null && Body.Group.MimicGroup.MainAssist.InCombat)
             {
@@ -798,13 +795,8 @@ namespace DOL.AI.Brain
 
                 if (assistTarget != null && CanAggroTarget((GameLiving)assistTarget))
                     target = assistTarget;
-                //else if (assistTarget == null && lastTargetObject != null)
-                //    target = lastTargetObject;
-                //else
-                //    target = null;
 
-                if (target != null)
-                    return (GameLiving)target;
+                return target;
             }
 
             return null;

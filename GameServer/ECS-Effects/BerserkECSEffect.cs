@@ -1,10 +1,5 @@
 ﻿using DOL.GS.PacketHandler;
 using DOL.Language;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DOL.GS
 {
@@ -19,19 +14,22 @@ namespace DOL.GS
 
         protected ushort m_startModel = 0;
 
-        public override ushort Icon { get { return 479; } }
-        public override string Name 
-        { 
-            get 
+        public override ushort Icon
+        { get { return 479; } }
+
+        public override string Name
+        {
+            get
             {
                 if (OwnerPlayer != null)
                     return LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.Name");
                 else
                     return "Berserk";
-            } 
+            }
         }
 
-        public override bool HasPositiveEffect { get { return true; } }
+        public override bool HasPositiveEffect
+        { get { return true; } }
 
         public override void OnStartEffect()
         {
@@ -42,7 +40,7 @@ namespace DOL.GS
                 // "You go into a berserker frenzy!"
                 OwnerPlayer.Out.SendMessage(LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.StartFrenzy"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 // "{0} goes into a berserker frenzy!"
-                Message.SystemToArea(OwnerPlayer, LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.AreaStartFrenzy",OwnerPlayer.GetName(0, true)), eChatType.CT_System, OwnerPlayer);
+                Message.SystemToArea(OwnerPlayer, LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.AreaStartFrenzy", OwnerPlayer.GetName(0, true)), eChatType.CT_System, OwnerPlayer);
             }
 
             if (Owner.Race == (int)eRace.Dwarf)
@@ -52,7 +50,7 @@ namespace DOL.GS
 
             Owner.Emote(eEmote.MidgardFrenzy);
         }
-        
+
         public override void OnStopEffect()
         {
             Owner.Model = m_startModel;
