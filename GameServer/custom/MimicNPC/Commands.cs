@@ -12,9 +12,9 @@ namespace DOL.GS.Scripts
     #region Admin/GM/Debug/Cheats
 
     [CmdAttribute(
-    "&mimic",
+    "&m",
     ePrivLevel.Player,
-    "/mimic - Create a mimic of a certain class at your position or ground target.")]
+    "/m - Create a mimic of a certain class at your position or ground target.")]
     public class SummonCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -58,9 +58,9 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mimicgroup",
+       "&mgroup",
        ePrivLevel.Player,
-       "/mimicgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
+       "/mgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
     public class SummonMimicGroupCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -118,7 +118,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Albion);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), level);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -138,7 +138,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Hibernia);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), level);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -158,7 +158,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Midgard);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), level);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -198,27 +198,61 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mc",
+       "&mpvp",
        ePrivLevel.Player,
-       "/mc - Set universal combat prevention on/off")]
-    public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
+       "/mpvp (true/false) - Set PvP mode on selected mimic.")]
+    public class MimicPvPModeCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
-            if (args.Length > 0)
+            if (client.Player != null && client.Player.TargetObject is not MimicNPC)
+                return;
+
+            MimicNPC mimic = client.Player.TargetObject as MimicNPC;
+
+            if (args.Length > 1)
             {
-                string toLower = args[1].ToLower();
+                args[1] = args[1].ToLower();
 
                 switch (args[1])
                 {
-                    case "on":
-                    MimicManager.SetPreventCombat(true);
+                    case "true":
+                    mimic.MimicBrain.PvPMode = true;
                     break;
 
-                    case "off":
-                    MimicManager.SetPreventCombat(false);
+                    case "false":
+                    mimic.MimicBrain.PvPMode = false;
+                    break;
+                }
+            }
+        }
+    }
+
+        [CmdAttribute(
+       "&mpc",
+       ePrivLevel.Player,
+       "/mpc (true/false) - Set prevent combat on selected mimic.")]
+    public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            if (client.Player != null && client.Player.TargetObject is not MimicNPC)
+                return;
+
+            MimicNPC mimic = client.Player.TargetObject as MimicNPC;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
+                {
+                    case "true":
+                    mimic.MimicBrain.PreventCombat = true;
+                    break;
+
+                    case "false":
+                    mimic.MimicBrain.PreventCombat = false;
                     break;
                 }
             }
@@ -226,15 +260,31 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-      "&mimicbattle",
+      "&mbattle",
       ePrivLevel.Player,
-      "/mimicbattle - Call mimics to Thid. You must be in Thid atm for the command.")]
+      "/mbattle [Region] (Start/Stop/Clear>)",
+      "Regions: Thid. Start - Start spawning. Stop - Stop spawning. Clear - Stop and remove mimics.")]
     public class MimicBattleCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
         {
-            if (!MimicBattlegrounds.Running)
-                MimicBattlegrounds.Start(client.Player);
+            if (args.Length > 2)
+            {
+                args[1] = args[1].ToLower();
+                args[2] = args[2].ToLower();
+
+                switch (args[1])
+                {
+                    case "thid":
+                        switch(args[2])
+                        {
+                            case "start": MimicBattlegrounds.ThidBattleground.Start(); break;
+                            case "stop": MimicBattlegrounds.ThidBattleground.Stop(); break;
+                            case "clear": MimicBattlegrounds.ThidBattleground.Clear(); break;
+                        }
+                    break;
+                }
+            }
         }
     }
 
@@ -289,29 +339,56 @@ namespace DOL.GS.Scripts
                     message = BuildMessage(entries, true);
                 else
                 {
-                    MimicNPC mimic = entries[index].Mimic;
+                    MimicLFGManager.MimicLFGEntry entry = entries[index];
 
-                    MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
+                    int baseChance = 90;
 
-                    if (player.Group == null)
+                    if (MimicConfig.LEVEL_BIAS)
                     {
-                        player.Group = new Group(player);
-                        player.Group.AddMember(player);
+                        int biasAmount = 5;
+                        int levelDifference = player.Level - entry.Level;
+
+                        if (Math.Abs(levelDifference) > 1)
+                            baseChance += levelDifference * biasAmount;
+
+                        baseChance = Math.Clamp(baseChance, 5, 95);
                     }
 
-                    if (player.Group.GetMembersInTheGroup().Count < ServerProperties.Properties.GROUP_MAX_MEMBER)
+                    if (Util.Chance(baseChance) && !entry.RefusedGroup)
                     {
-                        player.Group.AddMember(mimic);
+                        if (player.Group == null)
+                        {
+                            player.Group = new Group(player);
+                            player.Group.AddMember(player);
+                        }
 
-                        MimicLFGManager.Remove(player.Realm, mimic);
+                        if (player.Group.GetMembersInTheGroup().Count < ServerProperties.Properties.GROUP_MAX_MEMBER)
+                        {
+                            MimicNPC mimic = MimicManager.GetMimic(entry.MimicClass, entry.Level, entry.Name, entry.Gender);
+                            MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
 
-                        // Send a refreshed list with new indexes to avoid using wrong indexes while leaving the dialogue open
-                        entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+                            player.Group.AddMember(mimic);
 
-                        message = BuildMessage(entries);
+                            MimicLFGManager.Remove(player.Realm, entry);
+
+                            // Send a refreshed list with new indexes to avoid using wrong indexes while leaving the dialogue open
+                            entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+
+                            message = BuildMessage(entries);
+                        }
+                        else
+                            message = BuildMessage(entries, true);
                     }
                     else
-                        message = BuildMessage(entries, true);
+                    {
+                        if (entry.RefusedGroup)
+                            player.Out.SendMessage(entry.Name + " sends, \"Sorry, I've already said no.\"", eChatType.CT_Send, eChatLoc.CL_SystemWindow);
+                        else
+                            player.Out.SendMessage(entry.Name + " sends, \"No thanks, looking for a different group!\"", eChatType.CT_Send, eChatLoc.CL_SystemWindow);
+
+                        entry.RefusedGroup = true;
+                        return;
+                    }
                 }
             }
 
@@ -328,7 +405,7 @@ namespace DOL.GS.Scripts
             {
                 int index = 1;
                 foreach (var entry in entries)
-                    message += index++.ToString() + " " + entry.Mimic.Name + " " + entry.Mimic.CharacterClass.Name + " " + entry.Mimic.Level + "\n";
+                    message += index++.ToString() + ". " + entry.Name + " " + Enum.GetName(typeof(eMimicClasses), entry.MimicClass) + " " + entry.Level + "\n";
             }
             else
                 message += "No Mimics available.\n";
@@ -338,9 +415,9 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-        "&maintank",
+        "&mmaintank",
         ePrivLevel.Player,
-        "/maintank - Set main tank of a group.")]
+        "/mmaintank - Set main tank of a group.")]
     public class MainTankCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -358,9 +435,9 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-        "&mainassist",
+        "&mmainassist",
         ePrivLevel.Player,
-        "/mainassist - Set main assist of a group.")]
+        "/mmainassist - Set main assist of a group.")]
     public class MainAssistCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -430,13 +507,21 @@ namespace DOL.GS.Scripts
     [CmdAttribute(
       "&mbstats",
       ePrivLevel.Player,
-      "/mbstats - Get stats on Thid.")]
+      "/mbstats [Battleground] - Get stats on a battleground.",
+      "[Battleground] - Thid")]
     public class MimicBattleStatsCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
         {
-            if (MimicBattlegrounds.Running)
-                MimicBattlegrounds.MimicBattlegroundStats(client.Player);
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch(args[1])
+                {
+                    case "thid": MimicBattlegrounds.ThidBattleground.BattlegroundStats(client.Player); break;
+                }
+            }    
         }
     }
 }

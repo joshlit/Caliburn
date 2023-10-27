@@ -20,7 +20,7 @@ namespace DOL.GS
         { 
             get 
             {
-                if (Owner is GamePlayer)
+                if (OwnerPlayer != null)
                     return LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Effects.QuickCastEffect.Name");
                 else
                     return "Quickcast";

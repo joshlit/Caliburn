@@ -5,6 +5,7 @@ using DOL.GS.PacketHandler;
 using DOL.AI.Brain;
 using DOL.GS.Effects;
 using DOL.GS.ServerProperties;
+using DOL.GS.Scripts;
 
 namespace DOL.GS
 {
@@ -46,7 +47,7 @@ namespace DOL.GS
             Owner.DisableTurning(false);
             UpdatePlayerStatus();
 
-            if (SpellHandler.Caster is GamePlayer)
+            if (SpellHandler.Caster is GamePlayer || SpellHandler.Caster is MimicNPC)
                 Owner.LastAttackedByEnemyTickPvP = GameLoop.GameLoopTime;
             else
                 Owner.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;

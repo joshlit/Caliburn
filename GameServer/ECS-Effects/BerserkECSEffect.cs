@@ -20,7 +20,17 @@ namespace DOL.GS
         protected ushort m_startModel = 0;
 
         public override ushort Icon { get { return 479; } }
-        public override string Name { get { return LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.Name"); } }
+        public override string Name 
+        { 
+            get 
+            {
+                if (OwnerPlayer != null)
+                    return LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.Name");
+                else
+                    return "Berserk";
+            } 
+        }
+
         public override bool HasPositiveEffect { get { return true; } }
 
         public override void OnStartEffect()
@@ -33,18 +43,14 @@ namespace DOL.GS
                 OwnerPlayer.Out.SendMessage(LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.StartFrenzy"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 // "{0} goes into a berserker frenzy!"
                 Message.SystemToArea(OwnerPlayer, LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.AreaStartFrenzy",OwnerPlayer.GetName(0, true)), eChatType.CT_System, OwnerPlayer);
-
-                OwnerPlayer.Emote(eEmote.MidgardFrenzy);
-                //TODO differentiate model between Dwarves and other races
-                if (OwnerPlayer.Race == (int)eRace.Dwarf)
-                {
-                    OwnerPlayer.Model = 2032;
-                }
-                else
-                {
-                    OwnerPlayer.Model = 582;
-                }
             }
+
+            if (Owner.Race == (int)eRace.Dwarf)
+                Owner.Model = 2032;
+            else
+                Owner.Model = 582;
+
+            Owner.Emote(eEmote.MidgardFrenzy);
         }
         
         public override void OnStopEffect()
@@ -59,7 +65,6 @@ namespace DOL.GS
                 // "{0}'s berserker frenzy ends."
                 Message.SystemToArea(OwnerPlayer, LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.BerserkEffect.AreaEndFrenzy", OwnerPlayer.GetName(0, true)), eChatType.CT_System, OwnerPlayer);
             }
-
         }
     }
 }

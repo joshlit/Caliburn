@@ -1,5 +1,6 @@
 ﻿using DOL.Events;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 using System;
 using System.Collections.Generic;
@@ -21,21 +22,30 @@ namespace DOL.GS
         protected ushort m_startModel = 0;
 
         public override ushort Icon { get { return 475; } }
-        public override string Name { get { return LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Effects.TripleWieldEffect.Name"); } }
+        public override string Name 
+		{
+			get
+			{
+				if (OwnerPlayer != null)
+					return LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Effects.TripleWieldEffect.Name");
+				else
+					return "Triple Wield";
+			}
+		}
+
         public override bool HasPositiveEffect { get { return true; } }
 
         public override void OnStartEffect()
         {
-            GamePlayer player = Owner as GamePlayer;
-            foreach (GamePlayer p in player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+            foreach (GamePlayer p in Owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
             {
-                p.Out.SendSpellEffectAnimation(player, player, 7102, 0, false, 1);
-                p.Out.SendSpellCastAnimation(player, Icon, 0);
+                p.Out.SendSpellEffectAnimation(Owner, Owner, 7102, 0, false, 1);
+                p.Out.SendSpellCastAnimation(Owner, Icon, 0);
             }
         }
+
         public override void OnStopEffect()
         {
-
         }
 
 		/// <summary>

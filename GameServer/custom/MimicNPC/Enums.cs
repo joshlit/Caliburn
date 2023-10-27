@@ -58,7 +58,6 @@ namespace DOL.GS.Scripts
 
     public enum eMimicClasses
     {
-        Random = -2,
         None = -1,
 
         Armsman = 0,

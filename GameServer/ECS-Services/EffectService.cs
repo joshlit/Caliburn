@@ -143,7 +143,7 @@ namespace DOL.GS
                 else if (spellEffect is not ECSImmunityEffect)
                     SendSpellAnimation(spellEffect);
                 if (e is StatDebuffECSEffect && spell.CastTime == 0)
-                    StatDebuffECSEffect.TryDebuffInterrupt(spell, e.OwnerPlayer, caster);
+                    StatDebuffECSEffect.TryDebuffInterrupt(spell, e.Owner, caster);
             }
             else
                 e.OnStartEffect();

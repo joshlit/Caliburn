@@ -3793,7 +3793,7 @@ namespace DOL.GS
 			{
 				Spell spellToCast;
 
-				if (line.KeyName == GlobalSpellsLines.Mob_Spells)
+				if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
 				{
 					// NPC spells will get the level equal to their caster
 					spellToCast = (Spell)spell.Clone();

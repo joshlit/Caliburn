@@ -1,4 +1,6 @@
+using DOL.Database;
 using DOL.GS;
+using DOL.GS.API;
 using DOL.GS.Effects;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
@@ -42,14 +44,15 @@ namespace DOL.AI.Brain
         public bool Defend;
         public bool Roam;
         public bool IsFleeing;
-        public bool IsBuffing;
-
-        public bool PositionSelected;
-        public bool IsFlanking;
-
-        public Point2D TargetPosition;
 
         private GameObject lastTargetObject;
+        public bool IsFlanking;
+        public Point2D TargetFlankPosition;
+
+        public Spell QueuedOffensiveSpell;
+        public Point3D TargetFleePosition;
+
+        
 
         // Used for AmbientBehaviour "Seeing" - maintains a list of GamePlayer in range
         public List<GamePlayer> PlayersSeen = new();
@@ -240,12 +243,12 @@ namespace DOL.AI.Brain
                     }
 
                     if (!isAttacking)
-                        return;
+                        continue;
                 }
 
                 AddToAggroList(npc, 1);
 
-                return;
+                //return;
             }
         }
 
@@ -283,7 +286,7 @@ namespace DOL.AI.Brain
         {
             get
             {
-                return 1000;
+                return 500;
             }
         }
 
@@ -312,63 +315,35 @@ namespace DOL.AI.Brain
                 {
                     case Abilities.Intercept:
                     {
-                        if (Body.Group != null)
-                        {
-                            GameLiving interceptTarget;
-                            List<GameLiving> interceptTargets = new List<GameLiving>();
+                        //if (Body.Group != null)
+                        //{
+                        //    GameLiving interceptTarget;
+                        //    List<GameLiving> interceptTargets = new List<GameLiving>();
 
-                            foreach (GameLiving groupMember in Body.Group.GetMembersInTheGroup())
-                            {
-                                if (groupMember is MimicNPC mimic)
-                                {
-                                    if (mimic.CharacterClass.Name == "Druid" ||
-                                        mimic.CharacterClass.Name == "Cleric" ||
-                                        mimic.CharacterClass.Name == "Healer")
-                                    {
-                                        interceptTargets.Add(groupMember);
-                                    }
-                                }
-
-                                if (interceptTargets.Any())
-                                {
-                                    foreach (GameLiving target in interceptTargets)
-                                    {
-                                        ECSGameAbilityEffect intercept = EffectListService.GetAbilityEffectOnTarget(target, eEffect.Intercept);
-
-                                        if (intercept != null)
-                                        {
-                                            EffectService.RequestStartEffect(new InterceptECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1), Body, target));
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        //    foreach (GameLiving groupMember in Body.Group.GetMembersInTheGroup())
+                        //    {
+                        //        if (groupMember is MimicNPC mimic)
+                        //        {
+                        //            if (mimic.CharacterClass.ID == (int)eCharacterClass.Cleric ||
+                        //                mimic.CharacterClass.ID == (int)eCharacterClass.Druid ||
+                        //                mimic.CharacterClass.ID == (int)eCharacterClass.Healer ||
+                        //                mimic.CharacterClass.ID == (int)eCharacterClass.Friar ||
+                        //                mimic.CharacterClass.ID == (int)eCharacterClass.Bard ||
+                        //                mimic.CharacterClass.ID == (int)eCharacterClass.Shaman)
+                        //            {
+                        //                interceptTargets.Add(groupMember);
+                        //            }
+                        //        }
+                        //    }
+                        //}
                         break;
                     }
                     case Abilities.Guard:
                     {
-                        //GamePlayer playerOwner = GetPlayerOwner();
-
-                        //if (playerOwner != null)
-                        //{
-                        //    GuardAbilityHandler.CheckExistingEffectsOnTarget(Body, playerOwner, false, out bool foundOurEffect, out GuardECSGameEffect existingEffectFromAnotherSource);
-
-                        //    if (foundOurEffect)
-                        //        break;
-
-                        //    if (existingEffectFromAnotherSource == null)
-                        //        GuardAbilityHandler.CancelOurEffectThenAddOnTarget(Body, playerOwner);
-                        //}
-
                         break;
                     }
                     case Abilities.Protect:
                     {
-                        //GamePlayer playerOwner = GetPlayerOwner();
-
-                        //if (playerOwner != null)
-                        //    new ProtectECSGameEffect(new ECSGameEffectInitParams(playerOwner, 0, 1), null, playerOwner);
-
                         break;
                     }
                 }
@@ -380,40 +355,111 @@ namespace DOL.AI.Brain
             if (Body.Abilities == null || Body.Abilities.Count <= 0)
                 return;
 
-            foreach (Ability ab in Body.Abilities.Values)
+            if (CanUseAbility())
             {
-                switch (ab.KeyName)
+                foreach (Ability ab in Body.GetAllAbilities())
                 {
-                    case Abilities.Berserk:
+                    if (Body.GetSkillDisabledDuration(ab) == 0)
                     {
-                        log.Info("I have berserk.");
-                        if (Body.TargetObject is GameLiving target)
+                        switch (ab.KeyName)
                         {
-                            if (Body.AttackRange < Body.GetDistanceTo(new Point3D(target.X, target.Y, target.Z)) &&
-                                GameServer.ServerRules.IsAllowedToAttack(Body, target, true))
+                            case Abilities.Berserk:
                             {
-                                EffectService.RequestStartEffect(new BerserkECSGameEffect(new ECSGameEffectInitParams()));
+                                if (Body.TargetObject is GameLiving target)
+                                {
+                                    if (Body.IsWithinRadius(Body.TargetObject, Body.AttackRange) &&
+                                        GameServer.ServerRules.IsAllowedToAttack(Body, target, true))
+                                    {
+                                        new BerserkECSGameEffect(new ECSGameEffectInitParams(Body, 20000, 1));
+                                        Body.DisableSkill(ab, 420000);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case Abilities.Stag:
+                            {
+                                if (Body.TargetObject is GameLiving target)
+                                {
+                                    if (Body.IsWithinRadius(Body.TargetObject, Body.AttackRange) &&
+                                        GameServer.ServerRules.IsAllowedToAttack(Body, target, true) || Body.HealthPercent < 75)
+                                    {
+                                        new StagECSGameEffect(new ECSGameEffectInitParams(Body, 30000, 1), ab.Level);
+                                        Body.DisableSkill(ab, 900000);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case Abilities.Triple_Wield:
+                            {
+                                if (Body.TargetObject is GameLiving target)
+                                {
+                                    if (Body.IsWithinRadius(Body.TargetObject, Body.AttackRange) &&
+                                        GameServer.ServerRules.IsAllowedToAttack(Body, target, true))
+                                    {
+                                        new TripleWieldECSGameEffect(new ECSGameEffectInitParams(Body, 30000, 1));
+                                        Body.DisableSkill(ab, 420000);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case Abilities.DirtyTricks:
+                            {
+                                if (Body.TargetObject is GameLiving target)
+                                {
+                                    GamePlayer gamePlayer = target as GamePlayer;
+                                    MimicNPC mimic = target as MimicNPC;
+
+                                    if ((gamePlayer != null && gamePlayer.CharacterClass.ClassType == eClassType.ListCaster) ||
+                                        (mimic != null && mimic.CharacterClass.ClassType == eClassType.ListCaster))
+                                        break;
+
+                                    if (Body.IsWithinRadius(Body.TargetObject, Body.AttackRange) &&
+                                        GameServer.ServerRules.IsAllowedToAttack(Body, target, true))
+                                    {
+                                        new DirtyTricksECSGameEffect(new ECSGameEffectInitParams(Body, 30000, 1));
+                                        Body.DisableSkill(ab, 420000);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case Abilities.ChargeAbility:
+                            {
+                                MimicBody.DevOut("I charged.");
+                                if (Body.TargetObject is GameLiving target &&
+                                    GameServer.ServerRules.IsAllowedToAttack(Body, target, true) &&
+                                    !Body.IsWithinRadius(target, 500))
+                                {
+                                    ChargeAbility charge = Body.GetAbility<ChargeAbility>();
+
+                                    if (charge != null && Body.GetSkillDisabledDuration(charge) <= 0)
+                                        charge.Execute(Body);
+                                }
+
+                                break;
                             }
                         }
-                        break;
-                    }
-
-                    case Abilities.ChargeAbility:
-                    {
-                        if (Body.TargetObject is GameLiving target &&
-                            GameServer.ServerRules.IsAllowedToAttack(Body, target, true) &&
-                            !Body.IsWithinRadius(target, 500))
-                        {
-                            ChargeAbility charge = Body.GetAbility<ChargeAbility>();
-
-                            if (charge != null && Body.GetSkillDisabledDuration(charge) <= 0)
-                                charge.Execute(Body);
-                        }
-
-                        break;
                     }
                 }
             }
+        }
+
+        private bool CanUseAbility()
+        {
+            if (!Body.IsAlive ||
+                Body.IsMezzed ||
+                Body.IsStunned ||
+                Body.IsSitting)
+                return false;
+
+            return true;
         }
 
         #endregion AI
@@ -620,9 +666,10 @@ namespace DOL.AI.Brain
             if (ECS.Debug.Diagnostics.AggroDebugEnabled)
                 PrintAggroTable();
 
-            Body.TargetObject = CheckAssist();
+            if (!PvPMode)
+                Body.TargetObject = CheckAssist();
 
-            if (Body.TargetObject == null)
+            //if (Body.TargetObject == null)
                 Body.TargetObject = CalculateNextAttackTarget();
 
             if (Body.TargetObject != null)
@@ -631,6 +678,8 @@ namespace DOL.AI.Brain
                     Body.StopAttack();
                 else
                 {
+                    CheckOffensiveAbilities();
+
                     if (Body.ControlledBrain != null)
                         Body.ControlledBrain.Attack(Body.TargetObject);
 
@@ -638,12 +687,44 @@ namespace DOL.AI.Brain
                     {
                         ECSGameAbilityEffect quickCast = EffectListService.GetAbilityEffectOnTarget(Body, eEffect.QuickCast);
 
-                        if (Body.IsBeingInterrupted && quickCast == null)
+                        if (quickCast != null)
                         {
-                            IsFleeing = true;
-                            Body.StopAttack();
-                            Body.StopCurrentSpellcast();
-                            Flee();
+                            CheckSpells(eCheckSpellType.Offensive);
+                            return;
+                        }
+
+                        // Don't flee if in a group for now. Need better control over when and where and how.
+                        if (Body.Group == null)
+                        {
+                            if ((TargetFleePosition == null && !IsFleeing && Body.IsBeingInterrupted && quickCast == null) && Body.IsWithinRadius(Body.TargetObject, 100))
+                            {
+                                //TODO: Get dynamic distances based on circumstances. Maybe rethink the whole thing.
+                                int fleeDistance = 2000;
+
+                                Flee(fleeDistance);
+
+                                return;
+                            }
+
+                            if (Body.movementComponent.IsTargetPositionValid)
+                                return;
+                            else if (TargetFleePosition != null)
+                            {
+                                if (Body.GetDistance(TargetFleePosition) < 5)
+                                {
+                                    IsFleeing = false;
+                                    TargetFleePosition = null;
+
+                                    if (Body.IsWithinRadius(Body.TargetObject, 500))
+                                    {
+                                        Flee(1800);
+                                        return;
+                                    }
+
+                                    if (Body.TargetObject != Body)
+                                        Body.TurnTo(Body.TargetObject);
+                                }
+                            }
                         }
 
                         return;
@@ -652,31 +733,36 @@ namespace DOL.AI.Brain
                     if (Body.TargetObject != lastTargetObject)
                         ResetFlanking();
 
-                    if (MimicBody.CanUsePositionalStyles)
+                    if (MimicBody.CanUsePositionalStyles && Body.ActiveWeapon != null && Body.ActiveWeapon.Item_Type != (int)eInventorySlot.DistanceWeapon)
                     {
                         if (Body.TargetObject is GameLiving livingTarget)
                         {
-                            if (livingTarget.IsMoving)
+                            if (livingTarget.IsMoving || livingTarget.TargetObject == Body)
                                 ResetFlanking();
 
-                            if (TargetPosition == null && !IsFlanking && !livingTarget.IsMoving && livingTarget.TargetObject != Body)
+                            if (TargetFlankPosition == null && !IsFlanking && !livingTarget.IsMoving && livingTarget.TargetObject != Body)
                             {
                                 lastTargetObject = Body.TargetObject;
-                                TargetPosition = GetStylePositionPoint(livingTarget, GetPositional());
+                                TargetFlankPosition = GetStylePositionPoint(livingTarget, GetPositional());
                                 Body.StopAttack();
                                 Body.StopFollowing();
-                                Body.WalkTo(new Point3D(TargetPosition.X, TargetPosition.Y, livingTarget.Z), 191);
+                                Body.WalkTo(new Point3D(TargetFlankPosition.X, TargetFlankPosition.Y, livingTarget.Z), Body.MaxSpeed);
                                 return;
                             }
 
                             if (Body.movementComponent.IsTargetPositionValid)
-                                return;
-                            else if (TargetPosition != null)
                             {
-                                if (Body.GetDistance(TargetPosition) < 2)
+                                if (TargetFlankPosition == null)
+                                    Body.Follow(Body.TargetObject, 75, 5000);
+                                else
+                                    return;
+                            }
+                            else if (TargetFlankPosition != null)
+                            {
+                                if (Body.GetDistance(TargetFlankPosition) < 5)
                                 {
                                     IsFlanking = true;
-                                    TargetPosition = null;
+                                    TargetFlankPosition = null;
                                 }
                             }
                         }
@@ -689,10 +775,18 @@ namespace DOL.AI.Brain
             }
         }
 
+        private void Flee(int distance)
+        {
+            IsFleeing = true;
+            MimicBody.Sprint(true);
+            TargetFleePosition = GetFleePoint(distance);
+            Body.PathTo(TargetFleePosition, Body.MaxSpeed);
+        }
+
         public void ResetFlanking()
         {
             IsFlanking = false;
-            TargetPosition = null;
+            TargetFlankPosition = null;
         }
 
         private GameLiving CheckAssist()
@@ -726,33 +820,12 @@ namespace DOL.AI.Brain
             //}
         }
 
-        private void Flee()
+        private Point3D GetFleePoint(int fleeDistance)
         {
-            log.Info("Fleeing...");
-            if (TargetPosition != null && Body.GetDistance(TargetPosition) < 100)
-            {
-                log.Info(Body.Name + " reached destination");
-                IsFleeing = false;
-                TargetPosition = null;
-                return;
-            }
-
-            if (!MimicBody.IsSprinting)
-                MimicBody.Sprint(true);
-
-            //Calculate the difference between our position and the players position
             float diffx = (long)Body.TargetObject.X - Body.X;
             float diffy = (long)Body.TargetObject.Y - Body.Y;
 
-            //Calculate the distance to the player
             float distance = (float)Math.Sqrt(diffx * diffx + diffy * diffy);
-
-            float fleeDistance;
-
-            if (Body.Group != null && Body.TargetObject is not MimicNPC && Body.TargetObject is not GamePlayer)
-                fleeDistance = 10;
-            else
-                fleeDistance = 1400;
 
             diffx = (diffx / distance) * fleeDistance;
             diffy = (diffy / distance) * fleeDistance;
@@ -762,11 +835,7 @@ namespace DOL.AI.Brain
 
             Vector3? target = PathingMgr.Instance.GetClosestPointAsync(Body.CurrentZone, new Vector3(newX, newY, 0));
 
-            if (target != null)
-            {
-                TargetPosition = new Point2D((int)target?.X, (int)target?.Y);
-                Body.PathTo(new Point3D((int)target?.X, (int)target?.Y, (int)target?.Z), Body.MaxSpeed);
-            }
+            return new Point3D((int)target?.X, (int)target?.Y, (int)target?.Z);
         }
 
         private ePositional GetPositional()
@@ -1217,6 +1286,15 @@ namespace DOL.AI.Brain
             bool casted = false;
             List<Spell> spellsToCast = new();
 
+            //if (QueuedOffensiveSpell != null)
+            //{
+            //    if (CheckOffensiveSpells(QueuedOffensiveSpell))
+            //    {
+            //        casted = true;
+            //        QueuedOffensiveSpell = null;
+            //    }
+            //}
+
             // Healers should heal whether in combat or out of it.
             if (Body.CanCastHealSpells)
             {
@@ -1309,11 +1387,17 @@ namespace DOL.AI.Brain
                     }
                 }
 
+                // TODO: This makes Thane, Valewalker, and Nightshade use melee when in range rather than cast in all situations.
+                //        but still use instants. Need to include instant CC for skald use and other exceptions like maybe low health
+                //        endurance.
+                if ((MimicBody.CanUsePositionalStyles || MimicBody.CanUseAnytimeStyles) && Body.IsWithinRadius(Body.TargetObject, 500))
+                    return false;
+
                 if (MimicBody.CanCastCrowdControlSpells)
                 {
                     int ccChance = 35;
 
-                    if ((GameLiving)Body.TargetObject == Body && Body.IsWithinRadius(Body.TargetObject, 500))
+                    if (((GameLiving)Body.TargetObject).TargetObject == Body && Body.IsWithinRadius(Body.TargetObject, 500))
                         ccChance = 95;
 
                     if (Body.Group != null)
@@ -1373,9 +1457,12 @@ namespace DOL.AI.Brain
                                 {
                                     Body.DisableSkill(quickCast, 180000);
 
-                                    new QuickCastECSGameEffect(new ECSGameEffectInitParams(Body, QuickCastECSGameEffect.DURATION, 1));
+                                    // Give mimics a small bump in duration, they don't use it as well as humans.
+                                    new QuickCastECSGameEffect(new ECSGameEffectInitParams(Body, QuickCastECSGameEffect.DURATION + 1000, 1));
 
-                                    casted = CheckOffensiveSpells(spellToCast, true);
+                                    casted = CheckOffensiveSpells(spellToCast);
+
+                                    //QueuedOffensiveSpell = spellToCast;
                                 }
                             }
                         }
@@ -1518,6 +1605,7 @@ namespace DOL.AI.Brain
                 }
 
                 Body.TargetObject = Body;
+
                 break;
 
                 case eSpellType.PetSpell:
@@ -1540,10 +1628,9 @@ namespace DOL.AI.Brain
 
                 #region Pulse
 
-                //TODO: Figure out speed spells.
                 case eSpellType.SpeedEnhancement:
-                //if (!Body.InCombat && Roam && !LivingHasEffect(Body, spell))
-                //    Body.TargetObject = Body;
+                    if (!Body.InCombat && !LivingHasEffect(Body, spell))
+                        Body.TargetObject = Body;
                 break;
 
                 #endregion Pulse
@@ -1758,22 +1845,18 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual bool CheckOffensiveSpells(Spell spell, bool quickCast = false)
         {
-            if (spell.SpellType == eSpellType.Charm)
+            if (spell.SpellType == eSpellType.Charm || spell.SpellType == eSpellType.Amnesia)
                 return false;
 
-            if (spell.Target is not eSpellTarget.ENEMY or eSpellTarget.AREA or eSpellTarget.CONE)
+            if (spell.SpellType == eSpellType.Taunt)
                 return false;
 
-            // Make sure we're currently able to cast the spell
-            if (spell.CastTime > 0 && Body.IsBeingInterrupted && !spell.Uninterruptible && !quickCast)
+            if (!Body.IsWithinRadius(Body.TargetObject, spell.Range))
+            {
+                Body.Follow(Body.TargetObject, spell.Range - 100, 5000);
+                QueuedOffensiveSpell = spell;
                 return false;
-
-            // Make sure the spell isn't disabled
-            if (spell.HasRecastDelay && Body.GetSkillDisabledDuration(spell) > 0)
-                return false;
-
-            //if (!Body.IsWithinRadius(Body.TargetObject, spell.Range))
-            //    return false;
+            }
 
             bool casted = false;
 
@@ -1790,7 +1873,7 @@ namespace DOL.AI.Brain
                         Body.StopFollowing();
                     else if (Body.FollowTarget != Body.TargetObject)
                     {
-                        Body.Follow(Body.TargetObject, GameNPC.STICK_MINIMUM_RANGE, GameNPC.STICK_MAXIMUM_RANGE);
+                        Body.Follow(Body.TargetObject, spell.Range - 100, spell.Range + 500);
                     }
                 }
             }
@@ -1819,7 +1902,10 @@ namespace DOL.AI.Brain
                 if (Body.HealthPercent < 10)
                     break;
 
-                if (!CheckSavageResistSpell(spell.SpellType))  
+                if (spell.SpellType == eSpellType.SavageCrushResistanceBuff ||
+                    spell.SpellType == eSpellType.SavageSlashResistanceBuff ||
+                    spell.SpellType == eSpellType.SavageThrustResistanceBuff &&
+                    !CheckSavageResistSpell(spell.SpellType))
                     break;
 
                 if (!LivingHasEffect(Body, spell))
@@ -1919,6 +2005,9 @@ namespace DOL.AI.Brain
 
             if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && !(LivingHasEffect(living, spell)))))
             {
+                if (Body.TargetObject != Body)
+                    Body.TurnTo(Body.TargetObject);
+
                 Body.CastSpell(spell, m_mobSpellLine, true);
                 Body.TargetObject = lastTarget;
                 return true;
@@ -1952,8 +2041,15 @@ namespace DOL.AI.Brain
                 foreach (var attacker in Body.attackComponent.Attackers)
                 {
                     if (attacker.Key.ActiveWeapon != null)
+                    {
                         if (attacker.Key.ActiveWeapon.Type_Damage != 0 && (int)damageType == attacker.Key.ActiveWeapon.Type_Damage)
                             return true;
+                    }
+                    else if (attacker.Key is GameNPC npc)
+                    {
+                        if (npc.MeleeDamageType == damageType)
+                            return true;
+                    }
                 }
             }
 
@@ -1961,6 +2057,7 @@ namespace DOL.AI.Brain
         }
 
         protected static SpellLine m_mobSpellLine = SkillBase.GetSpellLine(GlobalSpellsLines.Mob_Spells);
+        //protected static SpellLine m_MimicSpellLine = SkillBase.GetSpellLine("MimicSpellLine");
 
         /// <summary>
         /// Checks if the living target has a spell effect.

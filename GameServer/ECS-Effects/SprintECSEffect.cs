@@ -31,7 +31,7 @@ namespace DOL.GS
 		{ 
 			get 
 			{
-				if (Owner is GamePlayer)
+				if (OwnerPlayer != null)
 					return LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.SprintEffect.Name");
 				else
 					return "Sprint";

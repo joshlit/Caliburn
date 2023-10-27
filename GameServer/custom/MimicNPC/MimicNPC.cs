@@ -81,14 +81,15 @@ namespace DOL.GS.Scripts
             set { m_mimicBrain = value; }
         }
 
-        public MimicNPC(ICharacterClass cClass, byte level)
+        public MimicNPC(ICharacterClass cClass, byte level, eGender gender = eGender.Neutral)
         {
             Inventory = new MimicNPCInventory(this);
             MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
- 
+            
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
             SetLevel(level);
+            MimicAddAbilities();
 
             MimicBrain = new MimicBrain();
             MimicBrain.MimicBody = this;
@@ -111,7 +112,7 @@ namespace DOL.GS.Scripts
             if (!base.Interact(player))
                 return false;
 
-            player.Out.SendMessage("[State], [Prevent Combat]\n " +
+            player.Out.SendMessage("[State], [Prevent Combat], [Brain]\n " +
                 "[Group]\n " +
                 "[Spells] [Inst Harmful] [Harmful Spells] [Inst Misc] [Misc Spells] [Inst Heal] [Heal Spells]\n " +
                 "[Styles] [Abilities]\n " +
@@ -133,6 +134,11 @@ namespace DOL.GS.Scripts
 
             switch (str)
             {
+                case "Brain":
+                MimicBrain newBrain = new MimicBrain();
+                newBrain.MimicBody = this;
+                SetOwnBrain(newBrain);
+                break;
                 case "State":
                 {
                     string message = string.Empty;
@@ -721,7 +727,7 @@ namespace DOL.GS.Scripts
             
             return result;
         }
-
+        
         /// <summary>
         //        /// Default getter for Ability
         //        /// Return Abilities it lists depending on spec level
@@ -734,7 +740,7 @@ namespace DOL.GS.Scripts
         {
             // Select only Enabled and Max Level Abilities
             List<Ability> abs = SkillBase.GetSpecAbilityList(keyName, living is MimicNPC ? ((MimicNPC)living).CharacterClass.ID : 0);
-
+            
             // Get order of first appearing skills
             IOrderedEnumerable<Ability> order = abs.GroupBy(item => item.KeyName)
                 .Select(ins => ins.OrderBy(it => it.SpecLevelRequirement).First())
@@ -889,6 +895,93 @@ namespace DOL.GS.Scripts
             return list;
         }
 
+        private void MimicAddAbilities()
+        {
+            switch (CharacterClass.ID)
+            {
+                case (int)eCharacterClass.Berserker:
+                {
+                    if (Level >= 5)
+                    {
+                        Ability ability = SkillBase.GetAbility("Berserk");
+
+                        if (GetAllAbilities().Contains(ability))
+                            RemoveAbility("Berserk");
+
+                        if (Level >= 20)
+                            ability.Level = 4;
+                        else if (Level >= 15)
+                            ability.Level = 3;
+                        else if (Level >= 10)
+                            ability.Level = 2;
+                        else
+                            ability.Level = 1;
+
+                        AddAbility(ability);
+                    }
+                }
+                break;
+
+                case (int)eCharacterClass.Hero:
+                {
+                    if (Level >= 15)
+                    {
+                        Ability ability = SkillBase.GetAbility("Stag");
+
+                        if (GetAllAbilities().Contains(ability))
+                            RemoveAbility("Stag");
+
+                        if (Level >= 45)
+                            ability.Level = 4;
+                        else if (Level >= 35)
+                            ability.Level = 3;
+                        else if (Level >= 25)
+                            ability.Level = 2;
+                        else
+                            ability.Level = 1;
+
+                        AddAbility(ability);
+                    }
+                }
+                break;
+
+                case (int)eCharacterClass.Blademaster:
+                {
+                    if (Level >= 20)
+                    {
+                        Ability ability = SkillBase.GetAbility("Triple Wield");
+
+                        if (GetAllAbilities().Contains(ability))
+                            break;
+
+                        ability.Level = 1;
+
+                        AddAbility(ability);
+                    }
+                }
+                break;
+
+                case (int)eCharacterClass.Mercenary:
+                {
+                    if (Level >= 20)
+                    {
+                        Ability ability = SkillBase.GetAbility("Dirty Tricks");
+
+                        if (GetAllAbilities().Contains(ability))
+                        {
+                            DevOut("IT DID");
+                            break;
+                        }
+
+                        ability.Level = 1;
+
+                        AddAbility(ability);
+                    }
+                }
+                break;
+            }
+        }
+
         private List<Spell> m_spells = new(0);
 
         /// <summary>
@@ -1041,7 +1134,7 @@ namespace DOL.GS.Scripts
         {
             PlayerRace playerRace = CharacterClass.EligibleRaces[Util.Random(CharacterClass.EligibleRaces.Count - 1)];
 
-            Gender = Util.RandomBool() ? Gender = eGender.Female : Gender = eGender.Male;
+            Gender = Util.RandomBool() ? eGender.Female : eGender.Male;
             Race = (short)playerRace.ID;
             Model = (ushort)playerRace.GetModel(Gender);
             Size = (byte)Util.Random(45, 60);
@@ -1086,7 +1179,7 @@ namespace DOL.GS.Scripts
                 Sit(false);
 
             base.StartAttack(target);
-        }  
+        }
 
         public override bool AddToWorld()
         {
@@ -1101,27 +1194,8 @@ namespace DOL.GS.Scripts
             m_powerRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(PowerRegenerationTimerCallback);
             m_enduRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(EnduranceRegenerationTimerCallback);
 
-            if (Brain is MimicBrain mimicBrain)
-            {
-                ((MimicState)mimicBrain.FSM.GetCurrentState()).Init = false;
-                mimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
-                mimicBrain.Start();
-            }
-            else
-            {
-                log.Info("Didn't have a brain");
-                SetOwnBrain(new MimicBrain());
-            }
-
             return true;
         }
-
-        //public override void Delete()
-        //{
-        //    Group?.RemoveMember(this);
-        //    base.RemoveFromWorld();
-        //    base.Delete();
-        //}
 
         private readonly object m_LockObject = new object();
         public int Regen { get; set; }
@@ -2226,7 +2300,8 @@ namespace DOL.GS.Scripts
         public virtual void Release(eReleaseType releaseCommand, bool forced)
         {
             DbCoreCharacter character = DBCharacter;
-            if (character == null) return;
+            if (character == null) 
+                return;
 
             // check if valid housebind
             if (releaseCommand == eReleaseType.House && character.BindHouseRegion < 1)
@@ -2677,6 +2752,7 @@ namespace DOL.GS.Scripts
         {
             if (IsAlive)
                 return 0;
+
             long diffToRelease = GameLoop.GameLoopTime - m_deathTick;
             if (m_automaticRelease && diffToRelease > RELEASE_MINIMUM_WAIT * 1000)
             {
@@ -7094,6 +7170,9 @@ namespace DOL.GS.Scripts
             DirtyTricksECSGameEffect dt = (DirtyTricksECSGameEffect)EffectListService.GetAbilityEffectOnTarget(this, eEffect.DirtyTricks);
             if (dt != null)
             {
+                foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                    player.Out.SendSpellEffectAnimation(this, ad.Target, 471, 0, false, 1);
+
                 dt.EventHandler(ad);
             }
             TripleWieldECSGameEffect tw = (TripleWieldECSGameEffect)EffectListService.GetAbilityEffectOnTarget(this, eEffect.TripleWield);
@@ -7242,12 +7321,14 @@ namespace DOL.GS.Scripts
                     {
                         mimic.Kills++;
                         mimic.KillStreak++;
-                        
-                        if (MimicBattlegrounds.Running)
-                        {
-                            MimicBattlegrounds.UpdateBattleStats(this);
-                            KillStreak = 0;
-                        }
+                    }
+
+                    KillStreak = 0;
+
+                    switch (CurrentRegionID)
+                    {
+                        // Thid
+                        case 252: MimicBattlegrounds.ThidBattleground.UpdateBattleStats(this); break;
                     }
 
                     playerMessage = LanguageMgr.GetTranslation("EN", "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
@@ -7303,127 +7384,117 @@ namespace DOL.GS.Scripts
                     player.Out.SendMessage(publicMessage, messageType, eChatLoc.CL_SystemWindow);
             }
 
-            //Dead ppl. dismount ...
-            //if (Steed != null)
-            //    DismountSteed(true);
-            //Dead ppl. don't sit ...
-            if (IsSitting)
-            {
-                IsSitting = false;
-                //UpdatePlayerStatus();
-            }
+            IsSitting = false;
+            IsSwimming = false;
+
+            //if (ControlledBrain != null)
+            //    CommandNpcRelease();
 
             // then buffs drop messages
+            //GameLivingProcessDeath(killer);
             base.ProcessDeath(killer);
 
             lock (m_LockObject)
             {
-                if (m_releaseTimer != null)
-                {
-                    m_releaseTimer.Stop();
-                    m_releaseTimer = null;
-                }
+                //if (m_releaseTimer != null)
+                //{
+                //    m_releaseTimer.Stop();
+                //    m_releaseTimer = null;
+                //}
 
-                if (m_quitTimer != null)
-                {
-                    m_quitTimer.Stop();
-                    m_quitTimer = null;
-                }
+                //if (m_healthRegenerationTimer != null)
+                //{
+                //    m_healthRegenerationTimer.Stop();
+                //    m_healthRegenerationTimer = null;
+                //}
 
-                if (m_healthRegenerationTimer != null)
-                {
-                    m_healthRegenerationTimer.Stop();
-                    m_healthRegenerationTimer = null;
-                }
+                //m_automaticRelease = m_releaseType == eReleaseType.Duel;
+                //m_releasePhase = 0;
+                //m_deathTick = GameLoop.GameLoopTime; // we use realtime, because timer window is realtime
 
-                m_automaticRelease = m_releaseType == eReleaseType.Duel;
-                m_releasePhase = 0;
-                m_deathTick = GameLoop.GameLoopTime; // we use realtime, because timer window is realtime
-
-                m_releaseTimer = new ECSGameTimer(this);
-                m_releaseTimer.Callback = new ECSGameTimer.ECSTimerCallback(ReleaseTimerCallback);
-                m_releaseTimer.Start(1000);
+                //m_releaseTimer = new ECSGameTimer(this);
+                //m_releaseTimer.Callback = new ECSGameTimer.ECSTimerCallback(ReleaseTimerCallback);
+                //m_releaseTimer.Start(1000);
 
  
                 // clear target object so no more actions can used on this target, spells, styles, attacks...
-                TargetObject = null;
+                //TargetObject = null;
 
-                // first penalty is 5% of expforlevel, second penalty comes from release
-                int xpLossPercent;
-                if (Level < 40)
-                {
-                    xpLossPercent = MaxLevel - Level;
-                }
-                else
-                {
-                    xpLossPercent = MaxLevel - 40;
-                }
+                //// first penalty is 5% of expforlevel, second penalty comes from release
+                //int xpLossPercent;
+                //if (Level < 40)
+                //{
+                //    xpLossPercent = MaxLevel - Level;
+                //}
+                //else
+                //{
+                //    xpLossPercent = MaxLevel - 40;
+                //}
 
-                if (realmDeath || killer?.Realm == Realm) //Live PvP servers have 3 con loss on pvp death, can be turned off in server properties -Unty
-                {
-                    int conpenalty = 0;
-                    switch (GameServer.Instance.Configuration.ServerType)
-                    {
-                        case EGameServerType.GST_Normal:
-                        xpLossPercent = 0;
-                        m_deathtype = eDeathType.RvR;
-                        break;
+                //if (realmDeath || killer?.Realm == Realm) //Live PvP servers have 3 con loss on pvp death, can be turned off in server properties -Unty
+                //{
+                //    int conpenalty = 0;
+                //    switch (GameServer.Instance.Configuration.ServerType)
+                //    {
+                //        case EGameServerType.GST_Normal:
+                //        xpLossPercent = 0;
+                //        m_deathtype = eDeathType.RvR;
+                //        break;
 
-                        case EGameServerType.GST_PvP:
-                       // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeadRVR"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
-                        xpLossPercent = 0;
-                        m_deathtype = eDeathType.PvP;
-                        if (ServerProperties.Properties.PVP_DEATH_CON_LOSS)
-                        {
-                            conpenalty = 3;
-                            TempProperties.SetProperty(DEATH_CONSTITUTION_LOSS_PROPERTY, conpenalty);
-                        }
-                        break;
-                    }
-                }
-                else
-                {
-                    if (Level >= ServerProperties.Properties.PVE_EXP_LOSS_LEVEL)
-                    {
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.LoseExperience"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
-                        // if this is the first death in level, you lose only half the penalty
-                        switch (DeathCount)
-                        {
-                            case 0:
-                            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeathN1"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
-                            xpLossPercent /= 3;
-                            break;
-                            case 1:
-                            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeathN2"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
-                            xpLossPercent = xpLossPercent * 2 / 3;
-                            break;
-                        }
+                //        case EGameServerType.GST_PvP:
+                //       // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeadRVR"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
+                //        xpLossPercent = 0;
+                //        m_deathtype = eDeathType.PvP;
+                //        if (ServerProperties.Properties.PVP_DEATH_CON_LOSS)
+                //        {
+                //            conpenalty = 3;
+                //            TempProperties.SetProperty(DEATH_CONSTITUTION_LOSS_PROPERTY, conpenalty);
+                //        }
+                //        break;
+                //    }
+                //}
+                //else
+                //{
+                //    if (Level >= ServerProperties.Properties.PVE_EXP_LOSS_LEVEL)
+                //    {
+                //        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.LoseExperience"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
+                //        // if this is the first death in level, you lose only half the penalty
+                //        switch (DeathCount)
+                //        {
+                //            case 0:
+                //            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeathN1"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
+                //            xpLossPercent /= 3;
+                //            break;
+                //            case 1:
+                //            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.DeathN2"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
+                //            xpLossPercent = xpLossPercent * 2 / 3;
+                //            break;
+                //        }
 
-                        DeathCount++;
-                        m_deathtype = eDeathType.PvE;
-                        long xpLoss = (ExperienceForNextLevel - ExperienceForCurrentLevel) * xpLossPercent / 1000;
-                        GainExperience(eXPSource.Other, -xpLoss, 0, 0, 0, false, true);
-                        //TempProperties.SetProperty(DEATH_EXP_LOSS_PROPERTY, xpLoss);
-                    }
+                //        DeathCount++;
+                //        m_deathtype = eDeathType.PvE;
+                //        long xpLoss = (ExperienceForNextLevel - ExperienceForCurrentLevel) * xpLossPercent / 1000;
+                //        GainExperience(eXPSource.Other, -xpLoss, 0, 0, 0, false, true);
+                //        //TempProperties.SetProperty(DEATH_EXP_LOSS_PROPERTY, xpLoss);
+                //    }
 
-                    if (Level >= ServerProperties.Properties.PVE_CON_LOSS_LEVEL)
-                    {
-                        int conLoss = DeathCount;
-                        if (conLoss > 3)
-                            conLoss = 3;
-                        else if (conLoss < 1)
-                            conLoss = 1;
-                        //TempProperties.SetProperty(DEATH_CONSTITUTION_LOSS_PROPERTY, conLoss);
-                    }
+                //    if (Level >= ServerProperties.Properties.PVE_CON_LOSS_LEVEL)
+                //    {
+                //        int conLoss = DeathCount;
+                //        if (conLoss > 3)
+                //            conLoss = 3;
+                //        else if (conLoss < 1)
+                //            conLoss = 1;
+                //        //TempProperties.SetProperty(DEATH_CONSTITUTION_LOSS_PROPERTY, conLoss);
+                //    }
 
-                    if (realmDeath)
-                        LastDeathPvP = true;
-                }
+                //    if (realmDeath)
+                //        LastDeathPvP = true;
+                //}
                 //GameEventMgr.AddHandler(this, GamePlayerEvent.Revive, new DOLEventHandler(OnRevive));
             }
 
-            if (ControlledBrain != null)
-                CommandNpcRelease();
+
 
             //if (this.SiegeWeapon != null)
             //    SiegeWeapon.ReleaseControl();
@@ -7450,10 +7521,105 @@ namespace DOL.GS.Scripts
             //if (m_releaseType != eReleaseType.Duel)
             //    DeathTime = PlayedTime;
 
-            CancelAllConcentrationEffects();
-            effectListComponent.CancelAll();
+            //CancelAllConcentrationEffects();
+            //effectListComponent.CancelAll();
+        }
 
-            IsSwimming = false;
+        // Needed to skip over GameNPC ProcessDeath
+        public virtual void GameLivingProcessDeath(GameObject killer)
+        {
+            try
+            {
+                attackComponent.StopAttack();
+
+                if (killer is GameLiving livingKiller)
+                    attackComponent.Attackers.TryAdd(livingKiller, long.MaxValue);
+
+                List<GamePlayer> playerAttackers = new();
+
+                foreach (GameObject attacker in attackComponent.Attackers.Keys)
+                {
+                    if (attacker is not GameLiving livingAttacker)
+                        continue;
+
+                    GamePlayer player = attacker as GamePlayer;
+
+                    if (attacker is GameNPC npcAttacker && npcAttacker.Brain is IControlledBrain npcAttackerBrain)
+                    {
+                        // Ok, we're a pet - if our Player owner isn't in the attacker list, let's make them a 'virtual' attacker
+                        player = npcAttackerBrain.GetPlayerOwner();
+
+                        if (player != null)
+                        {
+                            if (!attackComponent.Attackers.ContainsKey(player))
+                            {
+                                if (!playerAttackers.Contains(player))
+                                    playerAttackers.Add(player);
+                            }
+
+                            // Pet gets the killed message as well
+                            livingAttacker.EnemyKilled(this);
+                        }
+                    }
+
+                    if (player != null)
+                    {
+                        if (!playerAttackers.Contains(player))
+                            playerAttackers.Add(player);
+
+                        if (player.Group != null)
+                        {
+                            foreach (GamePlayer groupPlayer in player.Group.GetPlayersInTheGroup())
+                            {
+                                if (groupPlayer.IsWithinRadius(this, WorldMgr.MAX_EXPFORKILL_DISTANCE) && playerAttackers.Contains(groupPlayer) == false)
+                                    playerAttackers.Add(groupPlayer);
+                            }
+                        }
+                    }
+                    else
+                        livingAttacker.EnemyKilled(this);
+                }
+
+                foreach (GamePlayer player in playerAttackers)
+                    player.EnemyKilled(this);
+
+                foreach (Quests.DataQuest q in DataQuestList)
+                    q.Notify(GameLivingEvent.Dying, this, new DyingEventArgs(killer, playerAttackers));
+
+                attackComponent.Attackers.Clear();
+
+                // clear all of our targets
+                rangeAttackComponent.AutoFireTarget = null;
+                TargetObject = null;
+
+                // cancel all left effects
+                EffectList.CancelAll();
+                effectListComponent.CancelAll();
+
+                // Stop the regeneration timers
+                StopHealthRegeneration();
+                StopPowerRegeneration();
+                StopEnduranceRegeneration();
+
+                //Reduce health to zero
+                Health = 0;
+
+                // Remove all last attacked times
+                LastAttackedByEnemyTickPvE = 0;
+                LastAttackedByEnemyTickPvP = 0;
+
+                //Let's send the notification at the end
+                Notify(GameLivingEvent.Dying, this, new DyingEventArgs(killer));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                //isDying flag is ALWAYS set to false even if exception happens so it can get remove from the list
+                isDeadOrDying = false;
+            }
         }
 
         /// <summary>
@@ -8954,14 +9120,8 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override short MaxSpeedBase
         {
-            get => DBCharacter != null ? (short)DBCharacter.MaxSpeed : base.MaxSpeedBase;
-            set
-            {
-                base.MaxSpeedBase = value;
-
-                if (DBCharacter != null)
-                    DBCharacter.MaxSpeed = value;
-            }
+            get { return base.MaxSpeedBase; }
+            set { base.MaxSpeedBase = value; }
         }
 
         public override bool IsMoving => base.IsMoving || IsStrafing;
@@ -9025,27 +9185,6 @@ namespace DOL.GS.Scripts
             //    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "SpellHandler.CasterMove"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
             //    RealmAbilityCastTimer.Stop();
             //    RealmAbilityCastTimer = null;
-            //}
-
-            //if (IsCrafting)
-            //{
-            //    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnPlayerMove.InterruptCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            //    craftComponent.StopCraft();
-            //    Out.SendCloseTimerWindow();
-            //}
-
-            //if (IsSalvagingOrRepairing)
-            //{
-            //    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnPlayerMove.InterruptCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            //    CraftTimer.Stop();
-            //    CraftTimer = null;
-            //    Out.SendCloseTimerWindow();
-            //}
-
-            //if (IsSummoningMount)
-            //{
-            //    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnPlayerMove.CannotCallMount"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            //    StopWhistleTimers();
             //}
 
             if (attackComponent.AttackState)

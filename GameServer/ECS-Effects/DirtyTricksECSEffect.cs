@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DOL.Database;
+using log4net;
+using System.Reflection;
 
 namespace DOL.GS
 {
@@ -20,7 +22,17 @@ namespace DOL.GS
         }
 
         public override ushort Icon { get { return 478; } }
-        public override string Name { get { return LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Skill.Ability.DirtyTricks.Name"); } }
+        public override string Name
+        { 
+            get
+            {
+                if (OwnerPlayer != null)
+                    return LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Skill.Ability.DirtyTricks.Name");
+                else
+                    return "Dirty Tricks";
+            } 
+        }
+
         public override bool HasPositiveEffect { get { return true; } }
 
         public override void OnStartEffect()
@@ -29,13 +41,12 @@ namespace DOL.GS
             {
                 plyr.Out.SendSoundEffect(163, 0, 0, 0, 0, 0);    
             }
-            
-
         }
+
         public override void OnStopEffect()
         {
-
         }
+
         public void EventHandler(AttackData attackData)
 		{
 			if (attackData == null) return;

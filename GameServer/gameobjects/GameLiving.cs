@@ -1958,7 +1958,7 @@ namespace DOL.GS
 			{
 				var brain = npc.Brain as ControlledNpcBrain;
 
-                if (ad.Target is GamePlayer)
+                if (ad.Target is GamePlayer || ad.Target is MimicNPC)
 				{
 					LastAttackTickPvP = GameLoop.GameLoopTime;
 					if (brain != null)
@@ -3993,7 +3993,8 @@ namespace DOL.GS
 			
 			if (!this.IsWithinRadius(target, WorldMgr.WHISPER_DISTANCE))
 			{
-				return false;
+				if (target is not MimicNPC)
+					return false;
 			}
 			
 			Notify(GameLivingEvent.Whisper, this, new WhisperEventArgs(target, str));
