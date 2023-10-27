@@ -80,7 +80,7 @@ namespace DOL.GS.Scripts
             private int m_currentMaxHib;
             private int m_currentMaxMid;
 
-            private int m_groupChance = 50;
+            private int m_groupChance = 35;
 
             public void Start()
             {
