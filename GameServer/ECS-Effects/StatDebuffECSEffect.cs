@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using DOL.GS.API;
 using DOL.GS.PlayerClass;
 using DOL.GS.PropertyCalc;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 
 namespace DOL.GS
@@ -15,8 +17,8 @@ namespace DOL.GS
 
         public override void OnStartEffect()
         {
-            if (Owner is GamePlayer player)
-                TryDebuffInterrupt(SpellHandler.Spell, player, SpellHandler.Caster);
+            if (Owner is GamePlayer || Owner is MimicNPC)
+                TryDebuffInterrupt(SpellHandler.Spell, Owner, SpellHandler.Caster);
 
             //if our debuff is already on the target, do not reapply effect
             if (Owner.effectListComponent.Effects.ContainsKey(EffectType))
@@ -32,6 +34,9 @@ namespace DOL.GS
             }
 
             eBuffBonusCategory debuffCategory = (Caster as GamePlayer)?.CharacterClass is ClassChampion ? eBuffBonusCategory.SpecDebuff : eBuffBonusCategory.Debuff;
+
+            if (Caster is MimicNPC mimic && mimic.CharacterClass is ClassChampion)
+                debuffCategory = eBuffBonusCategory.SpecDebuff;
 
             if (EffectType == eEffect.StrConDebuff || EffectType == eEffect.DexQuiDebuff)
             {
@@ -102,6 +107,9 @@ namespace DOL.GS
         public override void OnStopEffect()
         {
             eBuffBonusCategory debuffCategory = (Caster as GamePlayer)?.CharacterClass is ClassChampion ? eBuffBonusCategory.SpecDebuff : eBuffBonusCategory.Debuff;
+
+            if (Caster is MimicNPC mimic && mimic.CharacterClass is ClassChampion)
+                debuffCategory = eBuffBonusCategory.SpecDebuff;
 
             if (EffectType == eEffect.StrConDebuff || EffectType == eEffect.DexQuiDebuff)
             {
@@ -216,7 +224,7 @@ namespace DOL.GS
             return bonuscat;
         }
 
-        public static void TryDebuffInterrupt(Spell spell, GamePlayer player, GameLiving caster)
+        public static void TryDebuffInterrupt(Spell spell, GameLiving living, GameLiving caster)
         {
             if (spell.ID != 10031 && //BD insta debuffs
                 spell.ID != 10032 &&
@@ -235,9 +243,17 @@ namespace DOL.GS
                 spell.ID != 9605 &&
                 spell.ID != 9606)
                 return;
-
-            player?.StopCurrentSpellcast();
-            player?.StartInterruptTimer(player.SpellInterruptDuration, AttackData.eAttackType.Spell, caster);
+            
+            if (living is GamePlayer player)
+            {
+                player.StopCurrentSpellcast();
+                player.StartInterruptTimer(player.SpellInterruptDuration, AttackData.eAttackType.Spell, caster);
+            }
+            else if (living is MimicNPC mimic)
+            {
+                mimic.StopCurrentSpellcast();
+                mimic.StartInterruptTimer(mimic.SpellInterruptDuration, AttackData.eAttackType.Spell, caster);
+            }
         }
     }
 }

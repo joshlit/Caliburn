@@ -9,6 +9,7 @@ using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerClass;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.Language;
@@ -21,8 +22,10 @@ namespace DOL.GS.Spells
 	/// </summary>
 	public class SpellHandler : ISpellHandler
 	{
-		// Maximum number of sub-spells to get delve info for.
-		protected const byte MAX_DELVE_RECURSION = 5;
+        public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        // Maximum number of sub-spells to get delve info for.
+        protected const byte MAX_DELVE_RECURSION = 5;
 
 		// Maximum number of Concentration spells that a single caster is allowed to cast.
 		private const int MAX_CONC_SPELLS = 20;
@@ -478,7 +481,7 @@ namespace DOL.GS.Spells
 						Target = Caster?.TargetObject as GameLiving;
 
 					// Pet spells are automatically casted on the controlled NPC, but only if the current target isn't a subpet or a turret.
-					if (((Target as GameNPC)?.Brain as IControlledBrain)?.GetPlayerOwner() != Caster && Caster.ControlledBrain?.Body != null)
+					if (((Target as GameNPC)?.Brain as IControlledBrain)?.GetLivingOwner() != Caster && Caster.ControlledBrain?.Body != null)
 						Target = Caster.ControlledBrain.Body;
 
 					break;
@@ -617,12 +620,12 @@ namespace DOL.GS.Spells
 			// Check interrupt timer.
 			if (!m_spell.Uninterruptible && !m_spell.IsInstantCast && Caster.InterruptAction > 0 && Caster.IsBeingInterrupted)
 			{
-				if (m_caster is GamePlayer)
+				if (m_caster is GamePlayer || m_caster is MimicNPC)
 				{
 					if (!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.QuickCast) &&
 						!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.MasteryOfConcentration))
 					{
-						if (!quiet)
+						if (!quiet && m_caster is GamePlayer)
 							MessageToCaster($"You must wait {(Caster.InterruptTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted);
 
 						return false;
@@ -805,6 +808,10 @@ namespace DOL.GS.Spells
 				if (!quiet)
 					MessageToCaster("You don't have enough power to cast that!", eChatType.CT_SpellResisted);
 
+				return false;
+			}
+			else if (Spell.Power != 0 && m_caster is MimicNPC && (m_caster as MimicNPC).CharacterClass.ID != (int)eCharacterClass.Savage && m_caster.Mana < PowerCost(Target) && EffectListService.GetAbilityEffectOnTarget(Caster, eEffect.QuickCast) == null && Spell.SpellType != eSpellType.Archery)
+			{
 				return false;
 			}
 
@@ -1325,7 +1332,7 @@ namespace DOL.GS.Spells
 			int syphon = Caster.GetModified(eProperty.ArcaneSyphon);
 			if (syphon > 0)
 			{
-				if(Util.Chance(syphon))
+				if (Util.Chance(syphon))
 				{
 					return 0;
 				}
@@ -1340,6 +1347,11 @@ namespace DOL.GS.Spells
 				{
 					GamePlayer player = Caster as GamePlayer;
 					basepower = player.CalculateMaxMana(player.Level, player.GetBaseStat(player.CharacterClass.ManaStat)) * basepower * -0.01;
+				}
+				else if (Caster is MimicNPC && ((MimicNPC)Caster).CharacterClass.ManaStat != eStat.UNDEFINED)
+				{
+					MimicNPC mimic = Caster as MimicNPC;
+					basepower = mimic.CalculateMaxMana(mimic.Level, mimic.GetBaseStat(mimic.CharacterClass.ManaStat)) * basepower * -0.01;
 				}
 				else
 				{
@@ -1367,6 +1379,14 @@ namespace DOL.GS.Spells
 						specBonus = 1;
 					focusBonus *= specBonus;
 				}
+				else if (Caster is MimicNPC)
+				{
+					var spec = ((MimicNPC)Caster).GetModifiedSpecLevel(SpellLine.Spec);
+					double specBonus = Math.Min(spec, 50) / (Spell.Level * 1.0);
+					if (specBonus > 1)
+						specBonus = 1;
+					focusBonus *= specBonus;
+				}
 				power -= basepower * focusBonus; //<== So i can finally use 'basepower' for both calculations: % and absolut
 			}
 			else if (Caster is GamePlayer && ((GamePlayer)Caster).CharacterClass.ClassType == eClassType.Hybrid)
@@ -1380,9 +1400,22 @@ namespace DOL.GS.Spells
 					specBonus = 0;
 				power -= basepower * specBonus;
 			}
+			else if (Caster is MimicNPC && ((MimicNPC)Caster).CharacterClass.ClassType == eClassType.Hybrid)
+			{
+				double specBonus = 0;
+				if (Spell.Level != 0) specBonus = (((MimicNPC)Caster).GetBaseSpecLevel(SpellLine.Spec) * 0.4 / Spell.Level);
+
+				if (specBonus > 0.4)
+					specBonus = 0.4;
+				else if (specBonus < 0)
+					specBonus = 0;
+				power -= basepower * specBonus;
+			}
+
 			// doubled power usage if quickcasting
 			if (EffectListService.GetAbilityEffectOnTarget(Caster, eEffect.QuickCast) != null && Spell.CastTime > 0)
 				power *= 2;
+
 			return (int)power;
 		}
 
@@ -1624,7 +1657,7 @@ namespace DOL.GS.Spells
 			{
 				(Caster as GamePlayer).Out.SendObjectUpdate(target);
 			}*/
-			if(!this.Spell.IsPulsingEffect && !this.Spell.IsPulsing && Caster is GamePlayer {CharacterClass: not ClassSavage})
+			if(!this.Spell.IsPulsingEffect && !this.Spell.IsPulsing && Caster is GamePlayer || Caster is MimicNPC {CharacterClass: not ClassSavage})
 				m_caster.ChangeEndurance(m_caster, eEnduranceChangeType.Spell, -5);
 
 			GameEventMgr.Notify(GameLivingEvent.CastFinished, m_caster, new CastingEventArgs(this, target, m_lastAttackData));
@@ -2536,7 +2569,7 @@ namespace DOL.GS.Spells
 		/// <returns>immunity duration in milliseconds</returns>
 		public virtual int OnEffectExpires(GameSpellEffect effect, bool noMessages)
 		{
-			return 0;
+            return 0;
 		}
 
 		/// <summary>
@@ -2647,7 +2680,9 @@ namespace DOL.GS.Spells
 				
 				if (!Properties.OVERRIDE_DECK_RNG && Caster is GamePlayer player)
 					spellResistRoll = player.RandomNumberDeck.GetInt();
-				else
+				else if (!Properties.OVERRIDE_DECK_RNG && Caster is MimicNPC mimic)
+                    spellResistRoll = mimic.RandomNumberDeck.GetInt();
+                else
 					spellResistRoll = Util.CryptoNextInt(100);
 
 				if (Caster is GamePlayer playerCaster && playerCaster.UseDetailedCombatLog)

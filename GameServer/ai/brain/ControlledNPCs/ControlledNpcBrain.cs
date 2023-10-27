@@ -7,6 +7,7 @@ using DOL.GS;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
 using log4net;
@@ -1047,10 +1048,16 @@ namespace DOL.AI.Brain
 			if (Owner is GamePlayer && ((GamePlayer)Owner).CharacterClass.ID == (int)eCharacterClass.Theurgist)
 				return;
 
-			if (ad.Target is GamePlayer && ((ad.Target as GamePlayer).ControlledBrain != this || (ad.Target as GamePlayer).ControlledBrain.Body == Owner))
+            if (Owner is MimicNPC && ((MimicNPC)Owner).CharacterClass.ID == (int)eCharacterClass.Theurgist)
+                return;
+
+            if (ad.Target is GamePlayer && ((ad.Target as GamePlayer).ControlledBrain != this || (ad.Target as GamePlayer).ControlledBrain.Body == Owner))
 				return;
 
-			switch (ad.AttackResult)
+            if (ad.Target is MimicNPC && ((ad.Target as MimicNPC).ControlledBrain != this || (ad.Target as MimicNPC).ControlledBrain.Body == Owner))
+                return;
+
+            switch (ad.AttackResult)
 			{
 				case eAttackResult.Blocked:
 				case eAttackResult.Evaded:

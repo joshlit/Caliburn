@@ -49,6 +49,13 @@
     <APIDocs Include=".\API\docs\*" />
   </ItemGroup>
   <ItemGroup>
+    <APIDocs Remove="custom\MimicNPC\Invasion System\**" />
+    <Compile Remove="custom\MimicNPC\Invasion System\**" />
+    <EmbeddedResource Remove="custom\MimicNPC\Invasion System\**" />
+    <None Remove="custom\MimicNPC\Invasion System\**" />
+    <TranslationFiles Remove="custom\MimicNPC\Invasion System\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="API\docs\index.css" />
     <Content Include="API\docs\index.html" />
     <Content Include="API\docs\oauth2-redirect.html" />

@@ -50,7 +50,7 @@ namespace DOL.GS
     {
         [CmdAttribute(
             "&genuniques",
-            ePrivLevel.GM,
+            ePrivLevel.Player,
             "/genuniques ([TOA] || [L51] || [self] || [suit] || [objecttype]) [itemtype] : generate 8 unique items")]
         public class LootGeneratorUniqueObjectCommandHandler : DOL.GS.Commands.AbstractCommandHandler,
             DOL.GS.Commands.ICommandHandler

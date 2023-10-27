@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using DOL.Database;
+using DOL.GS.Scripts;
 using DOL.GS.Styles;
 using static DOL.GS.GameLiving;
 using static DOL.GS.GameObject;
@@ -12,12 +13,12 @@ namespace DOL.GS
         // Next tick interval for when the current tick doesn't result in an attack.
         protected const int TICK_INTERVAL_FOR_NON_ATTACK = 100;
 
-        protected AttackComponent _attackComponent;
+        protected MimicAttackComponent _attackComponent;
         protected AttackData _lastAttackData;
         protected DbInventoryItem _weapon;
         protected DbInventoryItem _leftWeapon;
         protected Style _combatStyle;
-        protected StyleComponent _styleComponent;
+        protected MimicStyleComponent _styleComponent;
         protected GameObject _target;
         protected double _effectiveness;
         protected int _ticksToTarget;
@@ -44,6 +45,8 @@ namespace DOL.GS
 
         public static AttackAction Create(GameLiving gameLiving)
         {
+            if (gameLiving is MimicNPC mimicNPC)
+                return new MimicAttackAction(mimicNPC);
             if (gameLiving is GameNPC gameNpc)
                 return new NpcAttackAction(gameNpc);
             else if (gameLiving is GamePlayer gamePlayer)
@@ -181,6 +184,8 @@ namespace DOL.GS
             // Damage is doubled on sitting players, but only with melee weapons; arrows and magic do normal damage.
             if (_target is GamePlayer playerTarget && playerTarget.IsSitting)
                 _effectiveness *= 2;
+            else if (_target is MimicNPC mimicTarget && mimicTarget.IsSitting)
+                _effectiveness *= 2;
 
             _interruptDuration = mainHandAttackSpeed;
             return true;
@@ -289,14 +294,14 @@ namespace DOL.GS
 
         protected virtual void PerformMeleeAttack()
         {
-            _attackComponent.weaponAction = new WeaponAction(_owner, _target, _weapon, _leftWeapon, _effectiveness, _interruptDuration, _combatStyle);
+            _attackComponent.weaponAction = new MimicWeaponAction(_owner, _target, _weapon, _leftWeapon, _effectiveness, _interruptDuration, _combatStyle);
             _attackComponent.weaponAction.Execute();
             _lastAttackData = _owner.TempProperties.GetProperty<AttackData>(LAST_ATTACK_DATA, null);
         }
 
         protected virtual void PerformRangedAttack()
         {
-            _attackComponent.weaponAction = new WeaponAction(_owner, _target, _weapon, _effectiveness, _interruptDuration, _owner.rangeAttackComponent.RangedAttackType);
+            _attackComponent.weaponAction = new MimicWeaponAction(_owner, _target, _weapon, _effectiveness, _interruptDuration, _owner.rangeAttackComponent.RangedAttackType);
 
             if (_owner.rangeAttackComponent.RangedAttackType == eRangedAttackType.Critical)
                 _owner.rangeAttackComponent.RangedAttackType = eRangedAttackType.Normal;

@@ -3,6 +3,7 @@ using System.Numerics;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Movement;
+using DOL.GS.Scripts;
 using static DOL.GS.GameObject;
 
 namespace DOL.GS
@@ -525,6 +526,7 @@ namespace DOL.GS
             }
 
             CurrentSpeed = speed;
+
             UpdateTickSpeed();
         }
 

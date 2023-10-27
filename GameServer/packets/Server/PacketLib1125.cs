@@ -24,6 +24,7 @@ using System.Linq;
 using System.Reflection;
 using DOL.Database;
 using DOL.GS.Housing;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 using log4net;
 
@@ -426,7 +427,15 @@ namespace DOL.GS.PacketHandler
 					{
 						if (living == null) continue;
 						pak.WritePascalString(living.Name);
-						pak.WritePascalString(living is GamePlayer ? ((GamePlayer)living).CharacterClass.Name : "NPC");
+
+						string charClassName = "NPC";
+
+						if (living is GamePlayer player)
+							charClassName = player.CharacterClass.Name;
+						else if (living is MimicNPC mimic)
+							charClassName = mimic.CharacterClass.Name;
+
+                        pak.WritePascalString(charClassName);
 						pak.WriteShort((ushort)living.ObjectID); //or session id?
 						pak.WriteByte(living.Level);
 					}

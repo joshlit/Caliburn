@@ -561,7 +561,7 @@ namespace DOL.AI.Brain
             GameLiving realTarget = target;
 
             if (realTarget is GameNPC npcTarget && npcTarget.Brain is IControlledBrain npcTargetBrain)
-                realTarget = npcTargetBrain.GetPlayerOwner();
+                realTarget = npcTargetBrain.GetLivingOwner();
 
             // Only attack if green+ to target
             if (realTarget.IsObjectGreyCon(Body))
@@ -665,6 +665,8 @@ namespace DOL.AI.Brain
         /// </summary>
         public virtual bool CanBAF { get; set; } = true;
 
+        public List<GameLiving> BAFList { get; set; } = new List<GameLiving>();
+
         /// <summary>
         /// Bring friends when this mob aggros
         /// </summary>
@@ -700,7 +702,7 @@ namespace DOL.AI.Brain
 
             int numAttackers = 0;
 
-            List<GamePlayer> victims = null; // Only instantiated if we're tracking potential victims
+            List<GameLiving> victims = null; // Only instantiated if we're tracking potential victims
 
             // These are only used if we have to check for duplicates
             HashSet<string> countedVictims = null;
@@ -719,24 +721,24 @@ namespace DOL.AI.Brain
                     if (Properties.BAF_MOBS_ATTACK_BG_MEMBERS && bg != null)
                     {
                         // We need a large enough victims list for group and BG, and also need to check for duplicate victims
-                        victims = new List<GamePlayer>(group.MemberCount + bg.PlayerCount - 1);
+                        victims = new List<GameLiving>(group.MemberCount + bg.PlayerCount - 1);
                         countedVictims = new HashSet<string>();
                     }
                     else
-                        victims = new List<GamePlayer>(group.MemberCount);
+                        victims = new List<GameLiving>(group.MemberCount);
                 }
 
-                foreach (GamePlayer player in group.GetPlayersInTheGroup())
+                foreach (GameLiving living in group.GetMembersInTheGroup())
                 {
-                    if (player != null && (player.InternalID == puller.InternalID || player.IsWithinRadius(puller, BAFPlayerRange, true)))
+                    if (living != null && (living.InternalID == puller.InternalID || living.IsWithinRadius(puller, BAFPlayerRange, true)))
                     {
                         numAttackers++;
-                        countedAttackers?.Add(player.InternalID);
+                        countedAttackers?.Add(living.InternalID);
 
                         if (victims != null)
                         {
-                            victims.Add(player);
-                            countedVictims?.Add(player.InternalID);
+                            victims.Add(living);
+                            countedVictims?.Add(living.InternalID);
                         }
                     }
                 }
@@ -747,9 +749,9 @@ namespace DOL.AI.Brain
             {
                 if (victims == null && Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !Properties.BAF_MOBS_ATTACK_PULLER)
                     // Puller isn't in a group, so we have to create the victims list for the BG
-                    victims = new List<GamePlayer>(bg.PlayerCount);
+                    victims = new List<GameLiving>(bg.PlayerCount);
 
-                foreach (GamePlayer player2 in bg.Members.Keys)
+                foreach (GameLiving player2 in bg.Members.Keys)
                 {
                     if (player2 != null && (player2.InternalID == puller.InternalID || player2.IsWithinRadius(puller, BAFPlayerRange, true)))
                     {
@@ -791,6 +793,8 @@ namespace DOL.AI.Brain
                         // If it's a friend, have it attack
                         if (npc.IsFriend(Body) && npc.IsAggressive && npc.IsAvailable && npc.Brain is StandardMobBrain brain)
                         {
+                            BAFList.Add(npc);
+
                             brain.CanBAF = false; // Mobs brought cannot bring friends of their own
                             GameLiving target;
 

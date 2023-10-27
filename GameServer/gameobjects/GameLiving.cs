@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -14,6 +15,7 @@ using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.PropertyCalc;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -551,8 +553,8 @@ namespace DOL.GS
 			}
 
 			double absorbBonus = GetModified(eProperty.ArmorAbsorption) / 100.0;
-			double absorptionFromConstitution = StatCalculator.CalculateBuffContributionToAbsorbOrResist(this, eProperty.Constitution) / 4;
-			double absorptionFromDexterity = StatCalculator.CalculateBuffContributionToAbsorbOrResist(this, eProperty.Dexterity) / 4;
+			double absorptionFromConstitution = PropertyCalc.StatCalculator.CalculateBuffContributionToAbsorbOrResist(this, eProperty.Constitution) / 4;
+			double absorptionFromDexterity = PropertyCalc.StatCalculator.CalculateBuffContributionToAbsorbOrResist(this, eProperty.Dexterity) / 4;
 			double absorb = 1 - (1 - baseAbsorb) * (1 - absorbBonus) * (1 - absorptionFromConstitution) * (1 - absorptionFromDexterity);
 			return Math.Clamp(absorb, 0, 1);
 		}
@@ -1141,7 +1143,7 @@ namespace DOL.GS
 		{
 			double chance;
 
-			if (attacker is GamePlayer)
+			if (attacker is GamePlayer || attacker is MimicNPC)
 				chance = 99;
 			else
 			{
@@ -1376,6 +1378,8 @@ namespace DOL.GS
 
 			double evadeChance = 0;
 			GamePlayer player = this as GamePlayer;
+			MimicNPC mimic = this as MimicNPC;
+
 			ECSGameEffect evadeBuff = EffectListService.GetEffectOnTarget(this, eEffect.SavageBuff, eSpellType.SavageEvadeBuff);
 
 			if (player != null)
@@ -1388,6 +1392,16 @@ namespace DOL.GS
 				else if (IsObjectInFront(ad.Attacker, 180) && (evadeBuff != null || player.HasAbility(Abilities.Evade)))
 					evadeChance = Math.Max(GetModified(eProperty.EvadeChance), 0);
 			}
+			else if (mimic != null)
+			{
+                if (mimic.HasAbility(Abilities.Advanced_Evade) ||
+                    mimic.HasAbility(Abilities.Enhanced_Evade) ||
+                    mimic.EffectList.GetOfType<CombatAwarenessEffect>() != null ||
+                    mimic.EffectList.GetOfType<RuneOfUtterAgilityEffect>() != null)
+                    evadeChance = GetModified(eProperty.EvadeChance);
+                else if (IsObjectInFront(ad.Attacker, 180) && (evadeBuff != null || mimic.HasAbility(Abilities.Evade)))
+                    evadeChance = Math.Max(GetModified(eProperty.EvadeChance), 0);
+            }
 			else if (this is GameNPC && IsObjectInFront(ad.Attacker, 180))
 				evadeChance = GetModified(eProperty.EvadeChance);
 
@@ -1411,7 +1425,7 @@ namespace DOL.GS
 
 				if (evadeChance < 0.01)
 					evadeChance = 0.01;
-				else if (evadeChance > Properties.EVADE_CAP && ad.Attacker is GamePlayer && ad.Target is GamePlayer)
+				else if (evadeChance > Properties.EVADE_CAP && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && (ad.Target is GamePlayer || ad.Target is MimicNPC))
 					evadeChance = Properties.EVADE_CAP; // 50% evade cap RvR only. http://www.camelotherald.com/more/664.shtml
 
 				if (evadeChance > 0.995)
@@ -1421,7 +1435,7 @@ namespace DOL.GS
 					evadeChance = Math.Max(evadeChance * 0.5, 0.01);
 			
 				if (IsObjectInFront(ad.Attacker, 180) &&
-					(evadeBuff != null || (player != null && player.HasAbility(Abilities.Evade))) &&
+					(evadeBuff != null || player != null && player.HasAbility(Abilities.Evade) || mimic != null && mimic.HasAbility(Abilities.Evade)) &&
 					evadeChance < 0.05 &&
 					ad.AttackType != eAttackType.Ranged)
 				{
@@ -1438,8 +1452,15 @@ namespace DOL.GS
 				if (Overwhelm != null)
 					evadeChance = Math.Max(evadeChance - OverwhelmAbility.BONUS, 0);
 			}
+            else if (ad.Attacker is MimicNPC mimicAttacker)
+            {
+                OverwhelmEffect Overwhelm = mimicAttacker.EffectList.GetOfType<OverwhelmEffect>();
 
-			return evadeChance;
+                if (Overwhelm != null)
+                    evadeChance = Math.Max(evadeChance - OverwhelmAbility.BONUS, 0);
+            }
+
+            return evadeChance;
 		}
 
 		public virtual double TryParry(AttackData ad, AttackData lastAD, double attackerConLevel, int attackerCount)
@@ -1488,7 +1509,28 @@ namespace DOL.GS
 						}
 					}
 				}
-				else if (this is GameNPC && IsObjectInFront(ad.Attacker, 120))
+                else if (this is MimicNPC mimic)
+                {
+                    // BladeBarrier overwrites all parrying, 90% chance to parry any attack, does not consider other bonuses to parry.
+                    // They still need an active weapon to parry with BladeBarrier
+                    BladeBarrier = mimic.EffectList.GetOfType<BladeBarrierEffect>();
+
+                    if (BladeBarrier != null && ActiveWeapon != null)
+                        parryChance = 0.90;
+                    else if (IsObjectInFront(ad.Attacker, 120))
+                    {
+                        if ((mimic.HasSpecialization(Specs.Parry) || parryBuff != null) && ActiveWeapon != null &&
+                            ActiveWeapon.Object_Type != (int)eObjectType.RecurvedBow &&
+                            ActiveWeapon.Object_Type != (int)eObjectType.Longbow &&
+                            ActiveWeapon.Object_Type != (int)eObjectType.CompositeBow &&
+                            ActiveWeapon.Object_Type != (int)eObjectType.Crossbow &&
+                            ActiveWeapon.Object_Type != (int)eObjectType.Fired)
+                        {
+                            parryChance = GetModified(eProperty.ParryChance);
+                        }
+                    }
+                }
+                else if (this is GameNPC && IsObjectInFront(ad.Attacker, 120))
 					parryChance = GetModified(eProperty.ParryChance);
 
 				if (BladeBarrier != null && !ad.Target.IsStunned && !ad.Target.IsSitting)
@@ -1511,7 +1553,7 @@ namespace DOL.GS
 
 					if (parryChance < 0.01)
 						parryChance = 0.01;
-					else if (parryChance > Properties.PARRY_CAP && ad.Attacker is GamePlayer && ad.Target is GamePlayer)
+					else if (parryChance > Properties.PARRY_CAP && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && (ad.Target is GamePlayer || ad.Target is MimicNPC))
 						parryChance = Properties.PARRY_CAP;
 
 					if (parryChance > 0.995)
@@ -1530,8 +1572,15 @@ namespace DOL.GS
 				if (Overwhelm != null)
 					parryChance = Math.Max(parryChance - OverwhelmAbility.BONUS, 0);
 			}
+            else if (ad.Attacker is MimicNPC attackerMimic)
+            {
+                OverwhelmEffect Overwhelm = attackerMimic.EffectList.GetOfType<OverwhelmEffect>();
 
-			return parryChance;
+                if (Overwhelm != null)
+                    parryChance = Math.Max(parryChance - OverwhelmAbility.BONUS, 0);
+            }
+
+            return parryChance;
 		}
 
 		public virtual double TryBlock(AttackData ad, double attackerConLevel, int attackerCount)
@@ -1563,6 +1612,7 @@ namespace DOL.GS
 				leftHand = null;
 
 			GamePlayer player = this as GamePlayer;
+			MimicNPC mimic = this as MimicNPC;
 
 			if (IsObjectInFront(ad.Attacker, 120) && !ad.Target.IsStunned && !ad.Target.IsSitting)
 			{
@@ -1571,6 +1621,11 @@ namespace DOL.GS
 					if (player.HasAbility(Abilities.Shield) && leftHand != null && (player.ActiveWeapon == null || player.ActiveWeapon.Item_Type == Slot.RIGHTHAND || player.ActiveWeapon.Item_Type == Slot.LEFTHAND))
 						blockChance = GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double) leftHand.MaxCondition);
 				}
+				else if (mimic != null)
+				{
+                    if (mimic.HasAbility(Abilities.Shield) && leftHand != null && (mimic.ActiveWeapon == null || mimic.ActiveWeapon.Item_Type == Slot.RIGHTHAND || mimic.ActiveWeapon.Item_Type == Slot.LEFTHAND))
+                        blockChance = GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double)leftHand.MaxCondition);
+                }
 				else
 					blockChance = GetModified(eProperty.BlockChance);
 			}
@@ -1596,7 +1651,7 @@ namespace DOL.GS
 
 				if (blockChance < 0.01)
 					blockChance = 0.01;
-				else if (blockChance > Properties.BLOCK_CAP && ad.Attacker is GamePlayer && ad.Target is GamePlayer)
+				else if (blockChance > Properties.BLOCK_CAP && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && (ad.Target is GamePlayer || ad.Target is MimicNPC))
 					blockChance = Properties.BLOCK_CAP;
 
 				// Possibly intended to be applied in RvR only.
@@ -1640,8 +1695,15 @@ namespace DOL.GS
 				if (Overwhelm != null)
 					blockChance = Math.Max(blockChance - OverwhelmAbility.BONUS, 0);
 			}
+            else if (mimic != null)
+            {
+                OverwhelmEffect Overwhelm = mimic.EffectList.GetOfType<OverwhelmEffect>();
 
-			return blockChance;
+                if (Overwhelm != null)
+                    blockChance = Math.Max(blockChance - OverwhelmAbility.BONUS, 0);
+            }
+
+            return blockChance;
 		}
 
 		public double GetAttackerDefensePenetration(GameLiving living, DbInventoryItem weapon)
@@ -1657,6 +1719,16 @@ namespace DOL.GS
 				//divide by final 2.1 to use the 2.1 damage table as our anchor. classes below 2.1 damage table will have slightly reduced penetration, above 2.1 will have increased penetration
 				double tableMod = p.CharacterClass.WeaponSkillBase / 200.0 / 2.1;
 				totalReduction = (skillBasedReduction + statBasedReduction) * tableMod;
+            }
+			else if (living is MimicNPC m)
+			{
+                double skillBasedReduction = living.WeaponSpecLevel(weapon) * 0.15;
+                double statBasedReduction = living.GetWeaponStat(weapon) * .05;
+                //p.CharacterClass.WeaponSkillBase returns unscaled damage table value
+                //divide by 200 to change to scaling factor. example: warrior's 460 WeaponSkillBase / 200 = 2.3 Damage Table
+                //divide by final 2.1 to use the 2.1 damage table as our anchor. classes below 2.1 damage table will have slightly reduced penetration, above 2.1 will have increased penetration
+                double tableMod = m.CharacterClass.WeaponSkillBase / 200.0 / 2.1;
+                totalReduction = (skillBasedReduction + statBasedReduction) * tableMod;
             }
 			else
 			{
@@ -1886,7 +1958,7 @@ namespace DOL.GS
 			{
 				var brain = npc.Brain as ControlledNpcBrain;
 
-                if (ad.Target is GamePlayer)
+                if (ad.Target is GamePlayer || ad.Target is MimicNPC)
 				{
 					LastAttackTickPvP = GameLoop.GameLoopTime;
 					if (brain != null)
@@ -2022,7 +2094,19 @@ namespace DOL.GS
 			}
 			else if (ad.IsSpellResisted && ad.Target is GameNPC npc)
 				npc.CancelReturnToSpawnPoint();
-		}
+
+            if (Group != null)
+            {
+                if (Group.GetMembersInTheGroup().Any())
+				{
+                    foreach (GameLiving groupMember in Group.GetMembersInTheGroup())
+					{
+						if (groupMember is MimicNPC mimic && groupMember != this)
+                            ((MimicBrain)mimic.Brain).OnGroupMemberAttacked(ad);
+					}
+                }
+            }
+        }
 
 		public void HandleDamageShields(AttackData ad)
 		{
@@ -2291,10 +2375,13 @@ namespace DOL.GS
 		/// <returns>the amount really changed</returns>
 		public virtual int ChangeEndurance(GameObject changeSource, eEnduranceChangeType enduranceChangeType, int changeAmount)
 		{
+			
 			//TODO fire event that might increase or reduce the amount
 			int oldEndurance = Endurance;
 			Endurance += changeAmount;
-			return Endurance - oldEndurance;
+
+			return 
+				Endurance - oldEndurance;
 		}
 
 		/// <summary>
@@ -3287,9 +3374,9 @@ namespace DOL.GS
 
 		#region Components
 
-		public AttackComponent attackComponent;
+		public MimicAttackComponent attackComponent;
 		public RangeAttackComponent rangeAttackComponent;
-		public StyleComponent styleComponent;
+		public MimicStyleComponent styleComponent;
 		public CastingComponent castingComponent;
 		public EffectListComponent effectListComponent;
 		public MovementComponent movementComponent;
@@ -3906,7 +3993,8 @@ namespace DOL.GS
 			
 			if (!this.IsWithinRadius(target, WorldMgr.WHISPER_DISTANCE))
 			{
-				return false;
+				if (target is not MimicNPC)
+					return false;
 			}
 			
 			Notify(GameLivingEvent.Whisper, this, new WhisperEventArgs(target, str));
@@ -4670,9 +4758,9 @@ namespace DOL.GS
 		/// </summary>
 		public GameLiving() : base()
 		{
-			attackComponent = new AttackComponent(this);
+			attackComponent = new MimicAttackComponent(this);
 			rangeAttackComponent = new RangeAttackComponent(this);
-			styleComponent = new StyleComponent(this);
+			styleComponent = new MimicStyleComponent(this);
 			castingComponent = CastingComponent.Create(this);
 			effectListComponent = new EffectListComponent(this);
 			movementComponent = MovementComponent.Create(this);

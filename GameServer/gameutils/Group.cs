@@ -24,6 +24,7 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 
 namespace DOL.GS
 {
@@ -32,6 +33,8 @@ namespace DOL.GS
 	/// </summary>
 	public class Group
 	{
+		public MimicGroup MimicGroup;
+
 		public object _groupLock = new object();
 
 		#region constructor and members
@@ -52,6 +55,7 @@ namespace DOL.GS
 		{
 			LivingLeader = leader;
 			m_groupMembers = new ReaderWriterList<GameLiving>(ServerProperties.Properties.GROUP_MAX_MEMBER);
+            MimicGroup = new MimicGroup(leader);
 		}
 		
 		/// <summary>
@@ -216,20 +220,6 @@ namespace DOL.GS
 			SendMessageToGroupMembers(string.Format("{0} has joined the group.", living.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			GameEventMgr.Notify(GroupEvent.MemberJoined, this, new MemberJoinedEventArgs(living));
 
-
-			//use this to track completely solo characters
-			const string customKey = "grouped_char";
-			var hasGrouped = DOLDB<DbCoreCharacterXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
-
-			if (hasGrouped == null)
-			{
-				DbCoreCharacterXCustomParam groupedChar = new DbCoreCharacterXCustomParam();
-				groupedChar.DOLCharactersObjectId = player.ObjectId;
-				groupedChar.KeyName = customKey;
-				groupedChar.Value = "1";
-				GameServer.Database.AddObject(groupedChar);
-			}
-
 			// Part of the hack to make friendly pets untargetable (or targetable again) with TAB on a PvP server.
 			// We could also check for non controlled pets (turrets for example) around the player, but it isn't very important.
 			if (GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvP)
@@ -362,18 +352,19 @@ namespace DOL.GS
 			// Update all members
 			if (MemberCount > 1 && LivingLeader == living)
 			{
-				var newLeader = m_groupMembers.OfType<GamePlayer>().First();
+                LivingLeader = m_groupMembers.First();
+    //            var newLeader = m_groupMembers.OfType<GamePlayer>().First();
 
-				if (newLeader != null)
-				{
-					LivingLeader = newLeader;
-					SendMessageToGroupMembers(string.Format("{0} is the new group leader.", Leader.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				}
-				else
-				{
-					// Set aother Living Leader.
-					LivingLeader = m_groupMembers.First();
-				}
+				//if (newLeader != null)
+				//{
+				//	LivingLeader = newLeader;
+				//	SendMessageToGroupMembers(string.Format("{0} is the new group leader.", Leader.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				//}
+				//else
+				//{
+				//	// Set aother Living Leader.
+				//	LivingLeader = m_groupMembers.First();
+				//}
 			}
 
 			UpdateGroupIndexes();

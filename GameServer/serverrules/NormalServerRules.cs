@@ -3,6 +3,7 @@ using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Keeps;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.ServerRules
 {
@@ -12,7 +13,9 @@ namespace DOL.GS.ServerRules
 	[ServerRules(EGameServerType.GST_Normal)]
 	public class NormalServerRules : AbstractServerRules
 	{
-		public override string RulesDescription()
+        public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public override string RulesDescription()
 		{
 			return "standard Normal server rules";
 		}
@@ -43,6 +46,7 @@ namespace DOL.GS.ServerRules
 					quiet = true; // silence all attacks by controlled npc
 				}
 			}
+
 			if (defender is GameNPC)
 			{
 				IControlledBrain controlled = ((GameNPC)defender).Brain as IControlledBrain;

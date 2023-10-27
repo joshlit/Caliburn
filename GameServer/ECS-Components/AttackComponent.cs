@@ -11,6 +11,7 @@ using DOL.GS.Effects;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -26,7 +27,7 @@ namespace DOL.GS
         private static int CHECK_ATTACKERS_INTERVAL = 1000;
 
         public GameLiving owner;
-        public WeaponAction weaponAction;
+        public MimicWeaponAction weaponAction;
         public AttackAction attackAction;
         public EntityManagerId EntityManagerId { get; set; } = new(EntityManager.EntityType.AttackComponent, false);
 
@@ -110,7 +111,7 @@ namespace DOL.GS
         /// The chance for a critical hit
         /// </summary>
         /// <param name="weapon">attack weapon</param>
-        public int AttackCriticalChance(WeaponAction action, DbInventoryItem weapon)
+        public virtual int AttackCriticalChance(WeaponAction action, DbInventoryItem weapon)
         {
             if (owner is GamePlayer playerOwner)
             {
@@ -153,7 +154,7 @@ namespace DOL.GS
         /// Returns the damage type of the current attack
         /// </summary>
         /// <param name="weapon">attack weapon</param>
-        public eDamageType AttackDamageType(DbInventoryItem weapon)
+        public virtual eDamageType AttackDamageType(DbInventoryItem weapon)
         {
             if (owner is GamePlayer || owner is CommanderPet)
             {
@@ -201,7 +202,7 @@ namespace DOL.GS
         /// <summary>
         /// Returns this attack's range
         /// </summary>
-        public int AttackRange
+        public virtual int AttackRange
         {
             /* tested with:
             staff					= 125-130
@@ -306,7 +307,7 @@ namespace DOL.GS
         /// Gets the current attackspeed of this living in milliseconds
         /// </summary>
         /// <returns>effective speed of the attack. average if more than one weapon.</returns>
-        public int AttackSpeed(DbInventoryItem mainWeapon, DbInventoryItem leftWeapon = null)
+        public virtual int AttackSpeed(DbInventoryItem mainWeapon, DbInventoryItem leftWeapon = null)
         {
             if (owner is GamePlayer player)
             {
@@ -452,7 +453,7 @@ namespace DOL.GS
             }
         }
 
-        public double AttackDamage(DbInventoryItem weapon, out double damageCap)
+        public virtual double AttackDamage(DbInventoryItem weapon, out double damageCap)
         {
             double effectiveness = 1;
             damageCap = 0;
@@ -928,7 +929,7 @@ namespace DOL.GS
         /// <summary>
         /// Called whenever a single attack strike is made
         /// </summary>
-        public AttackData MakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield)
+        public virtual AttackData MakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield)
         {
             if (owner is GamePlayer playerOwner)
             {
@@ -1070,7 +1071,7 @@ namespace DOL.GS
                                 // TODO: Figure out why Shield Swipe is handled differently here.
                                 if (IsNotShieldSwipe)
                                 {
-                                    weaponAction = new WeaponAction(playerOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
+                                    weaponAction = new MimicWeaponAction(playerOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
                                     weaponAction.Execute();
                                 }
                                 else
@@ -1100,7 +1101,7 @@ namespace DOL.GS
         /// attacktimer and should not be called manually
         /// </summary>
         /// <returns>the object where we collect and modifiy all parameters about the attack</returns>
-        public AttackData LivingMakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS = false)
+        public virtual AttackData LivingMakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS = false)
         {
             AttackData ad = new()
             {
@@ -1718,7 +1719,7 @@ namespace DOL.GS
             return CalculateWeaponSkill(target, baseWeaponSkill, 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength), specModifier);
         }
 
-        public double CalculateWeaponSkill(GameLiving target, double baseWeaponSkill, double relicBonus, double specModifier)
+        public virtual double CalculateWeaponSkill(GameLiving target, double baseWeaponSkill, double relicBonus, double specModifier)
         {
             if (owner is GamePlayer)
                 return baseWeaponSkill * relicBonus * specModifier;
@@ -1731,7 +1732,7 @@ namespace DOL.GS
             return baseWeaponSkill;
         }
 
-        public double CalculateSpecModifier(GameLiving target, DbInventoryItem weapon)
+        public virtual double CalculateSpecModifier(GameLiving target, DbInventoryItem weapon)
         {
             double specModifier;
 
@@ -1780,7 +1781,7 @@ namespace DOL.GS
             return CalculateTargetArmor(target, armorSlot, out _, out _, out _);
         }
 
-        public double CalculateTargetArmor(GameLiving target, eArmorSlot armorSlot, out double bonusArmorFactor, out double armorFactor, out double absorb)
+        public virtual double CalculateTargetArmor(GameLiving target, eArmorSlot armorSlot, out double bonusArmorFactor, out double armorFactor, out double absorb)
         {
             bonusArmorFactor = owner is GamePlayer && target is not GamePlayer ? 2 : target.Level * ARMOR_FACTOR_LEVEL_SCALAR / 50.0;
             armorFactor = bonusArmorFactor + target.GetArmorAF(armorSlot);
@@ -1876,7 +1877,7 @@ namespace DOL.GS
             return false;
         }
 
-        public bool CheckGuard(AttackData ad, bool stealthStyle, double attackerConLevel)
+        public virtual bool CheckGuard(AttackData ad, bool stealthStyle, double attackerConLevel)
         {
             GuardECSGameEffect guard = EffectListService.GetAbilityEffectOnTarget(owner, eEffect.Guard) as GuardECSGameEffect;
 
@@ -2639,7 +2640,7 @@ namespace DOL.GS
             }
         }
 
-        public int CalculateMeleeCriticalDamage(AttackData ad, WeaponAction action, DbInventoryItem weapon)
+        public virtual int CalculateMeleeCriticalDamage(AttackData ad, WeaponAction action, DbInventoryItem weapon)
         {
             if (!Util.Chance(AttackCriticalChance(action, weapon)))
                 return 0;
@@ -2693,7 +2694,7 @@ namespace DOL.GS
             }
         }
 
-        public int GetMissChance(WeaponAction action, AttackData ad, AttackData lastAD, DbInventoryItem weapon)
+        public virtual int GetMissChance(WeaponAction action, AttackData ad, AttackData lastAD, DbInventoryItem weapon)
         {
             // No miss if the target is sitting or for Volley attacks.
              if ((owner is GamePlayer player && player.IsSitting) || action.RangedAttackType == eRangedAttackType.Volley)
@@ -2819,7 +2820,7 @@ namespace DOL.GS
         /// <summary>
         /// Checks whether Living has ability to use lefthanded weapons
         /// </summary>
-        public bool CanUseLefthandedWeapon
+        public virtual bool CanUseLefthandedWeapon
         {
             get
             {

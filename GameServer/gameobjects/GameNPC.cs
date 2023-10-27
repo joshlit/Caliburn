@@ -14,6 +14,7 @@ using DOL.GS.Housing;
 using DOL.GS.Movement;
 using DOL.GS.PacketHandler;
 using DOL.GS.Quests;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
@@ -2836,7 +2837,7 @@ namespace DOL.GS
 				if (killer != null)
 				{
 					if (killer is GameNPC pet && pet.Brain is IControlledBrain petBrain)
-						killer = petBrain.GetPlayerOwner();
+						killer = petBrain.GetLivingOwner();
 
 					Diagnostics.StartPerfCounter($"ReaperService-NPC-ProcessDeath-DropLoot-NPC({hashCode})");
 
@@ -3747,6 +3748,7 @@ namespace DOL.GS
 						if (InstantHealSpells == null)
 							InstantHealSpells = new List<Spell>(1);
 						InstantHealSpells.Add(spell);
+						log.Info("HealType for instant: " + spell.SpellType);
 					}
 					else
 					{
@@ -3791,7 +3793,7 @@ namespace DOL.GS
 			{
 				Spell spellToCast;
 
-				if (line.KeyName == GlobalSpellsLines.Mob_Spells)
+				if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
 				{
 					// NPC spells will get the level equal to their caster
 					spellToCast = (Spell)spell.Clone();
@@ -3827,10 +3829,10 @@ namespace DOL.GS
 
 			Spell spellToCast = null;
 
-			if (line.KeyName == GlobalSpellsLines.Mob_Spells)
+			if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
 			{
 				// NPC spells will get the level equal to their caster
-				spellToCast = (Spell) spell.Clone();
+				spellToCast = (Spell)spell.Clone();
 				spellToCast.Level = Level;
 			}
 			else
@@ -3910,7 +3912,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Styles for this NPC
 		/// </summary>
-		private IList m_styles = new List<Style>(0);
+		public IList m_styles = new List<Style>(0);
 		public IList Styles
 		{
 			get { return m_styles; }
