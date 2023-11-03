@@ -600,7 +600,6 @@ namespace DOL.GS.Scripts
                         }
                     }
 
-                    // Reset and spend any leftover points until spentPoints is false again.
                     if (!spentPoints && !spendLeftOverPoints)
                     {
                         spendLeftOverPoints = true;
@@ -624,9 +623,10 @@ namespace DOL.GS.Scripts
 
             int specpoints = 0;
 
-            if (level >= 40 && IsLevelSecondStage)
+            if (level > 40)
                 specpoints += CharacterClass.SpecPointsMultiplier * level / 20;
-            else if (level > 5)
+
+            if (level > 5)
                 specpoints += CharacterClass.SpecPointsMultiplier * level / 10;
             else if (level >= 2)
                 specpoints = level;
