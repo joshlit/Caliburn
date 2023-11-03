@@ -28,7 +28,7 @@ namespace DOL.GS.Scripts
 
             WeaponTypeOne = "Staff";
 
-            int randVariance = Util.Random(5);
+            int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
@@ -73,7 +73,7 @@ namespace DOL.GS.Scripts
 
             WeaponTypeOne = "Staff";
 
-            int randVariance = Util.Random(5);
+            int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
@@ -118,7 +118,7 @@ namespace DOL.GS.Scripts
 
             WeaponTypeOne = "Staff";
 
-            int randVariance = Util.Random(4);
+            int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
