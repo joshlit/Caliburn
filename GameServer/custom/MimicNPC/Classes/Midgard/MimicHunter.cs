@@ -1,18 +1,14 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicHunter : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicHunter(byte level) : base(new ClassHunter(), level)
         {
             MimicSpec = new HunterSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
 
@@ -22,15 +18,13 @@ namespace DOL.GS.Scripts
                 MimicEquipment.SetShield(this, 1);
             }
 
-            eObjectType objectType;
+            eObjectType objectType = eObjectType.Leather;
 
-            if (level < 10)
-                objectType = eObjectType.Leather;
-            else
+            if (level >= 10)
                 objectType = eObjectType.Studded;
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Distance);
             RefreshSpecDependantSkills(false);

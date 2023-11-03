@@ -2,10 +2,12 @@
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using log4net;
+using log4net.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using static DOL.Database.DbArtifactBonus;
 
 namespace DOL.GS.Scripts
 {
@@ -228,10 +230,10 @@ namespace DOL.GS.Scripts
         }
     }
 
-        [CmdAttribute(
-       "&mpc",
-       ePrivLevel.Player,
-       "/mpc (true/false) - Set prevent combat on selected mimic.")]
+    [CmdAttribute(
+   "&mpc",
+   ePrivLevel.Player,
+   "/mpc (true/false) - Set prevent combat on selected mimic.")]
     public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
@@ -276,12 +278,12 @@ namespace DOL.GS.Scripts
                 switch (args[1])
                 {
                     case "thid":
-                        switch(args[2])
-                        {
-                            case "start": MimicBattlegrounds.ThidBattleground.Start(); break;
-                            case "stop": MimicBattlegrounds.ThidBattleground.Stop(); break;
-                            case "clear": MimicBattlegrounds.ThidBattleground.Clear(); break;
-                        }
+                    switch (args[2])
+                    {
+                        case "start": MimicBattlegrounds.ThidBattleground.Start(); break;
+                        case "stop": MimicBattlegrounds.ThidBattleground.Stop(); break;
+                        case "clear": MimicBattlegrounds.ThidBattleground.Clear(); break;
+                    }
                     break;
                 }
             }
@@ -299,7 +301,7 @@ namespace DOL.GS.Scripts
             if (client.Player.Group == null)
                 return;
 
-            foreach(GameLiving groupMember in client.Player.Group.GetMembersInTheGroup())
+            foreach (GameLiving groupMember in client.Player.Group.GetMembersInTheGroup())
             {
                 if (groupMember != client.Player)
                     groupMember.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
@@ -415,13 +417,11 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-        "&mmaintank",
+        "&mrole",
         ePrivLevel.Player,
-        "/mmaintank - Set main tank of a group.")]
-    public class MainTankCommandHandler : AbstractCommandHandler, ICommandHandler
+        "/mrole (leader/tank/assist/cc/puller) - Set the role of a group member.")]
+    public class MainRoleCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
             GamePlayer player = client.Player;
@@ -430,34 +430,31 @@ namespace DOL.GS.Scripts
             if (player.Group == null || target == null)
                 return;
 
-            player.Group.MimicGroup.SetMainTank(target);
-        }
-    }
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
 
-    [CmdAttribute(
-        "&mmainassist",
-        ePrivLevel.Player,
-        "/mmainassist - Set main assist of a group.")]
-    public class MainAssistCommandHandler : AbstractCommandHandler, ICommandHandler
-    {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+                bool success = false;
 
-        public void OnCommand(GameClient client, string[] args)
-        {
-            GamePlayer player = client.Player;
-            GameLiving target = player.TargetObject as GameLiving;
+                switch (args[1])
+                {
+                    case "leader": success = player.Group.MimicGroup.SetLeader(target); break;
+                    case "tank": success = player.Group.MimicGroup.SetMainTank(target); break;
+                    case "assist": success =player.Group.MimicGroup.SetMainAssist(target); break;
+                    case "cc": success = player.Group.MimicGroup.SetMainCC(target); break;
+                    case "puller": success = player.Group.MimicGroup.SetMainPuller(target); break;
+                }
 
-            if (player.Group == null || target == null)
-                return;
-
-            player.Group.MimicGroup.SetMainAssist(target);
+                if (!success)
+                    player.Out.SendMessage("Failed to set " + args[1], eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+            }
         }
     }
 
     [CmdAttribute(
         "&mcamp",
         ePrivLevel.Player,
-        "/mcamp - Set where the group camp point is.")]
+        "/mcamp (set/remove)- Set where the group camp point is.")]
     public class CampCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
@@ -465,43 +462,101 @@ namespace DOL.GS.Scripts
             GamePlayer player = client.Player;
             Point3D target = client.Player.GroundTarget;
 
-            if (player.Group == null || target == null || !player.GroundTargetInView)
-                return;
-
-            player.Group.MimicGroup.SetCampPoint(target);
-
-            foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
-                if (groupMember is MimicNPC mimic)
-                    mimic.Brain.FSM.SetCurrentState(eFSMStateType.CAMP);
-        }
-    }
-
-    [CmdAttribute(
-        "&mcampremove",
-        ePrivLevel.Player,
-        "/mcampremove - Remove camp point.")]
-    public class CampRemoveCommandHandler : AbstractCommandHandler, ICommandHandler
-    {
-        public void OnCommand(GameClient client, string[] args)
-        {
-            GamePlayer player = client.Player;
-
             if (player.Group == null)
                 return;
 
-            player.Group.MimicGroup.RemoveCampPoint();
-
-            foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+            if (args.Length > 1)
             {
-                if (groupMember is MimicNPC mimic)
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
                 {
-                    mimic.Brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
-                    mimic.MimicBrain.AggroRange = 3600;
+                    case "set":
+                    {
+                        if (target == null || player.GetDistance(player.GroundTarget) > 2000)
+                        {
+                            player.Out.SendMessage("Ground target is too far away.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                            return;
+                        }
+
+                        player.Group.MimicGroup.SetCampPoint(target);
+
+                        player.Out.SendMessage("Set camp spot.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+
+                        foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                            if (groupMember is MimicNPC mimic)
+                                mimic.Brain.FSM.SetCurrentState(eFSMStateType.CAMP);
+                    }
+                    break;
+
+                    case "remove":
+                    {
+                        if (player.Group.MimicGroup.CampPoint != null)
+                        {
+                            player.Group.MimicGroup.SetCampPoint(null);
+                            player.Out.SendMessage("Removed camp spot.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                        }
+                        else
+                            player.Out.SendMessage("No camp spot to remove.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+
+                        foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                        {
+                            if (groupMember is MimicNPC mimic)
+                            {
+                                mimic.Brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                                mimic.MimicBrain.AggroRange = 3600;
+                            }
+                        }
+                    }
+                    break;
                 }
             }
         }
     }
 
+    [CmdAttribute(
+        "&mpullfrom",
+        ePrivLevel.Player,
+        "/mpullfrom (set/remove) - Set where the group puller should try to pull from.")]
+    public class PullFromCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            Point3D target = client.Player.GroundTarget;
+
+            if (player.Group == null)
+                return;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
+                {
+                    case "set":
+                    {
+                        if (target == null || !player.GroundTargetInView)
+                            return;
+
+                        player.Group.MimicGroup.SetPullPoint(target);
+
+                        player.Out.SendMessage("Set position to pull from.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                    }
+                    break;
+
+                    case "remove":
+                    {
+                        player.Group.MimicGroup.SetPullPoint(null);
+
+                        player.Out.SendMessage("Removed position to pull from.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
     #endregion MimicGroup
 
     [CmdAttribute(

@@ -1,27 +1,17 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
     public class MimicEnchanter : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicEnchanter(byte level) : base(new ClassEnchanter(), level)
         {
             MimicSpec = MimicManager.Random(this);
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
@@ -57,9 +47,9 @@ namespace DOL.GS.Scripts
         }
     }
 
-    public class LightEnchanter : MimicSpec 
-    { 
-        public LightEnchanter() 
+    public class LightEnchanter : MimicSpec
+    {
+        public LightEnchanter()
         {
             SpecName = "LightEnchanter";
 
@@ -81,6 +71,6 @@ namespace DOL.GS.Scripts
                 Add("Enchantments", 17, 0.1f);
                 break;
             }
-        } 
+        }
     }
 }

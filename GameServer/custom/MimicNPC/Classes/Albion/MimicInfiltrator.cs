@@ -1,23 +1,19 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicInfiltrator : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicInfiltrator(byte level) : base(new ClassInfiltrator(), level)
         {
             MimicSpec = new InfiltratorSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
             MimicEquipment.SetArmor(this, eObjectType.Leather);
-            //MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);

@@ -1,43 +1,31 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicScout : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
+    public class MimicScout : MimicNPC
+    {
         public MimicScout(byte level) : base(new ClassScout(), level)
-		{
-			MimicSpec = new ScoutSpec();
+        {
+            MimicSpec = new ScoutSpec();
 
-			DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow);
             MimicEquipment.SetShield(this, 1);
 
-            eObjectType objectType;
+            eObjectType objectType = eObjectType.Leather;
 
-            if (level < 10)
-                objectType = eObjectType.Leather;
-            else
+            if (level >= 10)
                 objectType = eObjectType.Studded;
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Distance);
-			RefreshSpecDependantSkills(false);
+            RefreshSpecDependantSkills(false);
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
     public class ScoutSpec : MimicSpec
     {

@@ -554,45 +554,45 @@ namespace DOL.GS.Scripts
 
             switch (mimicClass)
             {
-                case eMimicClasses.Armsman: mimic = new MimicArmsman(level); break;
-                case eMimicClasses.Cabalist: mimic = new MimicCabalist(level); break;
-                case eMimicClasses.Cleric: mimic = new MimicCleric(level); break;
-                case eMimicClasses.Friar: mimic = new MimicFriar(level); break;
-                case eMimicClasses.Infiltrator: mimic = new MimicInfiltrator(level); break;
-                case eMimicClasses.Mercenary: mimic = new MimicMercenary(level); break;
-                case eMimicClasses.Minstrel: mimic = new MimicMinstrel(level); break;
-                case eMimicClasses.Paladin: mimic = new MimicPaladin(level); break;
-                case eMimicClasses.Reaver: mimic = new MimicReaver(level); break;
-                case eMimicClasses.Scout: mimic = new MimicScout(level); break;
-                case eMimicClasses.Sorcerer: mimic = new MimicSorcerer(level); break;
-                case eMimicClasses.Theurgist: mimic = new MimicTheurgist(level); break;
-                case eMimicClasses.Wizard: mimic = new MimicWizard(level); break;
+                case eMimicClasses.Armsman:      mimic = new MimicArmsman(level); break;
+                case eMimicClasses.Cabalist:     mimic = new MimicCabalist(level); break;
+                case eMimicClasses.Cleric:       mimic = new MimicCleric(level); break;
+                case eMimicClasses.Friar:        mimic = new MimicFriar(level); break;
+                case eMimicClasses.Infiltrator:  mimic = new MimicInfiltrator(level); break;
+                case eMimicClasses.Mercenary:    mimic = new MimicMercenary(level); break;
+                case eMimicClasses.Minstrel:     mimic = new MimicMinstrel(level); break;
+                case eMimicClasses.Paladin:      mimic = new MimicPaladin(level); break;
+                case eMimicClasses.Reaver:       mimic = new MimicReaver(level); break;
+                case eMimicClasses.Scout:        mimic = new MimicScout(level); break;
+                case eMimicClasses.Sorcerer:     mimic = new MimicSorcerer(level); break;
+                case eMimicClasses.Theurgist:    mimic = new MimicTheurgist(level); break;
+                case eMimicClasses.Wizard:       mimic = new MimicWizard(level); break;
 
-                case eMimicClasses.Bard: mimic = new MimicBard(level); break;
-                case eMimicClasses.Blademaster: mimic = new MimicBlademaster(level); break;
-                case eMimicClasses.Champion: mimic = new MimicChampion(level); break;
-                case eMimicClasses.Druid: mimic = new MimicDruid(level); break;
-                case eMimicClasses.Eldritch: mimic = new MimicEldritch(level); break;
-                case eMimicClasses.Enchanter: mimic = new MimicEnchanter(level); break;
-                case eMimicClasses.Hero: mimic = new MimicHero(level); break;
-                case eMimicClasses.Mentalist: mimic = new MimicMentalist(level); break;
-                case eMimicClasses.Nightshade: mimic = new MimicNightshade(level); break;
-                case eMimicClasses.Ranger: mimic = new MimicRanger(level); break;
-                case eMimicClasses.Valewalker: mimic = new MimicValewalker(level); break;
-                case eMimicClasses.Warden: mimic = new MimicWarden(level); break;
+                case eMimicClasses.Bard:         mimic = new MimicBard(level); break;
+                case eMimicClasses.Blademaster:  mimic = new MimicBlademaster (level); break;
+                case eMimicClasses.Champion:     mimic = new MimicChampion(level); break;
+                case eMimicClasses.Druid:        mimic = new MimicDruid(level); break;
+                case eMimicClasses.Eldritch:     mimic = new MimicEldritch(level); break;
+                case eMimicClasses.Enchanter:    mimic = new MimicEnchanter(level); break;
+                case eMimicClasses.Hero:         mimic = new MimicHero(level); break;
+                case eMimicClasses.Mentalist:    mimic = new MimicMentalist(level); break;
+                case eMimicClasses.Nightshade:   mimic = new MimicNightshade(level); break;
+                case eMimicClasses.Ranger:       mimic = new MimicRanger(level); break;
+                case eMimicClasses.Valewalker:   mimic = new MimicValewalker(level); break;
+                case eMimicClasses.Warden:       mimic = new MimicWarden(level); break;
 
-                case eMimicClasses.Berserker: mimic = new MimicBerserker(level); break;
-                case eMimicClasses.Bonedancer: mimic = new MimicBonedancer(level); break;
-                case eMimicClasses.Healer: mimic = new MimicHealer(level); break;
-                case eMimicClasses.Hunter: mimic = new MimicHunter(level); break;
-                case eMimicClasses.Runemaster: mimic = new MimicRunemaster(level); break;
-                case eMimicClasses.Savage: mimic = new MimicSavage(level); break;
-                case eMimicClasses.Shadowblade: mimic = new MimicShadowblade(level); break;
-                case eMimicClasses.Shaman: mimic = new MimicShaman(level); break;
-                case eMimicClasses.Skald: mimic = new MimicSkald(level); break;
+                case eMimicClasses.Berserker:    mimic = new MimicBerserker(level); break;
+                case eMimicClasses.Bonedancer:   mimic = new MimicBonedancer(level); break;
+                case eMimicClasses.Healer:       mimic = new MimicHealer(level); break;
+                case eMimicClasses.Hunter:       mimic = new MimicHunter(level); break;
+                case eMimicClasses.Runemaster:   mimic = new MimicRunemaster(level); break;
+                case eMimicClasses.Savage:       mimic = new MimicSavage(level); break;
+                case eMimicClasses.Shadowblade:  mimic = new MimicShadowblade (level); break;
+                case eMimicClasses.Shaman:       mimic = new MimicShaman(level); break;
+                case eMimicClasses.Skald:        mimic = new MimicSkald(level); break;
                 case eMimicClasses.Spiritmaster: mimic = new MimicSpiritmaster(level); break;
-                case eMimicClasses.Thane: mimic = new MimicThane(level); break;
-                case eMimicClasses.Warrior: mimic = new MimicWarrior(level); break;
+                case eMimicClasses.Thane:        mimic = new MimicThane(level); break;
+                case eMimicClasses.Warrior:      mimic = new MimicWarrior(level); break;
             }
 
             if (mimic != null)
@@ -696,11 +696,27 @@ namespace DOL.GS.Scripts
             living.Inventory.AddItem(slot, item);
         }
 
-        public static void SetArmorAndJewelryROG(GameLiving living, eRealm realm, eCharacterClass charClass, byte level, eObjectType objectType)
+        public static void SetArmorROG(GameLiving living, eRealm realm, eCharacterClass charClass, byte level, eObjectType objectType)
         {
-            for (int i = Slot.HELM; i <= Slot.RIGHTRING; i++)
+            for (int i = Slot.HELM; i <= Slot.ARMS; i++)
             {
-                if (i == Slot.FOREARMS || i == Slot.SHIELD)
+                if (i == Slot.JEWELRY || i == Slot.CLOAK)
+                    continue;
+
+                eInventorySlot slot = (eInventorySlot)i;
+                DbItemTemplate itemToCreate = new GeneratedUniqueItem(false, realm, charClass, level, objectType, slot);
+
+                GameInventoryItem item = GameInventoryItem.Create(itemToCreate);
+
+                living.Inventory.AddItem(slot, item);
+            }
+        }
+
+        public static void SetJewelryROG(GameLiving living, eRealm realm, eCharacterClass charClass, byte level, eObjectType objectType)
+        {
+            for (int i = Slot.JEWELRY; i <= Slot.RIGHTRING; i++)
+            {
+                if (i is Slot.TORSO or Slot.LEGS or Slot.ARMS or Slot.FOREARMS or Slot.SHIELD)
                     continue;
 
                 eInventorySlot slot = (eInventorySlot)i;
@@ -715,6 +731,17 @@ namespace DOL.GS.Scripts
                 else
                     living.Inventory.AddItem(slot, item);
             }
+        }
+
+        public static void SetInstrumentROG(GameLiving living, eRealm realm, eCharacterClass charClass, byte level, eObjectType objectType, eInventorySlot slot, eInstrumentType instrumentType)
+        {
+            DbItemTemplate itemToCreate = new GeneratedUniqueItem(false, realm, charClass, level, objectType, slot, instrumentType);
+
+            GameInventoryItem item = GameInventoryItem.Create(itemToCreate);
+            if (!living.Inventory.AddItem(slot, item))
+                log.Info("Could not add " + item.Name + " to slot " + slot);
+            else
+                log.Info("Added " + item.Name + " to slot " + slot);
         }
 
         public static void SetMeleeWeapon(GameLiving living, string weapType, eHand hand, eWeaponDamageType damageType = 0)
@@ -886,6 +913,31 @@ namespace DOL.GS.Scripts
             }
             else
                 log.Info("No armor found for " + living.Name);
+        }
+
+        public static void SetInstrument(GameLiving living, eObjectType weapType, eInventorySlot slot, eInstrumentType instrumentType)
+        {
+            int min = Math.Max(1, living.Level - 6);
+            int max = Math.Min(51, living.Level + 3);
+
+            IList<DbItemTemplate> itemList;
+            itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
+                                                                       DB.Column("Level").IsLessOrEqualTo(max).And(
+                                                                       DB.Column("Object_Type").IsEqualTo((int)weapType).And(
+                                                                       DB.Column("DPS_AF").IsEqualTo((int)instrumentType).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
+                                                                       DB.Column("IsPickable").IsEqualTo(1))))));
+
+            if (itemList.Any())
+            {
+                DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
+                DbInventoryItem item = GameInventoryItem.Create(itemTemplate);
+                living.Inventory.AddItem(slot, item);
+
+                return;
+            }
+            else
+                log.Info("No instrument found for " + living.Name);
         }
 
         public static void SetJewelry(GameLiving living)
@@ -1251,8 +1303,8 @@ namespace DOL.GS.Scripts
                 {
                     if (Util.Chance(chance))
                     {
-                        int levelMin = Math.Max(1, level - 5);
-                        int levelMax = Math.Min(50, level + 5);
+                        int levelMin = Math.Max(1, level - 3);
+                        int levelMax = Math.Min(50, level + 3);
                         int levelRand = Util.Random(levelMin, levelMax);
                         long removeTime = GameLoop.GameLoopTime + Util.Random(minRemoveTime, maxRemoveTime);
 

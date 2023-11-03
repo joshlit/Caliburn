@@ -7,6 +7,7 @@ using DOL.GS;
 using DOL.GS.Effects;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -665,8 +666,6 @@ namespace DOL.AI.Brain
         /// </summary>
         public virtual bool CanBAF { get; set; } = true;
 
-        public List<GameLiving> BAFList { get; set; } = new List<GameLiving>();
-
         /// <summary>
         /// Bring friends when this mob aggros
         /// </summary>
@@ -676,13 +675,18 @@ namespace DOL.AI.Brain
             if (!CanBAF)
                 return;
 
-            GamePlayer puller;  // player that triggered the BAF
+            GameLiving puller;  // player that triggered the BAF
             GameLiving actualPuller;
 
             // Only BAF on players and pets of players
             if (attacker is GamePlayer)
             {
-                puller = (GamePlayer) attacker;
+                puller = (GamePlayer)attacker;
+                actualPuller = puller;
+            }
+            else if (attacker is MimicNPC)
+            {
+                puller = (MimicNPC)attacker;
                 actualPuller = puller;
             }
             else if (attacker is GameSummonedPet pet && pet.Owner is GamePlayer owner)
@@ -793,8 +797,6 @@ namespace DOL.AI.Brain
                         // If it's a friend, have it attack
                         if (npc.IsFriend(Body) && npc.IsAggressive && npc.IsAvailable && npc.Brain is StandardMobBrain brain)
                         {
-                            BAFList.Add(npc);
-
                             brain.CanBAF = false; // Mobs brought cannot bring friends of their own
                             GameLiving target;
 
@@ -806,6 +808,15 @@ namespace DOL.AI.Brain
                             brain.AddToAggroList(target, 0);
                             brain.AttackMostWanted();
                             numAdds++;
+
+                            if (npc != Body)
+                            {
+                                MimicNPC mimic = target as MimicNPC;
+                                GamePlayer player = target as GamePlayer;
+
+                                mimic?.Group?.MimicGroup.CCTargets.Add(npc);
+                                player?.Group?.MimicGroup.CCTargets.Add(npc);
+                            }
                         }
                     }
 

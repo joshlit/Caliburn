@@ -9,14 +9,8 @@ namespace DOL.GS.Scripts
 {
     class MimicNPCInventory : GameLivingInventory
     {
-        MimicNPC m_Mimic;
-
-        public MimicNPCInventory(MimicNPC mimic)
+        public MimicNPCInventory()
         {
-            if (mimic != null)
-            {
-                m_Mimic = mimic;
-            }
         }
     }
 }

@@ -1,49 +1,37 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicSkald : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicSkald : MimicNPC
+    {
+        public MimicSkald(byte level) : base(new ClassSkald(), level)
+        {
+            MimicSpec = new SkaldSpec();
 
-		public MimicSkald(byte level) : base(new ClassSkald(), level)
-		{
-			MimicSpec = new SkaldSpec();
-
-			DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 1);
+            MimicEquipment.SetShield(this, 1);
 
-            eObjectType objectType;
+            eObjectType objectType = eObjectType.Studded;
 
-            if (level < 20)
-                objectType = eObjectType.Studded;
-            else
+            if (level >= 20)
                 objectType = eObjectType.Chain;
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-			RefreshSpecDependantSkills(false);
-			SetSpells();
+            RefreshSpecDependantSkills(false);
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class SkaldSpec : MimicSpec
-	{
-		public SkaldSpec()
-		{
+    public class SkaldSpec : MimicSpec
+    {
+        public SkaldSpec()
+        {
             SpecName = "SkaldSpec";
 
             int randBaseWeap = Util.Random(2);
@@ -57,14 +45,14 @@ namespace DOL.GS.Scripts
 
             int randVariance = Util.Random(2);
 
-			switch (randVariance)
-			{
-				case 0:
-				case 1:
+            switch (randVariance)
+            {
+                case 0:
+                case 1:
                 Add(WeaponTypeOne, 39, 0.7f);
                 Add("Battlesongs", 50, 0.8f);
                 Add("Parry", 28, 0.1f);
-				break;
+                break;
 
                 case 2:
                 Add(WeaponTypeOne, 44, 0.7f);
@@ -73,5 +61,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

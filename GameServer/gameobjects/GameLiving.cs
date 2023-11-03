@@ -2646,7 +2646,6 @@ namespace DOL.GS
 			int rightHand = (VisibleActiveWeaponSlots & 0x0F);
 			int leftHand = (VisibleActiveWeaponSlots & 0xF0) >> 4;
 
-
 			// set new active weapon slot
 			switch (slot)
 			{

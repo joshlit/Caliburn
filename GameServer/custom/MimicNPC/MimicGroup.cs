@@ -13,10 +13,13 @@ namespace DOL.GS.Scripts
         public GameLiving MainAssist { get; private set; }
         public GameLiving MainTank { get; private set; }
         public GameLiving MainCC { get; private set; }
+        public GameLiving MainPuller { get; private set; }
         public Point3D CampPoint { get; private set; }
+        public Point2D PullFromPoint {get; private set; }
            
-
         public Queue<QueueRequest> GroupQueue = new Queue<QueueRequest>();
+
+        public List<GameLiving> CCTargets = new List<GameLiving>();
 
         public GameObject CurrentTarget
         {
@@ -29,6 +32,7 @@ namespace DOL.GS.Scripts
             MainAssist = leader;
             MainTank = leader;
             MainCC = leader;
+            MainPuller = leader;
         }
 
         public void AddToQueue(QueueRequest request)
@@ -58,41 +62,71 @@ namespace DOL.GS.Scripts
             }
         }
 
-        public void SetMainAssist(GameLiving living)
+        public bool SetLeader(GameLiving living)
         {
             if (living == null)
-                return;
+                return false;
+
+            MainLeader = living;
+            living.Say("Follow me! I will now lead the group. Not really though this isn't implemented.");
+
+            return true;
+        }
+
+        public bool SetMainAssist(GameLiving living)
+        {
+            if (living == null)
+                return false;
 
             MainAssist = living;
+            living.Say("Assist me! I will be the main assist. Not really though this isn't implemented.");
+
+            return true;
         }
 
-        public void SetMainTank(GameLiving living)
+        public bool SetMainTank(GameLiving living)
         {
             if (living == null)
-                return;
+                return false;
 
             MainTank = living;
+            living.Say("I will tank. Not really though this isn't implemented.");
+            return true;
         }
 
-        public void SetMainCC(GameLiving living)
+        public bool SetMainCC(GameLiving living)
         {
             if (living == null)
-                return;
+                return false;
 
             MainCC = living;
+            living.Say("I'll be the main CC.");
+
+            return true;
+        }
+
+        public bool SetMainPuller(GameLiving living)
+        {
+            if (living == null || living.Inventory.GetItem(eInventorySlot.DistanceWeapon) == null)
+                return false;
+
+            MainPuller = living;
+            living.Say("I'll be the puller.");
+
+            return true;
         }
 
         public void SetCampPoint(Point3D point)
         {
-            if (point == null)
-                return;
-
-            CampPoint = point;
+            if (point != null)
+                CampPoint = new Point3D(point);
+            else
+                CampPoint = null;
         }
 
-        public void RemoveCampPoint()
+        public void SetPullPoint(Point2D point)
         {
-            CampPoint = null;
+            PullFromPoint = new Point2D(point);
         }
 
         public class QueueRequest

@@ -1,30 +1,25 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicRanger : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicRanger(byte level) : base(new ClassRanger(), level)
         {
             MimicSpec = new RangerSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetRangedWeapon(this, eObjectType.RecurvedBow);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
-            eObjectType objectType;
 
-            if (level < 10)
-                objectType = eObjectType.Leather;
-            else
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 10)
                 objectType = eObjectType.Reinforced;
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);

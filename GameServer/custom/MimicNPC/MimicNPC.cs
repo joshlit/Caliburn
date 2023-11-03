@@ -39,7 +39,7 @@ namespace DOL.GS.Scripts
 {
     public class MimicNPC : GameNPC
     {
-        public GamePlayer Dev { get; set; }
+        public GamePlayer Dev { private get; set; }
         public void DevOut(string message)
         {
             Dev.Out.SendMessage(message, eChatType.CT_Say, eChatLoc.CL_ChatWindow);
@@ -54,7 +54,7 @@ namespace DOL.GS.Scripts
         public bool CanCastCrowdControlSpells { get { return CrowdControlSpells != null && CrowdControlSpells.Count > 0; } }
         public bool CanCastBolts { get { return BoltSpells != null && BoltSpells.Count > 0; } }
 
-        public override int InteractDistance => 1500;
+        public override int InteractDistance => WorldMgr.VISIBILITY_DISTANCE;
 
         /// <summary>
 		/// Instant Crowd Controll spell list and accessor
@@ -81,11 +81,13 @@ namespace DOL.GS.Scripts
             set { m_mimicBrain = value; }
         }
 
+        private int m_leftOverSpecPoints;
+
         public MimicNPC(ICharacterClass cClass, byte level, eGender gender = eGender.Neutral)
         {
-            Inventory = new MimicNPCInventory(this);
+            Inventory = new MimicNPCInventory();
             MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
-            
+
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
             SetLevel(level);
@@ -94,7 +96,7 @@ namespace DOL.GS.Scripts
             MimicBrain = new MimicBrain();
             MimicBrain.MimicBody = this;
             SetOwnBrain(MimicBrain);
-            
+
             Endurance = MaxEndurance;
             Mana = MaxMana;
             RespawnInterval = -1;
@@ -112,16 +114,16 @@ namespace DOL.GS.Scripts
             if (!base.Interact(player))
                 return false;
 
-            player.Out.SendMessage("[State], [Prevent Combat], [Brain]\n " +
-                "[Group]\n " +
-                "[Spells] [Inst Harmful] [Harmful Spells] [Inst Misc] [Misc Spells] [Inst Heal] [Heal Spells]\n " +
-                "[Styles] [Abilities]\n " +
-                "[Spec] [Stats]\n " +
-                "[Hood] [Weapon] [Helm] [Torso] [Legs] [Arms] [Hands] [Boots]\n " +
+            player.Out.SendMessage("[State] [Prevent Combat] [Brain]\n " +
+                "[Group] - [Leader] - [MainPuller] - [MainCC] - [MainTank] - [MainAssist]\n " +
+                "[Spells] - [Inst Harmful] - [Harmful Spells] - [Inst Misc] - [Misc Spells] - [Inst Heal] - [Heal Spells]\n " +
+                "[Styles] - [Abilities]\n " +
+                "[Spec] - [Stats]\n " +
+                "[Hood] [Weapon] [Helm] [Torso] [Legs] [Arms] [Hands] [Boots] [Jewelry]\n " +
                 "[Delete]", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
             return true;
         }
-        
+
         public override bool WhisperReceive(GameLiving source, string str)
         {
             if (!base.WhisperReceive(source, str))
@@ -139,44 +141,45 @@ namespace DOL.GS.Scripts
                 newBrain.MimicBody = this;
                 SetOwnBrain(newBrain);
                 break;
+
                 case "State":
                 {
-                    string message = string.Empty;
-
-                    message = Brain.FSM.GetCurrentState().ToString();
+                    string message = Brain.FSM.GetCurrentState().ToString();
                     SendReply(player, message);
-
-                    break;
                 }
-                case "Prevent Combat":
-                {
-                    MimicBrain.PreventCombat = !MimicBrain.PreventCombat;
+                break;
 
-                    break;
-                }
+                case "Prevent Combat": MimicBrain.PreventCombat = !MimicBrain.PreventCombat; break;
 
                 case "Group":
-
-                if (Group != null && Group.GetMembersInTheGroup().Count < 8)
                 {
-                    Group.AddMember(player);
-                    break;
-                }
-
-                if (player.Group == null)
-                {
-                    player.Group = new Group(player);
-                    player.Group.AddMember(player);
-                }
-                else
-                {
-                    if (player.Group.GetMembersInTheGroup().Contains(this) || player.Group.MemberCount > 8)
+                    if (Group != null && Group.GetMembersInTheGroup().Count < 8)
+                    {
+                        Group.AddMember(player);
                         break;
-                }
+                    }
 
-                player.Group.AddMember(this);
-                MimicBrain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                    if (player.Group == null)
+                    {
+                        player.Group = new Group(player);
+                        player.Group.AddMember(player);
+                    }
+                    else
+                    {
+                        if (player.Group.GetMembersInTheGroup().Contains(this) || player.Group.MemberCount > 8)
+                            break;
+                    }
+
+                    player.Group.AddMember(this);
+                    MimicBrain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                }
                 break;
+
+                case "Leader": Group?.MimicGroup.SetLeader(this); break;
+                case "MainPuller": Group?.MimicGroup.SetMainPuller(this); break;
+                case "MainCC": Group?.MimicGroup.SetMainCC(this); break;
+                case "MainTank": Group?.MimicGroup.SetMainTank(this); break;
+                case "MainAssist": Group?.MimicGroup.SetMainAssist(this); break;
 
                 case "Spells":
                 {
@@ -486,6 +489,19 @@ namespace DOL.GS.Scripts
                     break;
                 }
 
+                case "Jewelry":
+                {
+                    for (int i = Slot.JEWELRY; i <= Slot.RIGHTRING; i++)
+                    {
+                        if (i is Slot.TORSO or Slot.LEGS or Slot.ARMS or Slot.FOREARMS or Slot.SHIELD)
+                            continue;
+
+                        DbInventoryItem item = Inventory.GetItem((eInventorySlot)i);
+                        player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, item);
+                    }
+                }
+                break;
+
                 case "Delete":
                 {
                     if (ControlledBrain != null)
@@ -510,96 +526,115 @@ namespace DOL.GS.Scripts
             player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
         }
 
-        public void DistributeSkillPoints()
+        public override bool SayReceive(GameLiving source, string str)
         {
-            if (Level > 1)
+            if (source == null || str == null)
+                return false;
+
+            if (Group != null && Group.GetMembersInTheGroup().Contains(source))
             {
-                int totalSpecPoints = VerifySpecPoints();
-                //int autoTrainSpecPoints = 0;
+                str = str.ToLower();
 
-                //foreach (string specName in CharacterClass.GetAutotrainableSkills())
-                //{
-                //    if (specName == "Archery")
-                //        continue;
-
-                //    Specialization spec = GetSpecializationByName(specName);
-
-                //    if (spec != null)
-                //        autoTrainSpecPoints += GetAutoTrainPoints(spec, 3);
-                //    else
-                //        log.Info("spec for autotrain is null.");
-                //}
-                 
-                //log.Info("totalSpecPoints: " + totalSpecPoints);
-                //log.Info("AutoTrain points: " + autoTrainSpecPoints);
-                //log.Info("Total:  " + totalSpecPoints + autoTrainSpecPoints);
-
-                while (true)
+                switch (str)
                 {
-                    if (!SpendSpecPoints(totalSpecPoints, true))
-                        break;
+                    case "stay": Brain.FSM.SetCurrentState(eFSMStateType.IDLE); break;
+                    case "follow": Brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER); break;
+                    case "camp": Brain.FSM.SetCurrentState(eFSMStateType.CAMP); break;
+                    case "reset": Brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP); break;
                 }
             }
+
+            return base.SayReceive(source, str);
         }
-        private bool SpendSpecPoints(int totalSpecPoints, bool ratio)
+
+        // TODO: Will need a different method for when leveling up after being created or adjust this.
+        public void SpendSpecPoints()
         {
-            bool spentPoints = false;
+            int leftOverSpecPoints = 0;
+            MimicSpec.SpecLines = MimicSpec.SpecLines.OrderByDescending(ratio => ratio.levelRatio).ToList();
+            bool spentPoints = true;
+            bool spendLeftOverPoints = false;
 
-            while (true)
+            // For each level, get the points available. In the while loop, spend points according to the ratio in SpecLines until spentPoints is false.
+            // Then set spendLeftOverPoints true and spend any left over points until spentPoints is false again. Exit the while loop, increase level, and repeat.
+            for (byte i = 2; i <= Level; i++)
             {
-                foreach (SpecLine specLine in MimicSpec.SpecLines)
+                spentPoints = true;
+                spendLeftOverPoints = false;
+
+                int totalSpecPointsThisLevel = GetSpecPointsForLevel(i) + leftOverSpecPoints;
+
+                while (spentPoints)
                 {
-                    Specialization spec = GetSpecializationByName(specLine.SpecName);
+                    spentPoints = false;
 
-                    if (spec != null)
+                    foreach (SpecLine specLine in MimicSpec.SpecLines)
                     {
-                        if (spec.Level < specLine.SpecCap && spec.Level < Level)
+                        // Indicates a dump stat for lvl 50
+                        if (specLine.levelRatio <= 0 && Level < 50)
+                            continue;
+
+                        Specialization spec = GetSpecializationByName(specLine.SpecName);
+
+                        if (spec != null)
                         {
-                            int specRatio = (int)(Level * specLine.levelRatio);
-
-                            if (ratio)
+                            if (spec.Level < specLine.SpecCap && spec.Level < i)
                             {
-                                if (spec.Level >= specRatio)
-                                    continue;
-                            }
+                                int specRatio = (int)(i * specLine.levelRatio);
 
-                            int totalCost = spec.Level + 1;
+                                if (!spendLeftOverPoints)
+                                {
+                                    if (spec.Level >= specRatio)
+                                        continue;
+                                }
 
-                            // Indicates a dump stat for lvl 50
-                            if (specRatio <= 0 && Level < 50)
-                                continue;
+                                int totalCost = spec.Level + 1;
 
-                            if (totalSpecPoints >= totalCost)
-                            {
-                                totalSpecPoints -= totalCost;
-                                spec.Level++;
-
-                                spentPoints = true;
+                                if (totalSpecPointsThisLevel >= totalCost)
+                                {
+                                    totalSpecPointsThisLevel -= totalCost;
+                                    spec.Level++;
+                                    spentPoints = true;
+                                }
                             }
                         }
                     }
-                    else
+
+                    // Reset and spend any leftover points until spentPoints is false again.
+                    if (!spentPoints && !spendLeftOverPoints)
                     {
-                        log.Info("Couldn't get a spec for " + specLine.SpecName);
+                        spendLeftOverPoints = true;
+                        spentPoints = true;
                     }
                 }
 
-                if (spentPoints)
-                    spentPoints = false;
-                else
-                    break;
+                m_leftOverSpecPoints = leftOverSpecPoints = totalSpecPointsThisLevel;
             }
-
-            if (ratio)
-            {
-                return SpendSpecPoints(totalSpecPoints, false);
-            }
-
-            return false;
         }
+        
+    private int GetSpecPointsForLevel(int level)
+        {
+            //    // calc spec points player have (autotrain is not anymore processed here - 1.87 livelike)
+            //    int usedpoints = 0;
+            //        foreach (Specialization spec in GetSpecList().Where(e => e.Trainable))
+            //        {
+            //            usedpoints += (spec.Level* (spec.Level + 1) - 2) / 2;
+            //            usedpoints -= GetAutoTrainPoints(spec, 0);
+            //}
 
+            int specpoints = 0;
 
-        public void SetSpells()
+            if (level >= 40 && IsLevelSecondStage)
+                specpoints += CharacterClass.SpecPointsMultiplier * level / 20;
+            else if (level > 5)
+                specpoints += CharacterClass.SpecPointsMultiplier * level / 10;
+            else if (level >= 2)
+                specpoints = level;
+
+            return specpoints;
+        }
+        
+    public void SetSpells()
         {
             IList<Specialization> specs = GetSpecList();
 
@@ -739,7 +774,7 @@ namespace DOL.GS.Scripts
         protected virtual List<Ability> GetAbilitiesForMimic(string keyName, GameLiving living, int level)
         {
             // Select only Enabled and Max Level Abilities
-            List<Ability> abs = SkillBase.GetSpecAbilityList(keyName, living is MimicNPC ? ((MimicNPC)living).CharacterClass.ID : 0);
+            List<Ability> abs = SkillBase.GetSpecAbilityList(keyName, ((MimicNPC)living).CharacterClass.ID);
             
             // Get order of first appearing skills
             IOrderedEnumerable<Ability> order = abs.GroupBy(item => item.KeyName)
@@ -877,20 +912,6 @@ namespace DOL.GS.Scripts
                     }
                 }
             }
-            else
-            {
-                // default - not a player, add all...
-                foreach (Tuple<SpellLine, int> ls in spsl.OrderBy(item => (item.Item1.IsBaseLine ? 0 : 1)).ThenBy(item => item.Item1.ID))
-                {
-                    // default living spec is (Level * 0.66 + 1) on Live (no real proof...)
-                    // here : Level - (Level / 4) = 0.75
-                    if (ls.Item1.IsBaseLine)
-                        ls.Item1.Level = living.Level;
-                    else
-                        ls.Item1.Level = Math.Max(1, living.Level - (living.Level >> 2));
-                    list.Add(ls.Item1);
-                }
-            }
 
             return list;
         }
@@ -968,10 +989,7 @@ namespace DOL.GS.Scripts
                         Ability ability = SkillBase.GetAbility("Dirty Tricks");
 
                         if (GetAllAbilities().Contains(ability))
-                        {
-                            DevOut("IT DID");
                             break;
-                        }
 
                         ability.Level = 1;
 
@@ -1049,13 +1067,17 @@ namespace DOL.GS.Scripts
                 if (spell == null)
                     continue;
 
+                // Nightshades were casting weapon poisons as instant spells.
+                if (CharacterClass.ID == (int)eCharacterClass.Nightshade && (spell.SpellType != eSpellType.NightshadeNuke))
+                    continue;
+
                 if (spell.SpellType == eSpellType.Bolt)
                 {
                     if (BoltSpells == null)
                         BoltSpells = new List<Spell>(1);
                     BoltSpells.Add(spell);
                 }
-                else if (spell.SpellType == eSpellType.Mez || spell.SpellType == eSpellType.Stun || (spell.SpellType == eSpellType.SpeedDecrease && spell.Value >= 99))
+                else if (spell.SpellType == eSpellType.Mesmerize || (spell.SpellType == eSpellType.SpeedDecrease && spell.Value >= 99))
                 {
                     //if (spell.IsInstantCast)
                     //{
@@ -1093,7 +1115,8 @@ namespace DOL.GS.Scripts
                 }
                 else
                 {
-                    if (spell.IsInstantCast)
+                    // Skald speed is instant, but instant misc isn't checked outside combat. Add an exception.
+                    if (spell.IsInstantCast && spell.SpellType != eSpellType.SpeedEnhancement)
                     {
                         if (InstantMiscSpells == null)
                             InstantMiscSpells = new List<Spell>(1);
@@ -4381,7 +4404,7 @@ namespace DOL.GS.Scripts
                 }
             });
 
-            RefreshSpecDependantSkills(true);
+            RefreshSpecDependantSkills(false);
         }
 
         #endregion Abilities
@@ -4611,7 +4634,7 @@ namespace DOL.GS.Scripts
                 // Add Lists spells ordered.
                 foreach (Specialization spec in GetSpecList().Where(item => !item.HybridSpellList))
                 {
-                    var spells = GetLinesSpellsForLiving(this, Level, spec);
+                    var spells = GetLinesSpellsForLiving(this, spec.Level, spec);
 
                     foreach (SpellLine sl in GetSpellLinesForMimic(this, Level, spec.KeyName))
                     {
@@ -6358,7 +6381,6 @@ namespace DOL.GS.Scripts
             get { return DBCharacter != null ? DBCharacter.SpellQueue : false; }
             set { if (DBCharacter != null) DBCharacter.SpellQueue = value; }
         }
-
 
         /// <summary>
         /// Switches the active weapon to another one

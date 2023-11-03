@@ -922,7 +922,16 @@ namespace DOL.GS
 
             if (owner is GamePlayer playerOwner && playerOwner.IsAlive)
                 playerOwner.Out.SendAttackMode(AttackState);
-            else if (owner is GameNPC npcOwner && npcOwner.Inventory?.GetItem(eInventorySlot.DistanceWeapon) != null && npcOwner.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
+            else if (owner is MimicNPC mimic && !mimic.MimicBrain.HasAggro)
+            {
+                if (mimic.CharacterClass.ID == (int)eCharacterClass.Hunter ||
+                    mimic.CharacterClass.ID == (int)eCharacterClass.Ranger ||
+                    mimic.CharacterClass.ID == (int)eCharacterClass.Scout)
+                {
+                    mimic.SwitchWeapon(eActiveWeaponSlot.Distance);
+                }
+            }
+            else if (owner is not MimicNPC && owner is GameNPC npcOwner && npcOwner.Inventory?.GetItem(eInventorySlot.DistanceWeapon) != null && npcOwner.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
                 npcOwner.SwitchWeapon(eActiveWeaponSlot.Distance);
         }
 

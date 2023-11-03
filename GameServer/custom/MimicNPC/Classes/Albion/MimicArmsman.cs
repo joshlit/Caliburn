@@ -1,4 +1,5 @@
-﻿using DOL.GS.PlayerClass;
+﻿using DOL.Database;
+using DOL.GS.PlayerClass;
 using log4net;
 using System.Reflection;
 
@@ -10,23 +11,32 @@ namespace DOL.GS.Scripts
         {
             MimicSpec = new ArmsmanSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand, MimicSpec.DamageType);
 
-            eObjectType objectType;
+            int shieldSize = 1;
 
-            if (level < 5)
-                objectType = eObjectType.Studded;
-            else if (level < 10)
-                objectType = eObjectType.Chain;
-            else
+            if (level >= 10)
+                shieldSize = 3;
+            else if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Studded;
+
+            if (level >= 15)
+            {
                 objectType = eObjectType.Plate;
+                MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow);
+            }
+            else if (level >= 5)
+                objectType = eObjectType.Chain;
 
             MimicEquipment.SetArmor(this, objectType);
-            //SetRangedWeapon(eObjectType.Crossbow);
-            MimicEquipment.SetShield(this, 3);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
+
             RefreshItemBonuses();
 
             if (MimicSpec.is2H)

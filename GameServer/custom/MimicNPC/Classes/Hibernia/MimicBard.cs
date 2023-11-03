@@ -1,50 +1,40 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using System.Web;
-using static DOL.GS.CommanderPet;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicBard : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		public MimicBard(byte level) : base(new ClassBard(), level)
-		{
+    public class MimicBard : MimicNPC
+    {
+        public MimicBard(byte level) : base(new ClassBard(), level)
+        {
             MimicSpec = new BardSpec();
 
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 1);
-            eObjectType objectType;
+            SpendSpecPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetShield(this, 1);
+            MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.TwoHandWeapon, eInstrumentType.Lute);
+            MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.DistanceWeapon, eInstrumentType.Drum);
+            //MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.FirstEmptyBackpack, eInstrumentType.Flute);
 
-            if (level < 15)
-                objectType = eObjectType.Leather;
-            else
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 15)
                 objectType = eObjectType.Reinforced;
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
-			SetSpells();
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class BardSpec : MimicSpec
-	{
-		public BardSpec() 
-		{
-			SpecName = "BardSpec";
+    public class BardSpec : MimicSpec
+    {
+        public BardSpec()
+        {
+            SpecName = "BardSpec";
             is2H = false;
 
             int randBaseWeap = Util.Random(1);
@@ -79,5 +69,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

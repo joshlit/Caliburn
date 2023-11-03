@@ -1,24 +1,20 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicShadowblade : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicShadowblade(byte level) : base(new ClassShadowblade(), level)
         {
             MimicSpec = new ShadowbladeSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.leftHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             //MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown);
             MimicEquipment.SetArmor(this, eObjectType.Leather);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
 

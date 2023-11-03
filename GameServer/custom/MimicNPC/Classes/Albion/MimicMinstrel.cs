@@ -1,32 +1,29 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicMinstrel : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicMinstrel(byte level) : base(new ClassMinstrel(), level)
         {
             MimicSpec = new MinstrelSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetShield(this, 1);
+            MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.TwoHandWeapon, eInstrumentType.Flute);
+            MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.DistanceWeapon, eInstrumentType.Drum);
+            //MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.FirstEmptyBackpack, eInstrumentType.Lute);
 
-            eObjectType objectType;
+            eObjectType objectType = eObjectType.Leather;
 
-            if (level < 10)
-                objectType = eObjectType.Leather;
-            else if (level < 20)
-                objectType = eObjectType.Studded;
-            else
+            if (level >= 20)
                 objectType = eObjectType.Chain;
+            else if (level >= 10)
+                objectType = eObjectType.Studded;
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);

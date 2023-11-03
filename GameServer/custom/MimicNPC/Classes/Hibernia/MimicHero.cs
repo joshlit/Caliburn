@@ -1,32 +1,36 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicHero : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicHero(byte level) : base(new ClassHero(), level)
         {
             MimicSpec = new HeroSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand);
-            MimicEquipment.SetShield(this, 3);
 
-            eObjectType objectType;
+            int shieldSize = 1;
 
-            if (level < 15)
-                objectType = eObjectType.Reinforced;
-            else
+            if (level >= 10)
+                shieldSize = 3;
+            else if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Reinforced;
+
+            if (level >= 15)
+            {
                 objectType = eObjectType.Scale;
+                MimicEquipment.SetRangedWeapon(this, eObjectType.Fired);
+            }
 
             MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
 
             if (MimicSpec.is2H)

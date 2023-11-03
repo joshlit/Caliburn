@@ -141,7 +141,13 @@ namespace DOL.GS {
 
         }
 
-        public GeneratedUniqueItem(bool toa, eRealm realm, eCharacterClass charClass, byte level, eObjectType type, eInventorySlot slot, eDamageType dmg, int utilityMinimum = 15)
+        public GeneratedUniqueItem(bool toa, eRealm realm, eCharacterClass charClass, byte level, eObjectType type, eInventorySlot slot, eInstrumentType instrumentType)
+            : this(toa, realm, charClass, level, type, slot, GenerateDamageType(type, charClass, instrumentType), 15, instrumentType)
+        {
+
+        }
+
+        public GeneratedUniqueItem(bool toa, eRealm realm, eCharacterClass charClass, byte level, eObjectType type, eInventorySlot slot, eDamageType dmg, int utilityMinimum = 15, eInstrumentType instrumentType = eInstrumentType.None)
             : base()
         {
             this.Realm = (int)realm;
@@ -154,7 +160,7 @@ namespace DOL.GS {
             // shouldn't need more Randomized public set values
 
             //need stats before naming
-            this.GenerateItemStats();
+            this.GenerateItemStats(instrumentType);
 
             //name item
             this.GenerateItemNameModel();
@@ -228,7 +234,7 @@ namespace DOL.GS {
                 this.Price = 2; // 2c as sell price is 50%
         }
 
-        private void GenerateItemStats()
+        private void GenerateItemStats(eInstrumentType instrumentType = eInstrumentType.None)
         {
             int templevel = 0;
             if (Level > 51)
@@ -241,7 +247,12 @@ namespace DOL.GS {
 
             //special property for instrument
             if (type == eObjectType.Instrument)
-                this.DPS_AF = Util.Random(0, 3);
+            {
+                if (instrumentType != eInstrumentType.None)
+                    this.DPS_AF = (int)instrumentType;
+                else
+                    this.DPS_AF = Util.Random(0, 3);
+            }
 
             //set hand
             switch (type)
@@ -6385,7 +6396,7 @@ namespace DOL.GS {
             return eInventorySlot.FirstEmptyBackpack;
         }
 
-        private static eDamageType GenerateDamageType(eObjectType type, eCharacterClass charClass)
+        private static eDamageType GenerateDamageType(eObjectType type, eCharacterClass charClass, eInstrumentType instrumentType = eInstrumentType.None)
         {
             switch (type)
             {
@@ -6393,7 +6404,10 @@ namespace DOL.GS {
                 case eObjectType.TwoHandedWeapon:
                 case eObjectType.PolearmWeapon:
                 case eObjectType.Instrument:
-                    return (eDamageType)Util.Random(1, 3);
+                    if (instrumentType != eInstrumentType.None)
+                        return (eDamageType)instrumentType;
+                    else
+                        return (eDamageType)Util.Random(1, 3);
                 //slash
                 case eObjectType.Axe:
                 case eObjectType.Blades:

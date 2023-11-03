@@ -146,10 +146,10 @@ namespace DOL.GS
 
         protected override bool FinalizeRangedAttack()
         {
-            // Switch to melee if range to target is less than 200.
+            // Switch to melee if range to target is less than 350.
             if (_mimicOwner != null &&
                 _mimicOwner.TargetObject != null &&
-                _mimicOwner.IsWithinRadius(_target, 200))
+                _mimicOwner.IsWithinRadius(_target, 350))
             {
                 _mimicOwner.SwitchToMelee(_target);
                 _interval = 1;
