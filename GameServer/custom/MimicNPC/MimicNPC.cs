@@ -54,6 +54,16 @@ namespace DOL.GS.Scripts
         public bool CanCastCrowdControlSpells { get { return CrowdControlSpells != null && CrowdControlSpells.Count > 0; } }
         public bool CanCastBolts { get { return BoltSpells != null && BoltSpells.Count > 0; } }
 
+        public Style TauntStyle 
+        { 
+            get { return m_tauntStyle; }
+            set { m_tauntStyle = value; }
+        }
+
+        private Style m_tauntStyle;
+
+        public List<Style> TauntStyles { get; set; } = null;
+
         public override int InteractDistance => WorldMgr.VISIBILITY_DISTANCE;
 
         /// <summary>
@@ -91,7 +101,6 @@ namespace DOL.GS.Scripts
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
             SetLevel(level);
-            MimicAddAbilities();
 
             MimicBrain = new MimicBrain();
             MimicBrain.MimicBody = this;
@@ -107,6 +116,23 @@ namespace DOL.GS.Scripts
             }));
 
             Dev = ClientService.GetPlayers()[0];
+        }
+
+        public void GetTauntStyles()
+        {
+            if (CanUseAnytimeStyles && m_styles != null && m_styles.Count > 0)
+            {
+                foreach(Style style in m_styles)
+                {
+                    if (style.Procs?.FirstOrDefault(x => x.Item1.SpellType == eSpellType.StyleTaunt) != null)
+                    {
+                        if (TauntStyles == null)
+                            TauntStyles = new List<Style>(1);
+
+                        TauntStyles.Add(style);
+                    }
+                }
+            }
         }
 
         public override bool Interact(GamePlayer player)
@@ -548,21 +574,22 @@ namespace DOL.GS.Scripts
         }
 
         // TODO: Will need a different method for when leveling up after being created or adjust this.
-        public void SpendSpecPoints()
+        public void SpendSpecPoints(byte fromLevel = 2, bool mimicCreation = true)
         {
-            int leftOverSpecPoints = 0;
             MimicSpec.SpecLines = MimicSpec.SpecLines.OrderByDescending(ratio => ratio.levelRatio).ToList();
+
+            int leftOverSpecPoints = m_leftOverSpecPoints;
             bool spentPoints = true;
             bool spendLeftOverPoints = false;
 
             // For each level, get the points available. In the while loop, spend points according to the ratio in SpecLines until spentPoints is false.
             // Then set spendLeftOverPoints true and spend any left over points until spentPoints is false again. Exit the while loop, increase level, and repeat.
-            for (byte i = 2; i <= Level; i++)
+            for (byte i = fromLevel; i <= Level; i++)
             {
                 spentPoints = true;
                 spendLeftOverPoints = false;
 
-                int totalSpecPointsThisLevel = GetSpecPointsForLevel(i) + leftOverSpecPoints;
+                int totalSpecPointsThisLevel = GetSpecPointsForLevel(i, mimicCreation) + leftOverSpecPoints;
 
                 while (spentPoints)
                 {
@@ -582,11 +609,8 @@ namespace DOL.GS.Scripts
                             {
                                 int specRatio = (int)(i * specLine.levelRatio);
 
-                                if (!spendLeftOverPoints)
-                                {
-                                    if (spec.Level >= specRatio)
-                                        continue;
-                                }
+                                if (!spendLeftOverPoints && spec.Level >= specRatio)
+                                    continue;
 
                                 int totalCost = spec.Level + 1;
 
@@ -610,8 +634,8 @@ namespace DOL.GS.Scripts
                 m_leftOverSpecPoints = leftOverSpecPoints = totalSpecPointsThisLevel;
             }
         }
-        
-    private int GetSpecPointsForLevel(int level)
+
+        private int GetSpecPointsForLevel(int level, bool mimicCreation)
         {
             //    // calc spec points player have (autotrain is not anymore processed here - 1.87 livelike)
             //    int usedpoints = 0;
@@ -623,8 +647,12 @@ namespace DOL.GS.Scripts
 
             int specpoints = 0;
 
-            if (level > 40)
-                specpoints += CharacterClass.SpecPointsMultiplier * level / 20;
+            if (IsLevelSecondStage)
+                return 0;
+
+            if (mimicCreation)
+                if (level > 40)
+                    specpoints += CharacterClass.SpecPointsMultiplier * (level - 1) / 20;
 
             if (level > 5)
                 specpoints += CharacterClass.SpecPointsMultiplier * level / 10;
@@ -866,10 +894,8 @@ namespace DOL.GS.Scripts
             IList<Tuple<SpellLine, int>> spsl = SkillBase.GetSpecsSpellLines(KeyName);
 
             // Get Spell Lines by order of appearance
-            if (living is MimicNPC)
+            if (living is MimicNPC mimic)
             {
-                MimicNPC mimic = (MimicNPC)living;
-
                 // select only spec line if is advanced class...
                 var tmp = spsl.Where(item => (item.Item1.IsBaseLine || mimic.CharacterClass.HasAdvancedFromBaseClass()))
                     .OrderBy(item => (item.Item1.IsBaseLine ? 0 : 1)).ThenBy(item => item.Item1.ID);
@@ -914,90 +940,6 @@ namespace DOL.GS.Scripts
             }
 
             return list;
-        }
-
-        private void MimicAddAbilities()
-        {
-            switch (CharacterClass.ID)
-            {
-                case (int)eCharacterClass.Berserker:
-                {
-                    if (Level >= 5)
-                    {
-                        Ability ability = SkillBase.GetAbility("Berserk");
-
-                        if (GetAllAbilities().Contains(ability))
-                            RemoveAbility("Berserk");
-
-                        if (Level >= 20)
-                            ability.Level = 4;
-                        else if (Level >= 15)
-                            ability.Level = 3;
-                        else if (Level >= 10)
-                            ability.Level = 2;
-                        else
-                            ability.Level = 1;
-
-                        AddAbility(ability);
-                    }
-                }
-                break;
-
-                case (int)eCharacterClass.Hero:
-                {
-                    if (Level >= 15)
-                    {
-                        Ability ability = SkillBase.GetAbility("Stag");
-
-                        if (GetAllAbilities().Contains(ability))
-                            RemoveAbility("Stag");
-
-                        if (Level >= 45)
-                            ability.Level = 4;
-                        else if (Level >= 35)
-                            ability.Level = 3;
-                        else if (Level >= 25)
-                            ability.Level = 2;
-                        else
-                            ability.Level = 1;
-
-                        AddAbility(ability);
-                    }
-                }
-                break;
-
-                case (int)eCharacterClass.Blademaster:
-                {
-                    if (Level >= 20)
-                    {
-                        Ability ability = SkillBase.GetAbility("Triple Wield");
-
-                        if (GetAllAbilities().Contains(ability))
-                            break;
-
-                        ability.Level = 1;
-
-                        AddAbility(ability);
-                    }
-                }
-                break;
-
-                case (int)eCharacterClass.Mercenary:
-                {
-                    if (Level >= 20)
-                    {
-                        Ability ability = SkillBase.GetAbility("Dirty Tricks");
-
-                        if (GetAllAbilities().Contains(ability))
-                            break;
-
-                        ability.Level = 1;
-
-                        AddAbility(ability);
-                    }
-                }
-                break;
-            }
         }
 
         private List<Spell> m_spells = new(0);
@@ -1137,9 +1079,8 @@ namespace DOL.GS.Scripts
         public void SetLevel(byte level)
         {
             Level = level;
-            GainExperience(eXPSource.Other, GetExperienceValueForLevel(level));
-
-            RespecAllLines();
+            //Experience = ExperienceForNextLevel - 1;
+            Experience = ExperienceForCurrentLevel;
 
             if (level >= 20 && level < 25)
                 RealmLevel = Util.Random(1, 10);
@@ -1151,6 +1092,8 @@ namespace DOL.GS.Scripts
                 RealmLevel = Util.Random(1, 45);
             else if (level == 50)
                 RealmLevel = Util.Random(1, 90);
+
+            RealmPoints = REALMPOINTS_FOR_LEVEL[RealmLevel];
         }
 
         public void SetRaceAndName()
@@ -1559,7 +1502,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         public bool GainXP
         {
-            get { return DBCharacter != null ? DBCharacter.GainXP : true; }
+            get { return true; }
             set { if (DBCharacter != null) DBCharacter.GainXP = value; }
         }
 
@@ -1569,7 +1512,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         public bool GainRP
         {
-            get { return (DBCharacter != null ? DBCharacter.GainRP : true); }
+            get { return true; }
             set { if (DBCharacter != null) DBCharacter.GainRP = value; }
         }
 
@@ -1589,7 +1532,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         public bool HCFlag
         {
-            get { return (DBCharacter != null ? DBCharacter.HCFlag : true); }
+            get { return false; }
             set { if (DBCharacter != null) DBCharacter.HCFlag = value; }
         }
 
@@ -1609,7 +1552,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         public bool HCCompleted
         {
-            get { return (DBCharacter != null ? DBCharacter.HCCompleted : true); }
+            get { return false; }
             set { if (DBCharacter != null) DBCharacter.HCCompleted = value; }
         }
 
@@ -4859,7 +4802,7 @@ namespace DOL.GS.Scripts
                 foreach (Specialization spec in m_specialization.Values)
                 {
                     // check for new Abilities
-                    foreach (Ability ab in GetAbilitiesForMimic(spec.KeyName, this, spec.Level))
+                    foreach (Ability ab in GetAbilitiesForMimic(spec.KeyName, this, Level))
                     {
                         if (!HasAbility(ab.KeyName) || GetAbility(ab.KeyName).Level < ab.Level)
                             AddAbility(ab, false);
@@ -4949,24 +4892,26 @@ namespace DOL.GS.Scripts
 
         #region Realm-/Region-/Bount-/Skillpoints...
 
+        private long m_bountyPoints;
         /// <summary>
         /// Gets/sets player bounty points
         /// (delegate to PlayerCharacter)
         /// </summary>
         public virtual long BountyPoints
         {
-            get { return DBCharacter != null ? DBCharacter.BountyPoints : 0; }
-            set { if (DBCharacter != null) DBCharacter.BountyPoints = value; }
+            get { return m_bountyPoints; }
+            set { m_bountyPoints = value; }
         }
 
+        private long m_realmPoints;
         /// <summary>
         /// Gets/sets player realm points
         /// (delegate to PlayerCharacter)
         /// </summary>
         public virtual long RealmPoints
         {
-            get { return DBCharacter != null ? DBCharacter.RealmPoints : 0; }
-            set { if (DBCharacter != null) DBCharacter.RealmPoints = value; }
+            get { return m_realmPoints; }
+            set { m_realmPoints = value; }
         }
 
         /// <summary>
@@ -4990,18 +4935,14 @@ namespace DOL.GS.Scripts
         //    }
         //}
 
+        private int m_realmLevel;
         /// <summary>
         /// Gets/sets player realm rank
         /// </summary>
         public virtual int RealmLevel
         {
-            get { return DBCharacter != null ? DBCharacter.RealmLevel : 0; }
-            set
-            {
-                if (DBCharacter != null)
-                    DBCharacter.RealmLevel = value;
-                //CharacterClass.OnRealmLevelUp(this);
-            }
+            get { return m_realmLevel; }
+            set{ m_realmLevel = value; }
         }
 
         /// <summary>
@@ -5151,20 +5092,12 @@ namespace DOL.GS.Scripts
             //    m_guild.RealmPoints += amount;
 
             if (sendMessage == true && amount > 0)
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.YouGet", amount.ToString()), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-
                 while (RealmPoints >= CalculateRPsFromRealmLevel(RealmLevel + 1) && RealmLevel < (REALMPOINTS_FOR_LEVEL.Length - 1))
                 {
                     RealmLevel++;
-                    //Out.SendUpdatePlayer();
-                    //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.GainedLevel"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
                     if (RealmLevel % 10 == 0)
                     {
-                        //Out.SendUpdatePlayerSkills();
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.GainedRank"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.ReachedRank", (RealmLevel / 10) + 1), eChatType.CT_ScreenCenter, eChatLoc.CL_SystemWindow);
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.NewRealmTitle", RealmRankTitle(Client.Account.Language)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.GainBonus", RealmLevel / 10), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                         foreach (GamePlayer plr in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
                             plr.Out.SendLivingDataUpdate(this, true);
 
@@ -5765,16 +5698,16 @@ namespace DOL.GS.Scripts
             999999999950, // xp to level 51
         };
 
+        private long m_experience;
         /// <summary>
         /// Gets or sets the current xp of this player
         /// </summary>
         public virtual long Experience
         {
-            get { return DBCharacter != null ? DBCharacter.Experience : 0; }
+            get { return m_experience; }
             set
             {
-                if (DBCharacter != null)
-                    DBCharacter.Experience = value;
+                m_experience = value;
             }
         }
 
@@ -6003,26 +5936,22 @@ namespace DOL.GS.Scripts
             int relicBonus = (int)(baseXp * (0.05 * RelicMgr.GetRelicCount(this.Realm)));
             if (relicBonus > 0) expTotal += relicBonus;
 
+            log.Info("Experience for " + Name + ": " + Experience);
+            log.Info("expTotal to add for " + Name + ": " + expTotal);
+
             Experience += expTotal;
 
             if (expTotal >= 0)
             {
                 //Level up
-                if (Level >= 5 && !CharacterClass.HasAdvancedFromBaseClass())
-                {
-                    if (expTotal > 0)
-                    {
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainExperience.CannotRaise"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainExperience.TalkToTrainer"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                    }
-                }
-                else if (Level >= 40 && Level < MaxLevel && !IsLevelSecondStage && Experience >= ExperienceForCurrentLevelSecondStage)
+                if (Level >= 40 && Level < MaxLevel && !IsLevelSecondStage && Experience >= ExperienceForCurrentLevelSecondStage)
                 {
                     OnLevelSecondStage();
-                    Notify(GamePlayerEvent.LevelSecondStage, this);
+                    m_isLevelSecondStage = true;
                 }
                 else if (Level < MaxLevel && Experience >= ExperienceForNextLevel)
                 {
+                    log.Info("level up for " + Name);
                     Level++;
                 }
             }
@@ -6036,12 +5965,10 @@ namespace DOL.GS.Scripts
         /// </summary>
         public override byte Level
         {
-            //get { return DBCharacter != null ? (byte)DBCharacter.Level : base.Level; }
             get { return base.Level; }
             set
             {
                 int oldLevel = Level;
-
                 base.Level = value;
 
                 if (DBCharacter != null)
@@ -6073,14 +6000,16 @@ namespace DOL.GS.Scripts
             return Math.Min((byte)50, Level);
         }
 
+        private bool m_isLevelSecondStage;
+
         /// <summary>
         /// Is this player in second stage of current level
         /// (delegate to PlayerCharacter)
         /// </summary>
         public virtual bool IsLevelSecondStage
         {
-            get { return DBCharacter != null ? DBCharacter.IsLevelSecondStage : false; }
-            set { if (DBCharacter != null) DBCharacter.IsLevelSecondStage = value; }
+            get { return m_isLevelSecondStage; }
+            set { m_isLevelSecondStage = value; }
         }
 
         /// <summary>
@@ -6090,6 +6019,11 @@ namespace DOL.GS.Scripts
         public virtual void OnLevelUp(int previouslevel)
         {
             IsLevelSecondStage = false;
+
+            if (Level - previouslevel < 2)
+            {
+                SpendSpecPoints(Level, false);
+            }
 
             //level 20 changes realm title and gives 1 realm skill point
             if (Level == 20)
@@ -6118,7 +6052,8 @@ namespace DOL.GS.Scripts
 
             //CharacterClass.OnLevelUp(this, previouslevel);
             //GameServer.ServerRules.OnPlayerLevelUp(this, previouslevel);
-            RefreshSpecDependantSkills(true);
+
+            RefreshSpecDependantSkills(false);
 
             // Echostorm - Code for display of new title on level up
             // Get old and current rank titles
@@ -6130,16 +6065,6 @@ namespace DOL.GS.Scripts
             //    // Inform player of new title.
             //    //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnLevelUp.AttainedRank", currenttitle), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
             //}
-
-            // spec points
-            int specpoints = 0;
-            for (int i = Level; i > previouslevel; i--)
-            {
-                if (i <= 5) 
-                    specpoints += i; //start levels
-                else 
-                    specpoints += CharacterClass.SpecPointsMultiplier * i / 10; //spec levels
-            }
 
             if (IsAlive)
             {
@@ -6166,6 +6091,8 @@ namespace DOL.GS.Scripts
                     player.Out.SendEmoteAnimation(this, eEmote.LvlUp);
                 }
             }
+
+            Emote(eEmote.LvlUp);
 
             // Level up pets and subpets
             if (ServerProperties.Properties.PET_LEVELS_WITH_OWNER &&
@@ -6199,39 +6126,30 @@ namespace DOL.GS.Scripts
         {
             IsLevelSecondStage = true;
 
-            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnLevelUp.SecondStage", Level), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-
             // spec points
-            int specpoints = CharacterClass.SpecPointsMultiplier * Level / 20;
-            if (specpoints > 0)
-            {
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnLevelUp.YouGetSpec", specpoints), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-            }
+            m_leftOverSpecPoints += CharacterClass.SpecPointsMultiplier * Level / 20;
 
             //death penalty reset on mini-ding
             DeathCount = 0;
 
             if (Group != null)
-            {
                 Group.UpdateGroupWindow();
-            }
-            //Out.SendUpdatePlayer(); // Update player level
-            //Out.SendCharStatsUpdate(); // Update Stats and MaxHitpoints
-            //Out.SendUpdatePlayerSkills();
-            //Out.SendUpdatePoints();
-            //UpdatePlayerStatus();
-            // save player to database
-            //SaveIntoDatabase();
 
-            //Out.SendLevelUpSound(); // level animation
+            Emote(eEmote.LvlUp);
+
             if (ObjectState == eObjectState.Active)
             {
                 foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
                 {
-                    if (player == null) continue;
+                    if (player == null)
+                        continue;
+
                     player.Out.SendEmoteAnimation(this, eEmote.LvlUp);
                 }
             }
+
+            SpendSpecPoints(Level, false);
+            RefreshSpecDependantSkills(false);
         }
 
         /// <summary>
@@ -7416,8 +7334,8 @@ namespace DOL.GS.Scripts
             //GameLivingProcessDeath(killer);
             base.ProcessDeath(killer);
 
-            lock (m_LockObject)
-            {
+            //lock (m_LockObject)
+            //{
                 //if (m_releaseTimer != null)
                 //{
                 //    m_releaseTimer.Stop();
@@ -7514,7 +7432,7 @@ namespace DOL.GS.Scripts
                 //        LastDeathPvP = true;
                 //}
                 //GameEventMgr.AddHandler(this, GamePlayerEvent.Revive, new DOLEventHandler(OnRevive));
-            }
+            //}
 
 
 

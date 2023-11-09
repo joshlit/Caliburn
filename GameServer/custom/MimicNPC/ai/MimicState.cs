@@ -171,8 +171,16 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
+            if (_brain.Body.Group == null)
+            {
+                _brain.Body.StopFollowing();
+                _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+                
+                return;
+            }
+
             if (leader == null)
-                leader = _brain.Body.Group.LivingLeader;
+                leader = _brain.Body.Group.LivingLeader;          
 
             //if (!_brain.PreventCombat)
             //{
@@ -183,8 +191,9 @@ namespace DOL.AI.Brain
             //}
             //}
 
-            if ((leader.IsCasting || leader.IsAttacking) && _brain.CanAggroTarget((GameLiving)leader.TargetObject))
+            if ((leader.IsCasting || leader.IsAttacking) && leader.TargetObject is GameLiving livingTarget && _brain.CanAggroTarget(livingTarget))
             {
+                _brain.AddToAggroList(livingTarget, 1);
                 _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
                 return;
             }
@@ -402,7 +411,7 @@ namespace DOL.AI.Brain
 
     public class MimicState_Camp : MimicState
     {
-        private int aggroRange;
+        public int AggroRange = 0;
 
         public MimicState_Camp(MimicBrain brain) : base(brain)
         {
@@ -423,11 +432,14 @@ namespace DOL.AI.Brain
             int randomX = _brain.Body.CurrentRegion.IsDungeon ? Util.Random(-50, 50) : Util.Random(-100, 100);
             int randomY = _brain.Body.CurrentRegion.IsDungeon ? Util.Random(-50, 50) : Util.Random(-100, 100);
 
-            _brain.Body.SpawnPoint = _brain.Body.Group.MimicGroup.CampPoint;
+            _brain.Body.SpawnPoint = new Point3D(_brain.Body.Group.MimicGroup.CampPoint);
             _brain.Body.SpawnPoint.X += randomX;
             _brain.Body.SpawnPoint.Y += randomY;
 
             _brain.AggroRange = _brain.Body.CurrentRegion.IsDungeon ? 250 : 550;
+
+            if (AggroRange != 0)
+                _brain.AggroRange = AggroRange;
 
             _brain.ClearAggroList();
             _brain.Body.ReturnToSpawnPoint(_brain.Body.MaxSpeed);
@@ -509,8 +521,6 @@ namespace DOL.AI.Brain
             {
                 if (_brain.CheckProximityAggro(_brain.AggroRange))
                 {
-                    _brain.MimicBody.DevOut("In return spwan");
-
                     if (_brain.Body.Group != null && _brain.Body.Group.MimicGroup.CampPoint != null)
                         _brain.FSM.SetCurrentState(eFSMStateType.CAMP);
                     

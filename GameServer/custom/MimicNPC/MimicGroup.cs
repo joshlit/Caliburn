@@ -21,6 +21,8 @@ namespace DOL.GS.Scripts
 
         public List<GameLiving> CCTargets = new List<GameLiving>();
 
+        public int ConLevelFilter = -2;
+
         public GameObject CurrentTarget
         {
             get { return MainAssist.TargetObject; }

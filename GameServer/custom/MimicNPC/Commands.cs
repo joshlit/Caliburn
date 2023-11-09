@@ -1,4 +1,5 @@
-﻿using DOL.AI.Brain;
+﻿using DOL.AI;
+using DOL.AI.Brain;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using log4net;
@@ -454,7 +455,7 @@ namespace DOL.GS.Scripts
     [CmdAttribute(
         "&mcamp",
         ePrivLevel.Player,
-        "/mcamp (set/remove)- Set where the group camp point is.")]
+        "/mcamp (set/remove/aggrorange/filter)- Set where the group camp point is, remove the camp point, the range the group will aggro, and the con level the puller will pull.")]
     public class CampCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
@@ -509,6 +510,49 @@ namespace DOL.GS.Scripts
                         }
                     }
                     break;
+
+                    case "aggrorange":
+                    {
+                        if (args.Length > 2)
+                        {
+                            int range = int.Parse(args[2]);
+
+                            if (range < 0 || range > int.MaxValue)
+                                range = 550;
+
+                            foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                            {
+                                if (groupMember is MimicNPC mimic)
+                                {
+                                    FSMState mimicState = mimic.Brain.FSM.GetState(eFSMStateType.CAMP);
+
+                                    ((MimicState_Camp)mimicState).AggroRange = range;
+                                }
+                            }
+
+                            player.Out.SendMessage("Camp aggro range is " + range, eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        }
+                    }
+                    break;
+
+                    case "filter":
+                    {
+                        if (args.Length > 2)
+                        {
+                            args[2] = args[2].ToLower();
+
+                            switch (args[2])
+                            {
+                                case "purple": player.Group.MimicGroup.ConLevelFilter = 3; break;
+                                case "red": player.Group.MimicGroup.ConLevelFilter = 2; break;
+                                case "orange": player.Group.MimicGroup.ConLevelFilter = 1; break;
+                                case "yellow": player.Group.MimicGroup.ConLevelFilter = 0; break;
+                                case "blue": player.Group.MimicGroup.ConLevelFilter = -1; break;
+                                case "green": player.Group.MimicGroup.ConLevelFilter = -2; break;
+                            }
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -556,7 +600,7 @@ namespace DOL.GS.Scripts
             }
         }
     }
-    
+
     #endregion MimicGroup
 
     [CmdAttribute(

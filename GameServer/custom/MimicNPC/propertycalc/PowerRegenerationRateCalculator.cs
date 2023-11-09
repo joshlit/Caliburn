@@ -38,18 +38,10 @@ namespace DOL.GS.Scripts
 
         public override int CalcValue(GameLiving living, eProperty property)
         {
-            /* PATCH 1.87 COMBAT AND REGENERATION
-			  - While in combat, health and power regeneration ticks will happen twice as often.
-    		  - Each tick of health and power is now twice as effective.
-              - All health and power regeneration aids are now twice as effective.
-             */
-
             double regen = living.Level / 10 + (living.Level / 2.75);
 
-            if (living is GameNPC && living.InCombat && living is not MimicNPC)
+            if (living.InCombat)
                 regen /= 2.0;
-
-            // tolakram - there is no difference per tic between combat and non combat
 
             if (regen != 0 && ServerProperties.Properties.MANA_REGEN_RATE != 1)
                 regen *= ServerProperties.Properties.MANA_REGEN_RATE;

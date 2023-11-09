@@ -24,7 +24,7 @@ namespace DOL.GS.Scripts
 {
     /// <summary>
 	/// The health regen rate calculator
-	/// 
+	///
 	/// BuffBonusCategory1 is used for all buffs
 	/// BuffBonusCategory2 is used for all debuffs (positive values expected here)
 	/// BuffBonusCategory3 unused
@@ -34,7 +34,8 @@ namespace DOL.GS.Scripts
 	[PropertyCalculator(eProperty.EnduranceRegenerationRate)]
     public class EnduranceRegenerationRateCalculator : PropertyCalculator
     {
-        public EnduranceRegenerationRateCalculator() { }
+        public EnduranceRegenerationRateCalculator()
+        { }
 
         /// <summary>
         /// calculates the final property value
@@ -44,111 +45,33 @@ namespace DOL.GS.Scripts
         /// <returns></returns>
         public override int CalcValue(GameLiving living, eProperty property)
         {
+            // buffs allow to regenerate endurance even in combat and while moving
+            double regen = living.BaseBuffBonusCategory[(int)property] + living.ItemBonus[(int)property];
+
+            if (living is GamePlayer player)
+            {
+                if (player.IsSitting)
+                    regen += 10;
+                else if (!player.IsAttacking && !player.IsMoving && !player.IsSprinting)
+                    regen += 2;
+            }
+            else if (living is MimicNPC mimic)
+            {
+                if (mimic.IsSitting)
+                    regen += 10;
+                else if(!mimic.IsAttacking && !mimic.IsMoving && !mimic.IsSprinting)
+                    regen += 2;
+            }
+
+            var raTireless = living.GetAbility<AtlasOF_RAEndRegenEnhancer>();
+
+            if (raTireless != null)
+                regen++;
+
             int debuff = living.SpecBuffBonusCategory[(int)property];
 
             if (debuff < 0)
                 debuff = -debuff;
-
-            var p = living as GamePlayer;
-
-            if (p != null)
-                p.EnduDebuff = debuff;
-
-            var m = living as MimicNPC;
-
-            if (m != null)
-                m.EnduDebuff = debuff;
-
-            // buffs allow to regenerate endurance even in combat and while moving			
-            double regenBuff =living.BaseBuffBonusCategory[(int)property] + living.ItemBonus[(int)property];
-
-            if (p != null)
-                p.RegenBuff = regenBuff;
-
-            if (m != null)
-                m.RegenBuff = regenBuff;
-
-            double regen = regenBuff;
-
-            if (regen == 0 && (living is GamePlayer || living is MimicNPC)) //&& ((GamePlayer)living).HasAbility(Abilities.Tireless))
-                regen++;
-
-            // if (living is GamePlayer && living.HasAbility(Abilities.Tireless))
-            // 	regen++;
-
-            // --- [START] --- AtlasOF_Tireless ---------------------------------------------------------
-            var raTireless = living.GetAbility<AtlasOF_RAEndRegenEnhancer>();
-
-            if (raTireless != null)
-            {
-                regen++;
-            }
-            // --- [ END ] --- AtlasOF_Tireless ---------------------------------------------------------
-
-            if (p != null)
-                p.RegenAfterTireless = regen;
-
-            if (m != null)
-                m.RegenAfterTireless = regen;
-
-            /*    Patch 1.87 - COMBAT AND REGENERATION CHANGES
-				- The bonus to regeneration while standing out of combat has been greatly increased. The amount of ticks 
-					a player receives while standing has been doubled and it will now match the bonus to regeneration while sitting.
-					Players will no longer need to sit to regenerate faster.
-				- Fatigue now regenerates at the standing rate while moving.
-			*/
-            if (p != null)
-            {
-                p.NonCombatNonSprintRegen = 0;
-                p.CombatRegen = 0;
-            }
-
-            if (m != null)
-            {
-                m.NonCombatNonSprintRegen = 0;
-                m.CombatRegen = 0;
-            }
-
-            if (!living.InCombat)
-            {
-                if (living is GamePlayer)
-                {
-                    if (!((GamePlayer)living).IsSprinting)
-                    {
-                        regen += 4;
-                    }
-                }
-                else if (living is MimicNPC)
-                {
-                    if (!((MimicNPC)living).IsSprinting)
-                    {
-                        regen += 4;
-                    }
-                }
-
-                if (p != null)
-                    p.NonCombatNonSprintRegen = regen;
-
-                if (m != null)
-                    m.NonCombatNonSprintRegen = regen;
-            }
-            else
-            {
-                regen -= 3;
-                if (regen <= 0)
-                    regen = 0.1;
-                if (regenBuff > 0)
-                    regen = regenBuff;
-                if (p != null && raTireless != null)
-                    regen++;
-                if (p != null)
-                    p.CombatRegen = regen;
-
-                if (m != null && raTireless != null)
-                    regen++;
-                if (m != null)
-                    m.CombatRegen = regen;
-            }
 
             regen -= debuff;
 
@@ -159,10 +82,10 @@ namespace DOL.GS.Scripts
                 regen *= ServerProperties.Properties.ENDURANCE_REGEN_RATE;
 
             double decimals = regen - (int)regen;
+
             if (Util.ChanceDouble(decimals))
-            {
                 regen += 1; // compensate int rounding error
-            }
+
             return (int)regen;
         }
     }

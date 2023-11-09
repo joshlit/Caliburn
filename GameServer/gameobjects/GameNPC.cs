@@ -193,7 +193,9 @@ namespace DOL.GS
 					}
 
 					base.Level = value;
-					AutoSetStats();  // Recalculate stats when level changes
+
+					if (this is not MimicNPC)
+						AutoSetStats();  // Recalculate stats when level changes
 				}
 				else
 					base.Level = value;
@@ -3309,14 +3311,18 @@ namespace DOL.GS
 				}
 			}
 			
-			if (XPGainerList.Keys.Count == 0) return;
+			if (XPGainerList.Keys.Count == 0) 
+				return;
 
 			DbItemTemplate[] lootTemplates = LootMgr.GetLoot(this, killer);
 
 			foreach (DbItemTemplate lootTemplate in lootTemplates)
 			{
-				if (lootTemplate == null) continue;
+				if (lootTemplate == null) 
+					continue;
+
 				GameStaticItem loot = null;
+
 				if (GameMoney.IsItemMoney(lootTemplate.Name))
 				{
 					long value = lootTemplate.Price;
@@ -3439,7 +3445,8 @@ namespace DOL.GS
 						}
 					}
 				}
-				if (playerAttacker == null) return; // no loot if mob kills another mob
+				if (playerAttacker == null)
+					return; // no loot if mob kills another mob
 
 
 				droplist.Add(loot.GetName(1, false));

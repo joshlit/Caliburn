@@ -139,6 +139,14 @@ namespace DOL.GS
 			set { m_mezzed = value; }
 		}
 
+		protected bool m_rooted;
+
+		public bool IsRooted
+		{
+			get { return m_rooted; }
+			set { m_rooted = value; }
+		}
+
 		protected bool m_disarmed = false;
 		protected long m_disarmedTime = 0;
 

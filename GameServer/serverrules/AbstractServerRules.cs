@@ -1084,10 +1084,10 @@ namespace DOL.GS.ServerRules
 				}
 			}
 
-			#region Worth no experience
+            #region Worth no experience
 
-			//"This monster has been charmed recently and is worth no experience."
-			string message = "You gain no experience from this kill!";
+            //"This monster has been charmed recently and is worth no experience."
+            string message = "You gain no experience from this kill!";
 			if (killedNPC.CurrentRegion?.Time - GameNPC.CHARMED_NOEXP_TIMEOUT <
 			    killedNPC.TempProperties.GetProperty<long>(GameNPC.CHARMED_TICK_PROP))
 			{
@@ -1187,10 +1187,14 @@ namespace DOL.GS.ServerRules
 								livingsToAward.Add(living);
 						}
 					}
+					else if (living is MimicNPC mimic)
+					{
+						livingsToAward.Add(living);
+					}
 				}
 			}
 
-			foreach (GameLiving living in livingsToAward)
+            foreach (GameLiving living in livingsToAward)
 			{
 				DictionaryEntry de = new(living, XPGainerList[living]);
 				AwardExperience(de, killedNPC, killer, totalDamage, plrGrpExp, isGroupInRange);
@@ -1230,11 +1234,12 @@ namespace DOL.GS.ServerRules
 			//Need to do this before hand so we only do it once - just in case if the player levels!
 			double highestConValue = 0;
 
-			GameLiving living = de.Key as GameLiving;
+            GameLiving living = de.Key as GameLiving;
 			GamePlayer player = living as GamePlayer;
-
+			MimicNPC mimic = living as MimicNPC;
 			GamePlayer highestPlayer = player;
-			if (player != null && player.Group != null)
+
+            if (player != null && player.Group != null)
 			{
 				foreach (GamePlayer gamePlayer in player.Group.GetPlayersInTheGroup())
 				{
@@ -1258,11 +1263,11 @@ namespace DOL.GS.ServerRules
 
 			//Changed: people were getting penalized for their pets doing damage
 			double damagePercent = (float) de.Value / totalDamage;
+            
+            #region Realm Points
 
-			#region Realm Points
-
-			// realm points
-			int rpCap = living.RealmPointsValue * 2;
+            // realm points
+            int rpCap = living.RealmPointsValue * 2;
 			int realmPoints = 0;
 
 			// Keep and Tower captures reward full RP and BP value to each player
@@ -1287,13 +1292,13 @@ namespace DOL.GS.ServerRules
 			if (realmPoints > 0)
 				living.GainRealmPoints(realmPoints);
 
-			#endregion
+            #endregion
 
-			#region Bounty Points
+            #region Bounty Points
 
-			// bounty points
+            // bounty points
 
-			int bpCap = living.BountyPointsValue * 2;
+            int bpCap = living.BountyPointsValue * 2;
 			int bountyPoints = 0;
 
 			// Keep and Tower captures reward full RP and BP value to each player
@@ -1327,11 +1332,17 @@ namespace DOL.GS.ServerRules
 			//xp should divided across all members in the group, per this article: https://camelot.allakhazam.com/story.html?story=491
 			if (player != null && player.Group != null && player.Group.MemberCount > 1)
 			{
-				int scalingFactor = (int) Math.Ceiling((decimal) player.Group.MemberCount);
-				long tmpxp = (long) (xpReward * (1 + 0.125 * GetUniqueClassCount(player.Group)));
+				int scalingFactor = (int)Math.Ceiling((decimal)player.Group.MemberCount);
+				long tmpxp = (long)(xpReward * (1 + 0.125 * GetUniqueClassCount(player.Group)));
 				xpReward = tmpxp / scalingFactor;
 				//xpReward /= scalingFactor;
 			}
+			else if (mimic != null && mimic.Group != null && mimic.Group.MemberCount > 1)
+			{
+                int scalingFactor = (int)Math.Ceiling((decimal)mimic.Group.MemberCount);
+                long tmpxp = (long)(xpReward * (1 + 0.125 * GetUniqueClassCount(mimic.Group)));
+                xpReward = tmpxp / scalingFactor;
+            }
 
 			// exp cap
 			/*
@@ -1357,6 +1368,18 @@ namespace DOL.GS.ServerRules
 						ServerProperties.Properties.XP_GROUP_CAP_PERCENT / 100);
 				}
 			}
+			else if (mimic != null)
+			{
+                expCap = (long)(GameServer.ServerRules.GetExperienceForLiving(mimic.Level) *
+                                    ServerProperties.Properties.XP_CAP_PERCENT / 100);
+
+                if (mimic.Group != null && isGroupInRange)
+                {
+                    // Optional group cap can be set different from standard player cap
+                    expCap = (long)(GameServer.ServerRules.GetExperienceForLiving(mimic.Level) *
+                        ServerProperties.Properties.XP_GROUP_CAP_PERCENT / 100);
+                }
+            }
 
 			#region Challenge Code
 
@@ -1379,7 +1402,7 @@ namespace DOL.GS.ServerRules
 			if (player != null && highestPlayer != null && highestConValue < 0)
 			{
 				//challenge success, the xp needs to be reduced to the proper con
-				expCap = (long) (GameServer.ServerRules.GetExperienceForLiving(
+				expCap = (long)(GameServer.ServerRules.GetExperienceForLiving(
 					GameObject.GetLevelFromCon(player.Level, highestConValue)));
 			}
 
@@ -1581,6 +1604,16 @@ namespace DOL.GS.ServerRules
             {
 				groupClasses.Add((eCharacterClass)player.CharacterClass.ID);
             }
+
+			foreach(GameLiving living in group.GetMembersInTheGroup().ToList())
+			{
+				if (living is GamePlayer)
+					continue;
+
+				if (living is MimicNPC mimic)
+					groupClasses.Add((eCharacterClass)mimic.CharacterClass.ID);
+			}
+
 			return groupClasses.Count;
         }
 
