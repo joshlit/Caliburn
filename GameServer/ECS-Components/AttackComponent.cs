@@ -1800,16 +1800,8 @@ namespace DOL.GS
 
         public static double CalculateTargetResistance(GameLiving target, eDamageType damageType, DbInventoryItem armor)
         {
-            eProperty resistType = target.GetResistTypeForDamage(damageType);
             double damageModifier = 1.0;
-
-            // Against NPC targets this just doubles the resists. Applying only to player targets as a fix.
-            // TODO: Figure out why and fix the mess that resists are.
-            if (target is GamePlayer)
-                damageModifier *= 1.0 - (target.GetResist(damageType) + SkillBase.GetArmorResist(armor, damageType)) * 0.01;
-
-            damageModifier *= 1.0 - target.GetDamageResist(resistType) * 0.01;
-            damageModifier *= 1.0 - target.SpecBuffBonusCategory[(int) resistType];
+            damageModifier *= 1.0 - (target.GetResist(damageType) + SkillBase.GetArmorResist(armor, damageType)) * 0.01;
             return damageModifier;
         }
 
@@ -2324,11 +2316,17 @@ namespace DOL.GS
                 if (stealthStyle)
                     return eAttackResult.HitUnstyled; // Exit early for stealth to prevent breaking bubble but still register a hit.
 
-                if (action.RangedAttackType == eRangedAttackType.Long ||
-                    (ad.AttackType == AttackData.eAttackType.Ranged && ad.Target != bladeturn.SpellHandler.Caster && playerAttacker?.HasAbility(Abilities.PenetratingArrow) == true))
-                    penetrate = true;
-
-                if (ad.IsMeleeAttack && !Util.ChanceDouble(bladeturn.SpellHandler.Caster.Level / ad.Attacker.Level))
+                if (ad.AttackType == AttackData.eAttackType.Ranged)
+                {
+                    // 1.62: Penetrating Arrow penetrate only if the caster == target. Longshot and Volley always penetrate BTs.
+                    if ((ad.Target != bladeturn.SpellHandler.Caster && playerAttacker != null && playerAttacker.HasAbility(Abilities.PenetratingArrow)) ||
+                        action.RangedAttackType == eRangedAttackType.Long ||
+                        action.RangedAttackType == eRangedAttackType.Volley)
+                    {
+                        penetrate = true;
+                    }
+                }
+                else if (ad.IsMeleeAttack && !Util.ChanceDouble(bladeturn.SpellHandler.Caster.Level / (double) ad.Attacker.Level))
                     penetrate = true;
 
                 if (penetrate)
