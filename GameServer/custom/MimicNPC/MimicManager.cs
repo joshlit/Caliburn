@@ -25,7 +25,7 @@ namespace DOL.GS.Scripts
                                                     new Point3D(19820, 19305, 4050),
                                                     new Point3D(53300, 26100, 4270),
                                                     6,
-                                                    128,
+                                                    60,
                                                     20,
                                                     24);
         }
@@ -738,10 +738,10 @@ namespace DOL.GS.Scripts
             DbItemTemplate itemToCreate = new GeneratedUniqueItem(false, realm, charClass, level, objectType, slot, instrumentType);
 
             GameInventoryItem item = GameInventoryItem.Create(itemToCreate);
-            if (!living.Inventory.AddItem(slot, item))
-                log.Info("Could not add " + item.Name + " to slot " + slot);
-            else
-                log.Info("Added " + item.Name + " to slot " + slot);
+            //if (!living.Inventory.AddItem(slot, item))
+            //    log.Info("Could not add " + item.Name + " to slot " + slot);
+            //else
+            //    log.Info("Added " + item.Name + " to slot " + slot);
         }
 
         public static void SetMeleeWeapon(GameLiving living, string weapType, eHand hand, eWeaponDamageType damageType = 0)

@@ -91,7 +91,7 @@ namespace DOL.GS.Scripts
             set { m_mimicBrain = value; }
         }
 
-        private int m_leftOverSpecPoints;
+        private int m_leftOverSpecPoints = 0;
 
         public MimicNPC(ICharacterClass cClass, byte level, eGender gender = eGender.Neutral)
         {
@@ -5936,9 +5936,6 @@ namespace DOL.GS.Scripts
             int relicBonus = (int)(baseXp * (0.05 * RelicMgr.GetRelicCount(this.Realm)));
             if (relicBonus > 0) expTotal += relicBonus;
 
-            log.Info("Experience for " + Name + ": " + Experience);
-            log.Info("expTotal to add for " + Name + ": " + expTotal);
-
             Experience += expTotal;
 
             if (expTotal >= 0)
@@ -5971,16 +5968,9 @@ namespace DOL.GS.Scripts
                 int oldLevel = Level;
                 base.Level = value;
 
-                if (DBCharacter != null)
-                    DBCharacter.Level = value;
-
                 if (oldLevel > 0)
-                {
                     if (value > oldLevel)
-                    {
                         OnLevelUp(oldLevel);
-                    }
-                }
             }
         }
 
@@ -9183,11 +9173,7 @@ namespace DOL.GS.Scripts
 
             if (sit)
             {
-                if (Util.RandomBool())
-                    Emote(eEmote.Drink);
-                else
-                    Emote(eEmote.Sweat);
-
+                Emote(eEmote.Drink);
                 return true;
             }
             else

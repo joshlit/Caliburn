@@ -362,9 +362,11 @@ namespace DOL.GS.ServerRules
 			if (attacker is GameNPC)
 				if ((((GameNPC)attacker).Flags & GameNPC.eFlags.PEACE) != 0)
 					return false;
+
 			if (defender is GameNPC)
 				if ((((GameNPC)defender).Flags & GameNPC.eFlags.PEACE) != 0)
 					return false;
+
 			// Players can't attack mobs while they have immunity
 			if (playerAttacker != null && defender != null)
 			{

@@ -51,16 +51,16 @@ namespace DOL.GS.Scripts
             if (living is GamePlayer player)
             {
                 if (player.IsSitting)
-                    regen += 10;
-                else if (!player.IsAttacking && !player.IsMoving && !player.IsSprinting)
                     regen += 2;
+                else if (!player.IsAttacking && !player.IsCasting && !player.IsMoving && !player.IsSprinting)
+                    regen += 1;
             }
             else if (living is MimicNPC mimic)
             {
                 if (mimic.IsSitting)
-                    regen += 10;
-                else if(!mimic.IsAttacking && !mimic.IsMoving && !mimic.IsSprinting)
                     regen += 2;
+                else if(!mimic.IsAttacking && !mimic.IsCasting && !mimic.IsMoving && !mimic.IsSprinting)
+                    regen += 1;
             }
 
             var raTireless = living.GetAbility<AtlasOF_RAEndRegenEnhancer>();

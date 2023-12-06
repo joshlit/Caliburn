@@ -1254,7 +1254,7 @@ namespace DOL.AI.Brain
             // If this npc have Faction return the AggroAmount to Player
             if (Body.Faction != null)
             {
-                if (realTarget is GameNPC && realTarget is not MimicNPC && PvPMode)
+                if (realTarget is GameNPC && realTarget is not MimicNPC && realTarget is not GameKeepGuard && PvPMode)
                     return false;
 
                 if (realTarget is GamePlayer && realTarget.Realm != Body.Realm)
@@ -1845,96 +1845,96 @@ namespace DOL.AI.Brain
             Body.TargetObject = null;
 
             // TODO: Instrument classes need special logic.
-            if (spell.NeedInstrument)
-            {
-                switch (spell.SpellType)
-                {
-                    case eSpellType.PowerRegenBuff:
-                    {
-                        if (!Body.InCombat && !Body.IsMoving)
-                        {
-                            if (Body.Group != null)
-                            {
-                                if (Body.Group.GetMembersInTheGroup().Any(groupMember => groupMember.MaxMana > 0 && groupMember.ManaPercent < 80) && !LivingHasEffect(Body, spell))
-                                {
-                                    Body.SwitchWeapon(eActiveWeaponSlot.Distance);
-                                    Body.TargetObject = Body;
-                                }
-                            }
-                            else if (Body.ManaPercent < 75 && !LivingHasEffect(Body, spell))
-                            {
-                                Body.SwitchWeapon(eActiveWeaponSlot.Distance);
-                                Body.TargetObject = Body;
-                            }
-                            else if (LivingHasEffect(Body, spell))
-                            {
-                                Body.TargetObject = Body;
-                            }
-                        }
-                    }
-                    break;
+            //if (spell.NeedInstrument)
+            //{
+            //    switch (spell.SpellType)
+            //    {
+            //        case eSpellType.PowerRegenBuff:
+            //        {
+            //            if (!Body.InCombat && !Body.IsMoving)
+            //            {
+            //                if (Body.Group != null)
+            //                {
+            //                    if (Body.Group.GetMembersInTheGroup().Any(groupMember => groupMember.MaxMana > 0 && groupMember.ManaPercent < 80) && !LivingHasEffect(Body, spell))
+            //                    {
+            //                        Body.SwitchWeapon(eActiveWeaponSlot.Distance);
+            //                        Body.TargetObject = Body;
+            //                    }
+            //                }
+            //                else if (Body.ManaPercent < 75 && !LivingHasEffect(Body, spell))
+            //                {
+            //                    Body.SwitchWeapon(eActiveWeaponSlot.Distance);
+            //                    Body.TargetObject = Body;
+            //                }
+            //                else if (LivingHasEffect(Body, spell))
+            //                {
+            //                    Body.TargetObject = Body;
+            //                }
+            //            }
+            //        }
+            //        break;
 
-                    case eSpellType.HealthRegenBuff:
+            //        case eSpellType.HealthRegenBuff:
 
-                    if (!Body.InCombat && !Body.IsMoving && !LivingHasEffect(Body, spell))
-                    {
-                        ECSGameEffect powerRegen = EffectListService.GetEffectOnTarget(Body, eEffect.Pulse, eSpellType.PowerRegenBuff);
+            //        if (!Body.InCombat && !Body.IsMoving && !LivingHasEffect(Body, spell))
+            //        {
+            //            ECSGameEffect powerRegen = EffectListService.GetEffectOnTarget(Body, eEffect.Pulse, eSpellType.PowerRegenBuff);
 
-                        if (powerRegen == null)
-                        {
-                            if (!Body.InCombat && !Body.IsMoving)
-                            {
-                                if (Body.Group != null)
-                                {
-                                    if (Body.Group.GetMembersInTheGroup().Any(groupMember => groupMember.HealthPercent < 80) && !LivingHasEffect(Body, spell))
-                                    {
-                                        Body.SwitchWeapon(eActiveWeaponSlot.Distance);
-                                        Body.TargetObject = Body;
-                                    }
-                                }
-                                else if (Body.HealthPercent < 80 && !LivingHasEffect(Body, spell))
-                                {
-                                    Body.SwitchWeapon(eActiveWeaponSlot.Distance);
-                                    Body.TargetObject = Body;
-                                }
-                                else if (LivingHasEffect(Body, spell))
-                                {
-                                    Body.TargetObject = Body;
-                                }
-                            }
-                        }
-                    }
-                    break;
+            //            if (powerRegen == null)
+            //            {
+            //                if (!Body.InCombat && !Body.IsMoving)
+            //                {
+            //                    if (Body.Group != null)
+            //                    {
+            //                        if (Body.Group.GetMembersInTheGroup().Any(groupMember => groupMember.HealthPercent < 80) && !LivingHasEffect(Body, spell))
+            //                        {
+            //                            Body.SwitchWeapon(eActiveWeaponSlot.Distance);
+            //                            Body.TargetObject = Body;
+            //                        }
+            //                    }
+            //                    else if (Body.HealthPercent < 80 && !LivingHasEffect(Body, spell))
+            //                    {
+            //                        Body.SwitchWeapon(eActiveWeaponSlot.Distance);
+            //                        Body.TargetObject = Body;
+            //                    }
+            //                    else if (LivingHasEffect(Body, spell))
+            //                    {
+            //                        Body.TargetObject = Body;
+            //                    }
+            //                }
+            //            }
+            //        }
+            //        break;
 
-                    case eSpellType.EnduranceRegenBuff:
+            //        case eSpellType.EnduranceRegenBuff:
 
-                    if (Body.InCombat)
-                    {
-                        if (Body.Group != null)
-                        {
-                            if (Body.Group.GetMembersInTheGroup().Any(groupMember => groupMember.EndurancePercent < 95) && !LivingHasEffect(Body, spell))
-                            {
-                                Body.SwitchWeapon(eActiveWeaponSlot.Distance);
-                                Body.TargetObject = Body;
-                            }
-                        }
-                    }
+            //        if (Body.InCombat)
+            //        {
+            //            if (Body.Group != null)
+            //            {
+            //                if (Body.Group.GetMembersInTheGroup().Any(groupMember => groupMember.EndurancePercent < 95) && !LivingHasEffect(Body, spell))
+            //                {
+            //                    Body.SwitchWeapon(eActiveWeaponSlot.Distance);
+            //                    Body.TargetObject = Body;
+            //                }
+            //            }
+            //        }
 
-                    break;
+            //        break;
 
-                    case eSpellType.SpeedEnhancement:
-                    {
-                        if (!Body.InCombat && Body.IsMoving && !LivingHasEffect(Body, spell))
-                        {
-                            Body.SwitchWeapon(eActiveWeaponSlot.Distance);
-                            Body.TargetObject = Body;
-                        }
-                    }
-                    break;
-                }
-            }
-            else
-            {
+            //        case eSpellType.SpeedEnhancement:
+            //        {
+            //            if (!Body.InCombat && Body.IsMoving && !LivingHasEffect(Body, spell))
+            //            {
+            //                Body.SwitchWeapon(eActiveWeaponSlot.Distance);
+            //                Body.TargetObject = Body;
+            //            }
+            //        }
+            //        break;
+            //    }
+            //}
+            //else
+            //{
 
                 switch (spell.SpellType)
                 {
@@ -2229,7 +2229,7 @@ namespace DOL.AI.Brain
                     log.Warn($"CheckDefensiveSpells() encountered an unknown spell type [{spell.SpellType}] for {Body?.Name}");
                     break;
                 }
-            }
+            
 
             if (Body?.TargetObject != null)
             {
@@ -2245,7 +2245,7 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual bool CheckOffensiveSpells(Spell spell, bool quickCast = false)
         {
-            if (spell.SpellType == eSpellType.Charm || spell.SpellType == eSpellType.Amnesia)
+            if (spell.SpellType == eSpellType.Charm || spell.SpellType == eSpellType.Amnesia || spell.SpellType == eSpellType.Confusion)
                 return false;
 
             if (spell.SpellType == eSpellType.Taunt)
@@ -2302,8 +2302,8 @@ namespace DOL.AI.Brain
                 case eSpellType.SavageParryBuff:
                 case eSpellType.SavageEvadeBuff:
 
-                if (Body.HealthPercent < 10)
-                    break;
+                //if (Body.HealthPercent < 10)
+                //    break;
 
                 if (spell.SpellType == eSpellType.SavageCrushResistanceBuff ||
                     spell.SpellType == eSpellType.SavageSlashResistanceBuff ||
