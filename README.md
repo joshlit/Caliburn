@@ -2,21 +2,21 @@ This fork focuses on having bots that are treated as players as far as having pl
 
 Everything is currently very command based. Bracketed commands are required, parenthesis commands are optional.
 
-/mlfg (index) - Shows a list of available bots. It is currently based on the level of the player calling it. Multiple players being able to call is yet to be implemented.
-   index - Attempts to add the bot of the index given to your group. They may decline if they are higher level than the player.
+/mlfg (Index) - Shows a list of available bots. It is currently based on the level of the player calling it. Multiple players being able to call is yet to be implemented.
+   - Index - Attempts to add the bot of the index given to your group. They may decline if they are higher level than the player.
 
-/mcamp [set/remove/aggrorange/filter]
-   set - Sets the spot the group will wait at and return to after battle based on your ground target. They aggro anything around this point.
-   remove - Returns the group to follow the leader. They will attack anything the leader is attacking or casting towards.
-   aggrorange [1-6000] - Sets the range the group will attack anything around their camp point. Default is 250 in dungeons, 550 outside of them. They will aggro through walls in dungeons. Visibility range is 6000.
-   filter [green/blue/yellow/orange/red/purple] - Sets the minimum con level the puller will pull.
+/mcamp [Set/Remove/Aggrorange/Filter]
+   - Set - Sets the spot the group will wait at and return to after battle based on your ground target. They aggro anything around this point.
+   - Remove - Returns the group to follow the leader. They will attack anything the leader is attacking or casting towards.
+   - Aggrorange [1-6000] - Sets the range the group will attack anything around their camp point. Default is 250 in dungeons, 550 outside of them. They will aggro through walls in dungeons. Visibility range is 6000.
+   - Filter [green/blue/yellow/orange/red/purple] - Sets the minimum con level the puller will pull.
 
 /mrole [leader/puller/tank/cc/assist]
-   leader - Not implemented. The group member everyone follows.
-   assist - Not implemented. Will provide a target everyone should focus on.
-   puller - Only avaible for classes that can use a bow/crossbow currentely. The puller will run pull mobs to the point set with /mcamp set.
-   tank - Will only use taunt styles and defensive styles. Ensures every mob is attacking themselves.
-   cc - Will attempt to CC any adds from the puller.
+   - Leader - Not implemented. The group member everyone follows.
+   - Assist - Not implemented. Will provide a target everyone should focus on.
+   - Puller - Only avaible for classes that can use a bow/crossbow currentely. The puller will run pull mobs to the point set with /mcamp set.
+   - Tank - Will only use taunt styles and defensive styles. Ensures every mob is attacking themselves.
+   - CC - Will attempt to CC any adds from the puller.
    
 /msummon - Summons your group to you. Used to summon your group if you zone into a dungeon or teleport somewhere.
 
@@ -28,8 +28,7 @@ For PvE:
    
    The bots can have roles set that are only considered in PvE. Currently they are MainTank, MainCC, MainPuller. The roles are set with the /mrole command or via right-click interaction and only apply when a camp point is set with the /mcamp set command. Without a /mcamp set or removed via /mccamp remove, bots will only attack targets you go into attack mode against or cast a spell at. Basically:
 
-   "/mcamp set" to set a point with a ground target and the grouped bots will stay at this point and attack anything in a small range, adjustable with the /mcamp aggrorange command. Any bot set to the "puller" role will seek a target to pull into the camp. Currently limited to classes that can use a bow/crossbow. They will wait for everyone to finish "sitting", which is shown by the             "Drink" emote. When they are ready, they will perform the "LetsGo" emote. Anyone set to the CC role with the appropriate spells will root or mez adds. The bot set with the tank role will focus
-   on taunts to make them targeted provided the target isn't CC'd. This all works outside dungeons provided the puller isn't set. A puller in dungeons isn't tested. They will likely pull and run through walls.
+   "/mcamp set" to set a point with a ground target and the grouped bots will stay at this point and attack anything in a small range, adjustable with the /mcamp aggrorange command. Any bot set to the "puller" role will seek a target to pull into the camp. Currently limited to classes that can use a bow/crossbow. They will wait for everyone to finish "sitting", which is shown by the "Drink" emote. When they are ready, they will perform the "LetsGo" emote. Anyone set to the CC role with the appropriate spells will root or mez adds. The bot set with the tank role will focus on taunts to make them targeted provided the target isn't CC'd. This all works outside dungeons provided the puller isn't set. A puller in dungeons isn't tested. They will likely pull and run through walls.
 
 For RvR:
 
@@ -42,20 +41,21 @@ For RvR:
    /mbattle [Region] [Start/Stop/Clear]
    
    - Region - "thid" is the only working region command.
-   - start - Begins spawning all realms.
-   - stop - Stops all spawning of realms.
-   - clear - Stops all spawning of realms and kills and removes all npcs.
+   - Start - Begins spawning all realms.
+   - Stop - Stops all spawning of realms.
+   - Clear - Stops all spawning of realms and kills and removes all npcs.
    
 
 Commands for testing:
 
-/m [classname] (level)
-   classname - summons a mimic with a level equal to the caller.
+/m [Classname] (Level)
+   - Classname - summons a mimic with a level equal to the caller.
+   - Level - The level of the bot.
 
-/mgroup (realm) (amount) (level) - Summons a group of bots. With no arguments, all arguments will be the caller's realm, 8 bots, and the level of the caller.
-	realm - The realm of the bots.
-	amount - The amount in the group.
-	level - The level of all bots in the group.
+/mgroup (Realm) (Amount) (Level) - Summons a group of bots. With no arguments, all arguments will be the caller's realm, 8 bots, and the level of the caller.
+- Realm - The realm of the bots.
+- Amount - The amount in the group.
+- Level - The level of all bots in the group.
 
 # Docker
 [![Build and Push Docker Image](https://github.com/OpenDAoC/OpenDAoC-Core/actions/workflows/build-docker-image.yml/badge.svg)](https://github.com/OpenDAoC/OpenDAoC-Core/actions/workflows/build-docker-image.yml)
