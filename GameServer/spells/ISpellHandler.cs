@@ -10,7 +10,7 @@ namespace DOL.GS.Spells
 		GameLiving Target { get; set; }
 		bool HasLos { get; set; }
 
-		void CreateECSEffect(ECSGameEffectInitParams initParams);
+		ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams);
 
 		/// <summary>
 		/// Starts the spell, without displaying cast message etc.
@@ -81,6 +81,8 @@ namespace DOL.GS.Spells
 		/// </summary>
 		/// <returns></returns>
 		bool IsUnPurgeAble { get; }
+
+		ECSPulseEffect PulseEffect { get; }
 
 		/// <summary>
 		/// Determines wether new spell is better than existing one
@@ -177,7 +179,7 @@ namespace DOL.GS.Spells
 		/// </summary>
 		GameLiving Caster { get; }
 
-		void Tick(long currentTick);
+		void Tick();
 
 		/// <summary>
 		/// The power cost for this spell.

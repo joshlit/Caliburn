@@ -380,9 +380,10 @@ namespace DOL.AI.Brain
 		/// <returns>true if stopped</returns>
 		public override bool Stop()
 		{
-			if (!base.Stop()) return false;
-			//GameEventMgr.RemoveHandler(Owner, GameLivingEvent.AttackedByEnemy, new DOLEventHandler(OnOwnerAttacked));
+			if (!base.Stop())
+				return false;
 
+			StripCastedBuffs();
 			GameEventMgr.Notify(GameLivingEvent.PetReleased, Body);
 			return true;
 		}
@@ -1084,7 +1085,7 @@ namespace DOL.AI.Brain
 			{
 				foreach (GameLiving living in m_buffedTargets)
 				{
-					foreach (ECSGameEffect effect in living.effectListComponent.GetAllEffects().Where(x => x.SpellHandler.Caster == Body))
+					foreach (ECSGameEffect effect in living.effectListComponent.GetAllEffects().Where(x => x.SpellHandler != null && x.SpellHandler.Caster == Body))
 						EffectService.RequestCancelEffect(effect);
 				}
 
