@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.Language;
@@ -190,7 +171,8 @@ namespace DOL.GS.Commands
                         if (!CheckDuelStart(client.Player, duelStarter))
                             return;
 
-                        client.Player.DuelStart(duelStarter);
+						GameDuel duel = new(duelStarter, client.Player);
+						duel.Start();
 
                         if (duelStarter is GamePlayer)
                             ((GamePlayer)duelStarter).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAccept", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
@@ -261,24 +243,20 @@ namespace DOL.GS.Commands
                         return;
                     }
 
-                    case "surrender":
-                    {
-                        GameLiving target = client.Player.DuelTarget;
+					case "surrender":
+					{
+						GamePlayer target = client.Player.DuelPartner;
 
-                        if (target == null)
-                        {
-                            client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                            return;
-                        }
+						if (target == null)
+						{
+							client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+							return;
+						}
 
-                        client.Player.DuelStop();
-
-                        client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouSurrender", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
-                        if (target is GamePlayer)
-                            ((GamePlayer)target).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetSurrender", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
-                        Message.SystemToArea(client.Player, LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.PlayerVsPlayer", client.Player.Name, target.Name), eChatType.CT_Emote, client.Player, target);
+						client.Player.Duel.Stop();
+						client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouSurrender", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+						target.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetSurrender", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+						Message.SystemToArea(client.Player, LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.PlayerVsPlayer", client.Player.Name, target.Name), eChatType.CT_Emote, client.Player, target);
 
                         return;
                     }
@@ -288,69 +266,59 @@ namespace DOL.GS.Commands
             client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.DuelOptions"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
         }
 
-        /// <summary>
-        /// Checks if a duel can be started between 2 players at this moment
-        /// </summary>
-        /// <param name="actionSource">The duel starter</param>
-        /// <param name="actionTarget">The duel target</param>
-        /// <returns>true if players can start a duel</returns>
-        private static bool CheckDuelStart(GameLiving actionSource, GameLiving actionTarget)
-        {
-            GamePlayer playerActionSource = actionSource as GamePlayer;
-            GamePlayer playerActionTarget = actionTarget as GamePlayer;
-            MimicNPC mimicActionSource = actionSource as MimicNPC;
-            MimicNPC mimicActionTarget = actionTarget as MimicNPC;
-
-            if (!GameServer.ServerRules.IsSameRealm(actionSource, actionTarget, true))
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.EnemyRealm"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-
-            if (playerActionSource?.DuelTarget != null)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-            if (playerActionTarget?.DuelTarget != null)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInDuel", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-
-            if (mimicActionSource?.DuelTarget != null || mimicActionTarget?.DuelTarget != null)
-                return false;
-
-            if (actionTarget.InCombat)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInCombat", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-            if (actionSource.InCombat)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInCombat"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-            if (actionTarget.Group != null)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInGroup", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-            if (actionSource.Group != null)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInGroup"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-            if (actionSource.Health < actionSource.MaxHealth)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
-            if (actionTarget.Health < actionTarget.MaxHealth)
-            {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                return false;
-            }
+		/// <summary>
+		/// Checks if a duel can be started between 2 players at this moment
+		/// </summary>
+		/// <param name="actionSource">The duel starter</param>
+		/// <param name="actionTarget">The duel target</param>
+		/// <returns>true if players can start a duel</returns>
+		private static bool CheckDuelStart(GamePlayer actionSource, GamePlayer actionTarget)
+		{
+			if (!GameServer.ServerRules.IsSameRealm(actionSource, actionTarget, true))
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.EnemyRealm"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionSource.DuelPartner != null)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.YouInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionTarget.DuelPartner != null)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.TargetInDuel", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionTarget.InCombat)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.TargetInCombat", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionSource.InCombat)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.YouInCombat"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionTarget.Group != null)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.TargetInGroup", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionSource.Group != null)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.YouInGroup"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionSource.Health < actionSource.MaxHealth)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.YouHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			if (actionTarget.Health < actionTarget.MaxHealth)
+			{
+				actionSource.Out.SendMessage(LanguageMgr.GetTranslation(actionSource.Client, "Scripts.Players.Duel.TargetHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+				return false;
+			}
 
             return true;
         }

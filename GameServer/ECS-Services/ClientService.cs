@@ -78,7 +78,7 @@ namespace DOL.GS
                                         log.Warn($"Long {SERVICE_NAME}.{nameof(UpdateWorld)} for {player.Name}({player.ObjectID}) Time: {stopTick - startTick}ms");
                                 }
 
-                                player.movementComponent.Tick(GameLoop.GameLoopTime);
+                                player.movementComponent.Tick();
                             }
                             catch (Exception e)
                             {
@@ -167,10 +167,14 @@ namespace DOL.GS
             {
                 foreach (GameClient client in _clients)
                 {
-                    if (client == null || !client.IsPlaying)
+                    if (client == null)
                         continue;
 
                     GamePlayer player = client.Player;
+
+                    // Apparently 'Client.IsPlaying' can in sone cases be true even if it has no player. Need to figure out why.
+                    if (player == null)
+                        continue;
 
                     if (action?.Invoke(player, actionArgument) != false)
                         players.Add(player);

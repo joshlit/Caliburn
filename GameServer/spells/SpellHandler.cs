@@ -72,11 +72,11 @@ namespace DOL.GS.Spells
 		protected bool m_startReuseTimer = true;
 
 		private long _castStartTick;
-		public long CastStartTick { get { return _castStartTick; } }
-		public bool StartReuseTimer
-		{
-			get { return m_startReuseTimer; }
-		}
+		private long _castEndTick;
+		private long _calculatedCastTime;
+
+		public long CastStartTick => _castStartTick;
+		public bool StartReuseTimer => m_startReuseTimer;
 
 		/// <summary>
 		/// Can this spell be queued with other spells?
@@ -125,9 +125,6 @@ namespace DOL.GS.Spells
 		public const string INTERRUPT_TIMEOUT_PROPERTY = "CAST_INTERRUPT_TIMEOUT";
 
 		protected bool m_ignoreDamageCap = false;
-
-		private long _calculatedCastTime = 0;
-
 		private long _lastDuringCastLosCheckTime;
 
 		/// <summary>
@@ -340,17 +337,15 @@ namespace DOL.GS.Spells
 
 		#endregion
 
-		public virtual void CreateECSEffect(ECSGameEffectInitParams initParams)
+		public virtual ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
 		{
-			// Base function should be empty once all effects are moved to their own effect class.
-			new ECSGameSpellEffect(initParams);
+			return new ECSGameSpellEffect(initParams);
 		}
 
-		public virtual void CreateECSPulseEffect(GameLiving target, double effectiveness)
+		public virtual ECSPulseEffect CreateECSPulseEffect(GameLiving target, double effectiveness)
 		{
 			int freq = Spell != null ? Spell.Frequency : 0;
-
-			new ECSPulseEffect(target, this, CalculateEffectDuration(target, effectiveness), freq, effectiveness, Spell.Icon);
+			return new ECSPulseEffect(target, this, CalculateEffectDuration(target, effectiveness), freq, effectiveness, Spell.Icon);
 		}
 
 		/// <summary>
@@ -1191,7 +1186,7 @@ namespace DOL.GS.Spells
 		#endregion
 
 		//This is called after our pre-cast checks are done (Range, valid target, mana pre-req, and standing still?) and checks for the casting states
-		public void Tick(long currentTick)
+		public void Tick()
 		{
 			switch (CastState)
 			{
@@ -1199,7 +1194,7 @@ namespace DOL.GS.Spells
 				{
 					if (CheckBeginCast(Target))
 					{
-						_castStartTick = currentTick;
+						_castStartTick = GameLoop.GameLoopTime;
 
 						if (Spell.IsInstantCast)
 						{
@@ -1238,20 +1233,13 @@ namespace DOL.GS.Spells
 				{
 					if (!CheckDuringCast(Target))
 						CastState = eCastState.Interrupted;
-					if (_castStartTick + _calculatedCastTime < currentTick)
+
+					if (ServiceUtils.ShouldTick(_castEndTick))
 					{
-						if (!(m_spell.IsPulsing && m_spell.SpellType == eSpellType.Mesmerize))
-						{
-							if (!CheckEndCast(Target))
-								CastState = eCastState.Interrupted;
-							else
-								CastState = eCastState.Finished;
-						}
-						else
-						{
-							if (CheckEndCast(Target))
-								CastState = eCastState.Finished;
-						}
+						if (!m_spell.IsPulsing || m_spell.SpellType != eSpellType.Mesmerize)
+							CastState = CheckEndCast(Target) ? eCastState.Finished : eCastState.Interrupted;
+						else if (CheckEndCast(Target))
+							CastState = eCastState.Finished;
 					}
 
 					break;
@@ -1483,6 +1471,7 @@ namespace DOL.GS.Spells
 		public virtual void SendCastAnimation(ushort castTime)
 		{
 			_calculatedCastTime = castTime * 100;
+			_castEndTick = _castStartTick + _calculatedCastTime;
 
 			foreach (GamePlayer player in m_caster.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
 			{
@@ -1594,7 +1583,7 @@ namespace DOL.GS.Spells
 
 				if (m_spell.SpellType != eSpellType.Mesmerize)
 				{
-					CreateECSPulseEffect(Caster, Caster.Effectiveness);
+					PulseEffect = CreateECSPulseEffect(Caster, Caster.Effectiveness);
 					Caster.ActivePulseSpells.AddOrUpdate(m_spell.SpellType, m_spell, (x, y) => m_spell);
 				}
 			}
@@ -1622,13 +1611,13 @@ namespace DOL.GS.Spells
 
 			//the quick cast is unallowed whenever you miss the spell
 			//set the time when casting to can not quickcast during a minimum time
-			if (m_caster is GamePlayer)
+			if (playerCaster != null)
 			{
 				QuickCastECSGameEffect quickcast = (QuickCastECSGameEffect)EffectListService.GetAbilityEffectOnTarget(m_caster, eEffect.QuickCast);
 				if (quickcast != null && Spell.CastTime > 0)
 				{
 					m_caster.TempProperties.SetProperty(GamePlayer.QUICK_CAST_CHANGE_TICK, m_caster.CurrentRegion.Time);
-					((GamePlayer)m_caster).DisableSkill(SkillBase.GetAbility(Abilities.Quickcast), QuickCastAbilityHandler.DISABLE_DURATION);
+					playerCaster.DisableSkill(SkillBase.GetAbility(Abilities.Quickcast), QuickCastAbilityHandler.DISABLE_DURATION);
 					//EffectService.RequestImmediateCancelEffect(quickcast, false);
 					quickcast.Cancel(false);
 				}
@@ -2516,7 +2505,7 @@ namespace DOL.GS.Spells
 			return false;
 		}
 
-		public virtual void OnDurationEffectApply(GameLiving target)
+		public void OnDurationEffectApply(GameLiving target)
 		{
 			if (!target.IsAlive || target.effectListComponent == null)
 				return;
@@ -2527,7 +2516,10 @@ namespace DOL.GS.Spells
 			if (_distanceFallOff > 0 && Spell.Damage == 0 && (target is GamePlayer || (target is GameNPC npcTarget && npcTarget.Brain is IControlledBrain)))
 				durationEffectiveness *= 1 - _distanceFallOff / 2;
 
-			CreateECSEffect(new ECSGameEffectInitParams(target, CalculateEffectDuration(target, durationEffectiveness), Effectiveness, this));
+			ECSGameSpellEffect effect = CreateECSEffect(new ECSGameEffectInitParams(target, CalculateEffectDuration(target, durationEffectiveness), Effectiveness, this));
+
+			if (PulseEffect != null)
+				PulseEffect.ChildEffects[target] = effect;
 		}
 		
 		/// <summary>
@@ -2920,6 +2912,8 @@ namespace DOL.GS.Spells
 		{
 			get { return false; }
 		}
+
+		public virtual ECSPulseEffect PulseEffect { get; private set; }
 
 		/// <summary>
 		/// Current depth of delve info

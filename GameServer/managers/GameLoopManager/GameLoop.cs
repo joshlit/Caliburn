@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
-using DOL.GS.Scripts;
 using log4net;
 
 namespace DOL.GS
@@ -10,16 +9,19 @@ namespace DOL.GS
     public static class GameLoop
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
         public const long TICK_RATE = 50;
+        private const bool DYNAMIC_BUSY_WAIT_THRESHOLD = true; // Setting it to false disables busy waiting completely unless a default value is given to '_busyWaitThreshold'.
         private const string THREAD_NAME = "GameLoop";
+
         public static long GameLoopTime;
         public static string CurrentServiceTick;
         private static Thread _gameLoopThread;
-        private static Timer _timerRef;
-        private static Stopwatch _stopwatch = new();
-        private static long _stopwatchFrequencyMilliseconds = Stopwatch.Frequency / 1000;
+        private static Thread _busyWaitThresholdThread;
+        private static int _busyWaitThreshold;
+        private static readonly long _stopwatchFrequencyMilliseconds = Stopwatch.Frequency / 1000;
 
-        // Previously in 'GameTimer'. Not sure where this should be moved to.
+        // This is unrelated to the game loop and should probably be moved elsewhere.
         public static long GetCurrentTime()
         {
             return Stopwatch.GetTimestamp() / _stopwatchFrequencyMilliseconds;
@@ -27,79 +29,143 @@ namespace DOL.GS
 
         public static bool Init()
         {
-            _gameLoopThread = new Thread(new ThreadStart(GameLoopThreadStart))
+            if (_gameLoopThread != null)
+                return false;
+
+            _gameLoopThread = new Thread(new ThreadStart(Run))
             {
-                Priority = ThreadPriority.AboveNormal,
                 Name = THREAD_NAME,
                 IsBackground = true
             };
             _gameLoopThread.Start();
+
+            if (DYNAMIC_BUSY_WAIT_THRESHOLD)
+            {
+                _busyWaitThresholdThread = new Thread(new ThreadStart(UpdateBusyWaitThreshold))
+                {
+                    Name = "BusyWaitThreshold",
+                    Priority = ThreadPriority.AboveNormal,
+                    IsBackground = true
+                };
+                _busyWaitThresholdThread.Start();
+            }
 
             return true;
         }
 
         public static void Exit()
         {
-            _gameLoopThread?.Interrupt();
+            if (_gameLoopThread == null)
+                return;
+
+            _gameLoopThread.Interrupt();
+            _gameLoopThread.Join();
             _gameLoopThread = null;
+            _busyWaitThresholdThread.Interrupt();
+            _busyWaitThresholdThread.Join();
+            _busyWaitThresholdThread = null;
         }
 
-        private static void GameLoopThreadStart()
+        private static void Run()
         {
-            _timerRef = new Timer(Tick, null, 0, Timeout.Infinite);
-        }
+            double gameLoopTime = 0;
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
 
-        private static void Tick(object obj)
-        {
-            _stopwatch.Restart();
-            ECS.Debug.Diagnostics.StartPerfCounter(THREAD_NAME);
-
-            try
+            while (true)
             {
-                NpcService.Tick(GameLoopTime);
-                AttackService.Tick(GameLoopTime);
-                CastingService.Tick(GameLoopTime);
+                try
+                {
+                    TickServices();
+                    Sleep(stopwatch);
+                    gameLoopTime += stopwatch.Elapsed.TotalMilliseconds;
+                    GameLoopTime = (long) Math.Round(gameLoopTime);
+                    stopwatch.Restart();
+                }
+                catch (ThreadInterruptedException)
+                {
+                    log.Info($"Thread \"{_gameLoopThread.Name}\" was interrupted");
+                    return;
+                }
+                catch (Exception e)
+                {
+                    log.Error($"Critical error encountered in {nameof(GameLoop)}: {e}");
+                    GameServer.Instance.Stop();
+                    return;
+                }
+            }
+
+            static void TickServices()
+            {
+                ECS.Debug.Diagnostics.StartPerfCounter(THREAD_NAME);
+                NpcService.Tick();
+                AttackService.Tick();
+                CastingService.Tick();
                 EffectService.Tick();
-                EffectListService.Tick(GameLoopTime);
+                EffectListService.Tick();
                 ZoneService.Tick();
-                CraftingService.Tick(GameLoopTime);
-                TimerService.Tick(GameLoopTime);
+                CraftingService.Tick();
+                TimerService.Tick();
+                AuxTimerService.Tick();
                 ReaperService.Tick();
+                ClientService.Tick();
                 DailyQuestService.Tick();
                 WeeklyQuestService.Tick();
                 ConquestService.Tick();
-                BountyService.Tick(GameLoopTime);
-                PredatorService.Tick(GameLoopTime);
+                BountyService.Tick();
+                PredatorService.Tick();
+                ECS.Debug.Diagnostics.Tick();
+                CurrentServiceTick = "";
+                ECS.Debug.Diagnostics.StopPerfCounter(THREAD_NAME);
             }
-            catch (Exception e)
+
+            static void Sleep(Stopwatch stopwatch)
             {
-                log.Error($"Critical error encountered in {nameof(GameLoop)}: {e}");
-                GameServer.Instance.Stop();
+                int sleepFor = (int) (TICK_RATE - stopwatch.Elapsed.TotalMilliseconds);
+                int busyWaitThreshold = _busyWaitThreshold;
+
+                if (sleepFor >= busyWaitThreshold)
+                    Thread.Sleep(sleepFor - busyWaitThreshold);
+                else
+                    Thread.Yield();
+
+                if (busyWaitThreshold > 0)
+                    while (TICK_RATE > stopwatch.Elapsed.TotalMilliseconds) { }
+            }
+        }
+
+        private static void UpdateBusyWaitThreshold()
+        {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            try
+            {
+                while (true)
+                {
+                    double start;
+                    double overSleptFor;
+                    double highest = 0;
+
+                    for (int i = 0; i < 20; i++)
+                    {
+                        start = stopwatch.Elapsed.TotalMilliseconds;
+                        Thread.Sleep(1);
+                        overSleptFor = stopwatch.Elapsed.TotalMilliseconds - start - 1;
+
+                        if (highest < overSleptFor)
+                            highest = overSleptFor;
+                    }
+
+                    _busyWaitThreshold = Math.Max(0, (int) highest);
+                    Thread.Sleep(20000);
+                }
+            }
+            catch (ThreadInterruptedException)
+            {
+                log.Info($"Thread \"{_busyWaitThresholdThread.Name}\" was interrupted");
                 return;
             }
-
-            if (ZoneBonusRotator._lastPvEChangeTick == 0)
-                ZoneBonusRotator._lastPvEChangeTick = GameLoopTime;
-            if (ZoneBonusRotator._lastRvRChangeTick == 0)
-                ZoneBonusRotator._lastRvRChangeTick = GameLoopTime;
-
-            ECS.Debug.Diagnostics.Tick();
-            CurrentServiceTick = "";
-            ECS.Debug.Diagnostics.StopPerfCounter(THREAD_NAME);
-            GameLoopTime = GetCurrentTime();
-            _stopwatch.Stop();
-
-            float elapsed = (float) _stopwatch.Elapsed.TotalMilliseconds;
-            // We need to delay our next threading time to the default tick time. If this is > 0, we delay the next tick until its met to maintain consistent tick rate.
-            int diff = (int) (TICK_RATE - elapsed);
-
-            if (diff <= 0)
-            {
-                _timerRef.Change(0, Timeout.Infinite);
-                return;
-            }
-
-            _timerRef.Change(diff, Timeout.Infinite);
         }
     }
 }
