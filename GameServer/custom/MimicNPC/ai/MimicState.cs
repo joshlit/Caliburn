@@ -40,9 +40,18 @@ namespace DOL.AI.Brain
             if (!Init)
             {
                 _brain.AggroLevel = 100;
-                
-                _brain.PvPMode = _brain.Body.CurrentRegionID == 252 ? true : false;
-                _brain.AggroRange = _brain.PvPMode ? 3600 : 1500;
+
+                if (_brain.MimicBody.Duel != null)
+                {
+                    _brain.PvPMode = true;
+                    _brain.AggroRange = 3600;
+                }
+                else
+                {
+                    _brain.PvPMode = _brain.Body.CurrentRegionID == 252 ? true : false;
+                    _brain.AggroRange = _brain.PvPMode ? 3600 : 1500;
+                }
+
                 _brain.Roam = true;
                 _brain.Defend = false;
 
@@ -567,6 +576,44 @@ namespace DOL.AI.Brain
             }
 
             base.Think();
+        }
+    }
+
+    public class MimicState_Duel : MimicState
+    {
+        public MimicState_Duel(MimicBrain brain) : base(brain)
+        {
+            StateType = eFSMStateType.DUEL;
+        }
+
+        public override void Enter()
+        {
+            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
+                Console.WriteLine($"{_brain.Body} has entered DUEL state");
+
+            _brain.ClearAggroList();
+
+            _brain.MimicBody.DuelReady = false;
+            _brain.AggroLevel = 100;
+            _brain.PvPMode = true;
+            _brain.AggroRange = 3600;
+
+            base.Enter();
+        }
+
+        public override void Think()
+        {
+            if (!_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive))
+            {
+                _brain.MimicBody.DuelReady = true;
+                _brain.MimicBody.IsSitting = false;
+            }
+
+            if (_brain.HasAggro)
+                Console.WriteLine(_brain.Body.Name + " has aggro");
+
+            if (_brain.MimicBody.IsSitting)
+                Console.WriteLine(_brain.Body.Name + " is sitting");
         }
     }
 

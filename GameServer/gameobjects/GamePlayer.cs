@@ -20,6 +20,7 @@ using DOL.GS.PlayerTitles;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Quests;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -1787,7 +1788,7 @@ namespace DOL.GS
 
             if (Realm != eRealm.None)
             {
-                if (Level >= ServerProperties.Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
+                if (Level >= Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
                 {
                     // actual lost exp, needed for 2nd stage deaths
                     long lostExp = Experience;
@@ -1825,7 +1826,7 @@ namespace DOL.GS
                 }
             }
 
-            if (Level >= ServerProperties.Properties.PVE_CON_LOSS_LEVEL)
+            if (Level >= Properties.PVE_CON_LOSS_LEVEL)
             {
                 int deathConLoss = TempProperties.GetProperty<int>(DEATH_CONSTITUTION_LOSS_PROPERTY); // get back constitution lost at death
                 if (deathConLoss > 0)
@@ -1845,7 +1846,7 @@ namespace DOL.GS
             StartEnduranceRegeneration();
             LastDeathPvP = false;
 
-            var maxChargeItems = ServerProperties.Properties.MAX_CHARGE_ITEMS;
+            var maxChargeItems = Properties.MAX_CHARGE_ITEMS;
             /*
             foreach (var item in this.Inventory.EquippedItems)
             {
@@ -7200,18 +7201,18 @@ namespace DOL.GS
         /// <summary>
         /// Gets the duel target of this player
         /// </summary>
-        public GamePlayer DuelTarget { get { return Duel != null ? Duel.Target : null; }}
+        public GameLiving DuelTarget { get { return Duel != null ? Duel.Target : null; }}
 
         /// <summary>
         /// Get the GameDuel of this player
         /// </summary>
-        protected GameDuel Duel { get; set; }
+        public GameDuel Duel { get; set; }
 
         /// <summary>
         /// Starts the duel
         /// </summary>
         /// <param name="duelTarget">The duel target</param>
-        public virtual void DuelStart(GamePlayer duelTarget)
+        public virtual void DuelStart(GameLiving duelTarget)
         {
             if (Duel != null)
                 return;
@@ -7239,6 +7240,7 @@ namespace DOL.GS
             LastAttackTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
             LastAttackedByEnemyTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
         }
+
         #endregion
 
         #region Spell cast

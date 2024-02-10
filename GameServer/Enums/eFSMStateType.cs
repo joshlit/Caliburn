@@ -12,6 +12,7 @@
         DEAD,
         FOLLOW_THE_LEADER,
         LEADER,
-        CAMP
+        CAMP,
+        DUEL
     }
 }

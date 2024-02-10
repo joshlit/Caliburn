@@ -80,7 +80,7 @@ namespace DOL.GS.Scripts
             private int m_currentMaxHib;
             private int m_currentMaxMid;
 
-            private int m_groupChance = 35;
+            private int m_groupChance = 50;
 
             public void Start()
             {
@@ -327,7 +327,7 @@ namespace DOL.GS.Scripts
                     {
                         if (i + 1 < list.Count)
                         {
-                            if (Util.Chance(groupChance))
+                            if (Util.Chance(groupChance) && !(list[i].Group?.GetMembersInTheGroup().Count > 7))
                             {
                                 if (groupLeaderIndex == -1)
                                 {
@@ -350,7 +350,7 @@ namespace DOL.GS.Scripts
             }
 
             /// <summary>
-            /// Gets a new total maximum of mimics and maximum of mimics for each realm randomly.
+            /// Gets a new total maximum and minimum of mimics for each realm randomly.
             /// </summary>
             private void ResetMaxMimics()
             {
@@ -545,54 +545,54 @@ namespace DOL.GS.Scripts
             return false;
         }
 
-        public static MimicNPC GetMimic(eMimicClasses mimicClass, byte level, string name = "", eGender gender = eGender.Neutral, bool preventCombat = false)
+        public static MimicNPC GetMimic(eMimicClass mimicClass, byte level, string name = "", eGender gender = eGender.Neutral, bool preventCombat = false)
         {
-            if (mimicClass == eMimicClasses.None)
+            if (mimicClass == eMimicClass.None)
                 return null;
 
             MimicNPC mimic = null;
 
             switch (mimicClass)
             {
-                case eMimicClasses.Armsman:      mimic = new MimicArmsman(level); break;
-                case eMimicClasses.Cabalist:     mimic = new MimicCabalist(level); break;
-                case eMimicClasses.Cleric:       mimic = new MimicCleric(level); break;
-                case eMimicClasses.Friar:        mimic = new MimicFriar(level); break;
-                case eMimicClasses.Infiltrator:  mimic = new MimicInfiltrator(level); break;
-                case eMimicClasses.Mercenary:    mimic = new MimicMercenary(level); break;
-                case eMimicClasses.Minstrel:     mimic = new MimicMinstrel(level); break;
-                case eMimicClasses.Paladin:      mimic = new MimicPaladin(level); break;
-                case eMimicClasses.Reaver:       mimic = new MimicReaver(level); break;
-                case eMimicClasses.Scout:        mimic = new MimicScout(level); break;
-                case eMimicClasses.Sorcerer:     mimic = new MimicSorcerer(level); break;
-                case eMimicClasses.Theurgist:    mimic = new MimicTheurgist(level); break;
-                case eMimicClasses.Wizard:       mimic = new MimicWizard(level); break;
+                case eMimicClass.Armsman:      mimic = new MimicArmsman(level); break;
+                case eMimicClass.Cabalist:     mimic = new MimicCabalist(level); break;
+                case eMimicClass.Cleric:       mimic = new MimicCleric(level); break;
+                case eMimicClass.Friar:        mimic = new MimicFriar(level); break;
+                case eMimicClass.Infiltrator:  mimic = new MimicInfiltrator(level); break;
+                case eMimicClass.Mercenary:    mimic = new MimicMercenary(level); break;
+                case eMimicClass.Minstrel:     mimic = new MimicMinstrel(level); break;
+                case eMimicClass.Paladin:      mimic = new MimicPaladin(level); break;
+                case eMimicClass.Reaver:       mimic = new MimicReaver(level); break;
+                case eMimicClass.Scout:        mimic = new MimicScout(level); break;
+                case eMimicClass.Sorcerer:     mimic = new MimicSorcerer(level); break;
+                case eMimicClass.Theurgist:    mimic = new MimicTheurgist(level); break;
+                case eMimicClass.Wizard:       mimic = new MimicWizard(level); break;
 
-                case eMimicClasses.Bard:         mimic = new MimicBard(level); break;
-                case eMimicClasses.Blademaster:  mimic = new MimicBlademaster (level); break;
-                case eMimicClasses.Champion:     mimic = new MimicChampion(level); break;
-                case eMimicClasses.Druid:        mimic = new MimicDruid(level); break;
-                case eMimicClasses.Eldritch:     mimic = new MimicEldritch(level); break;
-                case eMimicClasses.Enchanter:    mimic = new MimicEnchanter(level); break;
-                case eMimicClasses.Hero:         mimic = new MimicHero(level); break;
-                case eMimicClasses.Mentalist:    mimic = new MimicMentalist(level); break;
-                case eMimicClasses.Nightshade:   mimic = new MimicNightshade(level); break;
-                case eMimicClasses.Ranger:       mimic = new MimicRanger(level); break;
-                case eMimicClasses.Valewalker:   mimic = new MimicValewalker(level); break;
-                case eMimicClasses.Warden:       mimic = new MimicWarden(level); break;
+                case eMimicClass.Bard:         mimic = new MimicBard(level); break;
+                case eMimicClass.Blademaster:  mimic = new MimicBlademaster (level); break;
+                case eMimicClass.Champion:     mimic = new MimicChampion(level); break;
+                case eMimicClass.Druid:        mimic = new MimicDruid(level); break;
+                case eMimicClass.Eldritch:     mimic = new MimicEldritch(level); break;
+                case eMimicClass.Enchanter:    mimic = new MimicEnchanter(level); break;
+                case eMimicClass.Hero:         mimic = new MimicHero(level); break;
+                case eMimicClass.Mentalist:    mimic = new MimicMentalist(level); break;
+                case eMimicClass.Nightshade:   mimic = new MimicNightshade(level); break;
+                case eMimicClass.Ranger:       mimic = new MimicRanger(level); break;
+                case eMimicClass.Valewalker:   mimic = new MimicValewalker(level); break;
+                case eMimicClass.Warden:       mimic = new MimicWarden(level); break;
 
-                case eMimicClasses.Berserker:    mimic = new MimicBerserker(level); break;
-                case eMimicClasses.Bonedancer:   mimic = new MimicBonedancer(level); break;
-                case eMimicClasses.Healer:       mimic = new MimicHealer(level); break;
-                case eMimicClasses.Hunter:       mimic = new MimicHunter(level); break;
-                case eMimicClasses.Runemaster:   mimic = new MimicRunemaster(level); break;
-                case eMimicClasses.Savage:       mimic = new MimicSavage(level); break;
-                case eMimicClasses.Shadowblade:  mimic = new MimicShadowblade (level); break;
-                case eMimicClasses.Shaman:       mimic = new MimicShaman(level); break;
-                case eMimicClasses.Skald:        mimic = new MimicSkald(level); break;
-                case eMimicClasses.Spiritmaster: mimic = new MimicSpiritmaster(level); break;
-                case eMimicClasses.Thane:        mimic = new MimicThane(level); break;
-                case eMimicClasses.Warrior:      mimic = new MimicWarrior(level); break;
+                case eMimicClass.Berserker:    mimic = new MimicBerserker(level); break;
+                case eMimicClass.Bonedancer:   mimic = new MimicBonedancer(level); break;
+                case eMimicClass.Healer:       mimic = new MimicHealer(level); break;
+                case eMimicClass.Hunter:       mimic = new MimicHunter(level); break;
+                case eMimicClass.Runemaster:   mimic = new MimicRunemaster(level); break;
+                case eMimicClass.Savage:       mimic = new MimicSavage(level); break;
+                case eMimicClass.Shadowblade:  mimic = new MimicShadowblade (level); break;
+                case eMimicClass.Shaman:       mimic = new MimicShaman(level); break;
+                case eMimicClass.Skald:        mimic = new MimicSkald(level); break;
+                case eMimicClass.Spiritmaster: mimic = new MimicSpiritmaster(level); break;
+                case eMimicClass.Thane:        mimic = new MimicThane(level); break;
+                case eMimicClass.Warrior:      mimic = new MimicWarrior(level); break;
             }
 
             if (mimic != null)
@@ -628,7 +628,7 @@ namespace DOL.GS.Scripts
             return null;
         }
 
-        public static eMimicClasses GetRandomMimicClass(eRealm realm)
+        public static eMimicClass GetRandomMimicClass(eRealm realm)
         {
             int randomIndex;
 
@@ -641,7 +641,35 @@ namespace DOL.GS.Scripts
             else
                 randomIndex = Util.Random(36);
 
-            return (eMimicClasses)randomIndex;
+            return (eMimicClass)randomIndex;
+        }
+
+        public static eMimicClass GetRandomMeleeClass()
+        {
+            int enumIndexes = Enum.GetValues(typeof(eMimicClass)).Length;
+
+            List<int> meleeClasses = new List<int>();
+
+            for (int i = 0; i < enumIndexes; i++)
+            {
+                if (i == 1
+                    || i == 10
+                    || i == 11
+                    || i == 12
+                    || i == 17
+                    || i == 18
+                    || i == 20
+                    || i == 26
+                    || i == 29
+                    || i == 34)
+                    continue;
+                else
+                    meleeClasses.Add(i);
+            }
+                
+            int randomIndex = Util.Random(meleeClasses.Count - 1);
+
+            return (eMimicClass)meleeClasses[randomIndex];
         }
 
         #region Spec
@@ -1341,13 +1369,13 @@ namespace DOL.GS.Scripts
         {
             public string Name;
             public eGender Gender;
-            public eMimicClasses MimicClass;
+            public eMimicClass MimicClass;
             public byte Level;
             public eRealm Realm;
             public long RemoveTime;
             public bool RefusedGroup;
 
-            public MimicLFGEntry(eMimicClasses mimicClass, byte level, eRealm realm, long removeTime)
+            public MimicLFGEntry(eMimicClass mimicClass, byte level, eRealm realm, long removeTime)
             {
                 Gender = Util.RandomBool() ? eGender.Male : eGender.Female;
                 Name = MimicNames.GetName(Gender, realm);

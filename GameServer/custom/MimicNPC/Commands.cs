@@ -51,7 +51,7 @@ namespace DOL.GS.Scripts
                 if (position != null)
                 {
                     string capitalize = char.ToUpper(args[1][0]) + args[1].Substring(1);
-                    eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), capitalize);
+                    eMimicClass mclass = (eMimicClass)Enum.Parse(typeof(eMimicClass), capitalize);
 
                     MimicNPC mimic = MimicManager.GetMimic(mclass, level);
                     MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
@@ -408,7 +408,7 @@ namespace DOL.GS.Scripts
             {
                 int index = 1;
                 foreach (var entry in entries)
-                    message += index++.ToString() + ". " + entry.Name + " " + Enum.GetName(typeof(eMimicClasses), entry.MimicClass) + " " + entry.Level + "\n";
+                    message += index++.ToString() + ". " + entry.Name + " " + Enum.GetName(typeof(eMimicClass), entry.MimicClass) + " " + entry.Level + "\n";
             }
             else
                 message += "No Mimics available.\n";

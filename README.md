@@ -57,6 +57,12 @@ Commands for testing:
 - Amount - The amount in the group.
 - Level - The level of all bots in the group.
 
+There are also commands from interacting with MimicNPCs. They are mostly for testing with the exception of
+[Group] - [Leader] - [MainPuller] - [MainCC] - [MainTank] - [MainAssist]. These set their respective roles or attempt to group with the bot.
+ 
+Do not click [Weapon] [Helm] [Torso] [Legs] [Arms] [Hands] [Boots] [Jewelry]
+if you don't need to, these simply place the items equipped into your inventory. You can't put them back at the moment.
+
 # Docker
 [![Build and Push Docker Image](https://github.com/OpenDAoC/OpenDAoC-Core/actions/workflows/build-docker-image.yml/badge.svg)](https://github.com/OpenDAoC/OpenDAoC-Core/actions/workflows/build-docker-image.yml)
 

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
+using DOL.GS.Commands;
 using DOL.GS.Keeps;
 using DOL.GS.Scripts;
 
@@ -36,6 +37,9 @@ namespace DOL.GS.ServerRules
 			if (!base.IsAllowedToAttack(attacker, defender, quiet))
 				return false;
 
+			if (attacker is MimicNPC && ((MimicNPC)attacker).Duel != null && defender != ((MimicNPC)attacker).DuelTarget)
+				return false;
+
 			// if controlled NPC - do checks for owner instead
 			if (attacker is GameNPC)
 			{
@@ -62,12 +66,13 @@ namespace DOL.GS.ServerRules
 			}
 
 			//Don't allow attacks on same realm members on Normal Servers
-			if (attacker.Realm == defender.Realm && !(attacker is GamePlayer && ((GamePlayer)attacker).DuelTarget == defender))
+			if (attacker.Realm == defender.Realm && !(attacker is GamePlayer && ((GamePlayer)attacker).DuelTarget == defender)
+												 && !(attacker is MimicNPC && ((MimicNPC)attacker).DuelTarget == defender))
 			{
 				// allow confused mobs to attack same realm
 				if (attacker is GameNPC && (attacker as GameNPC).IsConfused)
 					return true;
-
+				
 				if (attacker.Realm == 0)
 				{
 					return FactionMgr.CanLivingAttack(attacker, defender);
