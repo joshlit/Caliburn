@@ -14,6 +14,7 @@ using DOL.GS.Housing;
 using DOL.GS.Movement;
 using DOL.GS.PacketHandler;
 using DOL.GS.Quests;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
@@ -192,7 +193,9 @@ namespace DOL.GS
 					}
 
 					base.Level = value;
-					AutoSetStats();  // Recalculate stats when level changes
+
+					if (this is not MimicNPC)
+						AutoSetStats();  // Recalculate stats when level changes
 				}
 				else
 					base.Level = value;
@@ -3308,14 +3311,18 @@ namespace DOL.GS
 				}
 			}
 			
-			if (XPGainerList.Keys.Count == 0) return;
+			if (XPGainerList.Keys.Count == 0) 
+				return;
 
 			DbItemTemplate[] lootTemplates = LootMgr.GetLoot(this, killer);
 
 			foreach (DbItemTemplate lootTemplate in lootTemplates)
 			{
-				if (lootTemplate == null) continue;
+				if (lootTemplate == null) 
+					continue;
+
 				GameStaticItem loot = null;
+
 				if (GameMoney.IsItemMoney(lootTemplate.Name))
 				{
 					long value = lootTemplate.Price;
@@ -3438,7 +3445,8 @@ namespace DOL.GS
 						}
 					}
 				}
-				if (playerAttacker == null) return; // no loot if mob kills another mob
+				if (playerAttacker == null)
+					return; // no loot if mob kills another mob
 
 
 				droplist.Add(loot.GetName(1, false));
@@ -3792,7 +3800,7 @@ namespace DOL.GS
 			{
 				Spell spellToCast;
 
-				if (line.KeyName == GlobalSpellsLines.Mob_Spells)
+				if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
 				{
 					// NPC spells will get the level equal to their caster
 					spellToCast = (Spell)spell.Clone();
@@ -3828,10 +3836,10 @@ namespace DOL.GS
 
 			Spell spellToCast = null;
 
-			if (line.KeyName == GlobalSpellsLines.Mob_Spells)
+			if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
 			{
 				// NPC spells will get the level equal to their caster
-				spellToCast = (Spell) spell.Clone();
+				spellToCast = (Spell)spell.Clone();
 				spellToCast.Level = Level;
 			}
 			else

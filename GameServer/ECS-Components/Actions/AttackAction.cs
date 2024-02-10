@@ -45,8 +45,8 @@ namespace DOL.GS
 
         public static AttackAction Create(GameLiving gameLiving)
         {
-            //if (gameLiving is MimicNPC mimicNPC)
-            //    return new MimicAttackAction(mimicNPC);
+            if (gameLiving is MimicNPC mimicNPC)
+                return new MimicAttackAction(mimicNPC);
             if (gameLiving is GameNPC gameNpc)
                 return new NpcAttackAction(gameNpc);
             else if (gameLiving is GamePlayer gamePlayer)
@@ -183,6 +183,8 @@ namespace DOL.GS
 
             // Damage is doubled on sitting players, but only with melee weapons; arrows and magic do normal damage.
             if (_target is GamePlayer playerTarget && playerTarget.IsSitting)
+                _effectiveness *= 2;
+            else if (_target is MimicNPC mimicTarget && mimicTarget.IsSitting)
                 _effectiveness *= 2;
 
             _interruptDuration = mainHandAttackSpeed;

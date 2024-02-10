@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -136,6 +137,14 @@ namespace DOL.GS
 				return m_mezzed;
 			}
 			set { m_mezzed = value; }
+		}
+
+		protected bool m_rooted;
+
+		public bool IsRooted
+		{
+			get { return m_rooted; }
+			set { m_rooted = value; }
 		}
 
 		protected bool m_disarmed = false;
@@ -1957,7 +1966,7 @@ namespace DOL.GS
 			{
 				var brain = npc.Brain as ControlledNpcBrain;
 
-                if (ad.Target is GamePlayer)
+                if (ad.Target is GamePlayer || ad.Target is MimicNPC)
 				{
 					LastAttackTickPvP = GameLoop.GameLoopTime;
 					if (brain != null)
@@ -2093,7 +2102,19 @@ namespace DOL.GS
 			}
 			else if (ad.IsSpellResisted && ad.Target is GameNPC npc)
 				npc.CancelReturnToSpawnPoint();
-		}
+
+            if (Group != null)
+            {
+                if (Group.GetMembersInTheGroup().Any())
+				{
+                    foreach (GameLiving groupMember in Group.GetMembersInTheGroup())
+					{
+						if (groupMember is MimicNPC mimic && groupMember != this)
+                            ((MimicBrain)mimic.Brain).OnGroupMemberAttacked(ad);
+					}
+                }
+            }
+        }
 
 		public void HandleDamageShields(AttackData ad)
 		{
@@ -2362,10 +2383,13 @@ namespace DOL.GS
 		/// <returns>the amount really changed</returns>
 		public virtual int ChangeEndurance(GameObject changeSource, eEnduranceChangeType enduranceChangeType, int changeAmount)
 		{
+			
 			//TODO fire event that might increase or reduce the amount
 			int oldEndurance = Endurance;
 			Endurance += changeAmount;
-			return Endurance - oldEndurance;
+
+			return 
+				Endurance - oldEndurance;
 		}
 
 		/// <summary>
@@ -2629,7 +2653,6 @@ namespace DOL.GS
 			// 0=right hand, 1=left hand, 2=two-hand, 3=range, F=none
 			int rightHand = (VisibleActiveWeaponSlots & 0x0F);
 			int leftHand = (VisibleActiveWeaponSlots & 0xF0) >> 4;
-
 
 			// set new active weapon slot
 			switch (slot)
@@ -2974,26 +2997,6 @@ namespace DOL.GS
 		public virtual int GetResistBase(eDamageType damageType)
 		{
 			return GetModifiedBase(GetResistTypeForDamage(damageType));
-		}
-
-		/// <summary>
-		/// Get the resistance to damage by resist type
-		/// </summary>
-		/// <param name="property">one of the Resist_XXX properties</param>
-		/// <returns>the resist value</returns>
-		public virtual int GetDamageResist(eProperty property)
-		{
-			return SkillBase.GetRaceResist( m_race, (eResist)property );
-		}
-
-		/// <summary>
-		/// Gets the Damage Resist for a damage type
-		/// </summary>
-		/// <param name="damageType"></param>
-		/// <returns></returns>
-		public virtual int GetDamageResist(eDamageType damageType)
-		{
-			return GetDamageResist(GetResistTypeForDamage(damageType));
 		}
 
 		/// <summary>
@@ -3977,7 +3980,8 @@ namespace DOL.GS
 			
 			if (!this.IsWithinRadius(target, WorldMgr.WHISPER_DISTANCE))
 			{
-				return false;
+				if (target is not MimicNPC)
+					return false;
 			}
 			
 			Notify(GameLivingEvent.Whisper, this, new WhisperEventArgs(target, str));

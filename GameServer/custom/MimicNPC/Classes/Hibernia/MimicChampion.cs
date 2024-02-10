@@ -1,23 +1,31 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicChampion : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicChampion(byte level) : base(new ClassChampion(), level)
         {
             MimicSpec = new ChampionSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand);
-            MimicEquipment.SetShield(this, 2);
-            MimicEquipment.SetArmor(this, eObjectType.Scale);
-            MimicEquipment.SetJewelry(this);
+
+            int shieldSize = 1;
+
+            if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Reinforced;
+
+            if (level >= 20)
+                objectType = eObjectType.Scale;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
 
             if (MimicSpec.is2H)
@@ -26,6 +34,7 @@ namespace DOL.GS.Scripts
                 SwitchWeapon(eActiveWeaponSlot.Standard);
 
             RefreshSpecDependantSkills(false);
+            GetTauntStyles();
             SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }

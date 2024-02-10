@@ -1,52 +1,42 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicBonedancer : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicBonedancer : MimicNPC
+    {
+        public MimicBonedancer(byte level) : base(new ClassBonedancer(), level)
+        {
+            MimicSpec = new BonedancerSpec();
 
-		public MimicBonedancer(byte level) : base(new ClassBonedancer(), level)
-		{
-			MimicSpec = new BonedancerSpec();
-
-			DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
-			MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
-			RefreshSpecDependantSkills(false);
-			SetCasterSpells();
+            RefreshSpecDependantSkills(false);
+            SetCasterSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class BonedancerSpec : MimicSpec
-	{
-		public BonedancerSpec()
-		{
+    public class BonedancerSpec : MimicSpec
+    {
+        public BonedancerSpec()
+        {
             SpecName = "BonedancerSpec";
 
             WeaponTypeOne = "Staff";
 
             int randVariance = Util.Random(5);
 
-			switch (randVariance)
-			{
-				case 0:
+            switch (randVariance)
+            {
+                case 0:
                 Add("Darkness", 26, 0.1f);
                 Add("Suppression", 47, 1.0f);
                 Add("Bone Army", 5, 0.0f);
-				break;
+                break;
 
                 case 1:
                 Add("Darkness", 24, 0.1f);
@@ -79,5 +69,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

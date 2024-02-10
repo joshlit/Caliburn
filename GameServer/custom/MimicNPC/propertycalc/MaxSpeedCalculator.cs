@@ -22,6 +22,8 @@ using DOL.AI.Brain;
 using DOL.GS.Effects;
 using DOL.GS.PropertyCalc;
 using DOL.GS.RealmAbilities;
+using DOL.GS.SkillHandler;
+using DOL.GS.Spells;
 
 namespace DOL.GS.Scripts
 {
@@ -127,11 +129,6 @@ namespace DOL.GS.Scripts
             }
             else if (living is MimicNPC mimic)
             {
-                //double horseSpeed = player.IsOnHorse ? player.ActiveHorse.Speed * 0.01 : 1.0;
-
-                //if (speed > horseSpeed)
-                //    horseSpeed = 1.0;
-
                 if (ServerProperties.Properties.ENABLE_PVE_SPEED)
                 {
                     // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
@@ -139,34 +136,20 @@ namespace DOL.GS.Scripts
                         speed *= 1.25; // New run speed is 125% when no buff.
                 }
 
-                //if (mimic.IsOverencumbered && mimic.Client.Account.PrivLevel < 2 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
-                //{
-                //    double Enc = mimic.Encumberance; // Calculating player.Encumberance is a bit slow with all those locks, don't call it much.
-
-                //    if (Enc > mimic.MaxEncumberance)
-                //    {
-                //        speed *= (((mimic.MaxSpeedBase * 1.0 / GamePlayer.PLAYER_BASE_SPEED) * (-Enc)) / (mimic.MaxEncumberance * 0.35f)) + (mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) + ((mimic.MaxSpeedBase / GamePlayer.PLAYER_BASE_SPEED) * mimic.MaxEncumberance / (mimic.MaxEncumberance * 0.35));
-
-                //        if (speed <= 0)
-                //            speed = 0;
-                //    }
-                //    else
-                //        mimic.IsOverencumbered = false;
-                //}
                 if (mimic.IsStealthed)
                 {
                     AtlasOF_MasteryOfStealth mos = mimic.GetAbility<AtlasOF_MasteryOfStealth>();
                     //GameSpellEffect bloodrage = SpellHandler.FindEffectOnTarget(player, "BloodRage");
-                    //VanishEffect vanish = player.EffectList.GetOfType<VanishEffect>();
+                    //VanishEffect vanish = mimic.EffectList.GetOfType<VanishEffect>();
                     double stealthSpec = mimic.GetModifiedSpecLevel(Specs.Stealth);
-
+                    
                     if (stealthSpec > mimic.Level)
                         stealthSpec = mimic.Level;
 
                     speed *= 0.3 + (stealthSpec + 10) * 0.3 / (mimic.Level + 10);
 
                     //if (vanish != null)
-                    //    speed *= vanish.SpeedBonus;
+                        //speed *= vanish.SpeedBonus;
 
                     if (mos != null)
                         speed *= 1 + mos.GetAmountForLevel(mos.Level) / 100.0;
@@ -182,14 +165,10 @@ namespace DOL.GS.Scripts
                 //{
                 //    if (speed > 1.0)
                 //        speed = 1.0;
-
-                //    horseSpeed = 1.0;
                 //}
 
                 if (mimic.IsSprinting)
-                    speed *= 1.3;
-
-                //speed *= horseSpeed;
+                    speed *= 1.3;                
             }
             else if (living is GameNPC npc)
             {
@@ -256,7 +235,7 @@ namespace DOL.GS.Scripts
 
             speed = living.MaxSpeedBase * speed + 0.5; // 0.5 is to fix the rounding error when converting to int so root results in speed 2 ((191 * 0.01 = 1.91) + 0.5 = 2.41).
 
-            if (speed <= 0.5) // Fix for the rounding fix above. (???)
+            if (speed < 0) // Fix for the rounding fix above. (???)
                 return 0;
 
             return (int)speed;

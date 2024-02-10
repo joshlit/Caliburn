@@ -1,70 +1,60 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicSorcerer : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicSorcerer : MimicNPC
+    {
+        public MimicSorcerer(byte level) : base(new ClassSorcerer(), level)
+        {
+            MimicSpec = new SorcererSpec();
 
-		public MimicSorcerer(byte level) : base(new ClassSorcerer(), level)
-		{
-			MimicSpec = new SorcererSpec();
-			
-			DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-			RefreshSpecDependantSkills(false);
-			SetCasterSpells();
+            RefreshSpecDependantSkills(false);
+            SetCasterSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
-	
-	public class SorcererSpec : MimicSpec
-	{
-		public SorcererSpec()
-		{
-			SpecName = "SorcererSpec";
+    }
+
+    public class SorcererSpec : MimicSpec
+    {
+        public SorcererSpec()
+        {
+            SpecName = "SorcererSpec";
 
             WeaponTypeOne = "Staff";
 
             int randVariance = Util.Random(4);
 
-			switch (randVariance)
-			{
-				case 0:
-				case 1:
+            switch (randVariance)
+            {
+                case 0:
+                case 1:
                 Add("Matter Magic", 8, 0.0f);
                 Add("Body Magic", 30, 0.6f);
-				Add("Mind Magic", 44, 0.8f);
+                Add("Mind Magic", 44, 0.8f);
                 break;
 
-				case 2:
+                case 2:
                 Add("Matter Magic", 26, 0.5f);
                 Add("Body Magic", 5, 0.0f);
-				Add("Mind Magic", 47, 0.8f);
+                Add("Mind Magic", 47, 0.8f);
                 break;
 
-				case 3:
+                case 3:
                 Add("Matter Magic", 5, 0.0f);
                 Add("Body Magic", 22, 0.6f);
-				Add("Mind Magic", 49, 0.8f);
+                Add("Mind Magic", 49, 0.8f);
                 break;
 
                 case 4:
                 Add("Matter Magic", 8, 0.0f);
                 Add("Body Magic", 40, 0.6f);
-				Add("Mind Magic", 36, 0.8f);
+                Add("Mind Magic", 36, 0.8f);
                 break;
 
                 case 5:
@@ -79,6 +69,6 @@ namespace DOL.GS.Scripts
                 Add("Mind Magic", 29, 0.6f);
                 break;
             }
-		}
-	}
+        }
+    }
 }

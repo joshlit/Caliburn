@@ -20,6 +20,7 @@ using DOL.GS.PlayerTitles;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Quests;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -1787,7 +1788,7 @@ namespace DOL.GS
 
             if (Realm != eRealm.None)
             {
-                if (Level >= ServerProperties.Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
+                if (Level >= Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
                 {
                     // actual lost exp, needed for 2nd stage deaths
                     long lostExp = Experience;
@@ -1825,7 +1826,7 @@ namespace DOL.GS
                 }
             }
 
-            if (Level >= ServerProperties.Properties.PVE_CON_LOSS_LEVEL)
+            if (Level >= Properties.PVE_CON_LOSS_LEVEL)
             {
                 int deathConLoss = TempProperties.GetProperty<int>(DEATH_CONSTITUTION_LOSS_PROPERTY); // get back constitution lost at death
                 if (deathConLoss > 0)
@@ -1845,7 +1846,7 @@ namespace DOL.GS
             StartEnduranceRegeneration();
             LastDeathPvP = false;
 
-            var maxChargeItems = ServerProperties.Properties.MAX_CHARGE_ITEMS;
+            var maxChargeItems = Properties.MAX_CHARGE_ITEMS;
             /*
             foreach (var item in this.Inventory.EquippedItems)
             {
@@ -7194,54 +7195,24 @@ namespace DOL.GS
             }
         }
 
-        /// <summary>
-        /// Easy method to get the resist of a certain damage type
-        /// Good for when we add RAs
-        /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        public override int GetDamageResist(eProperty property)
-        {
-            int res = 0;
-            int classResist = 0;
-            int secondResist = 0;
-
-            //Q: Do the Magic resist bonuses from Bedazzling Aura and Empty Mind stack with each other?
-            //A: Nope.
-            switch ((eResist)property)
-            {
-                case eResist.Body:
-                case eResist.Cold:
-                case eResist.Energy:
-                case eResist.Heat:
-                case eResist.Matter:
-                case eResist.Spirit:
-                    res += BaseBuffBonusCategory[(int)eProperty.MagicAbsorption];
-                    break;
-                default:
-                    break;
-            }
-            return (int)((res + classResist) - 0.01 * secondResist * (res + classResist) + secondResist);
-        }
-
         #endregion
 
         #region Duel
         /// <summary>
         /// Gets the duel target of this player
         /// </summary>
-        public GamePlayer DuelTarget { get { return Duel != null ? Duel.Target : null; }}
+        public GameLiving DuelTarget { get { return Duel != null ? Duel.Target : null; }}
 
         /// <summary>
         /// Get the GameDuel of this player
         /// </summary>
-        protected GameDuel Duel { get; set; }
+        public GameDuel Duel { get; set; }
 
         /// <summary>
         /// Starts the duel
         /// </summary>
         /// <param name="duelTarget">The duel target</param>
-        public virtual void DuelStart(GamePlayer duelTarget)
+        public virtual void DuelStart(GameLiving duelTarget)
         {
             if (Duel != null)
                 return;
@@ -7269,6 +7240,7 @@ namespace DOL.GS
             LastAttackTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
             LastAttackedByEnemyTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
         }
+
         #endregion
 
         #region Spell cast

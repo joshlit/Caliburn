@@ -5,6 +5,7 @@ using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
 using log4net;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,10 +54,12 @@ namespace DOL.GS
 		/// Holds the style that this living should use next
 		/// </summary>
 		protected Style m_nextCombatStyle;
+
         /// <summary>
         /// Holds the backup style for the style that the living should use next
         /// </summary>
         protected Style m_nextCombatBackupStyle;
+
         /// <summary>
         /// Holds the time at which the style was set
         /// </summary>
@@ -73,6 +76,7 @@ namespace DOL.GS
             get { return m_nextCombatStyle; }
             set { m_nextCombatStyle = value; }
         }
+
         /// <summary>
         /// Gets or Sets the next combat backup style to use
         /// </summary>
@@ -81,6 +85,7 @@ namespace DOL.GS
             get { return m_nextCombatBackupStyle; }
             set { m_nextCombatBackupStyle = value; }
         }
+
         /// <summary>
         /// Gets or Sets the time at which the style was set
         /// </summary>
@@ -124,7 +129,7 @@ namespace DOL.GS
                 return null;
 
             AttackData lastAttackData = _owner.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
-            DbInventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int) eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
+            DbInventoryItem weapon = NextCombatStyle.WeaponTypeRequirement == (int)eObjectType.Shield ? _owner.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : _owner.ActiveWeapon;
             return MimicStyleProcessor.CanUseStyle(lastAttackData, _owner, NextCombatStyle, weapon) ? NextCombatStyle : NextCombatBackupStyle ?? AutomaticBackupStyle ?? NextCombatStyle;
         }
 
@@ -135,6 +140,7 @@ namespace DOL.GS
 		public Style NPCGetStyleToUse()
         {
             var p = _owner as GameNPC;
+            MimicNPC mimic = _owner as MimicNPC;
 
             if (_owner is not MimicNPC)
             {
@@ -144,10 +150,6 @@ namespace DOL.GS
 
             AttackData lastAttackData = p.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
 
-            // Chain and defensive styles are excluded from the chance roll because they would almost never happen otherwise. 
-            // For example, an NPC blocks 10% of the time, so the default 20% style chance effectively means the defensive 
-            // style would only actually occur during 2% of of a mob's attacks. In comparison, a style chain would only happen 
-            // 0.4% of the time.
             if (p.StylesChain != null && p.StylesChain.Count > 0)
                 foreach (Style s in p.StylesChain)
                     if (MimicStyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
@@ -161,21 +163,25 @@ namespace DOL.GS
 
             bool chance;
 
-            if (p is MimicNPC)
+            if (mimic != null)
                 chance = true;
             else
                 chance = Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE);
 
             if (chance)
             {
-                // All of the remaining lists are randomly picked from,
-                // as this creates more variety with each combat result.
-                // For example, a mob with both Pincer and Ice Storm
-                // styles could potentially use one or the other with
-                // each attack roll that succeeds.
+                if (mimic != null && mimic.MimicBrain.IsMainTank)
+                {
+                    if (mimic.TauntStyles != null && mimic.TauntStyles.Count > 0)
+                    {
+                        foreach (Style s in mimic.TauntStyles)
+                        {
+                            if (MimicStyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                                return s;
+                        }
+                    }
+                }
 
-                // First, check positional styles (in order of back, side, front)
-                // in case the defender is facing another direction
                 if (p.StylesBack != null && p.StylesBack.Count > 0)
                 {
                     Style s = p.StylesBack[Util.Random(0, p.StylesBack.Count - 1)];
@@ -197,9 +203,22 @@ namespace DOL.GS
                         return s;
                 }
 
-                // Pick a random anytime style
                 if (p.StylesAnytime != null && p.StylesAnytime.Count > 0)
-                    return p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                {
+                    Random rng = new Random();
+
+                    var randomList = p.StylesAnytime.OrderBy(x => rng.Next()).ToList();
+
+                    foreach (Style s in randomList)
+                    {
+                        if (mimic != null && !mimic.MimicBrain.PvPMode && mimic.Group != null && !mimic.MimicBrain.IsMainTank)
+                            if (mimic.TauntStyles != null && mimic.TauntStyles.Contains(s))
+                                continue;
+
+                        if (MimicStyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                            return s;
+                    }
+                }
             }
 
             return null;
@@ -253,29 +272,33 @@ namespace DOL.GS
                                 case Style.eAttackResultRequirement.Style:
                                 case Style.eAttackResultRequirement.Hit: // TODO: make own message for hit after styles DB is updated
 
-                                    Style reqStyle = SkillBase.GetStyleByID(style.OpeningRequirementValue, p.CharacterClass.ID);
+                                Style reqStyle = SkillBase.GetStyleByID(style.OpeningRequirementValue, p.CharacterClass.ID);
 
-                                    if (reqStyle == null)
-                                        message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterStyle", "(style " + style.OpeningRequirementValue + " not found)");
+                                if (reqStyle == null)
+                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterStyle", "(style " + style.OpeningRequirementValue + " not found)");
+                                else message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterStyle", reqStyle.Name);
 
-                                    else message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterStyle", reqStyle.Name);
+                                break;
 
-                                    break;
                                 case Style.eAttackResultRequirement.Miss:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterMissed");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterMissed");
+                                break;
+
                                 case Style.eAttackResultRequirement.Parry:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterParried");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterParried");
+                                break;
+
                                 case Style.eAttackResultRequirement.Block:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterBlocked");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterBlocked");
+                                break;
+
                                 case Style.eAttackResultRequirement.Evade:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterEvaded");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterEvaded");
+                                break;
+
                                 case Style.eAttackResultRequirement.Fumble:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterFumbles");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.AfterFumbles");
+                                break;
                             }
                         }
                         else if (Style.eOpening.Defensive == style.OpeningRequirementType)
@@ -283,26 +306,32 @@ namespace DOL.GS
                             switch (style.AttackResultRequirement)
                             {
                                 case Style.eAttackResultRequirement.Miss:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetMisses");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetMisses");
+                                break;
+
                                 case Style.eAttackResultRequirement.Hit:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetHits");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetHits");
+                                break;
+
                                 case Style.eAttackResultRequirement.Parry:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetParried");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetParried");
+                                break;
+
                                 case Style.eAttackResultRequirement.Block:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetBlocked");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetBlocked");
+                                break;
+
                                 case Style.eAttackResultRequirement.Evade:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetEvaded");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetEvaded");
+                                break;
+
                                 case Style.eAttackResultRequirement.Fumble:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetFumbles");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetFumbles");
+                                break;
+
                                 case Style.eAttackResultRequirement.Style:
-                                    message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetStyle");
-                                    break;
+                                message = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.RefreshSpec.TargetStyle");
+                                break;
                             }
                         }
 

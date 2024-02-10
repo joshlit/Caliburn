@@ -61,6 +61,19 @@ namespace DOL.GS.Styles
 				// Required attack result.
 				eAttackResult requiredAttackResult = eAttackResult.Any;
 
+				MimicNPC mimic = living as MimicNPC;
+
+				if (mimic != null)
+				{
+					if (style != null && weapon != null)
+					{
+						int fatigue = CalculateEnduranceCost(living, style, weapon.SPD_ABS);
+
+						if (living.Endurance < fatigue)
+							return false;
+					}
+				}
+
 				switch (style.AttackResultRequirement)
 				{
 					case Style.eAttackResultRequirement.Any: requiredAttackResult = eAttackResult.Any; break;
@@ -123,16 +136,16 @@ namespace DOL.GS.Styles
 							//Back Styles
 							//60 degree since 1.62 patch
 							case Style.eOpeningPosition.Back:
-								if (!(angle > 150 && angle < 210))
-									return false;
-								break;
+							if (!(angle > 150 && angle < 210))
+								return false;
+							break;
 							// Side Styles  
 							//105 degree since 1.62 patch
 							// Atlas change: 90 degrees
 							case Style.eOpeningPosition.Side:
 								if (!(angle >= 60 && angle <= 150) && !(angle >= 210 && angle <= 300))
 									return false;
-								break;
+							break;
 							// Front Styles
 							// 90 degree
 							// Atlas change: 120 degrees
@@ -357,12 +370,12 @@ namespace DOL.GS.Styles
 					// Reduce players endurance. Full endurance cost if conditions aren't met too.
 					if (player != null)
 						player.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
-					
-					if (mimic != null)
-                        mimic.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
-                }
 
-                AttackData lastAttackData = living.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+					if (mimic != null)
+						mimic.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
+				}
+
+				AttackData lastAttackData = living.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
 
                 // Did primary and backup style fail?
                 if (!CanUseStyle(lastAttackData, living, style, weapon))

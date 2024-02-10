@@ -9,17 +9,17 @@ namespace DOL.GS.Scripts
     public enum eHand
     {
         None = -1,
-        oneHand = 0,
-        twoHand = 1,
-        leftHand = 2,
+
+        oneHand,
+        twoHand,
+        leftHand,
     }
 
-    public enum eMimicClasses
+    public enum eMimicClass
     {
-        Random = -2,
         None = -1,
 
-        Armsman = 0,
+        Armsman,
         Cabalist,
         Cleric,
         Friar,
@@ -64,7 +64,7 @@ namespace DOL.GS.Scripts
     {
         None = -1,
 
-        Bard = 0,
+        Bard,
         Blademaster,
         Champion,
         Druid,
@@ -82,7 +82,7 @@ namespace DOL.GS.Scripts
     {
         None = -1,
 
-        Berserker = 0,
+        Berserker,
         Bonedancer,
         Healer,
         Hunter,
@@ -94,5 +94,46 @@ namespace DOL.GS.Scripts
         Spiritmaster,
         Thane,
         Warrior
+    }
+
+    public enum eMimicGroupRole
+    {
+        None = -1,
+
+        Leader,
+        MainAssist,
+        MainTank,
+        MainCC
+    }
+
+    public enum ePositional
+    {
+        None = -1,
+
+        Back,
+        Side,
+        Front
+    }
+
+    public enum eQueueMessage
+    {
+        None = -1,
+
+        WaitForBuffs,
+
+        LowPower,
+        OutOfPower,
+
+        LowEndurance,
+        OutOfEndurance
+    }
+
+    public enum eQueueMessageResult
+    {
+        None = -1,
+
+        Accept,
+        Deny,
+        OnHold
     }
 }

@@ -1,23 +1,35 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicPaladin : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicPaladin(byte level) : base(new ClassPaladin(), level)
         {
             MimicSpec = new PaladinSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand, MimicSpec.DamageType);
-            MimicEquipment.SetShield(this, 3);
-            MimicEquipment.SetArmor(this, eObjectType.Plate);
-            MimicEquipment.SetJewelry(this);
+
+            int shieldSize = 1;
+
+            if (level >= 10)
+                shieldSize = 3;
+            else if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Studded;
+
+            if (level >= 20)
+                objectType = eObjectType.Plate;
+            else if (level >= 10)
+                objectType = eObjectType.Chain;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
 
             if (!MimicSpec.is2H)
@@ -26,6 +38,7 @@ namespace DOL.GS.Scripts
                 SwitchWeapon(eActiveWeaponSlot.TwoHanded);
 
             RefreshSpecDependantSkills(false);
+            GetTauntStyles();
             SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
@@ -41,12 +54,12 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: 
+                case 0:
                 WeaponTypeOne = "Slash";
                 DamageType = eWeaponDamageType.Slash;
                 break;
 
-                case 1: 
+                case 1:
                 WeaponTypeOne = "Thrust";
                 DamageType = eWeaponDamageType.Thrust;
                 break;

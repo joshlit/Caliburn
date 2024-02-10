@@ -1,41 +1,23 @@
-﻿using DOL.AI.Brain;
-using DOL.GS.API;
+﻿using DOL.AI;
+using DOL.AI.Brain;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using log4net;
+using log4net.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using static DOL.Database.DbArtifactBonus;
 
 namespace DOL.GS.Scripts
 {
-    //[CmdAttribute(
-    //    "&pull",
-    //    ePrivLevel.Admin,
-    //    "/mpull - Pull a player to you.")]
-    //public class PullCommandHandler : AbstractCommandHandler, ICommandHandler
-    //{
-    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-    //    public void OnCommand(GameClient client, string[] args)
-    //    {
-    //        foreach (GameClient playerClient in WorldMgr.GetAllPlayingClients())
-    //        {
-    //            GamePlayer player = client.Player;
-
-    //            playerClient.Player.MoveTo(player.CurrentRegionID, player.X, player.Y, player.Z, player.Heading);
-    //        }
-    //    }
-    //}
+    #region Admin/GM/Debug/Cheats
 
     [CmdAttribute(
-    "&mimic",
+    "&m",
     ePrivLevel.Player,
-    "/mimic - To summon a realm mate")]
+    "/m - Create a mimic of a certain class at your position or ground target.")]
     public class SummonCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -44,7 +26,7 @@ namespace DOL.GS.Scripts
         {
             if (args.Length > 0)
             {
-                byte level = 1;
+                byte level;
 
                 if (args.Length > 2)
                 {
@@ -54,25 +36,22 @@ namespace DOL.GS.Scripts
                         level = 1;
                 }
                 else
-                {
                     level = client.Player.Level;
-                }
 
-                Point3D position = null;
+                Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
 
                 if (client.Player.GroundTarget != null)
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
 
-                    if (client.Player.GroundTarget.GetDistance(playerPos) < 3000)
+                    if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
                         position = new Point3D(client.Player.GroundTarget);
                 }
 
                 if (position != null)
                 {
                     string capitalize = char.ToUpper(args[1][0]) + args[1].Substring(1);
-
-                    eMimicClasses mclass = (eMimicClasses)Enum.Parse(typeof(eMimicClasses), capitalize);
+                    eMimicClass mclass = (eMimicClass)Enum.Parse(typeof(eMimicClass), capitalize);
 
                     MimicNPC mimic = MimicManager.GetMimic(mclass, level);
                     MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
@@ -82,9 +61,9 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mimicgroup",
+       "&mgroup",
        ePrivLevel.Player,
-       "/mimicgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
+       "/mgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
     public class SummonMimicGroupCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -94,7 +73,6 @@ namespace DOL.GS.Scripts
             if (args.Length >= 2)
             {
                 args[1] = args[1].ToLower();
-                log.Info("args[1]: " + args[1]);
 
                 byte groupSize = 8;
                 if (args.Length >= 3)
@@ -116,20 +94,20 @@ namespace DOL.GS.Scripts
                 else
                     level = client.Player.Level;
 
-                Point3D position = null;
+                Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
 
                 if (client.Player.GroundTarget != null)
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
 
-                    if (client.Player.GroundTarget.GetDistance(playerPos) < 3000)
+                    if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
                         position = new Point3D(client.Player.GroundTarget);
                 }
 
                 if (position != null)
                 {
                     List<GameLiving> groupMembers = new List<GameLiving>();
-                    MimicNPC mimic = null;
+                    MimicNPC mimic;
 
                     switch (args[1])
                     {
@@ -143,7 +121,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Albion);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), level);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -157,15 +135,13 @@ namespace DOL.GS.Scripts
                         {
                             for (int i = 0; i < groupSize; i++)
                             {
-                                eMimicClasses mimicClass = (eMimicClasses)Util.Random(12, 22);
-
                                 int randomX = Util.Random(-100, 100);
                                 int randomY = Util.Random(-100, 100);
 
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Hibernia);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), level);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -179,15 +155,13 @@ namespace DOL.GS.Scripts
                         {
                             for (int i = 0; i < groupSize; i++)
                             {
-                                eMimicClasses mimicClass = (eMimicClasses)Util.Random(23, 33);
-
                                 int randomX = Util.Random(-100, 100);
                                 int randomY = Util.Random(-100, 100);
 
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(eMimicClasses.Random, level, eRealm.Midgard);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), level);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -215,6 +189,8 @@ namespace DOL.GS.Scripts
                                 groupMembers[0].Group.AddMember(living);
 
                                 MimicBrain brain = ((MimicNPC)living).Brain as MimicBrain;
+                                brain.PvPMode = true;
+                                brain.Roam = true;
                                 brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
                             }
                         }
@@ -225,97 +201,426 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mc",
+       "&mpvp",
        ePrivLevel.Player,
-       "/mc - Set universal combat prevention on/off")]
-    public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
+       "/mpvp (true/false) - Set PvP mode on selected mimic.")]
+    public class MimicPvPModeCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
-            if (args.Length > 0)
-            {
-                string toLower = args[1].ToLower();
+            if (client.Player != null && client.Player.TargetObject is not MimicNPC)
+                return;
 
-                switch(args[1])
+            MimicNPC mimic = client.Player.TargetObject as MimicNPC;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
                 {
-                    case "on":
-                    MimicManager.SetPreventCombat(true);
+                    case "true":
+                    mimic.MimicBrain.PvPMode = true;
                     break;
 
-                    case "off":
-                    MimicManager.SetPreventCombat(false);
+                    case "false":
+                    mimic.MimicBrain.PvPMode = false;
                     break;
                 }
             }
         }
     }
 
-    //[CmdAttribute(
-    //   "&equip",
-    //   ePrivLevel.Player,
-    //   "/equip - Get a set of armor and weapons. WeaponSpec, ArmorType")]
-    //public class EquipCommandHandler : AbstractCommandHandler, ICommandHandler
-    //{
-    //    private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-    //    public void OnCommand(GameClient client, string[] args)
-    //    {
-    //        if (args.Length > 0)
-    //        {
-    //            string weapon = args[1];
-    //            string armor = args[2];
-
-    //            MimicEquipment.SetMeleeWeapon(client.Player, weapon);
-    //            MimicEquipment.SetArmor(client.Player, MimicEquipment.GetObjectType(armor));
-    //            MimicEquipment.SetJewelry(client.Player);
-    //        }
-    //    }
-    //}
-
     [CmdAttribute(
-       "&effects",
-       ePrivLevel.Player,
-       "/effects - Get a list of current effects.")]
-    public class EffectsCommandHandler : AbstractCommandHandler, ICommandHandler
+   "&mpc",
+   ePrivLevel.Player,
+   "/mpc (true/false) - Set prevent combat on selected mimic.")]
+    public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
-            //client.Player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+            if (client.Player != null && client.Player.TargetObject is not MimicNPC)
+                return;
+
+            MimicNPC mimic = client.Player.TargetObject as MimicNPC;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
+                {
+                    case "true":
+                    mimic.MimicBrain.PreventCombat = true;
+                    break;
+
+                    case "false":
+                    mimic.MimicBrain.PreventCombat = false;
+                    break;
+                }
+            }
         }
     }
 
     [CmdAttribute(
-      "&mimicbattle",
+      "&mbattle",
       ePrivLevel.Player,
-      "/mimicbattle - Call mimics to Thid")]
+      "/mbattle [Region] (Start/Stop/Clear>)",
+      "Regions: Thid. Start - Start spawning. Stop - Stop spawning. Clear - Stop and remove mimics.")]
     public class MimicBattleCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
-            MimicBattlegrounds.Start(client.Player);
+            if (args.Length > 2)
+            {
+                args[1] = args[1].ToLower();
+                args[2] = args[2].ToLower();
+
+                switch (args[1])
+                {
+                    case "thid":
+                    switch (args[2])
+                    {
+                        case "start": MimicBattlegrounds.ThidBattleground.Start(); break;
+                        case "stop": MimicBattlegrounds.ThidBattleground.Stop(); break;
+                        case "clear": MimicBattlegrounds.ThidBattleground.Clear(); break;
+                    }
+                    break;
+                }
+            }
         }
     }
+
+    [CmdAttribute(
+      "&msummon",
+      ePrivLevel.Player,
+      "/msummon - Summons all mimics in your group.")]
+    public class MimimcSummonCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            if (client.Player.Group == null)
+                return;
+
+            foreach (GameLiving groupMember in client.Player.Group.GetMembersInTheGroup())
+            {
+                if (groupMember != client.Player)
+                    groupMember.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
+            }
+        }
+    }
+
+    #endregion Admin/GM/Debug/Cheats
+
+    #region MimicGroup
+
+    [CmdAttribute(
+       "&mlfg",
+       ePrivLevel.Player,
+       "/mlfg - Get a list of Mimics that are looking for a group.")]
+    public class LocCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+
+            if (player == null)
+                return;
+
+            var entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+            string message;
+
+            if (args.Length < 2)
+            {
+                message = BuildMessage(entries);
+            }
+            else
+            {
+                int index = int.Parse(args[1]) - 1;
+
+                if (index < 0 || index > entries.Count - 1)
+                    message = BuildMessage(entries, true);
+                else
+                {
+                    MimicLFGManager.MimicLFGEntry entry = entries[index];
+
+                    int baseChance = 90;
+
+                    if (MimicConfig.LEVEL_BIAS)
+                    {
+                        int biasAmount = 5;
+                        int levelDifference = player.Level - entry.Level;
+
+                        if (Math.Abs(levelDifference) > 1)
+                            baseChance += levelDifference * biasAmount;
+
+                        baseChance = Math.Clamp(baseChance, 5, 95);
+                    }
+
+                    if (Util.Chance(baseChance) && !entry.RefusedGroup)
+                    {
+                        if (player.Group == null)
+                        {
+                            player.Group = new Group(player);
+                            player.Group.AddMember(player);
+                        }
+
+                        if (player.Group.GetMembersInTheGroup().Count < ServerProperties.Properties.GROUP_MAX_MEMBER)
+                        {
+                            MimicNPC mimic = MimicManager.GetMimic(entry.MimicClass, entry.Level, entry.Name, entry.Gender);
+                            MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
+
+                            player.Group.AddMember(mimic);
+
+                            MimicLFGManager.Remove(player.Realm, entry);
+
+                            // Send a refreshed list with new indexes to avoid using wrong indexes while leaving the dialogue open
+                            entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+
+                            message = BuildMessage(entries);
+                        }
+                        else
+                            message = BuildMessage(entries, true);
+                    }
+                    else
+                    {
+                        if (entry.RefusedGroup)
+                            player.Out.SendMessage(entry.Name + " sends, \"Sorry, I've already said no.\"", eChatType.CT_Send, eChatLoc.CL_SystemWindow);
+                        else
+                            player.Out.SendMessage(entry.Name + " sends, \"No thanks, looking for a different group!\"", eChatType.CT_Send, eChatLoc.CL_SystemWindow);
+
+                        entry.RefusedGroup = true;
+                        return;
+                    }
+                }
+            }
+
+            player.Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_PopupWindow);
+        }
+
+        private string BuildMessage(List<MimicLFGManager.MimicLFGEntry> entries, bool invalid = false)
+        {
+            string message = "--------------------------------\n";
+
+            if (invalid)
+                message += "Invalid number selection or group is full\n";
+            else if (entries.Any())
+            {
+                int index = 1;
+                foreach (var entry in entries)
+                    message += index++.ToString() + ". " + entry.Name + " " + Enum.GetName(typeof(eMimicClass), entry.MimicClass) + " " + entry.Level + "\n";
+            }
+            else
+                message += "No Mimics available.\n";
+
+            return message;
+        }
+    }
+
+    [CmdAttribute(
+        "&mrole",
+        ePrivLevel.Player,
+        "/mrole (leader/tank/assist/cc/puller) - Set the role of a group member.")]
+    public class MainRoleCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            GameLiving target = player.TargetObject as GameLiving;
+
+            if (player.Group == null || target == null)
+                return;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                bool success = false;
+
+                switch (args[1])
+                {
+                    case "leader": success = player.Group.MimicGroup.SetLeader(target); break;
+                    case "tank": success = player.Group.MimicGroup.SetMainTank(target); break;
+                    case "assist": success =player.Group.MimicGroup.SetMainAssist(target); break;
+                    case "cc": success = player.Group.MimicGroup.SetMainCC(target); break;
+                    case "puller": success = player.Group.MimicGroup.SetMainPuller(target); break;
+                }
+
+                if (!success)
+                    player.Out.SendMessage("Failed to set " + args[1], eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+            }
+        }
+    }
+
+    [CmdAttribute(
+        "&mcamp",
+        ePrivLevel.Player,
+        "/mcamp (set/remove/aggrorange/filter)- Set where the group camp point is, remove the camp point, the range the group will aggro, and the con level the puller will pull.")]
+    public class CampCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            Point3D target = client.Player.GroundTarget;
+
+            if (player.Group == null)
+                return;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
+                {
+                    case "set":
+                    {
+                        if (target == null || player.GetDistance(player.GroundTarget) > 2000)
+                        {
+                            player.Out.SendMessage("Ground target is too far away.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                            return;
+                        }
+
+                        player.Group.MimicGroup.SetCampPoint(target);
+
+                        player.Out.SendMessage("Set camp spot.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+
+                        foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                            if (groupMember is MimicNPC mimic)
+                                mimic.Brain.FSM.SetCurrentState(eFSMStateType.CAMP);
+                    }
+                    break;
+
+                    case "remove":
+                    {
+                        if (player.Group.MimicGroup.CampPoint != null)
+                        {
+                            player.Group.MimicGroup.SetCampPoint(null);
+                            player.Out.SendMessage("Removed camp spot.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                        }
+                        else
+                            player.Out.SendMessage("No camp spot to remove.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+
+                        foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                        {
+                            if (groupMember is MimicNPC mimic)
+                            {
+                                mimic.Brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
+                                mimic.MimicBrain.AggroRange = 3600;
+                            }
+                        }
+                    }
+                    break;
+
+                    case "aggrorange":
+                    {
+                        if (args.Length > 2)
+                        {
+                            int range = int.Parse(args[2]);
+
+                            if (range < 0 || range > int.MaxValue)
+                                range = 550;
+
+                            foreach (GameLiving groupMember in player.Group.GetMembersInTheGroup())
+                            {
+                                if (groupMember is MimicNPC mimic)
+                                {
+                                    FSMState mimicState = mimic.Brain.FSM.GetState(eFSMStateType.CAMP);
+
+                                    ((MimicState_Camp)mimicState).AggroRange = range;
+                                }
+                            }
+
+                            player.Out.SendMessage("Camp aggro range is " + range, eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        }
+                    }
+                    break;
+
+                    case "filter":
+                    {
+                        if (args.Length > 2)
+                        {
+                            args[2] = args[2].ToLower();
+
+                            switch (args[2])
+                            {
+                                case "purple": player.Group.MimicGroup.ConLevelFilter = 3; break;
+                                case "red": player.Group.MimicGroup.ConLevelFilter = 2; break;
+                                case "orange": player.Group.MimicGroup.ConLevelFilter = 1; break;
+                                case "yellow": player.Group.MimicGroup.ConLevelFilter = 0; break;
+                                case "blue": player.Group.MimicGroup.ConLevelFilter = -1; break;
+                                case "green": player.Group.MimicGroup.ConLevelFilter = -2; break;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    [CmdAttribute(
+        "&mpullfrom",
+        ePrivLevel.Player,
+        "/mpullfrom (set/remove) - Set where the group puller should try to pull from.")]
+    public class PullFromCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            GamePlayer player = client.Player;
+            Point3D target = client.Player.GroundTarget;
+
+            if (player.Group == null)
+                return;
+
+            if (args.Length > 1)
+            {
+                args[1] = args[1].ToLower();
+
+                switch (args[1])
+                {
+                    case "set":
+                    {
+                        if (target == null || !player.GroundTargetInView)
+                            return;
+
+                        player.Group.MimicGroup.SetPullPoint(target);
+
+                        player.Out.SendMessage("Set position to pull from.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                    }
+                    break;
+
+                    case "remove":
+                    {
+                        player.Group.MimicGroup.SetPullPoint(null);
+
+                        player.Out.SendMessage("Removed position to pull from.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    #endregion MimicGroup
 
     [CmdAttribute(
       "&mbstats",
       ePrivLevel.Player,
-      "/mbstats - Get stats on Thid.")]
+      "/mbstats [Battleground] - Get stats on a battleground.",
+      "[Battleground] - Thid")]
     public class MimicBattleStatsCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
-            if (MimicBattlegrounds.Running)
+            if (args.Length > 1)
             {
-                MimicBattlegrounds.MimicBattlegroundStats(client.Player);
-            }
+                args[1] = args[1].ToLower();
+
+                switch(args[1])
+                {
+                    case "thid": MimicBattlegrounds.ThidBattleground.BattlegroundStats(client.Player); break;
+                }
+            }    
         }
     }
 }

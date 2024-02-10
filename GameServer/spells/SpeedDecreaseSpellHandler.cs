@@ -108,7 +108,10 @@ namespace DOL.GS.Spells
 			ECSGameEffect mezz = EffectListService.GetEffectOnTarget(effect.Owner, eEffect.Mez);
 			if (mezz != null)
 				EffectService.RequestImmediateCancelEffect(mezz);
-				//mezz.Cancel(false);
+			//mezz.Cancel(false);
+
+			if (Spell.Value == 99)
+				effect.Owner.IsRooted = true;
 		}
 
 		/// <summary>
@@ -120,6 +123,9 @@ namespace DOL.GS.Spells
 		/// <returns>immunity duration in milliseconds</returns>
 		public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
 		{
+			if (effect.Owner.IsRooted)
+				effect.Owner.IsRooted = false;
+
 			GameEventMgr.RemoveHandler(effect.Owner, GameLivingEvent.AttackedByEnemy, new DOLEventHandler(OnAttacked));
 			return base.OnEffectExpires(effect, noMessages);
 		}

@@ -1,44 +1,39 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using System.Web;
-using static DOL.GS.CommanderPet;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicDruid : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		public MimicDruid(byte level) : base(new ClassDruid(), level)
-		{
+    public class MimicDruid : MimicNPC
+    {
+        public MimicDruid(byte level) : base(new ClassDruid(), level)
+        {
             MimicSpec = new DruidSpec();
 
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 1);
-			//SetRangedWeapon(eObjectType.Fired);
-			MimicEquipment.SetArmor(this, eObjectType.Scale);
-			MimicEquipment.SetJewelry(this);
+            SpendSpecPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetShield(this, 1);
+
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 20)
+                objectType = eObjectType.Scale;
+            else if (level >= 10)
+                objectType = eObjectType.Reinforced;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
-			SetSpells();
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class DruidSpec : MimicSpec
-	{
-		public DruidSpec() 
-		{
-			SpecName = "DruidSpec";
+    public class DruidSpec : MimicSpec
+    {
+        public DruidSpec()
+        {
+            SpecName = "DruidSpec";
             is2H = false;
 
             int randBaseWeap = Util.Random(1);
@@ -78,5 +73,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

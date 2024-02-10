@@ -1,35 +1,32 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicScout : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
+    public class MimicScout : MimicNPC
+    {
         public MimicScout(byte level) : base(new ClassScout(), level)
-		{
-			MimicSpec = new ScoutSpec();
+        {
+            MimicSpec = new ScoutSpec();
 
-			DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow);
             MimicEquipment.SetShield(this, 1);
-            MimicEquipment.SetArmor(this, eObjectType.Studded);
-            MimicEquipment.SetJewelry(this);
+
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 10)
+                objectType = eObjectType.Studded;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Distance);
-			RefreshSpecDependantSkills(false);
+            RefreshSpecDependantSkills(false);
+            GetTauntStyles();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
     public class ScoutSpec : MimicSpec
     {

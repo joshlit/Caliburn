@@ -1,41 +1,46 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicWarrior : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicWarrior : MimicNPC
+    {
+        public MimicWarrior(byte level) : base(new ClassWarrior(), level)
+        {
+            MimicSpec = new WarriorSpec();
 
-		public MimicWarrior(byte level) : base(new ClassWarrior(), level)
-		{
-			MimicSpec = new WarriorSpec();
-
-			DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 3);
-			//MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown);
-			MimicEquipment.SetArmor(this, eObjectType.Chain);
-			MimicEquipment.SetJewelry(this);
+            //MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown);
+
+            int shieldSize = 1;
+
+            if (level >= 10)
+                shieldSize = 3;
+            else if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Studded;
+
+            if (level >= 10)
+                objectType = eObjectType.Chain;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
-			RefreshSpecDependantSkills(false);
+            RefreshSpecDependantSkills(false);
+            GetTauntStyles();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class WarriorSpec : MimicSpec
-	{
-		public WarriorSpec()
-		{
+    public class WarriorSpec : MimicSpec
+    {
+        public WarriorSpec()
+        {
             SpecName = "WarriorSpec";
 
             int randBaseWeap = Util.Random(2);
@@ -49,13 +54,13 @@ namespace DOL.GS.Scripts
 
             int randVariance = Util.Random(1);
 
-			switch (randVariance)
-			{
-				case 0:
+            switch (randVariance)
+            {
+                case 0:
                 Add(WeaponTypeOne, 50, 0.8f);
                 Add("Shields", 42, 0.5f);
                 Add("Parry", 39, 0.2f);
-				break;
+                break;
 
                 case 1:
                 Add(WeaponTypeOne, 50, 0.8f);
@@ -64,5 +69,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

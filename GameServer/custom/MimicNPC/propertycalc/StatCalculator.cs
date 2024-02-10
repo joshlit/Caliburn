@@ -74,7 +74,7 @@ namespace DOL.GS.Scripts
                 livingToCheck = necromancerPet.Owner ?? living;
             else
                 livingToCheck = living;
-
+            
             int baseStat = living.GetBaseStat((eStat)property);
             int itemBonus = CalcValueFromItems(livingToCheck, property);
             int buffBonus = CalcValueFromBuffs(living, property);
@@ -117,17 +117,17 @@ namespace DOL.GS.Scripts
 
             // Caps and cap increases. Only players actually have a buff bonus cap, pets don't.
 
-            int baseBuffBonusCap = 0;
-            int specBuffBonusCap = 0;
+            int baseBuffBonusCap;
+            int specBuffBonusCap;
 
             if (living is MimicNPC || living is GamePlayer)
             {
-                baseBuffBonus = (int)(living.Level * 1.25);
-                specBuffBonus = (int)(living.Level * 1.5 * 1.25);
+                baseBuffBonusCap = (int)(living.Level * 1.25);
+                specBuffBonusCap = (int)(living.Level * 1.5 * 1.25);
             }
             else
             {
-                baseBuffBonus = short.MaxValue;
+                baseBuffBonusCap = short.MaxValue;
                 specBuffBonusCap = short.MaxValue;
             }
 

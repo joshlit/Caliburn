@@ -1,34 +1,24 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicWizard : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicWizard : MimicNPC
+    {
+        public MimicWizard(byte level) : base(new ClassWizard(), level)
+        {
+            MimicSpec = new WizardSpec();
 
-		public MimicWizard(byte level) : base(new ClassWizard(), level)
-		{
-			MimicSpec = new WizardSpec();
-
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
+            SpendSpecPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-			RefreshSpecDependantSkills(false);
-			SetCasterSpells();
+            RefreshSpecDependantSkills(false);
+            SetCasterSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
     public class WizardSpec : MimicSpec
     {
@@ -36,7 +26,7 @@ namespace DOL.GS.Scripts
         {
             SpecName = "WizardSpec";
 
-			WeaponTypeOne = "Staff";
+            WeaponTypeOne = "Staff";
 
             int randVariance = Util.Random(2);
 

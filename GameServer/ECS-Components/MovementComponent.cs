@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DOL.GS.Scripts;
+using System;
 using static DOL.GS.GameObject;
 
 namespace DOL.GS

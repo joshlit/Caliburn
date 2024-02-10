@@ -1,24 +1,14 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicSavage : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		public MimicSavage(byte level) : base(new ClassSavage(), level)
-		{
+    public class MimicSavage : MimicNPC
+    {
+        public MimicSavage(byte level) : base(new ClassSavage(), level)
+        {
             MimicSpec = new SavageSpec();
 
-			DistributeSkillPoints();
+            SpendSpecPoints();
 
             if (MimicSpec.WeaponTypeOne == "Hand to Hand")
             {
@@ -28,8 +18,8 @@ namespace DOL.GS.Scripts
             else
                 MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
 
-			MimicEquipment.SetArmor(this, eObjectType.Studded);
-			MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetArmor(this, eObjectType.Studded);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
 
             if (MimicSpec.WeaponTypeOne == "Hand to Hand")
@@ -37,16 +27,17 @@ namespace DOL.GS.Scripts
             else
                 SwitchWeapon(eActiveWeaponSlot.TwoHanded);
 
-			RefreshSpecDependantSkills(false);
+            RefreshSpecDependantSkills(false);
+            GetTauntStyles();
             SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class SavageSpec : MimicSpec
-	{
-		public SavageSpec()
-		{
+    public class SavageSpec : MimicSpec
+    {
+        public SavageSpec()
+        {
             SpecName = "SavageSpec";
 
             int randBaseWeap = Util.Random(4);
@@ -57,18 +48,18 @@ namespace DOL.GS.Scripts
                 case 1: WeaponTypeOne = "Axe"; break;
                 case 2: WeaponTypeOne = "Hammer"; break;
                 case 3:
-				case 4: WeaponTypeOne = "Hand to Hand"; break;
+                case 4: WeaponTypeOne = "Hand to Hand"; break;
             }
 
             int randVariance = Util.Random(3);
 
-			switch (randVariance)
-			{
-				case 0:
+            switch (randVariance)
+            {
+                case 0:
                 Add(WeaponTypeOne, 44, 0.7f);
                 Add("Savagery", 49, 0.9f);
                 Add("Parry", 4, 0.0f);
-				break;
+                break;
 
                 case 1:
                 Add(WeaponTypeOne, 39, 0.7f);
@@ -89,5 +80,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

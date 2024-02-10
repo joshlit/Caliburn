@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DOL.GS;
 
 namespace DOL.GS.Scripts
 {
-    class MimicNPCInventory : GameLivingInventory
+    public static class MimicConfig
     {
-        public MimicNPCInventory()
-        {
-        }
+        public static bool CLASS_BIAS = true;
+
+        public static bool LEVEL_BIAS = true;
     }
 }

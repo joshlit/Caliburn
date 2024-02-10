@@ -1,49 +1,47 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicShaman : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		public MimicShaman(byte level) : base(new ClassShaman(), level)
-		{
+    public class MimicShaman : MimicNPC
+    {
+        public MimicShaman(byte level) : base(new ClassShaman(), level)
+        {
             MimicSpec = new ShamanSpec();
 
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 1);
-			MimicEquipment.SetArmor(this, eObjectType.Chain);
-			MimicEquipment.SetJewelry(this);
+            SpendSpecPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetShield(this, 1);
+
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 20)
+                objectType = eObjectType.Chain;
+            else if (level >= 10)
+                objectType = eObjectType.Studded;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
-			RefreshSpecDependantSkills(false);
-			SetSpells();
+            RefreshSpecDependantSkills(false);
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class ShamanSpec : MimicSpec
-	{
-		public ShamanSpec()
-		{
+    public class ShamanSpec : MimicSpec
+    {
+        public ShamanSpec()
+        {
             SpecName = "ShamanSpec";
 
-			WeaponTypeOne = "Hammer";
+            WeaponTypeOne = "Hammer";
 
             int randVariance = Util.Random(7);
 
-			switch (randVariance)
-			{
-				case 0:
+            switch (randVariance)
+            {
+                case 0:
                 case 1:
                 Add("Mending", 8, 0.2f);
                 Add("Augmentation", 46, 0.8f);
@@ -87,5 +85,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

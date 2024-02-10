@@ -1,34 +1,40 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using System.Threading;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicReaver : MimicNPC
-	{
-		public MimicReaver(byte level) : base(new ClassReaver(), level)
-		{
+    public class MimicReaver : MimicNPC
+    {
+        public MimicReaver(byte level) : base(new ClassReaver(), level)
+        {
             MimicSpec = new ReaverSpec();
-            
-			DistributeSkillPoints();
+
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-            MimicEquipment.SetShield(this, 3);
-            MimicEquipment.SetArmor(this, eObjectType.Chain);
-            MimicEquipment.SetJewelry(this);     
+
+            int shieldSize = 1;
+
+            if (level >= 17)
+                shieldSize = 3;
+            else if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Studded;
+
+            if (level >= 10)
+                objectType = eObjectType.Chain;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
-			RefreshSpecDependantSkills(false);
-			SetSpells();
+            RefreshSpecDependantSkills(false);
+            GetTauntStyles();
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
     public class ReaverSpec : MimicSpec
     {
@@ -49,7 +55,7 @@ namespace DOL.GS.Scripts
 
             int randVariance = Util.Random(2);
 
-            switch(randVariance)
+            switch (randVariance)
             {
                 case 0:
                 case 1:

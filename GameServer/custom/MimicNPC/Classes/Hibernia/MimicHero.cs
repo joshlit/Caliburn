@@ -1,24 +1,36 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicHero : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicHero(byte level) : base(new ClassHero(), level)
         {
             MimicSpec = new HeroSpec();
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeTwo, eHand.twoHand);
-            MimicEquipment.SetShield(this, 3);
-            MimicEquipment.SetArmor(this, eObjectType.Scale);
-            MimicEquipment.SetJewelry(this);
+
+            int shieldSize = 1;
+
+            if (level >= 10)
+                shieldSize = 3;
+            else if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Reinforced;
+
+            if (level >= 15)
+            {
+                objectType = eObjectType.Scale;
+                MimicEquipment.SetRangedWeapon(this, eObjectType.Fired);
+            }
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
 
             if (MimicSpec.is2H)
@@ -27,6 +39,7 @@ namespace DOL.GS.Scripts
                 SwitchWeapon(eActiveWeaponSlot.Standard);
 
             RefreshSpecDependantSkills(false);
+            GetTauntStyles();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -57,7 +70,7 @@ namespace DOL.GS.Scripts
             else
                 WeaponTypeTwo = "Large Weapons";
 
-            int randVariance = Util.Random(5);
+            int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
@@ -67,8 +80,8 @@ namespace DOL.GS.Scripts
                 Add("Parry", 28, 0.1f);
                 break;
 
+                case 1:
                 case 2:
-                case 3:
                 is2H = true;
                 Add(WeaponTypeOne, 39, 0.8f);
                 Add(WeaponTypeTwo, 50, 1.0f);
@@ -76,8 +89,8 @@ namespace DOL.GS.Scripts
                 Add("Parry", 6, 0.1f);
                 break;
 
+                case 3:
                 case 4:
-                case 5:
                 is2H = true;
                 Add(WeaponTypeOne, 39, 0.8f);
                 Add(WeaponTypeTwo, 44, 1.0f);

@@ -43,7 +43,12 @@ namespace DOL.GS.PlayerClass
 			return true;
 		}
 
-		public override List<PlayerRace> EligibleRaces => new List<PlayerRace>()
+        public override eClassType ClassType
+        {
+            get { return eClassType.Hybrid; }
+        }
+
+        public override List<PlayerRace> EligibleRaces => new List<PlayerRace>()
 		{
 			 PlayerRace.Celt, PlayerRace.Firbolg, PlayerRace.Sylvan,
 		};

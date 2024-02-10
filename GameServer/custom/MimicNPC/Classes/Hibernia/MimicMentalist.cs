@@ -1,21 +1,17 @@
 ﻿using DOL.GS.PlayerClass;
-using log4net;
-using System.Reflection;
 
 namespace DOL.GS.Scripts
 {
     public class MimicMentalist : MimicNPC
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public MimicMentalist(byte level) : base(new ClassMentalist(), level)
         {
             MimicSpec = MimicManager.Random(this);
 
-            DistributeSkillPoints();
+            SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelry(this);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
@@ -32,7 +28,7 @@ namespace DOL.GS.Scripts
 
             WeaponTypeOne = "Staff";
 
-            int randVariance = Util.Random(5);
+            int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
@@ -77,7 +73,7 @@ namespace DOL.GS.Scripts
 
             WeaponTypeOne = "Staff";
 
-            int randVariance = Util.Random(5);
+            int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
@@ -122,7 +118,7 @@ namespace DOL.GS.Scripts
 
             WeaponTypeOne = "Staff";
 
-            int randVariance = Util.Random(4);
+            int randVariance = Util.Random(3);
 
             switch (randVariance)
             {

@@ -1,44 +1,49 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using System.Web;
-using static DOL.GS.CommanderPet;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicWarden : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		public MimicWarden(byte level) : base(new ClassWarden(), level)
-		{
+    public class MimicWarden : MimicNPC
+    {
+        public MimicWarden(byte level) : base(new ClassWarden(), level)
+        {
             MimicSpec = new WardenSpec();
 
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 2);
-			//SetRangedWeapon(eObjectType.Fired);
-			MimicEquipment.SetArmor(this, eObjectType.Reinforced);
-			MimicEquipment.SetJewelry(this);
+            SpendSpecPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+
+            if (level >= 7)
+                MimicEquipment.SetRangedWeapon(this, eObjectType.Fired);
+
+            int shieldSize = 1;
+
+            if (level >= 5)
+                shieldSize = 2;
+
+            MimicEquipment.SetShield(this, shieldSize);
+
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 20)
+                objectType = eObjectType.Scale;
+            else if (level >= 10)
+                objectType = eObjectType.Reinforced;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
-			SetSpells();
+            GetTauntStyles();
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class WardenSpec : MimicSpec
-	{
-		public WardenSpec() 
-		{
-			SpecName = "WardenSpec";
+    public class WardenSpec : MimicSpec
+    {
+        public WardenSpec()
+        {
+            SpecName = "WardenSpec";
             is2H = false;
 
             int randBaseWeap = Util.Random(1);
@@ -81,5 +86,5 @@ namespace DOL.GS.Scripts
                 break;
             }
         }
-	}
+    }
 }

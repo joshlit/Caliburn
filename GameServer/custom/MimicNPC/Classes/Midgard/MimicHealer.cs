@@ -1,49 +1,47 @@
-﻿using System;
-using System.Reflection;
-using DOL.GS;
-using DOL.GS.Scripts;
-using DOL.Database;
-using log4net;
-using DOL.GS.Realm;
-using System.Collections.Generic;
-using DOL.GS.PlayerClass;
+﻿using DOL.GS.PlayerClass;
 
 namespace DOL.GS.Scripts
 {
-	public class MimicHealer : MimicNPC
-	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+    public class MimicHealer : MimicNPC
+    {
+        public MimicHealer(byte level) : base(new ClassHealer(), level)
+        {
+            MimicSpec = MimicManager.Random(this);
 
-		public MimicHealer(byte level) : base(new ClassHealer(), level)
-		{
-			MimicSpec = MimicManager.Random(this);
+            SpendSpecPoints();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+            MimicEquipment.SetShield(this, 1);
 
-			DistributeSkillPoints();
-			MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-			MimicEquipment.SetShield(this, 1);
-			MimicEquipment.SetArmor(this, eObjectType.Chain);
-			MimicEquipment.SetJewelry(this);
+            eObjectType objectType = eObjectType.Leather;
+
+            if (level >= 20)
+                objectType = eObjectType.Chain;
+            else if (level >= 10)
+                objectType = eObjectType.Studded;
+
+            MimicEquipment.SetArmor(this, objectType);
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
-			RefreshSpecDependantSkills(false);
-			SetSpells();
+            RefreshSpecDependantSkills(false);
+            SetSpells();
             IsCloakHoodUp = Util.RandomBool();
         }
-	}
+    }
 
-	public class PacHealer : MimicSpec
-	{
-		public PacHealer()
-		{
+    public class PacHealer : MimicSpec
+    {
+        public PacHealer()
+        {
             SpecName = "PacHealer";
 
-			WeaponTypeOne = "Hammer";
+            WeaponTypeOne = "Hammer";
 
             int randVariance = Util.Random(3);
 
-			switch (randVariance)
-			{
-				case 0:
+            switch (randVariance)
+            {
+                case 0:
                 case 1:
                 Add("Mending", 31, 0.5f);
                 Add("Augmentation", 4, 0.1f);
@@ -60,10 +58,10 @@ namespace DOL.GS.Scripts
                 Add("Mending", 33, 0.5f);
                 Add("Augmentation", 19, 0.1f);
                 Add("Pacification", 38, 0.8f);
-                break;                
+                break;
             }
         }
-	}
+    }
 
     public class AugHealer : MimicSpec
     {

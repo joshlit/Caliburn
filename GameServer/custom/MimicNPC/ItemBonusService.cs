@@ -4,6 +4,8 @@ namespace DOL.GS.Scripts
 {
     public class ItemBonusService
     {
+        // For potential use with a smarter MimicEquip.
+
         public enum BonusType
         {
             Stat,

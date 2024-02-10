@@ -22,8 +22,10 @@ namespace DOL.GS.Spells
 	/// </summary>
 	public class SpellHandler : ISpellHandler
 	{
-		// Maximum number of sub-spells to get delve info for.
-		protected const byte MAX_DELVE_RECURSION = 5;
+        public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        // Maximum number of sub-spells to get delve info for.
+        protected const byte MAX_DELVE_RECURSION = 5;
 
 		// Maximum number of Concentration spells that a single caster is allowed to cast.
 		private const int MAX_CONC_SPELLS = 20;
@@ -479,7 +481,7 @@ namespace DOL.GS.Spells
 						Target = Caster?.TargetObject as GameLiving;
 
 					// Pet spells are automatically casted on the controlled NPC, but only if the current target isn't a subpet or a turret.
-					if (((Target as GameNPC)?.Brain as IControlledBrain)?.GetPlayerOwner() != Caster && Caster.ControlledBrain?.Body != null)
+					if (((Target as GameNPC)?.Brain as IControlledBrain)?.GetLivingOwner() != Caster && Caster.ControlledBrain?.Body != null)
 						Target = Caster.ControlledBrain.Body;
 
 					break;
@@ -618,12 +620,12 @@ namespace DOL.GS.Spells
 			// Check interrupt timer.
 			if (!m_spell.Uninterruptible && !m_spell.IsInstantCast && Caster.InterruptAction > 0 && Caster.IsBeingInterrupted)
 			{
-				if (m_caster is GamePlayer)
+				if (m_caster is GamePlayer || m_caster is MimicNPC)
 				{
 					if (!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.QuickCast) &&
 						!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.MasteryOfConcentration))
 					{
-						if (!quiet)
+						if (!quiet && m_caster is GamePlayer)
 							MessageToCaster($"You must wait {(Caster.InterruptTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted);
 
 						return false;
@@ -1553,17 +1555,26 @@ namespace DOL.GS.Spells
 			// Messages
 			if (Spell.InstrumentRequirement == 0 && Spell.ClientEffect != 0)
 			{
-				if (Spell.SpellType != eSpellType.PveResurrectionIllness && Spell.SpellType != eSpellType.RvrResurrectionIllness)
+				if (Spell.SpellType is not eSpellType.PveResurrectionIllness and not eSpellType.RvrResurrectionIllness)
 				{
+					GameLiving toExclude = null;
+
 					if (playerCaster != null)
+					{
 						// Message: You cast a {0} spell!
 						MessageToCaster(LanguageMgr.GetTranslation(playerCaster.Client, "SpellHandler.CastSpell.Msg.YouCastSpell", Spell.Name), eChatType.CT_Spell);
-					if (Caster is NecromancerPet {Owner: GamePlayer casterOwner})
+						toExclude = playerCaster;
+					}
+					else if (Caster is NecromancerPet pet && pet.Owner is GamePlayer casterOwner)
+					{
 						// Message: {0} cast a {1} spell!
 						casterOwner.Out.SendMessage(LanguageMgr.GetTranslation(casterOwner.Client.Account.Language, "SpellHandler.CastSpell.Msg.PetCastSpell", Caster.GetName(0, true), Spell.Name), eChatType.CT_Spell, eChatLoc.CL_SystemWindow);
+						toExclude = casterOwner;
+					}
+
 					foreach (GamePlayer player in m_caster.GetPlayersInRadius(WorldMgr.INFO_DISTANCE))
 					{
-						if (player != m_caster)
+						if (player != toExclude)
 							// Message: {0} casts a spell!
 							player.MessageFromArea(m_caster, LanguageMgr.GetTranslation(player.Client, "SpellHandler.CastSpell.Msg.LivingCastsSpell", Caster.GetName(0, true)), eChatType.CT_Spell, eChatLoc.CL_SystemWindow);
 					}
@@ -2567,7 +2578,7 @@ namespace DOL.GS.Spells
 		/// <returns>immunity duration in milliseconds</returns>
 		public virtual int OnEffectExpires(GameSpellEffect effect, bool noMessages)
 		{
-			return 0;
+            return 0;
 		}
 
 		/// <summary>
