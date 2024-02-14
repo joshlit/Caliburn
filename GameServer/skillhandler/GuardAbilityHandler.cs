@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Reflection;
 using DOL.GS.PacketHandler;
 using DOL.Language;
 using log4net;

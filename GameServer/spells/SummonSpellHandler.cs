@@ -39,9 +39,9 @@ namespace DOL.GS.Spells
 
 		public SummonSpellHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
 
-		public override void CreateECSEffect(ECSGameEffectInitParams initParams)
+		public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
 		{
-			new PetECSGameEffect(initParams);
+			return new PetECSGameEffect(initParams);
 		}
 
 		/// <summary>
@@ -211,9 +211,9 @@ namespace DOL.GS.Spells
 
 			foreach (var ability in pet.effectListComponent.GetAbilityEffects())
 			{
-                if (ability is InterceptECSGameEffect interceptEffect && interceptEffect.Source == pet && interceptEffect.Target == petOwner)
-                    EffectService.RequestCancelEffect(interceptEffect);
-            }
+				if (ability is InterceptECSGameEffect interceptEffect && interceptEffect.Source == pet && interceptEffect.Target == petOwner)
+					EffectService.RequestCancelEffect(interceptEffect);
+			}
 
 			GameEventMgr.RemoveHandler(pet, GameLivingEvent.PetReleased, new DOLEventHandler(OnNpcReleaseCommand));
 			

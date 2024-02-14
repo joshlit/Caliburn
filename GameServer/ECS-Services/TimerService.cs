@@ -87,7 +87,7 @@ namespace DOL.GS
         public int Interval { get; set; }
         public ref long NextTick => ref _nextTick;
         public bool IsAlive { get; private set; }
-        public int TimeUntilElapsed => (int)(_nextTick - GameLoop.GameLoopTime);
+        public int TimeUntilElapsed => (int) (_nextTick - GameLoop.GameLoopTime);
         public EntityManagerId EntityManagerId { get; set; } = new(EntityManager.EntityType.Timer, false);
         private PropertyCollection _properties;
 

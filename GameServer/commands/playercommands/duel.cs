@@ -248,11 +248,11 @@ namespace DOL.GS.Commands
                     {
                         GameLiving target = client.Player.DuelPartner;
 
-                        if (target == null)
-                        {
-                            client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                            return;
-                        }
+						if (target == null)
+						{
+							client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+							return;
+						}
 
                         client.Player.Duel.Stop();
 

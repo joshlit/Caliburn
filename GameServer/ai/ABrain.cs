@@ -10,12 +10,14 @@ namespace DOL.AI
     /// </summary>
     public abstract class ABrain : IManagedEntity
     {
+        private long _nextThinkTick;
+
         public FSM FSM { get; set; }
         public EntityManagerId EntityManagerId { get; set; } = new(EntityManager.EntityType.Brain, false);
         public virtual GameNPC Body { get; set; }
         public virtual bool IsActive => Body != null && Body.IsAlive && Body.ObjectState == GameObject.eObjectState.Active && Body.IsVisibleToPlayers;
         public virtual int ThinkInterval { get; set; } = 2500;
-        public virtual long LastThinkTick { get; set; }
+        public virtual ref long NextThinkTick => ref _nextThinkTick;
 
         /// <summary>
         /// Returns the string representation of the ABrain

@@ -10,17 +10,15 @@ namespace DOL.GS
         public GameLiving Target { get; private set; }
         public ProtectECSGameEffect PairedEffect { get; private set; }
         public override ushort Icon => 411;
-
         public override string Name
         {
             get
             {
                 return Source != null && Target != null
-                    ? LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Effects.ProtectEffect.ProtectByName", Target.GetName(0, false), Source.GetName(0, false))
-                    : LanguageMgr.GetTranslation(((GamePlayer)Owner).Client, "Effects.ProtectEffect.Name");
+                    ? LanguageMgr.GetTranslation(((GamePlayer) Owner).Client, "Effects.ProtectEffect.ProtectByName", Target.GetName(0, false), Source.GetName(0, false))
+                    : LanguageMgr.GetTranslation(((GamePlayer) Owner).Client, "Effects.ProtectEffect.Name");
             }
         }
-
         public override bool HasPositiveEffect => true;
 
         public ProtectECSGameEffect(ECSGameEffectInitParams initParams, GameLiving source, GameLiving target) : base(initParams)

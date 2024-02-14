@@ -43,7 +43,7 @@ namespace DOL.GS
 
         public ConcurrentLinkedList<GameObject>.Writer GetObjectWriter(LinkedListNode<GameObject> node)
         {
-            return _objects[(byte)node.Value.GameObjectType].GetWriter();
+            return _objects[(byte) node.Value.GameObjectType].GetWriter();
         }
     }
 

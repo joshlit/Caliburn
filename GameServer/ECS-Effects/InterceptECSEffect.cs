@@ -10,7 +10,6 @@ namespace DOL.GS
         public GameLiving Source { get; private set; }
         public GameLiving Target { get; private set; }
         public InterceptECSGameEffect PairedEffect { get; private set; }
-
         public int InterceptChance
         {
             get
@@ -30,9 +29,7 @@ namespace DOL.GS
                 return 75;
             }
         }
-
-        public override ushort Icon => Owner is GameNPC ? (ushort)7249 : (ushort)410;
-
+        public override ushort Icon => Owner is GameNPC ? (ushort) 7249 : (ushort) 410;
         public override string Name
         {
             get
@@ -47,7 +44,6 @@ namespace DOL.GS
                 return string.Empty;
             }
         }
-
         public override bool HasPositiveEffect => true;
 
         public InterceptECSGameEffect(ECSGameEffectInitParams initParams, GameLiving source, GameLiving target) : base(initParams)

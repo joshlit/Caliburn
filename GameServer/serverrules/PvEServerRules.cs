@@ -19,7 +19,6 @@
 
 using System;
 using DOL.AI.Brain;
-using DOL.GS.PacketHandler;
 using DOL.Database;
 
 namespace DOL.GS.ServerRules

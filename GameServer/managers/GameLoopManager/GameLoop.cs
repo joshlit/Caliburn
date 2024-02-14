@@ -79,7 +79,7 @@ namespace DOL.GS
                     TickServices();
                     Sleep(stopwatch);
                     gameLoopTime += stopwatch.Elapsed.TotalMilliseconds;
-                    GameLoopTime = (long)Math.Round(gameLoopTime);
+                    GameLoopTime = (long) Math.Round(gameLoopTime);
                     stopwatch.Restart();
                 }
                 catch (ThreadInterruptedException)
@@ -121,7 +121,7 @@ namespace DOL.GS
 
             static void Sleep(Stopwatch stopwatch)
             {
-                int sleepFor = (int)(TICK_RATE - stopwatch.Elapsed.TotalMilliseconds);
+                int sleepFor = (int) (TICK_RATE - stopwatch.Elapsed.TotalMilliseconds);
                 int busyWaitThreshold = _busyWaitThreshold;
 
                 if (sleepFor >= busyWaitThreshold)
@@ -157,7 +157,7 @@ namespace DOL.GS
                             highest = overSleptFor;
                     }
 
-                    _busyWaitThreshold = Math.Max(0, (int)highest);
+                    _busyWaitThreshold = Math.Max(0, (int) highest);
                     Thread.Sleep(20000);
                 }
             }

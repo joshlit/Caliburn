@@ -46,7 +46,7 @@ public class PredatorService
                 }
             }
         }
-
+        
         if (ServiceUtils.ShouldTickAdjust(ref _nextMessage))
         {
             _nextMessage += _messageBroadcastInterval;
@@ -69,7 +69,7 @@ public class PredatorService
                 }
             }
         }
-
+        
         if (ServiceUtils.ShouldTickAdjust(ref _nextInsert))
         {
             _nextInsert += _insertInterval;

@@ -1,8 +1,8 @@
+using System.Linq;
+using System.Reflection;
 using DOL.GS.PacketHandler;
 using DOL.Language;
 using log4net;
-using System.Linq;
-using System.Reflection;
 
 namespace DOL.GS.SkillHandler
 {

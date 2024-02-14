@@ -6017,7 +6017,7 @@ namespace DOL.GS
                 if (spell.InstrumentRequirement != 0)
                 {
                     Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-                    EffectService.RequestImmediateCancelConcEffect(EffectListService.GetPulseEffectOnTarget(this, spell));
+                    EffectService.RequestImmediateCancelEffect(EffectListService.GetPulseEffectOnTarget(this, spell));
                 }
             }
 
@@ -6387,19 +6387,15 @@ namespace DOL.GS
             if (Duel != null && !IsDuelPartner(source as GameLiving))
                 Duel.Stop();
 
-            #region PVP DAMAGE
-
             if (source is GamePlayer || (source is GameNPC npc && npc.Brain is IControlledBrain brain && brain.GetPlayerOwner() != null) || source is GameSiegeWeapon)
             {
                 if (Realm != source.Realm && source.Realm != 0)
                     DamageRvRMemory += damageAmount + criticalAmount;
             }
 
-            #endregion PVP DAMAGE
-
             base.TakeDamage(source, damageType, damageAmount, criticalAmount);
 
-            if(HasAbility(Abilities.DefensiveCombatPowerRegeneration))
+            if (HasAbility(Abilities.DefensiveCombatPowerRegeneration))
                 Mana += (int)((damageAmount + criticalAmount) * 0.25);
         }
 
@@ -6894,7 +6890,7 @@ namespace DOL.GS
                         publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
                     }
 
-                    if (ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
+                    if (ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != Realm && killer is GamePlayer && !IsDuelPartner(killer as GameLiving))
                         ConquestService.ConquestManager.AddContributor(this);
                 }
             }
@@ -7229,11 +7225,11 @@ namespace DOL.GS
 
         #endregion
 
-            #region Spell cast
+        #region Spell cast
 
-            /// <summary>
-            /// The time someone can not cast
-            /// </summary>
+        /// <summary>
+        /// The time someone can not cast
+        /// </summary>
         protected long m_disabledCastingTimeout = 0;
         /// <summary>
         /// Time when casting is allowed again (after interrupt from enemy attack)
@@ -9616,13 +9612,8 @@ namespace DOL.GS
                     AttackData ad = TempProperties.GetProperty<AttackData>(LAST_ATTACK_DATA, null);
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
-                        //Does the target can be attacked ?
-                        //if (ad.Target != null && IsObjectInFront(ad.Target, 120) && this.IsWithinRadius(ad.Target, AttackRange) && m_attackAction != null)
                         if (ad.Target != null && IsObjectInFront(ad.Target, 120) && this.IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                        {
-                            //m_attackAction.Start(1);
-                            attackComponent.attackAction.StartTime = 1;
-                        }
+                            attackComponent.attackAction.StartTime = 0;
                     }
                 }
             }
@@ -9993,7 +9984,7 @@ namespace DOL.GS
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
                         if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                            attackComponent.attackAction.StartTime = 1;
+                            attackComponent.attackAction.StartTime = 0;
                     }
                 }
             }

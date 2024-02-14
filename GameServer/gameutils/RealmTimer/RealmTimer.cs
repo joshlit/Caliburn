@@ -1,15 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text.Json.Serialization;
-using DOL.GS;
 using DOL.Database;
 using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Utils;
 
-//Utility class for checking realmtimer of a character/account and acting accordingly
+//Utility class for checking realmtimer of a character/account and acting accordingly 
 public class RealmTimer
 {
     public static bool CanPvP(GamePlayer player)
@@ -99,7 +95,6 @@ public class RealmTimer
             return;
 
         DbAccount playerAccount = player.Client.Account;
-
         DateTime LastCombatTickPvPDateTime = DateTime.Now.AddMilliseconds(-(GameLoop.GameLoopTime - player.LastCombatTickPvP));
 
         //Don't update realmtimer it is still in effect and players realm is not the realm_timer_realm

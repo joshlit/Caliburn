@@ -90,7 +90,7 @@ namespace DOL.GS
             _attackersCheckTimer = new(owner, CheckAttackers);
         }
 
-        public void Tick(long time)
+        public void Tick()
         {
             if (StartAttackRequested)
             {
@@ -98,7 +98,7 @@ namespace DOL.GS
                 StartAttack();
             }
 
-            attackAction?.Tick(time);
+            attackAction?.Tick();
 
             if (weaponAction?.AttackFinished == true)
                 weaponAction = null;
@@ -1313,9 +1313,9 @@ namespace DOL.GS
                     if (owner is GamePlayer || (owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain && owner.Realm != 0))
                     {
                         if (target is GamePlayer)
-                            damage = (int) (damage * Properties.PVP_MELEE_DAMAGE);
+                            damage *= Properties.PVP_MELEE_DAMAGE;
                         else if (target is GameNPC)
-                            damage = (int) (damage * Properties.PVE_MELEE_DAMAGE);
+                            damage *= Properties.PVE_MELEE_DAMAGE;
                     }
 
                     damage *= damageMod;
@@ -1339,8 +1339,8 @@ namespace DOL.GS
                     }
 
                     damage = preConversionDamage * conversionMod;
-                    ad.Modifier = (int) (damage - preResistDamage);
-                    damage = (int) Math.Min(damage, damageCap);
+                    ad.Modifier = (int) Math.Floor(damage - preResistDamage);
+                    damage = Math.Min(damage, damageCap);
 
                     if (conversionMod < 1)
                     {
@@ -1348,7 +1348,7 @@ namespace DOL.GS
                         ApplyTargetConversionRegen(ad.Target, (int) conversionAmount);
                     }
 
-                    ad.Damage = (int) Math.Min(damage, damageCap);
+                    ad.Damage = (int) damage;
                     ad.CriticalDamage = CalculateMeleeCriticalDamage(ad, action, weapon);
                     break;
                 }
@@ -1903,20 +1903,20 @@ namespace DOL.GS
                 !guard.Source.IsWithinRadius(guard.Target, GuardAbilityHandler.GUARD_DISTANCE))
                 return false;
 
-            DbInventoryItem leftHand = guard.Source.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-            DbInventoryItem rightHand = guard.Source.ActiveWeapon;
+            DbInventoryItem leftHand = source.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+            DbInventoryItem rightHand = source.ActiveWeapon;
 
-            if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int) eObjectType.Shield) && guard.Source is not GameNPC)
+            if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int) eObjectType.Shield) && source is not GameNPC)
                 return false;
 
             // TODO: Insert actual formula for guarding here, this is just a guessed one based on block.
-            int guardLevel = guard.Source.GetAbilityLevel(Abilities.Guard);
+            int guardLevel = source.GetAbilityLevel(Abilities.Guard);
             double guardChance;
 
-            if (guard.Source is GameNPC)
-                guardChance = guard.Source.GetModified(eProperty.BlockChance);
+            if (source is GameNPC)
+                guardChance = source.GetModified(eProperty.BlockChance);
             else
-                guardChance = guard.Source.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double) leftHand.MaxCondition);
+                guardChance = source.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double) leftHand.MaxCondition);
 
             guardChance *= 0.001;
             guardChance += guardLevel * 5 * 0.01; // 5% additional chance to guard with each Guard level.
@@ -1962,7 +1962,7 @@ namespace DOL.GS
 
             bool success = guardChance > guardRoll;
 
-            if (guard.Source is GamePlayer blockAttk && blockAttk.UseDetailedCombatLog)
+            if (source is GamePlayer blockAttk && blockAttk.UseDetailedCombatLog)
                 blockAttk.Out.SendMessage($"Chance to guard: {guardChance * 100:0.##} rand: {guardRoll * 100:0.##} success? {success}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
             if (guard.Target is GamePlayer blockTarg && blockTarg.UseDetailedCombatLog)
@@ -1970,7 +1970,7 @@ namespace DOL.GS
 
             if (success)
             {
-                ad.Target = guard.Source;
+                ad.Target = source;
                 return true;
             }
 
@@ -2473,42 +2473,42 @@ namespace DOL.GS
                             break;
                         case eAttackResult.HitStyle:
                         case eAttackResult.HitUnstyled:
-                        string modMessage;
+                            string modMessage;
 
-                        if (ad.Modifier > 0)
-                            modMessage = $" (+{ad.Modifier})";
-                        else if (ad.Modifier < 0)
-                            modMessage = $" ({ad.Modifier})";
-                        else
-                            modMessage = string.Empty;
+                            if (ad.Modifier > 0)
+                                modMessage = $" (+{ad.Modifier})";
+                            else if (ad.Modifier < 0)
+                                modMessage = $" ({ad.Modifier})";
+                            else
+                                modMessage = string.Empty;
 
-                        string hitWeapon;
+                            string hitWeapon;
 
-                        if (weapon != null)
-                        {
-                            switch (p.Client.Account.Language)
+                            if (weapon != null)
                             {
-                                case "DE":
+                                switch (p.Client.Account.Language)
                                 {
-                                    hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {weapon.Name}";
-                                    break;
-                                }
-                                default:
-                                {
-                                    hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {GlobalConstants.NameToShortName(weapon.Name)}";
-                                    break;
+                                    case "DE":
+                                    {
+                                        hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {weapon.Name}";
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {GlobalConstants.NameToShortName(weapon.Name)}";
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        else
-                            hitWeapon = string.Empty;
+                            else
+                                hitWeapon = string.Empty;
 
-                        string attackTypeMsg;
+                            string attackTypeMsg;
 
-                        if (action.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                            attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.YouShot");
-                        else
-                            attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.YouAttack");
+                            if (action.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
+                                attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.YouShot");
+                            else
+                                attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.YouAttack");
 
                         // intercept messages
                         if (target != null && target != ad.Target)
@@ -2598,35 +2598,35 @@ namespace DOL.GS
                             break;
                         case eAttackResult.HitStyle:
                         case eAttackResult.HitUnstyled:
-                        string modMessage;
+                            string modMessage;
 
-                        if (ad.Modifier > 0)
-                            modMessage = $" (+{ad.Modifier})";
-                        else if (ad.Modifier < 0)
-                            modMessage = $" ({ad.Modifier})";
-                        else
-                            modMessage = string.Empty;
+                            if (ad.Modifier > 0)
+                                modMessage = $" (+{ad.Modifier})";
+                            else if (ad.Modifier < 0)
+                                modMessage = $" ({ad.Modifier})";
+                            else
+                                modMessage = string.Empty;
 
-                        string hitWeapon;
+                            string hitWeapon;
 
-                        if (weapon != null)
-                        {
-                            switch (p.Client.Account.Language)
+                            if (weapon != null)
                             {
-                                case "DE":
+                                switch (p.Client.Account.Language)
                                 {
-                                    hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {weapon.Name}";
-                                    break;
-                                }
-                                default:
-                                {
-                                    hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {GlobalConstants.NameToShortName(weapon.Name)}";
-                                    break;
+                                    case "DE":
+                                    {
+                                        hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {weapon.Name}";
+                                        break;
+                                    }
+                                    default:
+                                    {
+                                        hitWeapon = $"{LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.WithYour")} {GlobalConstants.NameToShortName(weapon.Name)}";
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        else
-                            hitWeapon = string.Empty;
+                            else
+                                hitWeapon = string.Empty;
 
                         string attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language,
                                 "GamePlayer.Attack.YouAttack");

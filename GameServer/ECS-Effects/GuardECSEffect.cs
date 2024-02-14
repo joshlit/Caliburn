@@ -9,7 +9,7 @@ namespace DOL.GS
         public GameLiving Source { get; private set; }
         public GameLiving Target { get; private set; }
         public GuardECSGameEffect PairedEffect { get; private set; }
-        public override ushort Icon => Owner is GameNPC ? (ushort)1001 : (ushort)412;
+        public override ushort Icon => Owner is GameNPC ? (ushort) 1001 : (ushort) 412;
         public override string Name
         {
             get

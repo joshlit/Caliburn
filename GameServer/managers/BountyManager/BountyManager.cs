@@ -259,7 +259,7 @@ public class BountyManager
                     expireTime = bP.PostedTime + bountyDuration;
                     m_nextPosterToExpire = bP;
                     if (!ServiceUtils.ShouldTick(expireTime)) continue;
-
+                
                     GamePlayer playerToReimburse = bP.Ganked;
 
                     var posterLoyalty = LoyaltyManager.GetPlayerRealmLoyalty(playerToReimburse);
