@@ -129,9 +129,6 @@ namespace DOL.GS
         public static readonly string REALM_LOYALTY_KEY = "realm_loyalty";
         public static readonly string CURRENT_LOYALTY_KEY = "current_loyalty_days";
 
-        public static readonly string DUEL_PREVIOUS_LASTATTACKTICKPVP = "DUEL_PREVIOUS_LASTATTACKTICKPVP";
-        public static readonly string DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP= "DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP";
-
         /// <summary>
         /// Effectiveness of the rez sick that should be applied. This is set by rez spells just before rezzing.
         /// </summary>
@@ -6387,25 +6384,23 @@ namespace DOL.GS
 
         public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
         {
-
-            if (this.DuelTarget != null && source != this.DuelTarget)
-                this.DuelStop();
+            if (Duel != null && !IsDuelPartner(source as GameLiving))
+                Duel.Stop();
 
             #region PVP DAMAGE
 
-            if (source is GamePlayer || (source is GameNPC && (source as GameNPC).Brain is IControlledBrain && ((source as GameNPC).Brain as IControlledBrain).GetPlayerOwner() != null) || source is GameSiegeWeapon)
+            if (source is GamePlayer || (source is GameNPC npc && npc.Brain is IControlledBrain brain && brain.GetPlayerOwner() != null) || source is GameSiegeWeapon)
             {
                 if (Realm != source.Realm && source.Realm != 0)
-                    DamageRvRMemory += (long)(damageAmount + criticalAmount);
+                    DamageRvRMemory += damageAmount + criticalAmount;
             }
 
             #endregion PVP DAMAGE
 
             base.TakeDamage(source, damageType, damageAmount, criticalAmount);
-            if(this.HasAbility(Abilities.DefensiveCombatPowerRegeneration))
-            {
-                this.Mana += (int)((damageAmount + criticalAmount) * 0.25);
-            }
+
+            if(HasAbility(Abilities.DefensiveCombatPowerRegeneration))
+                Mana += (int)((damageAmount + criticalAmount) * 0.25);
         }
 
         /// <summary>
@@ -6878,7 +6873,7 @@ namespace DOL.GS
             }
             else
             {
-                if (DuelTarget == killer)
+                if (IsDuelPartner(killer as GameLiving))
                 {
                     m_releaseType = eReleaseType.Duel;
                     messageDistance = WorldMgr.YELL_DISTANCE;
@@ -6899,7 +6894,7 @@ namespace DOL.GS
                         publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
                     }
 
-                    if(ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
+                    if (ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
                         ConquestService.ConquestManager.AddContributor(this);
                 }
             }
@@ -6917,7 +6912,7 @@ namespace DOL.GS
 
             KillStreak = 0;
 
-            DuelStop();
+            Duel?.Stop();
 
             eChatType messageType;
             if (m_releaseType == eReleaseType.Duel)
@@ -7198,56 +7193,47 @@ namespace DOL.GS
         #endregion
 
         #region Duel
-        /// <summary>
-        /// Gets the duel target of this player
-        /// </summary>
-        public GameLiving DuelTarget { get { return Duel != null ? Duel.Target : null; }}
 
-        /// <summary>
-        /// Get the GameDuel of this player
-        /// </summary>
-        public GameDuel Duel { get; set; }
+        public GameDuel Duel { get; private set; }
+        public GamePlayer DuelPartner => Duel?.GetPartnerOf(this);
 
-        /// <summary>
-        /// Starts the duel
-        /// </summary>
-        /// <param name="duelTarget">The duel target</param>
-        public virtual void DuelStart(GameLiving duelTarget)
+        public void OnDuelStart(GameDuel duel)
         {
-            if (Duel != null)
-                return;
-
-            Duel = new GameDuel(this, duelTarget);
-            Duel.Start();
-
-            //Get PvP Combat ticks before duel.
-            TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKTICKPVP, LastAttackTickPvP);
-            TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP, LastAttackedByEnemyTickPvP);
+            Duel?.Stop();
+            Duel = duel;
         }
 
-        /// <summary>
-        /// Stops the duel if it is running
-        /// </summary>
-        public void DuelStop()
+        public void OnDuelStop()
         {
             if (Duel == null)
                 return;
 
-            Duel.Stop();
             Duel = null;
+        }
 
-            //Set PvP Combat ticks to that they were before duel.
-            LastAttackTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
-            LastAttackedByEnemyTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
+        public bool IsDuelPartner(GameLiving living)
+        {
+            if (living == null)
+                return false;
+
+            GamePlayer partner = DuelPartner;
+
+            if (partner == null)
+                return false;
+
+            if (living is GameNPC npc && npc.Brain is ControlledNpcBrain brain)
+                living = brain.GetPlayerOwner();
+
+            return partner == living;
         }
 
         #endregion
 
-        #region Spell cast
+            #region Spell cast
 
-        /// <summary>
-        /// The time someone can not cast
-        /// </summary>
+            /// <summary>
+            /// The time someone can not cast
+            /// </summary>
         protected long m_disabledCastingTimeout = 0;
         /// <summary>
         /// Time when casting is allowed again (after interrupt from enemy attack)
@@ -9055,6 +9041,8 @@ namespace DOL.GS
 
             if (CurrentRegion is BaseInstance instance)
                 instance.OnPlayerLeaveInstance(this);
+
+            Duel?.Stop();
 
             return true;
         }

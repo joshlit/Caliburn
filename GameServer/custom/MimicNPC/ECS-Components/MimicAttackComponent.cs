@@ -1543,7 +1543,7 @@ namespace DOL.GS
             return absorb >= 1 ? double.MaxValue : armorFactor / (1 - absorb);
         }
 
-        public static new double CalculateTargetResistance(GameLiving target, eDamageType damageType, DbInventoryItem armor)
+        public new static double CalculateTargetResistance(GameLiving target, eDamageType damageType, DbInventoryItem armor)
         {
             double damageModifier = 1.0;
 
@@ -1554,7 +1554,7 @@ namespace DOL.GS
 
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public static new double CalculateTargetConversion(GameLiving target, double damage)
+        public new static double CalculateTargetConversion(GameLiving target, double damage)
         {
             if (target is not GamePlayer && target is not MimicNPC)
                 return 1.0;
@@ -1567,7 +1567,7 @@ namespace DOL.GS
             return conversionMod;
         }
 
-        public static new void ApplyTargetConversionRegen(GameLiving target, int conversionAmount)
+        public new static void ApplyTargetConversionRegen(GameLiving target, int conversionAmount)
         {
             if (target is not GamePlayer && target is not MimicNPC)
                 return;
@@ -1650,37 +1650,37 @@ namespace DOL.GS
         {
             GuardECSGameEffect guard = EffectListService.GetAbilityEffectOnTarget(owner, eEffect.Guard) as GuardECSGameEffect;
 
-            if (guard?.GuardTarget != owner)
+            if (guard?.Target != owner)
                 return false;
 
-            GameLiving guardSource = guard.GuardSource;
+            GameLiving source = guard.Source;
 
-            if (guardSource == null ||
-                guardSource.ObjectState != eObjectState.Active ||
-                guardSource.IsStunned != false ||
-                guardSource.IsMezzed != false ||
-                guardSource.ActiveWeaponSlot == eActiveWeaponSlot.Distance ||
-                !guardSource.IsAlive ||
-                guardSource.IsSitting ||
+            if (source == null ||
+                source.ObjectState != eObjectState.Active ||
+                source.IsStunned != false ||
+                source.IsMezzed != false ||
+                source.ActiveWeaponSlot == eActiveWeaponSlot.Distance ||
+                !source.IsAlive ||
+                source.IsSitting ||
                 stealthStyle ||
-                !guard.GuardSource.IsWithinRadius(guard.GuardTarget, GuardAbilityHandler.GUARD_DISTANCE))
+                !guard.Source.IsWithinRadius(guard.Target, GuardAbilityHandler.GUARD_DISTANCE))
                 return false;
 
-            DbInventoryItem leftHand = guard.GuardSource.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-            DbInventoryItem rightHand = guard.GuardSource.ActiveWeapon;
+            DbInventoryItem leftHand = source.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+            DbInventoryItem rightHand = source.ActiveWeapon;
 
-            if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int)eObjectType.Shield) && guard.GuardSource is not GameNPC)
+            if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int)eObjectType.Shield) && source is not GameNPC)
                 return false;
 
             // TODO: Insert actual formula for guarding here, this is just a guessed one based on block.
-            int guardLevel = guard.GuardSource.GetAbilityLevel(Abilities.Guard);
+            int guardLevel = source.GetAbilityLevel(Abilities.Guard);
 
             double guardChance;
 
-            if (guard.GuardSource is GameNPC && guard.GuardSource is not MimicNPC)
-                guardChance = guard.GuardSource.GetModified(eProperty.BlockChance);
+            if (source is GameNPC && source is not MimicNPC)
+                guardChance = source.GetModified(eProperty.BlockChance);
             else
-                guardChance = guard.GuardSource.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double)leftHand.MaxCondition);
+                guardChance = source.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double)leftHand.MaxCondition);
 
             guardChance *= 0.001;
             guardChance += guardLevel * 5 * 0.01; // 5% additional chance to guard with each Guard level.
@@ -1691,7 +1691,7 @@ namespace DOL.GS
             {
                 shieldSize = Math.Max(leftHand.Type_Damage, 1);
 
-                if (guardSource is GamePlayer || guardSource is MimicNPC)
+                if (source is GamePlayer || source is MimicNPC)
                     guardChance += (double)(leftHand.Level - 1) / 50 * 0.15; // Up to 15% extra block chance based on shield level.
             }
 
@@ -1731,17 +1731,17 @@ namespace DOL.GS
 
             double? blockOutput = (blockDouble != null) ? blockDouble * 100 : ranBlockNum;
 
-            if (guard.GuardSource is GamePlayer blockAttk && blockAttk.UseDetailedCombatLog)
+            if (source is GamePlayer blockAttk && blockAttk.UseDetailedCombatLog)
                 blockAttk.Out.SendMessage($"Chance to guard: {guardChance} rand: {blockOutput} GuardSuccess? {guardChance > blockOutput}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
-            if (guard.GuardTarget is GamePlayer blockTarg && blockTarg.UseDetailedCombatLog)
+            if (source is GamePlayer blockTarg && blockTarg.UseDetailedCombatLog)
                 blockTarg.Out.SendMessage($"Chance to be guarded: {guardChance} rand: {blockOutput} GuardSuccess? {guardChance > blockOutput}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
             if (blockDouble == null || Properties.OVERRIDE_DECK_RNG)
             {
                 if (guardChance > ranBlockNum)
                 {
-                    ad.Target = guard.GuardSource;
+                    ad.Target = source;
                     return true;
                 }
             }
@@ -1749,7 +1749,7 @@ namespace DOL.GS
             {
                 if (guardChance > blockOutput)
                 {
-                    ad.Target = guard.GuardSource;
+                    ad.Target = source;
                     return true;
                 }
             }
@@ -1802,9 +1802,9 @@ namespace DOL.GS
             // We check if interceptor can intercept.
             if (EffectListService.GetAbilityEffectOnTarget(owner, eEffect.Intercept) is InterceptECSGameEffect inter)
             {
-                if (intercept == null && inter != null && inter.InterceptTarget == owner && !inter.InterceptSource.IsStunned && !inter.InterceptSource.IsMezzed
-                    && !inter.InterceptSource.IsSitting && inter.InterceptSource.ObjectState == eObjectState.Active && inter.InterceptSource.IsAlive
-                    && owner.IsWithinRadius(inter.InterceptSource, InterceptAbilityHandler.INTERCEPT_DISTANCE)) // && Util.Chance(inter.InterceptChance))
+                if (intercept == null && inter != null && inter.Target == owner && !inter.Source.IsStunned && !inter.Source.IsMezzed
+                    && !inter.Source.IsSitting && inter.Source.ObjectState == eObjectState.Active && inter.Source.IsAlive
+                    && owner.IsWithinRadius(inter.Source, InterceptAbilityHandler.INTERCEPT_DISTANCE)) // && Util.Chance(inter.InterceptChance))
                 {
                     int interceptRoll;
 
@@ -1870,10 +1870,10 @@ namespace DOL.GS
 
             if (intercept != null && !stealthStyle)
             {
-                ad.Target = intercept.InterceptSource;
+                ad.Target = intercept.Source;
 
-                if (intercept.InterceptSource is GamePlayer || intercept.InterceptSource is MimicNPC)
-                    intercept.Cancel(false);
+                if (intercept.Source is GamePlayer || intercept.Source is MimicNPC)
+                    EffectService.RequestCancelEffect(intercept);
 
                 return eAttackResult.HitUnstyled;
             }

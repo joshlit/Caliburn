@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.Language;
@@ -131,7 +112,8 @@ namespace DOL.GS.Commands
                                 if (!CheckDuelStart(client.Player, duelStarter))
                                     return;
 
-                                targetMimic.DuelStart(duelStarter);
+                                GameDuel duel = new(client.Player, targetMimic);
+                                duel.Start();
 
                                 client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAccept", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
 
@@ -190,7 +172,8 @@ namespace DOL.GS.Commands
                         if (!CheckDuelStart(client.Player, duelStarter))
                             return;
 
-                        client.Player.DuelStart(duelStarter);
+                        GameDuel duel = new(duelStarter, client.Player);
+                        duel.Start();
 
                         if (duelStarter is GamePlayer)
                             ((GamePlayer)duelStarter).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAccept", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
@@ -263,7 +246,7 @@ namespace DOL.GS.Commands
 
                     case "surrender":
                     {
-                        GameLiving target = client.Player.DuelTarget;
+                        GameLiving target = client.Player.DuelPartner;
 
                         if (target == null)
                         {
@@ -271,7 +254,7 @@ namespace DOL.GS.Commands
                             return;
                         }
 
-                        client.Player.DuelStop();
+                        client.Player.Duel.Stop();
 
                         client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouSurrender", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
 
@@ -307,18 +290,18 @@ namespace DOL.GS.Commands
                 return false;
             }
 
-            if (playerActionSource?.DuelTarget != null)
+            if (playerActionSource?.DuelPartner != null)
             {
                 playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
-            if (playerActionTarget?.DuelTarget != null)
+            if (playerActionTarget?.DuelPartner != null)
             {
                 playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInDuel", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
 
-            if (mimicActionSource?.DuelTarget != null || mimicActionTarget?.DuelTarget != null)
+            if (mimicActionSource?.DuelPartner != null || mimicActionTarget?.DuelPartner != null)
                 return false;
 
             if (actionTarget.InCombat)

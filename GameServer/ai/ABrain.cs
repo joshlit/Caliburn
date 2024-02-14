@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Text;
 using DOL.Events;
@@ -43,8 +24,8 @@ namespace DOL.AI
         public override string ToString()
         {
             return new StringBuilder()
-                .Append("body name='").Append(Body==null?"(null)":Body.Name)
-                .Append("' (id=").Append(Body==null?"(null)":Body.ObjectID.ToString())
+                .Append("body name='").Append(Body == null ? "(null)" : Body.Name)
+                .Append("' (id=").Append(Body == null ? "(null)" : Body.ObjectID.ToString())
                 .Append("), active=").Append(IsActive)
                 .Append(", ThinkInterval=").Append(ThinkInterval)
                 .ToString();
@@ -65,6 +46,12 @@ namespace DOL.AI
         /// <returns>true if stopped</returns>
         public virtual bool Stop()
         {
+            if (Body.IsReturningToSpawnPoint)
+            {
+                Body.StopMoving();
+                Body.MoveTo(Body.CurrentRegionID, Body.SpawnPoint.X, Body.SpawnPoint.Y, Body.SpawnPoint.Z, Body.SpawnHeading);
+            }
+
             return EntityManager.Remove(this);
         }
 
@@ -74,7 +61,8 @@ namespace DOL.AI
         /// <param name="e">The event received</param>
         /// <param name="sender">The event sender</param>
         /// <param name="args">The event arguments</param>
-        public virtual void Notify(DOLEvent e, object sender, EventArgs args) { }
+        public virtual void Notify(DOLEvent e, object sender, EventArgs args)
+        { }
 
         /// <summary>
         /// This method is called whenever the brain does some thinking

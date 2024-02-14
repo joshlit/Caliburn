@@ -23,32 +23,27 @@ namespace DOL.GS
 
         public void AddObjectNode(LinkedListNode<GameObject> node)
         {
-            _objects[(byte) node.Value.GameObjectType].AddLast(node);
+            _objects[(byte)node.Value.GameObjectType].AddLast(node);
         }
 
         public void RemoveObjectNode(LinkedListNode<GameObject> node)
         {
-            _objects[(byte) node.Value.GameObjectType].Remove(node);
+            _objects[(byte)node.Value.GameObjectType].Remove(node);
         }
 
         public ConcurrentLinkedList<GameObject> GetObjects(eGameObjectType objectType)
         {
-            return _objects[(byte) objectType];
+            return _objects[(byte)objectType];
         }
 
         public ConcurrentLinkedList<GameObject>.Reader GetObjectReader(LinkedListNode<GameObject> node)
         {
-            return _objects[(byte) node.Value.GameObjectType].GetReader();
+            return _objects[(byte)node.Value.GameObjectType].GetReader();
         }
 
         public ConcurrentLinkedList<GameObject>.Writer GetObjectWriter(LinkedListNode<GameObject> node)
         {
-            return _objects[(byte) node.Value.GameObjectType].GetWriter();
-        }
-
-        public void CheckForRelocation(LinkedListNode<GameObject> node)
-        {
-            ParentZone.CheckForRelocation(node);
+            return _objects[(byte)node.Value.GameObjectType].GetWriter();
         }
     }
 
@@ -73,7 +68,7 @@ namespace DOL.GS
 
         public void CheckForRelocation()
         {
-            CurrentSubZone?.CheckForRelocation(Node);
+            Node.Value.CurrentZone?.CheckForRelocation(Node);
         }
     }
 }

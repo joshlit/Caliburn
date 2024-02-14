@@ -53,7 +53,7 @@ namespace DOL.GS
                     }
                     case GameClient.eClientState.NotConnected:
                     case GameClient.eClientState.Linkdead:
-                        return;
+                    return;
                     case GameClient.eClientState.CharScreen:
                     {
                         CheckPingTimeout(client);
@@ -78,7 +78,7 @@ namespace DOL.GS
                                         log.Warn($"Long {SERVICE_NAME}.{nameof(UpdateWorld)} for {player.Name}({player.ObjectID}) Time: {stopTick - startTick}ms");
                                 }
 
-                                player.movementComponent.Tick(GameLoop.GameLoopTime);
+                                player.movementComponent.Tick();
                             }
                             catch (Exception e)
                             {
@@ -167,10 +167,14 @@ namespace DOL.GS
             {
                 foreach (GameClient client in _clients)
                 {
-                    if (client == null || !client.IsPlaying)
+                    if (client == null)
                         continue;
 
                     GamePlayer player = client.Player;
+
+                    // Apparently 'Client.IsPlaying' can in sone cases be true even if it has no player. Need to figure out why.
+                    if (player == null)
+                        continue;
 
                     if (action?.Invoke(player, actionArgument) != false)
                         players.Add(player);
@@ -287,7 +291,7 @@ namespace DOL.GS
 
             static bool Predicate(GamePlayer player, object unused)
             {
-                return player.Client.Account.PrivLevel == (uint) ePrivLevel.Player;
+                return player.Client.Account.PrivLevel == (uint)ePrivLevel.Player;
             }
         }
 
@@ -297,7 +301,7 @@ namespace DOL.GS
 
             static bool Predicate(GamePlayer player, object unused)
             {
-                return player.Client.Account.PrivLevel > (uint) ePrivLevel.Player;
+                return player.Client.Account.PrivLevel > (uint)ePrivLevel.Player;
             }
         }
 
@@ -379,7 +383,7 @@ namespace DOL.GS
             try
             {
                 using (_lock.GetRead())
-                return _clients[id - 1];
+                    return _clients[id - 1];
             }
             catch
             {
@@ -413,7 +417,7 @@ namespace DOL.GS
 
             static bool Predicate(GameClient client, GameClient otherClient)
             {
-                return client.Account != null && client.Account.PrivLevel <= (uint) ePrivLevel.Player && client.TcpEndpointAddress.Equals(otherClient.TcpEndpointAddress) && client != otherClient;
+                return client.Account != null && client.Account.PrivLevel <= (uint)ePrivLevel.Player && client.TcpEndpointAddress.Equals(otherClient.TcpEndpointAddress) && client != otherClient;
             }
         }
 
@@ -441,7 +445,7 @@ namespace DOL.GS
             if (player.NpcUpdateCache.TryGetValue(npc, out CachedNpcValues cachedNpcValues))
             {
                 cachedNpcValues.Time = GameLoop.GameLoopTime;
-                cachedNpcValues.HealthPercent =  npc.HealthPercent;
+                cachedNpcValues.HealthPercent = npc.HealthPercent;
             }
             else
                 player.NpcUpdateCache[npc] = new CachedNpcValues(GameLoop.GameLoopTime, npc.HealthPercent);

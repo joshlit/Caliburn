@@ -780,8 +780,8 @@ namespace DOL.GS.Scripts
                                                              && x.Radius == currentSpell.Radius
                                                              && x.Frequency == currentSpell.Frequency
                                                              && x.CastTime == currentSpell.CastTime
-                                                             && x.Target == currentSpell.Target
-                                                             && x.SharedTimerGroup == currentSpell.SharedTimerGroup);
+                                                             && x.Target == currentSpell.Target);
+                                                             //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
                 
                 if (matchingItem == null || currentSpell.Level > matchingItem.Level)
                 {
@@ -800,8 +800,8 @@ namespace DOL.GS.Scripts
                                        && x.Radius == currentSpell.Radius
                                        && x.Frequency == currentSpell.Frequency
                                        && x.CastTime == currentSpell.CastTime
-                                       && x.Target == currentSpell.Target
-                                       && x.SharedTimerGroup == currentSpell.SharedTimerGroup);
+                                       && x.Target == currentSpell.Target);
+                                       //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
 
                     result.Add(currentSpell);
                 }
@@ -1178,6 +1178,16 @@ namespace DOL.GS.Scripts
             m_healthRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(HealthRegenerationTimerCallback);
             m_powerRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(PowerRegenerationTimerCallback);
             m_enduRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(EnduranceRegenerationTimerCallback);
+
+            return true;
+        }
+
+        public override bool RemoveFromWorld()
+        {
+            if (!base.RemoveFromWorld())
+                return false;
+
+            Duel?.Stop();
 
             return true;
         }
@@ -6622,12 +6632,12 @@ namespace DOL.GS.Scripts
 
         public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
         {
-            if (DuelTarget != null && source != DuelTarget)
-                DuelStop();
+            if (Duel != null && !IsDuelPartner(source as GameLiving))
+                Duel.Stop();
 
             #region PVP DAMAGE
 
-            if ((source is GamePlayer || source is MimicNPC) || (source is GameNPC && (source as GameNPC).Brain is IControlledBrain && ((source as GameNPC).Brain as IControlledBrain).GetPlayerOwner() != null) || source is GameSiegeWeapon)
+            if (source is GamePlayer || source is MimicNPC || (source is GameNPC && (source as GameNPC).Brain is IControlledBrain && ((source as GameNPC).Brain as IControlledBrain).GetPlayerOwner() != null) || source is GameSiegeWeapon)
             {
                 if (Realm != source.Realm && source.Realm != 0)
                     DamageRvRMemory += (long)(damageAmount + criticalAmount);
@@ -7297,7 +7307,7 @@ namespace DOL.GS.Scripts
             }
             else
             {
-                if (DuelTarget == killer)
+                if (IsDuelPartner(killer as GameLiving))
                 {
                     m_releaseType = eReleaseType.Duel;
                     messageDistance = WorldMgr.YELL_DISTANCE;
@@ -7335,7 +7345,7 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            DuelStop();
+            Duel?.Stop();
 
             eChatType messageType;
 
@@ -7777,54 +7787,37 @@ namespace DOL.GS.Scripts
 
         #region Duel
 
-        /// <summary>
-        /// Gets the duel target of this mimic
-        /// </summary>
-        public GameLiving DuelTarget { get { return Duel != null ? Duel.Target : null; } }
+        public GameDuel Duel { get; private set; }
+        public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
 
-        /// <summary>
-        /// Get the GameDuel of this mimic
-        /// </summary>
-        public GameDuel Duel { get; set; }
-
-        public DuelMasterNPC DuelMaster { get; set; }
-
-        public bool DuelReady { get; set; }
-
-        /// <summary>
-        /// Starts the duel
-        /// </summary>
-        /// <param name="duelTarget">The duel target</param>
-        public virtual void DuelStart(GameLiving duelTarget)
+        public void OnDuelStart(GameDuel duel)
         {
-            if (Duel != null)
-                return;
-
-            Duel = new GameDuel(this, duelTarget);
-            Duel.Start();
-
-            //Get PvP Combat ticks before duel.
-            TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKTICKPVP, LastAttackTickPvP);
-            TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP, LastAttackedByEnemyTickPvP);
+            Duel?.Stop();
+            Duel = duel;
         }
 
-        /// <summary>
-        /// Stops the duel if it is running
-        /// </summary>
-        public void DuelStop()
+        public void OnDuelStop()
         {
             if (Duel == null)
                 return;
 
-            log.Info("Stopped duel");
-            DuelReady = false;
-
-            Duel.Stop();
             Duel = null;
+        }
 
-            //Set PvP Combat ticks to that they were before duel.
-            LastAttackTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
-            LastAttackedByEnemyTickPvP = TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
+        public bool IsDuelPartner(GameLiving living)
+        {
+            if (living == null)
+                return false;
+
+            GameLiving partner = DuelPartner;
+
+            if (partner == null)
+                return false;
+
+            if (living is GameNPC npc && npc.Brain is ControlledNpcBrain brain)
+                living = brain.GetLivingOwner();
+
+            return partner == living;
         }
 
         #endregion Duel

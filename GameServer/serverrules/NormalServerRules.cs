@@ -65,9 +65,9 @@ namespace DOL.GS.ServerRules
 				return false;
 			}
 
-			//Don't allow attacks on same realm members on Normal Servers
-			if (attacker.Realm == defender.Realm && !(attacker is GamePlayer && ((GamePlayer)attacker).DuelTarget == defender)
-												 && !(attacker is MimicNPC && ((MimicNPC)attacker).DuelTarget == defender))
+            //Don't allow attacks on same realm members on Normal Servers
+            if (attacker.Realm == defender.Realm && !(attacker is GamePlayer && ((GamePlayer)attacker).IsDuelPartner(defender)
+                                                 && !(attacker is MimicNPC && ((MimicNPC)attacker).IsDuelPartner(defender))))
 			{
 				// allow confused mobs to attack same realm
 				if (attacker is GameNPC && (attacker as GameNPC).IsConfused)
