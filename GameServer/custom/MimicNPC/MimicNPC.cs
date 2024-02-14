@@ -2504,6 +2504,7 @@ namespace DOL.GS.Scripts
                             break;
                         }
                     }
+
                     switch (CurrentRegionID)
                     {
                         //battlegrounds
@@ -7725,7 +7726,7 @@ namespace DOL.GS.Scripts
 
             // Delay the first think tick a bit to prevent clients from sending positive LoS check
             // when they shouldn't, which can happen right after 'SendNPCCreate' and makes mobs aggro through walls.
-            Brain.LastThinkTick = GameLoop.GameLoopTime + 1250;
+            //Brain.LastThinkTick = GameLoop.GameLoopTime + 1250;
             return 0;
         }
 
@@ -7789,6 +7790,7 @@ namespace DOL.GS.Scripts
 
         public GameDuel Duel { get; private set; }
         public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
+        public bool DuelReady { get; set; }
 
         public void OnDuelStart(GameDuel duel)
         {

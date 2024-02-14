@@ -37,8 +37,8 @@ namespace DOL.GS.ServerRules
 			if (!base.IsAllowedToAttack(attacker, defender, quiet))
 				return false;
 
-			if (attacker is MimicNPC && ((MimicNPC)attacker).Duel != null && defender != ((MimicNPC)attacker).DuelTarget)
-				return false;
+			//if (attacker is MimicNPC && ((MimicNPC)attacker).Duel != null && defender != ((MimicNPC)attacker).DuelTarget)
+			//	return false;
 
 			// if controlled NPC - do checks for owner instead
 			if (attacker is GameNPC)

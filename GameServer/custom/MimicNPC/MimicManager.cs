@@ -646,7 +646,9 @@ namespace DOL.GS.Scripts
 
         public static eMimicClass GetRandomMeleeClass()
         {
-            int enumIndexes = Enum.GetValues(typeof(eMimicClass)).Length;
+            int enumIndexes = Enum.GetValues(typeof(eMimicClass)).Length - 1;
+
+            Console.WriteLine("Indexes: " + enumIndexes);
 
             List<int> meleeClasses = new List<int>();
 

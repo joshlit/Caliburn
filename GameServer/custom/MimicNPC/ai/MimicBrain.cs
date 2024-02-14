@@ -793,10 +793,10 @@ namespace DOL.AI.Brain
                     if (aggroAmount <= 0)
                         break;
 
-                    if (protect.ProtectTarget != living)
+                    if (protect.Target != living)
                         continue;
 
-                    GamePlayer protectSource = protect.ProtectSource;
+                    GamePlayer protectSource = (GamePlayer)protect.Source;
 
                     if (protectSource.IsStunned
                         || protectSource.IsMezzed

@@ -67,7 +67,7 @@ namespace DOL.GS.Scripts
                         int zPos = Z;
 
                         MimicManager.AddMimicToWorld(mimic, new Point3D(xPos, yPos, zPos), CurrentRegionID);
-                        mimic.DuelStart(player);
+                        mimic.Duel.Start();
                     }
                     break;
                 }
@@ -127,7 +127,8 @@ namespace DOL.GS.Scripts
                 m_mimicOne.TargetObject = m_mimicTwo;
                 m_mimicTwo.TargetObject = m_mimicOne;
 
-                m_mimicOne.DuelStart(m_mimicTwo);
+                GameDuel duel = new(m_mimicOne, m_mimicTwo);
+                duel.Start();
 
                 m_mimicOne.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
                 m_mimicTwo.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);

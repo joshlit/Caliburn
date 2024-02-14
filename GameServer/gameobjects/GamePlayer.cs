@@ -7191,7 +7191,7 @@ namespace DOL.GS
         #region Duel
 
         public GameDuel Duel { get; private set; }
-        public GamePlayer DuelPartner => Duel?.GetPartnerOf(this);
+        public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
 
         public void OnDuelStart(GameDuel duel)
         {
@@ -7212,7 +7212,7 @@ namespace DOL.GS
             if (living == null)
                 return false;
 
-            GamePlayer partner = DuelPartner;
+            GameLiving partner = DuelPartner;
 
             if (partner == null)
                 return false;

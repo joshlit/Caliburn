@@ -62,7 +62,7 @@ namespace DOL.GS
 
             if (entityOwner is GamePlayer player)
             {
-                if (player.CharacterClass.ID == (int) eCharacterClass.Necromancer && player.IsShade)
+                if (player.CharacterClass.ID == (int)eCharacterClass.Necromancer && player.IsShade)
                     player.Shade(false);
 
                 player.Out.SendPlayerQuit(false);
