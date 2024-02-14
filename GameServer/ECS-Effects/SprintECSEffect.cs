@@ -1,5 +1,6 @@
 ﻿using System;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS
@@ -17,7 +18,7 @@ namespace DOL.GS
         private int _idleTicks = 0;
 
         public override ushort Icon => 0x199;
-        public override string Name => LanguageMgr.GetTranslation(OwnerPlayer.Client, "Effects.SprintEffect.Name");
+        public override string Name => LanguageMgr.GetTranslation(OwnerPlayer?.Client, "Effects.SprintEffect.Name");
         public override bool HasPositiveEffect => true;
 
         public override long GetRemainingTimeForClient()
@@ -39,6 +40,19 @@ namespace DOL.GS
                 OwnerPlayer.Endurance += cost;
                 OwnerPlayer.Out.SendUpdateMaxSpeed();
                 OwnerPlayer.Out.SendMessage(LanguageMgr.GetTranslation(OwnerPlayer.Client.Account.Language, "GamePlayer.Sprint.PrepareSprint"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                Owner.StartEnduranceRegeneration();
+            }
+            else if (Owner is MimicNPC mimic)
+            {
+                int regen = mimic.GetModified(eProperty.EnduranceRegenerationRate);
+                var endchant = mimic.GetModified(eProperty.FatigueConsumption);
+                var cost = -5 + regen;
+
+                if (endchant > 1)
+                    cost = (int)Math.Ceiling(cost * endchant * 0.01);
+
+                mimic.Endurance += cost;
+
                 Owner.StartEnduranceRegeneration();
             }
         }

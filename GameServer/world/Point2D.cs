@@ -125,13 +125,13 @@ namespace DOL.GS
 		/// <returns>Point at the given heading and distance</returns>
 		public Point2D GetPointFromHeading(ushort heading, int distance)
 		{
-			double angle = heading*HEADING_TO_RADIAN;
+			double angle = heading * HEADING_TO_RADIAN;
 			double targetX = X - Math.Sin(angle) * distance;
 			double targetY = Y + Math.Cos(angle) * distance;
 			Point2D point = new()
 			{
-				X = targetX > 0 ? (int) targetX : 0,
-				Y = targetY > 0 ? (int) targetY : 0
+				X = targetX > 0 ? (int)targetX : 0,
+				Y = targetY > 0 ? (int)targetY : 0
 			};
 			return point;
 		}
@@ -147,9 +147,9 @@ namespace DOL.GS
 		/// <returns>Distance to point</returns>
 		public int GetDistance(IPoint2D point)
 		{
-			double dx = (double) X - point.X;
-			double dy = (double) Y - point.Y;
-			return (int) Math.Sqrt(dx * dx + dy * dy);
+			double dx = (double)X - point.X;
+			double dy = (double)Y - point.Y;
+			return (int)Math.Sqrt(dx * dx + dy * dy);
 		}
 
         public virtual void Clear()
@@ -180,15 +180,15 @@ namespace DOL.GS
 			if (radius > ushort.MaxValue)
 				return GetDistance(point) <= radius;
 
-			uint rSquared = (uint) radius * (uint) radius;
+			uint rSquared = (uint)radius * (uint)radius;
 			int dx = X - point.X;
-			long dist = (long) dx*dx;
+			long dist = (long)dx * dx;
 
 			if (dist > rSquared)
 				return false;
 
 			int dy = Y - point.Y;
-			dist += (long) dy * dy;
+			dist += (long)dy * dy;
 			return dist <= rSquared;
 		}
 

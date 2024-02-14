@@ -1312,7 +1312,7 @@ namespace DOL.GS
                     // If the target is another player's pet, shouldn't 'PVP_MELEE_DAMAGE' be used?
                     if (owner is GamePlayer || (owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain && owner.Realm != 0))
                     {
-                        if (target is GamePlayer)
+                        if (target is GamePlayer || target is MimicNPC)
                             damage *= Properties.PVP_MELEE_DAMAGE;
                         else if (target is GameNPC)
                             damage *= Properties.PVE_MELEE_DAMAGE;
@@ -1913,7 +1913,7 @@ namespace DOL.GS
             int guardLevel = source.GetAbilityLevel(Abilities.Guard);
             double guardChance;
 
-            if (source is GameNPC)
+            if (source is GameNPC || source is MimicNPC)
                 guardChance = source.GetModified(eProperty.BlockChance);
             else
                 guardChance = source.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double) leftHand.MaxCondition);
