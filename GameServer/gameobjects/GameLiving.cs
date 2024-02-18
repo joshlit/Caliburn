@@ -1175,7 +1175,7 @@ namespace DOL.GS
 					return false;
 			}
 
-			long rangeAttackHoldStart = TempProperties.GetProperty<long>(RangeAttackComponent.RANGED_ATTACK_START);
+			long rangeAttackHoldStart = rangeAttackComponent.AttackStartTime;
 
 			if (rangeAttackHoldStart > 0)
 			{
@@ -2639,10 +2639,8 @@ namespace DOL.GS
 			if (Inventory == null)
 				return;
 
-            //Clean up range attack variables, no matter to what
-            //weapon we switch
-            rangeAttackComponent.RangedAttackState = eRangedAttackState.None;
-            rangeAttackComponent.RangedAttackType = eRangedAttackType.Normal;
+			rangeAttackComponent.RangedAttackState = eRangedAttackState.None;
+			rangeAttackComponent.RangedAttackType = eRangedAttackType.Normal;
 
 			DbInventoryItem rightHandSlot = Inventory.GetItem(eInventorySlot.RightHandWeapon);
 			DbInventoryItem leftHandSlot = Inventory.GetItem(eInventorySlot.LeftHandWeapon);

@@ -1496,6 +1496,9 @@ namespace DOL.GS
 		/// <param name="slot">the new eActiveWeaponSlot</param>
 		public override void SwitchWeapon(eActiveWeaponSlot slot)
 		{
+			if (ActiveWeaponSlot == slot)
+				return;
+
 			base.SwitchWeapon(slot);
 			if (ObjectState == eObjectState.Active)
 			{
