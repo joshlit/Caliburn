@@ -56,11 +56,6 @@ namespace DOL.GS.Scripts
         public bool CanCastCrowdControlSpells { get { return CrowdControlSpells != null && CrowdControlSpells.Count > 0; } }
         public bool CanCastBolts { get { return BoltSpells != null && BoltSpells.Count > 0; } }
 
-        //public IPacketLib Out
-        //{
-        //    get { return new PacketLib1124(new GameClient(GameServer.Instance)); }
-        //}
-
         public Style TauntStyle
         {
             get { return m_tauntStyle; }
@@ -590,7 +585,7 @@ namespace DOL.GS.Scripts
             return base.SayReceive(source, str);
         }
 
-        // TODO: Will need a different method for when leveling up after being created or adjust this.
+        // TODO: Will need a different method for when leveling up after being created or adjust 
         public void SpendSpecPoints(byte fromLevel = 2, bool mimicCreation = true)
         {
             MimicSpec.SpecLines = MimicSpec.SpecLines.OrderByDescending(ratio => ratio.levelRatio).ToList();
@@ -1268,9 +1263,6 @@ namespace DOL.GS.Scripts
         public static readonly string REALM_LOYALTY_KEY = "realm_loyalty";
         public static readonly string CURRENT_LOYALTY_KEY = "current_loyalty_days";
 
-        public static readonly string DUEL_PREVIOUS_LASTATTACKTICKPVP = "DUEL_PREVIOUS_LASTATTACKTICKPVP";
-        public static readonly string DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP = "DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP";
-
         /// <summary>
         /// Effectiveness of the rez sick that should be applied. This is set by rez spells just before rezzing.
         /// </summary>
@@ -1283,11 +1275,6 @@ namespace DOL.GS.Scripts
 
         private bool m_gmStealthed = false;
         public bool GMStealthed { get { return m_gmStealthed; } set { m_gmStealthed = value; } }
-
-        /// <summary>
-        /// Can this living accept any item regardless of tradable or droppable?
-        /// </summary>
-        public override bool CanTradeAnyItem { get { return Client.Account.PrivLevel > (int)ePrivLevel.Player; } }
 
         /// <summary>
         /// Gets or sets the targetObject's visibility
@@ -1351,33 +1338,6 @@ namespace DOL.GS.Scripts
             set { m_isInBG = value; }
         }
 
-        protected bool m_usedetailedcombatlog = false;
-
-        public bool UseDetailedCombatLog
-        {
-            get { return m_usedetailedcombatlog; }
-            set { m_usedetailedcombatlog = value; }
-        }
-
-        public eXPLogState XPLogState
-        {
-            get { return m_xplogstate; }
-            set { m_xplogstate = value; }
-        }
-
-        private eXPLogState m_xplogstate = 0;
-
-        /// <summary>
-        /// Current warmap page
-        /// </summary>
-        private volatile byte m_warmapPage = 1;
-
-        public byte WarMapPage
-        {
-            get { return m_warmapPage; }
-            set { m_warmapPage = value; }
-        }
-
         /// <summary>
         /// Returns the GameClient of this Player
         /// </summary>
@@ -1434,69 +1394,25 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// Whether or not the player can be attacked.
-        /// </summary>
-        public override bool IsAttackable { get { return (Client.Account.PrivLevel <= (uint)ePrivLevel.Player && base.IsAttackable); } }
-
-        /// <summary>
         /// Can this player use cross realm items
         /// </summary>
         public virtual bool CanUseCrossRealmItems { get { return ServerProperties.Properties.ALLOW_CROSS_REALM_ITEMS; } }
 
-        protected bool m_canUseSlashLevel = false;
-        public bool CanUseSlashLevel { get { return m_canUseSlashLevel; } }
-
-        /// <summary>
-        /// if player uses debug before (to prevent hack client fly mode for players using debug and then turning it off)
-        /// </summary>
-        protected bool m_canFly;
-
-        /// <summary>
-        /// Is this player allowed to fly?
-        /// This should only be set in debug command handler.  If player is flying but this flag is false then fly hack is detected
-        /// </summary>
-        public bool IsAllowedToFly
-        {
-            get { return m_canFly; }
-            set { m_canFly = value; }
-        }
-
-        private bool m_statsAnon = false;
-
-        /// <summary>
-        /// Gets or sets the stats anon flag for the command /statsanon
-        /// (delegate to property in PlayerCharacter)
-        /// </summary>
-        public bool StatsAnonFlag
-        {
-            get { return m_statsAnon; }
-            set { m_statsAnon = value; }
-        }
-
-        protected bool m_lastDeathPvP;
+        protected bool _lastDeathPvP;
 
         public bool LastDeathPvP
         {
-            get { return m_lastDeathPvP; }
-            set { m_lastDeathPvP = value; }
+            get { return _lastDeathPvP; }
+            set { _lastDeathPvP = value; }
         }
 
-        protected bool m_wasmovedbycorpsesummoner;
+        protected bool _wasMovedByCorpseSummoner;
 
         public bool WasMovedByCorpseSummoner
         {
-            get { return m_wasmovedbycorpsesummoner; }
-            set { m_wasmovedbycorpsesummoner = value; }
+            get { return _wasMovedByCorpseSummoner; }
+            set { _wasMovedByCorpseSummoner = value; }
         }
-
-        #region Object Caches
-
-        public ConcurrentDictionary<GameNPC, ClientService.CachedNpcValues> NpcUpdateCache { get; private set; } = new();
-        public ConcurrentDictionary<GameStaticItem, long> ItemUpdateCache { get; private set; } = new();
-        public ConcurrentDictionary<GameDoorBase, long> DoorUpdateCache { get; private set; } = new();
-        public ConcurrentDictionary<House, long> HouseUpdateCache { get; private set; } = new();
-
-        #endregion Object Caches
 
         #region Database Accessor
 
@@ -1508,26 +1424,6 @@ namespace DOL.GS.Scripts
         {
             get { return DBCharacter != null ? DBCharacter.ObjectId : InternalID; }
             set { if (DBCharacter != null) DBCharacter.ObjectId = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the no help flag for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool NoHelp
-        {
-            get { return DBCharacter != null ? DBCharacter.NoHelp : false; }
-            set { if (DBCharacter != null) DBCharacter.NoHelp = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the show guild logins flag for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool ShowGuildLogins
-        {
-            get { return DBCharacter != null ? DBCharacter.ShowGuildLogins : false; }
-            set { if (DBCharacter != null) DBCharacter.ShowGuildLogins = value; }
         }
 
         /// <summary>
@@ -1551,46 +1447,6 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// Gets or sets the roleplay flag for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool RPFlag
-        {
-            get { return (DBCharacter != null ? DBCharacter.RPFlag : true); }
-            set { if (DBCharacter != null) DBCharacter.RPFlag = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the hardcore flag for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool HCFlag
-        {
-            get { return false; }
-            set { if (DBCharacter != null) DBCharacter.HCFlag = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the HideSpecializationAPI for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool HideSpecializationAPI
-        {
-            get { return (DBCharacter != null ? DBCharacter.HideSpecializationAPI : false); }
-            set { if (DBCharacter != null) DBCharacter.HideSpecializationAPI = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the hardcore flag for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool HCCompleted
-        {
-            get { return false; }
-            set { if (DBCharacter != null) DBCharacter.HCCompleted = value; }
-        }
-
-        /// <summary>
         /// Gets or sets the boosted flag for this player
         /// (delegate to property in DBCharacter)
         /// </summary>
@@ -1608,86 +1464,6 @@ namespace DOL.GS.Scripts
         {
             get { return DBCharacter != null ? DBCharacter.GuildNote : String.Empty; }
             set { if (DBCharacter != null) DBCharacter.GuildNote = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the autoloot flag for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool Autoloot
-        {
-            get { return DBCharacter != null ? DBCharacter.Autoloot : true; }
-            set { if (DBCharacter != null) DBCharacter.Autoloot = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the advisor flag for this player
-        /// (delegate to property in PlayerCharacter)
-        /// </summary>
-        public bool Advisor
-        {
-            get { return DBCharacter != null ? DBCharacter.Advisor : false; }
-            set { if (DBCharacter != null) DBCharacter.Advisor = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the SerializedFriendsList for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public string[] SerializedFriendsList
-        {
-            get { return DBCharacter != null ? DBCharacter.SerializedFriendsList.Split(',').Select(name => name.Trim()).Where(name => !string.IsNullOrEmpty(name)).ToArray() : new string[0]; }
-            set { if (DBCharacter != null) DBCharacter.SerializedFriendsList = string.Join(",", value.Select(name => name.Trim()).Where(name => !string.IsNullOrEmpty(name))); }
-        }
-
-        /// <summary>
-        /// Gets or sets the NotDisplayedInHerald for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public byte NotDisplayedInHerald
-        {
-            get { return DBCharacter != null ? DBCharacter.NotDisplayedInHerald : (byte)0; }
-            set { if (DBCharacter != null) DBCharacter.NotDisplayedInHerald = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the LastFreeLevel for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public int LastFreeLevel
-        {
-            get { return DBCharacter != null ? DBCharacter.LastFreeLevel : 0; }
-            set { if (DBCharacter != null) DBCharacter.LastFreeLevel = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the LastFreeLeveled for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public DateTime LastFreeLeveled
-        {
-            get { return DBCharacter != null ? DBCharacter.LastFreeLeveled : DateTime.MinValue; }
-            set { if (DBCharacter != null) DBCharacter.LastFreeLeveled = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the SerializedIgnoreList for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public string[] SerializedIgnoreList
-        {
-            get { return DBCharacter != null ? DBCharacter.SerializedIgnoreList.Split(',').Select(name => name.Trim()).Where(name => !string.IsNullOrEmpty(name)).ToArray() : new string[0]; }
-            set { if (DBCharacter != null) DBCharacter.SerializedIgnoreList = string.Join(",", value.Select(name => name.Trim()).Where(name => !string.IsNullOrEmpty(name))); }
-        }
-
-        /// <summary>
-        /// Gets or sets the UsedLevelCommand for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool UsedLevelCommand
-        {
-            get { return DBCharacter != null ? DBCharacter.UsedLevelCommand : false; }
-            set { if (DBCharacter != null) DBCharacter.UsedLevelCommand = value; }
         }
 
         /// <summary>
@@ -1741,26 +1517,6 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// Gets or sets the CustomisationStep for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public byte CustomisationStep
-        {
-            get { return DBCharacter != null ? DBCharacter.CustomisationStep : (byte)0; }
-            set { if (DBCharacter != null) DBCharacter.CustomisationStep = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the IgnoreStatistics for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool IgnoreStatistics
-        {
-            get { return DBCharacter != null ? DBCharacter.IgnoreStatistics : false; }
-            set { if (DBCharacter != null) DBCharacter.IgnoreStatistics = value; }
-        }
-
-        /// <summary>
         /// Gets or sets the DeathTime for this player
         /// (delegate to property in DBCharacter)
         /// </summary>
@@ -1768,16 +1524,6 @@ namespace DOL.GS.Scripts
         {
             get { return DBCharacter != null ? DBCharacter.DeathTime : 0; }
             set { if (DBCharacter != null) DBCharacter.DeathTime = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the ShowXFireInfo for this player
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool ShowXFireInfo
-        {
-            get { return DBCharacter != null ? DBCharacter.ShowXFireInfo : false; }
-            set { if (DBCharacter != null) DBCharacter.ShowXFireInfo = value; }
         }
 
         /// <summary>
@@ -1887,19 +1633,13 @@ namespace DOL.GS.Scripts
             set { if (DBCharacter != null) DBCharacter.DeathCount = value; }
         }
 
-        private int m_killstreak = 0;
+        private int _killStreak = 0;
 
         public int KillStreak
         {
-            get { return m_killstreak; }
-            set { m_killstreak = value; }
+            get { return _killStreak; }
+            set { _killStreak = value; }
         }
-
-        //public long PlayedTimeSinceLevel
-        //{
-        //    get { return DBCharacter != null ? DBCharacter.PlayedTimeSinceLevel : 0; }
-        //    set { if (DBCharacter != null) DBCharacter.PlayedTimeSinceLevel = PlayedTimeSinceLevel; }
-        //}
 
         /// <summary>
         /// Gets the last time this player leveled up
@@ -2147,7 +1887,7 @@ namespace DOL.GS.Scripts
                 return;
             }
 
-            //string description = string.Format("in {0}", this.GetBindSpotDescription());
+            //string description = string.Format("in {0}", GetBindSpotDescription());
             //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.LastBindPoint", description), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
             bool bound = false;
@@ -2667,7 +2407,7 @@ namespace DOL.GS.Scripts
 
             var maxChargeItems = Properties.MAX_CHARGE_ITEMS;
             /*
-            foreach (var item in this.Inventory.EquippedItems)
+            foreach (var item in Inventory.EquippedItems)
             {
                 //max 2 charges
                 if (item.SpellID > 0 && SelfBuffChargeIDs.Contains(item.SpellID) && LoyaltyManager.GetPlayerRealmLoyalty(this).Days > 30)
@@ -2707,7 +2447,7 @@ namespace DOL.GS.Scripts
 
             int oldRegion = CurrentRegionID;
 
-            //Call MoveTo after new GameGravestone(this...
+            //Call MoveTo after new GameGravestone(..
             //or the GraveStone will be located at the player's bindpoint
 
             MoveTo(relRegion, relX, relY, relZ, relHeading);
@@ -3076,6 +2816,15 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
+        /// Gets player's strength
+        /// </summary>
+        public override short Strength
+        {
+            get { return (short)GetModified(eProperty.Strength); }
+            set { m_charStat[eStat.STR - eStat._First] = value; }
+        }
+
+        /// <summary>
         /// Gets player's constitution
         /// </summary>
         public override short Constitution
@@ -3091,15 +2840,6 @@ namespace DOL.GS.Scripts
         {
             get { return (short)GetModified(eProperty.Dexterity); }
             set { m_charStat[eStat.DEX - eStat._First] = value; }
-        }
-
-        /// <summary>
-        /// Gets player's strength
-        /// </summary>
-        public override short Strength
-        {
-            get { return (short)GetModified(eProperty.Strength); }
-            set { m_charStat[eStat.STR - eStat._First] = value; }
         }
 
         /// <summary>
@@ -3700,7 +3440,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         public virtual string RaceName
         {
-            //get { return this.RaceToTranslatedName(Race, Gender); }
+            //get { return RaceToTranslatedName(Race, Gender); }
             //get { return string.Format("!{0} - {1}!", ((eRace)Race).ToString("F"), Gender.ToString("F")); }
             get { return ((eRace)Race).ToString("F"); }
         }
@@ -4485,7 +4225,7 @@ namespace DOL.GS.Scripts
                 return 50;
 
             if (keyName.StartsWith(GlobalSpellsLines.Realm_Spells))
-                return this.Level;
+                return Level;
 
             Specialization spec = null;
             int level = 0;
@@ -4903,13 +4643,8 @@ namespace DOL.GS.Scripts
         /// <param name="skill"></param>
         public void OnSkillTrained(Specialization skill)
         {
-            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnSkillTrained.YouSpend", skill.Level, skill.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            //.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnSkillTrained.YouHave", SkillSpecialtyPoints), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnSkillTrained.TrainsInVarious", GetName(0, true)), eChatType.CT_System);
             //CharacterClass.OnSkillTrained(this, skill);
             RefreshSpecDependantSkills(true);
-
-            //Out.SendUpdatePlayerSkills();
         }
 
         /// <summary>
@@ -5129,7 +4864,7 @@ namespace DOL.GS.Scripts
                 #region Kill Streak
 
                 int killBonus = (int)((0.05 * (KillStreak > 10 ? 10 : KillStreak)) * amount);
-                //this.Out.SendMessage($"{KillStreak} kill streak! ({killBonus} RPs)", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                //Out.SendMessage($"{KillStreak} kill streak! ({killBonus} RPs)", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 amount += killBonus;
 
                 #endregion Kill Streak
@@ -5161,13 +4896,13 @@ namespace DOL.GS.Scripts
                     //{
                     //    string message = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.ReachedRankNews", Name, RealmLevel + 10, LastPositionUpdateZone.Description);
                     //    string newsmessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.ReachedRankNews", Name, RealmLevel + 10, LastPositionUpdateZone.Description);
-                    //    NewsMgr.CreateNews(newsmessage, this.Realm, eNewsType.RvRLocal, true);
+                    //    NewsMgr.CreateNews(newsmessage, Realm, eNewsType.RvRLocal, true);
                     //}
                     //if (CanGenerateNews && RealmPoints >= 1000000 && RealmPoints - amount < 1000000)
                     //{
                     //    string message = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.Earned", Name, LastPositionUpdateZone.Description);
                     //    string newsmessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainRealmPoints.Earned", Name, LastPositionUpdateZone.Description);
-                    //    NewsMgr.CreateNews(newsmessage, this.Realm, eNewsType.RvRLocal, true);
+                    //    NewsMgr.CreateNews(newsmessage, Realm, eNewsType.RvRLocal, true);
                     //}
                 }
 
@@ -5898,15 +5633,6 @@ namespace DOL.GS.Scripts
             if (!GainXP && expTotal > 0)
                 return;
 
-            if (HCFlag && this.Group != null)
-            {
-                foreach (var player in this.Group.GetPlayersInTheGroup())
-                {
-                    if (player.Level > this.Level + 5)
-                        expTotal = 0;
-                }
-            }
-
             long baseXp = 0;
             //xp rate modifier
             if (allowMultiply)
@@ -5958,11 +5684,11 @@ namespace DOL.GS.Scripts
             #region Guild XP Bonus
 
             //long guildBonus = 0;
-            //if (this.Guild != null && !this.Guild.IsStartingGuild && this.Guild.BonusType == Guild.eBonusType.Experience && xpSource == eXPSource.NPC)
+            //if (Guild != null && !Guild.IsStartingGuild && Guild.BonusType == Guild.eBonusType.Experience && xpSource == eXPSource.NPC)
             //{
             //    guildBonus = (long)Math.Ceiling((double)expTotal * ServerProperties.Properties.GUILD_BUFF_XP / 100);
             //}
-            //else if (this.Guild != null && this.Guild.IsStartingGuild && xpSource == eXPSource.NPC)
+            //else if (Guild != null && Guild.IsStartingGuild && xpSource == eXPSource.NPC)
             //{
             //    guildBonus = (long)Math.Ceiling((double)expTotal * ServerProperties.Properties.GUILD_BUFF_XP / 200);
             //}
@@ -5986,7 +5712,7 @@ namespace DOL.GS.Scripts
                 expTotal = ExperienceForCurrentLevel - Experience;
             }
 
-            int relicBonus = (int)(baseXp * (0.05 * RelicMgr.GetRelicCount(this.Realm)));
+            int relicBonus = (int)(baseXp * (0.05 * RelicMgr.GetRelicCount(Realm)));
             if (relicBonus > 0) expTotal += relicBonus;
 
             Experience += expTotal;
@@ -6350,40 +6076,22 @@ namespace DOL.GS.Scripts
         /// <param name="slot">the new eActiveWeaponSlot</param>
         public override void SwitchWeapon(eActiveWeaponSlot slot)
         {
-            //When switching weapons, attackmode is removed!
             if (attackComponent != null && attackComponent.AttackState && ActiveWeapon != null)
-            {
-                if (ActiveWeapon.Item_Type == (int)eInventorySlot.DistanceWeapon
-                    && rangeAttackComponent.RangedAttackState != eRangedAttackState.None
-                    && GameLoop.GameLoopTime - this.TempProperties.GetProperty<long>(RangeAttackComponent.RANGED_ATTACK_START) > 100
-                    && attackComponent.attackAction != null)
-                {
-                    attackComponent.attackAction.StartTime = 1000;
-                }
                 attackComponent.StopAttack();
-            }
 
             if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
             {
                 AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect)EffectListService.GetEffectOnTarget(this, eEffect.Volley);
-
-                if (volley != null)
-                    volley.OnPlayerSwitchedWeapon();
+                volley?.OnPlayerSwitchedWeapon();
             }
 
             if (CurrentSpellHandler != null)
-            {
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                 StopCurrentSpellcast();
-            }
 
             foreach (Spell spell in ActivePulseSpells.Values)
             {
                 if (spell.InstrumentRequirement != 0)
-                {
-                    // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-                    EffectService.RequestImmediateCancelConcEffect(EffectListService.GetPulseEffectOnTarget(this, spell));
-                }
+                    EffectService.RequestImmediateCancelEffect(EffectListService.GetPulseEffectOnTarget(this, spell));
             }
 
             DbInventoryItem[] oldActiveSlots = new DbInventoryItem[4];
@@ -6648,9 +6356,9 @@ namespace DOL.GS.Scripts
 
             base.TakeDamage(source, damageType, damageAmount, criticalAmount);
 
-            if (this.HasAbility("Defensive Combat Power Regeneration"))
+            if (HasAbility("Defensive Combat Power Regeneration"))
             {
-                this.Mana += (int)((damageAmount + criticalAmount) * 0.25);
+                Mana += (int)((damageAmount + criticalAmount) * 0.25);
             }
         }
 
@@ -7119,10 +6827,10 @@ namespace DOL.GS.Scripts
 
         public override void OnAttackEnemy(AttackData ad)
         {
-            //Console.WriteLine(string.Format("OnAttack called on {0}", this.Name));
+            //Console.WriteLine(string.Format("OnAttack called on {0}", Name));
 
             // Note that this function is called whenever an attack is made, regardless of whether that attack was successful.
-            // i.e. missed melee swings and resisted spells still trigger this.
+            // i.e. missed melee swings and resisted spells still trigger 
 
             if (effectListComponent is null)
                 return;
@@ -7513,12 +7221,12 @@ namespace DOL.GS.Scripts
             //GameEventMgr.AddHandler(this, GamePlayerEvent.Revive, new DOLEventHandler(OnRevive));
             //}
 
-            //if (this.SiegeWeapon != null)
+            //if (SiegeWeapon != null)
             //    SiegeWeapon.ReleaseControl();
 
             // sent after buffs drop
             // GamePlayer.Die.CorpseLies:		{0} just died. {1} corpse lies on the ground.
-            //Message.SystemToOthers2(this, eChatType.CT_PlayerDied, "GamePlayer.Die.CorpseLies", GetName(0, true), GetPronoun(this.Client, 1, true));
+            //Message.SystemToOthers2(this, eChatType.CT_PlayerDied, "GamePlayer.Die.CorpseLies", GetName(0, true), GetPronoun(Client, 1, true));
 
             //if (m_releaseType == eReleaseType.Duel)
             //{
@@ -7704,7 +7412,7 @@ namespace DOL.GS.Scripts
 			{
 				int minBound = (int) Math.Round(m_databaseLevel * .9);
 				int maxBound = (int) Math.Round(m_databaseLevel * 1.1);
-				this.Level = (byte)  Util.Random(minBound, maxBound);
+				Level = (byte)  Util.Random(minBound, maxBound);
 			}*/
 
             SpawnTick = GameLoop.GameLoopTime;
@@ -7752,7 +7460,7 @@ namespace DOL.GS.Scripts
                 var activeConquest = ConquestService.ConquestManager.ActiveObjective;
                 int baseContribution = enemy.RealmPointsValue / 2; //todo turn it into a server prop?
 
-                if (activeConquest != null && this.GetDistance(new Point2D(activeConquest.Keep.X, activeConquest.Keep.Y)) <=
+                if (activeConquest != null && GetDistance(new Point2D(activeConquest.Keep.X, activeConquest.Keep.Y)) <=
                     ServerProperties.Properties.MAX_CONQUEST_RANGE)
                 {
                     //TODO: add something here
@@ -7897,7 +7605,7 @@ namespace DOL.GS.Scripts
             //    return;
             //}
 
-            if (this.effectListComponent.ContainsEffectForEffectType(eEffect.Pulse))
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Pulse))
             {
                 //Out.SendMessage("You currently have an active, pulsing spell effect and cannot hide!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
@@ -8066,12 +7774,12 @@ namespace DOL.GS.Scripts
                 return false;
             if (enemy.EffectList.GetOfType<VanishEffect>() != null)
                 return false;
-            if (this.Client.Account.PrivLevel > 1)
+            if (Client.Account.PrivLevel > 1)
                 return true;
             if (enemy.Client.Account.PrivLevel > 1)
                 return false;
 
-            if (this.effectListComponent.ContainsEffectForEffectType(eEffect.TrueSight))
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.TrueSight))
                 return true;
 
             if (HasAbilityType(typeof(AtlasOF_SeeHidden))
@@ -8079,7 +7787,7 @@ namespace DOL.GS.Scripts
                      || enemy.CharacterClass is ClassRanger
                      || enemy.CharacterClass is ClassHunter
                      || enemy.CharacterClass is ClassScout)
-                && this.IsWithinRadius(enemy, 650)
+                && IsWithinRadius(enemy, 650)
                 && !enemy.effectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
             {
                 return true;
@@ -8097,7 +7805,7 @@ namespace DOL.GS.Scripts
             int EnemyStealthLevel = enemy.GetModifiedSpecLevel(Specs.Stealth);
             if (EnemyStealthLevel > 50)
                 EnemyStealthLevel = 50;
-            int levelDiff = this.Level - EnemyStealthLevel;
+            int levelDiff = Level - EnemyStealthLevel;
             if (levelDiff < 0) levelDiff = 0;
 
             int range = 0;
@@ -8180,7 +7888,7 @@ namespace DOL.GS.Scripts
 
             // Fin
             // vampiir stealth range, uncomment when add eproperty stealthrange i suppose
-            return this.IsWithinRadius(enemy, range);
+            return IsWithinRadius(enemy, range);
         }
 
         #endregion Stealth / Wireframe
@@ -9035,11 +8743,11 @@ namespace DOL.GS.Scripts
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
                         //Does the target can be attacked ?
-                        //if (ad.Target != null && IsObjectInFront(ad.Target, 120) && this.IsWithinRadius(ad.Target, AttackRange) && m_attackAction != null)
-                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && this.IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
+                        //if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, AttackRange) && m_attackAction != null)
+                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
                         {
                             //m_attackAction.Start(1);
-                            attackComponent.attackAction.StartTime = 1;
+                            attackComponent.attackAction.ResetNextTick();
                         }
                     }
                 }
@@ -9078,45 +8786,21 @@ namespace DOL.GS.Scripts
             }
         }
 
-        /// <summary>
-        /// The stuck state of this player
-        /// </summary>
-        private bool m_stuckFlag = false;
-
-        /// <summary>
-        /// Gets/sets the current stuck state
-        /// </summary>
-        public virtual bool Stuck
-        {
-            get { return m_stuckFlag; }
-            set
-            {
-                if (value == m_stuckFlag) return;
-                m_stuckFlag = value;
-            }
-        }
-
         protected long m_beginDrowningTick;
         protected eWaterBreath m_currentWaterBreathState;
 
         protected int DrowningTimerCallback(ECSGameTimer callingTimer)
         {
             if (!IsAlive)
-            {
-                //Out.SendCloseTimerWindow();
                 return 0;
-            }
 
             if (ObjectState != eObjectState.Active)
                 return 0;
 
-            // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.DrowningTimerCallback.CannotBreath"), eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
-            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.DrowningTimerCallback.Take5%Damage"), eChatType.CT_Damaged, eChatLoc.CL_SystemWindow);
-
             if (GameLoop.GameLoopTime - m_beginDrowningTick > 15000)
             {
                 TakeDamage(null, eDamageType.Natural, MaxHealth, 0);
-                //Out.SendCloseTimerWindow();
+
                 return 0;
             }
             else
@@ -9125,25 +8809,20 @@ namespace DOL.GS.Scripts
             return 1000;
         }
 
-        protected bool m_sitting;
+        protected bool _sitting;
 
         public override bool IsSitting
         {
-            get => m_sitting;
+            get => _sitting;
             set
             {
-                m_sitting = value;
+                _sitting = value;
                 if (value)
                 {
                     CurrentSpellHandler?.CasterMoves();
+
                     if (attackComponent.AttackState && ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                    {
-                        string attackTypeMsg = "shot";
-                        if (ActiveWeapon.Object_Type == (int)eObjectType.Thrown)
-                            attackTypeMsg = "throw";
-                        // Out.SendMessage("You move and interrupt your " + attackTypeMsg + "!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
                         attackComponent.StopAttack();
-                    }
                 }
             }
         }
@@ -9216,8 +8895,6 @@ namespace DOL.GS.Scripts
 
             //if (IsCastingRealmAbility)
             //{
-            //    Out.SendInterruptAnimation(this);
-            //    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "SpellHandler.CasterMove"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
             //    RealmAbilityCastTimer.Stop();
             //    RealmAbilityCastTimer = null;
             //}
@@ -9225,9 +8902,7 @@ namespace DOL.GS.Scripts
             if (attackComponent.AttackState)
             {
                 if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                {
-                    string attackTypeMsg = (ActiveWeapon.Object_Type == (int)eObjectType.Thrown ? "throw" : "shot");
-                    //Out.SendMessage("You move and interrupt your " + attackTypeMsg + "!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+                { 
                     attackComponent.StopAttack();
                 }
                 else
@@ -9237,7 +8912,7 @@ namespace DOL.GS.Scripts
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
                         if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                            attackComponent.attackAction.StartTime = 1;
+                            attackComponent.attackAction.ResetNextTick();
                     }
                 }
             }

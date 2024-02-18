@@ -445,7 +445,6 @@ namespace DOL.AI.Brain
 
                             case Abilities.ChargeAbility:
                             {
-                                MimicBody.DevOut("I charged.");
                                 if (Body.TargetObject is GameLiving target &&
                                     GameServer.ServerRules.IsAllowedToAttack(Body, target, true) &&
                                     !Body.IsWithinRadius(target, 500))
@@ -982,8 +981,8 @@ namespace DOL.AI.Brain
                             {
                                 LastTargetObject = Body.TargetObject;
                                 TargetFlankPosition = GetStylePositionPoint(livingTarget, GetPositional());
-                                Body.StopAttack();
                                 Body.StopFollowing();
+                                Body.StopAttack();
                                 Body.WalkTo(new Point3D(TargetFlankPosition.X, TargetFlankPosition.Y, livingTarget.Z), Body.MaxSpeed);
                                 return;
                             }
@@ -2034,7 +2033,7 @@ namespace DOL.AI.Brain
                 case eSpellType.CrushSlashTrustBuff:
                 case eSpellType.DexterityBuff:
                 case eSpellType.DexterityQuicknessBuff:
-                case eSpellType.EffectivenessBuff:              
+                case eSpellType.EffectivenessBuff:
                 case eSpellType.FatigueConsumptionBuff:
                 case eSpellType.FlexibleSkillBuff:
                 case eSpellType.HasteBuff:
@@ -2047,7 +2046,7 @@ namespace DOL.AI.Brain
                 case eSpellType.MLABSBuff:
                 case eSpellType.PaladinArmorFactorBuff:
                 case eSpellType.ParryBuff:
-                case eSpellType.PowerHealthEnduranceRegenBuff:            
+                case eSpellType.PowerHealthEnduranceRegenBuff:
                 case eSpellType.StrengthBuff:
                 case eSpellType.StrengthConstitutionBuff:
                 case eSpellType.SuperiorCourageBuff:

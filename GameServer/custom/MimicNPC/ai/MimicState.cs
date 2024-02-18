@@ -48,7 +48,11 @@ namespace DOL.AI.Brain
                 }
                 else
                 {
-                    _brain.PvPMode = _brain.Body.CurrentRegionID == 252 ? true : false;
+                    if (_brain.Body.CurrentRegion.IsRvR || _brain.Body.CurrentRegionID == 252)
+                        _brain.PvPMode = true;
+                    else
+                        _brain.PvPMode = false;
+
                     _brain.AggroRange = _brain.PvPMode ? 3600 : 1500;
                 }
 

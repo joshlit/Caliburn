@@ -1209,7 +1209,8 @@ namespace DOL.GS
 		{
 			if (weapon.Flags == 10) //Itemtemplates with "Flags" set to 10 will not proc on living (ex. Bruiser)
 				return false;
-			else return true;
+			else 
+				return true;
 		}
 
 		/// <summary>
@@ -1275,12 +1276,24 @@ namespace DOL.GS
 
 				if (ad.Attacker is GamePlayer)
 				{
-					GamePlayer PlayerAttacker = ad.Attacker as GamePlayer;
-					if (PlayerAttacker.GetSpellLine("Spymaster") != null)
+					GamePlayer playerAttacker = ad.Attacker as GamePlayer;
+					if (playerAttacker.GetSpellLine("Spymaster") != null)
 						if (Util.ChanceDouble((double)(15 * 0.0001))) return;
 				}
+				else if (ad.Attacker is MimicNPC)
+				{
+                    MimicNPC mimicAttacker = ad.Attacker as MimicNPC;
+                    if (mimicAttacker.GetSpellLine("Spymaster") != null)
+                        if (Util.ChanceDouble((double)(15 * 0.0001))) return;
+                }
+
 				weapon.PoisonCharges--;
-				if (weapon.PoisonCharges <= 0) { weapon.PoisonMaxCharges = 0; weapon.PoisonSpellID = 0; }
+
+				if (weapon.PoisonCharges <= 0) 
+				{ 
+					weapon.PoisonMaxCharges = 0; 
+					weapon.PoisonSpellID = 0; 
+				}
 			}
 		}
 
@@ -1318,6 +1331,7 @@ namespace DOL.GS
 								{
 									(this as GamePlayer).Out.SendMessage(LanguageMgr.GetTranslation((this as GamePlayer).Client.Account.Language, "GameLiving.StartWeaponMagicalEffect.NotPowerful"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 								}
+
 								return;
 							}
 						}
@@ -2671,7 +2685,7 @@ namespace DOL.GS
 
 				case eActiveWeaponSlot.TwoHanded:
 					{
-						if (twoHandSlot != null && (twoHandSlot.Hand == 1 || this is GameNPC)) // 2h
+						if (twoHandSlot != null && (twoHandSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC))) // 2h
 						{
 							rightHand = leftHand = 0x02;
 							break;
@@ -2696,7 +2710,7 @@ namespace DOL.GS
 
 						if (distanceSlot == null)
 							rightHand = 0xFF;
-						else if (distanceSlot.Hand == 1 || this is GameNPC) // NPC equipment does not have hand so always assume 2 handed bow
+						else if (distanceSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC)) // NPC equipment does not have hand so always assume 2 handed bow
 							rightHand = leftHand = 0x03; // bows use 2 hands, throwing axes 1h
 						else
 							rightHand = 0x03;
@@ -3359,9 +3373,9 @@ namespace DOL.GS
 
 		#region Components
 
-		public MimicAttackComponent attackComponent;
+		public AttackComponent attackComponent;
 		public RangeAttackComponent rangeAttackComponent;
-		public MimicStyleComponent styleComponent;
+		public StyleComponent styleComponent;
 		public CastingComponent castingComponent;
 		public EffectListComponent effectListComponent;
 		public MovementComponent movementComponent;
@@ -4743,9 +4757,9 @@ namespace DOL.GS
 		/// </summary>
 		public GameLiving() : base()
 		{
-			attackComponent = new MimicAttackComponent(this);
+			attackComponent = new AttackComponent(this);
 			rangeAttackComponent = new RangeAttackComponent(this);
-			styleComponent = new MimicStyleComponent(this);
+			styleComponent = new StyleComponent(this);
 			castingComponent = CastingComponent.Create(this);
 			effectListComponent = new EffectListComponent(this);
 			movementComponent = MovementComponent.Create(this);

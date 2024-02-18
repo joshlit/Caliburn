@@ -393,7 +393,7 @@ namespace DOL.GS.RealmAbilities
 
 		public override void DisableSkill(GameLiving living)
 		{
-			MimicStyleComponent styleComponent = living.styleComponent;
+			StyleComponent styleComponent = living.styleComponent;
 
 			// Remove RA styles from the backup slot so that it doesn't fire twice.
 			if (styleComponent.NextCombatBackupStyle == StyleToUse)

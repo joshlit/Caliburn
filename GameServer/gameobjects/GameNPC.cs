@@ -1496,16 +1496,15 @@ namespace DOL.GS
 		/// <param name="slot">the new eActiveWeaponSlot</param>
 		public override void SwitchWeapon(eActiveWeaponSlot slot)
 		{
-			if (ActiveWeaponSlot == slot)
-				return;
-
 			base.SwitchWeapon(slot);
+
 			if (ObjectState == eObjectState.Active)
 			{
 				// Update active weapon appearence
 				BroadcastLivingEquipmentUpdate();
 			}
 		}
+
 		/// <summary>
 		/// Equipment templateID
 		/// </summary>
@@ -3028,7 +3027,8 @@ namespace DOL.GS
 			{
 				if (Util.Chance(50))
 					SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-				else SwitchWeapon(eActiveWeaponSlot.Standard);
+				else 
+					SwitchWeapon(eActiveWeaponSlot.Standard);
 			}
 			else
 				SwitchWeapon(eActiveWeaponSlot.Standard);

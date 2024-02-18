@@ -13,12 +13,12 @@ namespace DOL.GS
         // Next tick interval for when the current tick doesn't result in an attack.
         protected const int TICK_INTERVAL_FOR_NON_ATTACK = 100;
 
-        protected MimicAttackComponent _attackComponent;
+        protected AttackComponent _attackComponent;
         protected AttackData _lastAttackData;
         protected DbInventoryItem _weapon;
         protected DbInventoryItem _leftWeapon;
         protected Style _combatStyle;
-        protected MimicStyleComponent _styleComponent;
+        protected StyleComponent _styleComponent;
         protected GameObject _target;
         protected double _effectiveness;
         protected int _ticksToTarget;
@@ -205,7 +205,7 @@ namespace DOL.GS
             {
                 _owner.rangeAttackComponent.RangedAttackState = eRangedAttackState.Aim;
 
-                if (_owner is not GamePlayer || !_owner.effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
+                if ((_owner is not GamePlayer && _owner is not MimicNPC) || !_owner.effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
                 {
                     // The 'stance' parameter appears to be used to tell whether or not the animation should be held, and doesn't seem to be related to the weapon speed.
                     foreach (GamePlayer player in _owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
@@ -318,14 +318,14 @@ namespace DOL.GS
 
         protected virtual void PerformMeleeAttack()
         {
-            _attackComponent.weaponAction = new MimicWeaponAction(_owner, _target, _weapon, _leftWeapon, _effectiveness, _interruptDuration, _combatStyle);
+            _attackComponent.weaponAction = new WeaponAction(_owner, _target, _weapon, _leftWeapon, _effectiveness, _interruptDuration, _combatStyle);
             _attackComponent.weaponAction.Execute();
             _lastAttackData = _owner.TempProperties.GetProperty<AttackData>(LAST_ATTACK_DATA, null);
         }
 
         protected virtual void PerformRangedAttack()
         {
-            _attackComponent.weaponAction = new MimicWeaponAction(_owner, _target, _weapon, _effectiveness, _interruptDuration, _owner.rangeAttackComponent.RangedAttackType);
+            _attackComponent.weaponAction = new WeaponAction(_owner, _target, _weapon, _effectiveness, _interruptDuration, _owner.rangeAttackComponent.RangedAttackType);
 
             if (_owner.rangeAttackComponent.RangedAttackType == eRangedAttackType.Critical)
                 _owner.rangeAttackComponent.RangedAttackType = eRangedAttackType.Normal;

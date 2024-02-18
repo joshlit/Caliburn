@@ -17,7 +17,6 @@ namespace DOL.GS
         private const int PET_LOS_CHECK_INTERVAL = 1000;
 
         private MimicNPC _mimicOwner;
-        private bool _isGuardArcher;
         // Next check for NPCs in attack range to hit while on the way to main target.
         private long _nextVicinityCheck = 0;
         private GamePlayer _npcOwnerOwner;
@@ -27,23 +26,8 @@ namespace DOL.GS
         public MimicAttackAction(MimicNPC mimicOwner) : base(mimicOwner)
         {
             _mimicOwner = mimicOwner;
-            _isGuardArcher = _mimicOwner is GuardArcher;
 
-            if (Properties.ALWAYS_CHECK_PET_LOS && mimicOwner.Brain is IControlledBrain npcOwnerBrain)
-            {
-                _npcOwnerOwner = npcOwnerBrain.GetPlayerOwner();
-                new ECSGameTimer(_mimicOwner, new ECSGameTimer.ECSTimerCallback(CheckLos), 1);
-            }
-            else
-                _hasLos = true;
-        }
-
-        public override void OnAimInterrupt(GameObject attacker)
-        {
-            // Guard archers shouldn't switch to melee when interrupted, otherwise they fall from the wall.
-            // They will still switch to melee if their target is in melee range.
-            if (!_isGuardArcher && _mimicOwner.HealthPercent < MIN_HEALTH_PERCENT_FOR_MELEE_SWITCH_ON_INTERRUPT)
-                _mimicOwner.SwitchToMelee(_target);
+            _hasLos = true;
         }
 
         protected override bool PrepareMeleeAttack()
@@ -53,16 +37,6 @@ namespace DOL.GS
                 _interval = TICK_INTERVAL_FOR_NON_ATTACK;
                 return false;
             }
-
-            // NPCs try to switch to their ranged weapon whenever possible.
-            //if (!_mimicOwner.IsBeingInterrupted &&
-            //    _mimicOwner.Inventory?.GetItem(eInventorySlot.DistanceWeapon) != null &&
-            //    !_mimicOwner.IsWithinRadius(_target, 500))
-            //{
-            //    _mimicOwner.SwitchToRanged(_target);
-            //    _interval = _attackComponent.AttackSpeed(_weapon);
-            //    return false;
-            //}
 
             _combatStyle = _styleComponent.NPCGetStyleToUse();
 
@@ -141,7 +115,22 @@ namespace DOL.GS
                 return false;
             }
 
-            return base.PrepareRangedAttack();
+            if (base.PrepareRangedAttack())
+            {
+                // This is also done in weaponAction.Execute(), but we must unstealth immediately if the call is delayed.
+                if (_ticksToTarget > 0)
+                    _mimicOwner.Stealth(false);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        protected override void PerformRangedAttack()
+        {
+            _mimicOwner.rangeAttackComponent.RemoveEnduranceAndAmmoOnShot();
+            base.PerformRangedAttack();
         }
 
         protected override bool FinalizeRangedAttack()

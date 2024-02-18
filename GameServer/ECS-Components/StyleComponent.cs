@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
@@ -153,15 +155,17 @@ namespace DOL.GS
         public Style NPCGetStyleToUse()
         {
             var p = _owner as GameNPC;
-            if (p.Styles == null || p.Styles.Count < 1 || p.TargetObject == null)
-                return null;
+
+            MimicNPC mimic = _owner as MimicNPC;
+
+            if (mimic == null)
+            {
+                if (p.Styles == null || p.Styles.Count < 1 || p.TargetObject == null)
+                    return null;
+            }
 
             AttackData lastAttackData = p.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
 
-            // Chain and defensive styles are excluded from the chance roll because they would almost never happen otherwise. 
-            // For example, an NPC blocks 10% of the time, so the default 20% style chance effectively means the defensive 
-            // style would only actually occur during 2% of of a mob's attacks. In comparison, a style chain would only happen 
-            // 0.4% of the time.
             if (p.StylesChain != null && p.StylesChain.Count > 0)
                 foreach (Style s in p.StylesChain)
                     if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
@@ -173,16 +177,22 @@ namespace DOL.GS
                         && p.CheckStyleStun(s)) // Make sure we don't spam stun styles like Brutalize
                         return s;
 
-            if (Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE))
+            bool chance = mimic != null ? true : Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE);
+
+            if (chance)
             {
-                // All of the remaining lists are randomly picked from,
-                // as this creates more variety with each combat result.
-                // For example, a mob with both Pincer and Ice Storm
-                // styles could potentially use one or the other with
-                // each attack roll that succeeds.
-                
-                // First, check positional styles (in order of back, side, front)
-                // in case the defender is facing another direction
+                if (mimic != null && mimic.MimicBrain.IsMainTank)
+                {
+                    if (mimic.TauntStyles != null && mimic.TauntStyles.Count > 0)
+                    {
+                        foreach (Style s in mimic.TauntStyles)
+                        {
+                            if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                                return s;
+                        }
+                    }
+                }
+
                 if (p.StylesBack != null && p.StylesBack.Count > 0)
                 {
                     Style s = p.StylesBack[Util.Random(0, p.StylesBack.Count - 1)];
@@ -204,9 +214,22 @@ namespace DOL.GS
                         return s;
                 }
 
-                // Pick a random anytime style
                 if (p.StylesAnytime != null && p.StylesAnytime.Count > 0)
-                    return p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                {
+                    Random rng = new Random();
+
+                    var randomList = p.StylesAnytime.OrderBy(x => rng.Next()).ToList();
+
+                    foreach (Style s in randomList)
+                    {
+                        if (mimic != null && !mimic.MimicBrain.PvPMode && mimic.Group != null && !mimic.MimicBrain.IsMainTank)
+                            if (mimic.TauntStyles != null && mimic.TauntStyles.Contains(s))
+                                continue;
+
+                        if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                            return s;
+                    }
+                }
             }
 
             return null;
