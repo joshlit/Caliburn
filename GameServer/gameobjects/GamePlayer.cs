@@ -20,6 +20,7 @@ using DOL.GS.PlayerTitles;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Quests;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Relics;
 using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
@@ -35,8 +36,13 @@ namespace DOL.GS
     /// <summary>
     /// This class represents a player inside the game
     /// </summary>
-    public class GamePlayer : GameLiving
+    public class GamePlayer : GameLiving, IGamePlayer
     {
+        public AttackComponent AttackComponent { get { return attackComponent; } }
+        public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
+        public StyleComponent StyleComponent { get { return styleComponent; } }
+        public EffectListComponent EffectListComponent { get { return effectListComponent; } }
+
         private const int SECONDS_TO_QUIT_ON_LINKDEATH = 60;
 
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -7181,6 +7187,8 @@ namespace DOL.GS
         public GameDuel Duel { get; private set; }
         public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
 
+        public bool DuelReady { get; set; }
+
         public void OnDuelStart(GameDuel duel)
         {
             Duel?.Stop();
@@ -7192,7 +7200,10 @@ namespace DOL.GS
             if (Duel == null)
                 return;
 
+            DuelReady = false;
             Duel = null;
+
+            Client.Out.SendMessage("You are no longer ready for your next duel.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
         }
 
         public bool IsDuelPartner(GameLiving living)

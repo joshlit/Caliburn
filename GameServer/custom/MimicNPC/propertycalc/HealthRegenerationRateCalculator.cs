@@ -63,7 +63,7 @@ namespace DOL.GS.Scripts
             if (regen != 0 && ServerProperties.Properties.HEALTH_REGEN_RATE != 1)
                 regen *= ServerProperties.Properties.HEALTH_REGEN_RATE;
 
-            if (living.IsSitting && (living is GamePlayer || living is MimicNPC))
+            if (living.IsSitting && living is IGamePlayer)
                 regen *= 1.75;
 
             double decimals = regen - (int)regen;

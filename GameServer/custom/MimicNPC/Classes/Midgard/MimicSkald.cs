@@ -11,20 +11,11 @@ namespace DOL.GS.Scripts
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-            MimicEquipment.SetShield(this, 1);
-
-            eObjectType objectType = eObjectType.Studded;
-
-            if (level >= 20)
-                objectType = eObjectType.Chain;
-
-            MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -39,26 +30,32 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Sword"; break;
-                case 1: WeaponTypeOne = "Axe"; break;
-                case 2: WeaponTypeOne = "Hammer"; break;
+                case 0: WeaponTypeOne = eObjectType.Sword; break;
+                case 1: WeaponTypeOne = eObjectType.Axe; break;
+                case 2: WeaponTypeOne = eObjectType.Hammer; break;
             }
 
-            int randVariance = Util.Random(2);
+            int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
                 case 1:
-                Add(WeaponTypeOne, 39, 0.7f);
-                Add("Battlesongs", 50, 0.8f);
-                Add("Parry", 28, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.7f);
+                Add(Specs.Battlesongs, 50, 0.8f);
+                Add(Specs.Parry, 18, 0.1f);
                 break;
 
                 case 2:
-                Add(WeaponTypeOne, 44, 0.7f);
-                Add("Battlesongs", 49, 0.8f);
-                Add("Parry", 4, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.7f);
+                Add(Specs.Battlesongs, 46, 0.8f);
+                Add(Specs.Parry, 17, 0.1f);
+                break;
+
+                case 3:
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.7f);
+                Add(Specs.Battlesongs, 49, 0.8f);
+                Add(Specs.Parry, 4, 0.1f);
                 break;
             }
         }

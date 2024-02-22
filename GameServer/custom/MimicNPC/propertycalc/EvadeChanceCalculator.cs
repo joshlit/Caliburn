@@ -37,7 +37,7 @@ namespace DOL.GS.Scripts
         {
             int chance = 0;
 
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 if (player.HasAbility(Abilities.Evade))
                     chance += (int)((((player.Dexterity + player.Quickness) / 2 - 50) * 0.05 + player.GetAbilityLevel(Abilities.Evade) * 5) * 10);
@@ -47,18 +47,6 @@ namespace DOL.GS.Scripts
                 chance -= player.DebuffCategory[(int)property] * 10;
                 chance += player.BuffBonusCategory4[(int)property] * 10;
                 chance += player.AbilityBonus[(int)property] * 10;
-            }
-            else if (living is MimicNPC mimic)
-            {
-                if (mimic.HasAbility(Abilities.Evade))
-                    chance += (int)((((mimic.Dexterity + mimic.Quickness) / 2 - 50) * 0.05 + mimic.GetAbilityLevel(Abilities.Evade) * 5) * 10);
-
-                chance += mimic.BaseBuffBonusCategory[(int)property] * 10;
-                chance += mimic.SpecBuffBonusCategory[(int)property] * 10;
-                chance -= mimic.DebuffCategory[(int)property] * 10;
-                chance += mimic.BuffBonusCategory4[(int)property] * 10;
-                chance += mimic.AbilityBonus[(int)property] * 10;
-
             }
             else if (living is GameNPC npc)
                 chance += npc.AbilityBonus[(int)property] * 10 + npc.EvadeChance * 10;

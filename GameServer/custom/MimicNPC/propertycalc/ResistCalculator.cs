@@ -34,8 +34,8 @@ namespace DOL.GS.Scripts
 
             // Necromancer pets receive resistances from Avoidance of Magic.
             GameLiving livingToCheck;
-            if (living is NecromancerPet necroPet && necroPet.Owner is GamePlayer playerOwner)
-                livingToCheck = playerOwner;
+            if (living is NecromancerPet necroPet && necroPet.Owner is IGamePlayer playerOwner)
+                livingToCheck = (GameLiving)playerOwner;
             else
                 livingToCheck = living;
 
@@ -65,7 +65,7 @@ namespace DOL.GS.Scripts
 
             buffBonus -= Math.Abs(debuff);
 
-            if (buffBonus < 0 && (living is GamePlayer || living is MimicNPC))
+            if (buffBonus < 0 && (living is IGamePlayer))
             {
                 itemBonus += buffBonus / 2;
                 buffBonus = 0;
@@ -87,7 +87,7 @@ namespace DOL.GS.Scripts
         {
             int propertyIndex = (int)property;
             int debuff = Math.Abs(living.DebuffCategory[propertyIndex]);
-            int racialBonus = (living is GamePlayer) ? SkillBase.GetRaceResist(((living as GamePlayer).Race), (eResist)property) : 0;
+            int racialBonus = (living is IGamePlayer) ? SkillBase.GetRaceResist(((living as IGamePlayer).Race), (eResist)property) : 0;
             int itemBonus = CalcValueFromItems(living, property);
             int buffBonus = CalcValueFromBuffs(living, property);
 
@@ -132,7 +132,7 @@ namespace DOL.GS.Scripts
 
             buffBonus -= Math.Abs(debuff);
 
-            if ((living is GamePlayer || living is MimicNPC) && buffBonus < 0)
+            if (living is IGamePlayer && buffBonus < 0)
             {
                 itemBonus += buffBonus / 2;
                 buffBonus = 0;
@@ -152,14 +152,14 @@ namespace DOL.GS.Scripts
         {
             // Necromancer pets receive resistances from The Empty Mind.
             GameLiving livingToCheck;
-            if (living is NecromancerPet necroPet && necroPet.Owner is GamePlayer playerOwner)
-                livingToCheck = playerOwner;
+            if (living is NecromancerPet necroPet && necroPet.Owner is IGamePlayer playerOwner)
+                livingToCheck = (GameLiving)playerOwner;
             else
                 livingToCheck = living;
 
             int buffBonus = living.BaseBuffBonusCategory[(int)property] + living.BuffBonusCategory4[(int)property];
 
-            int RACalcHolder = 0;
+            int RACalcHolder;
 
             if (livingToCheck is GameNPC && livingToCheck is not MimicNPC)
             {
@@ -183,8 +183,8 @@ namespace DOL.GS.Scripts
         {
             // Necromancer pets receive resistances from their owner's items.
             GameLiving livingToCheck;
-            if (living is NecromancerPet necroPet && necroPet.Owner is GamePlayer playerOwner)
-                livingToCheck = playerOwner;
+            if (living is NecromancerPet necroPet && necroPet.Owner is IGamePlayer playerOwner)
+                livingToCheck = (GameLiving)playerOwner;
             else
                 livingToCheck = living;
 
@@ -211,6 +211,7 @@ namespace DOL.GS.Scripts
         {
             if (living == null)
                 return 0;
+
             return Math.Min(living.ItemBonus[(int)(eProperty.ResCapBonus_First - eProperty.Resist_First + property)], 5);
         }
 
@@ -258,7 +259,7 @@ namespace DOL.GS.Scripts
 
             buffBonus -= Math.Abs(debuff);
 
-            if ((living is GamePlayer || living is MimicNPC) && buffBonus < 0)
+            if (living is IGamePlayer && buffBonus < 0)
             {
                 itemBonus += buffBonus / 2;
                 buffBonus = 0;

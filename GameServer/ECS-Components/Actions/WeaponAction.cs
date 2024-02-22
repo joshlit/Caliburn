@@ -110,9 +110,9 @@ namespace DOL.GS
             if (leftHandSwingCount > 0)
             {
                 if ((_owner is GameNPC && _owner is not MimicNPC) ||
-                    mainWeapon.Object_Type == (int)eObjectType.HandToHand ||
-                    leftWeapon?.Object_Type == (int)eObjectType.HandToHand ||
-                    mainWeapon.Object_Type == (int)eObjectType.TwoHandedWeapon ||
+                    mainWeapon.Object_Type == (int)eObjectType.HandToHand || 
+                    leftWeapon?.Object_Type == (int)eObjectType.HandToHand || 
+                    mainWeapon.Object_Type == (int)eObjectType.TwoHandedWeapon || 
                     mainWeapon.Object_Type == (int)eObjectType.Thrown ||
                     mainWeapon.SlotPosition == Slot.RANGED)
                     usingOH = false;
@@ -130,7 +130,7 @@ namespace DOL.GS
             }
             else if (mainWeapon != null)
             {
-                if ((_owner is GameNPC && _owner is not MimicNPC) ||
+                if (_owner is GameNPC && _owner is not MimicNPC ||
                     mainWeapon.Item_Type == Slot.TWOHAND ||
                     mainWeapon.SlotPosition == Slot.RANGED)
                     usingOH = false;
@@ -167,11 +167,9 @@ namespace DOL.GS
 
             // Check if Reflex Attack RA should apply. This is checked once here and cached since it is used multiple times below (every swing triggers Reflex Attack).
             bool targetHasReflexAttackRA = false;
-            GamePlayer targetPlayer = mainHandAD.Target as GamePlayer;
-            MimicNPC targetMimic = mainHandAD.Target as MimicNPC;
+            IGamePlayer targetPlayer = mainHandAD.Target as IGamePlayer;
 
-            if ((targetPlayer != null && targetPlayer.effectListComponent.ContainsEffectForEffectType(eEffect.ReflexAttack)) ||
-                (targetMimic != null && targetMimic.effectListComponent.ContainsEffectForEffectType(eEffect.ReflexAttack)))
+            if (targetPlayer != null && targetPlayer.EffectListComponent.ContainsEffectForEffectType(eEffect.ReflexAttack))
                 targetHasReflexAttackRA = true;
 
             // Reflex Attack - Mainhand.
@@ -235,38 +233,38 @@ namespace DOL.GS
                     case eAttackResult.Evaded:
                     case eAttackResult.Fumbled: // Takii - Fumble should not prevent Offhand attack.
                     case eAttackResult.Parried:
-                    for (int i = 0; i < leftHandSwingCount; i++)
-                    {
-                        if (_target is GameLiving living && (living.IsAlive == false || living.ObjectState != eObjectState.Active))
-                            break;
+                        for (int i = 0; i < leftHandSwingCount; i++)
+                        {
+                            if (_target is GameLiving living && (living.IsAlive == false || living.ObjectState != eObjectState.Active))
+                                break;
 
-                        // Savage swings - main, left, main, left.
-                        if (i % 2 == 0)
-                            leftHandAD = _owner.attackComponent.MakeAttack(this, _target, leftWeapon, null, leftHandEffectiveness, _interruptDuration, usingOH);
-                        else
-                            leftHandAD = _owner.attackComponent.MakeAttack(this, _target, mainWeapon, null, leftHandEffectiveness, _interruptDuration, usingOH);
+                            // Savage swings - main, left, main, left.
+                            if (i % 2 == 0)
+                                leftHandAD = _owner.attackComponent.MakeAttack(this, _target, leftWeapon, null, leftHandEffectiveness, _interruptDuration, usingOH);
+                            else
+                                leftHandAD = _owner.attackComponent.MakeAttack(this, _target, mainWeapon, null, leftHandEffectiveness, _interruptDuration, usingOH);
 
                         // Notify the target of our attack (sends damage messages, should be before damage).
                         leftHandAD.Target?.OnAttackedByEnemy(leftHandAD);
 
-                        // Deal damage and start the effect if any.
-                        if (leftHandAD.AttackResult is eAttackResult.HitUnstyled or eAttackResult.HitStyle)
-                        {
-                            _owner.DealDamage(leftHandAD);
-                            if (leftHandAD.IsMeleeAttack)
+                            // Deal damage and start the effect if any.
+                            if (leftHandAD.AttackResult is eAttackResult.HitUnstyled or eAttackResult.HitStyle)
                             {
-                                _owner.CheckWeaponMagicalEffect(leftHandAD, leftWeapon);
-                                HandleDamageAdd(_owner, leftHandAD);
+                                _owner.DealDamage(leftHandAD);
+                                if (leftHandAD.IsMeleeAttack)
+                                {
+                                    _owner.CheckWeaponMagicalEffect(leftHandAD, leftWeapon);
+                                    HandleDamageAdd(_owner, leftHandAD);
+                                }
                             }
+
+                            _owner.TempProperties.SetProperty(LAST_ATTACK_DATA_LH, leftHandAD);
+                            leftHandAD.Target.HandleDamageShields(leftHandAD);
+
+                            // Reflex Attack - Offhand.
+                            if (targetHasReflexAttackRA)
+                                HandleReflexAttack(_owner, leftHandAD.Target, leftHandAD.AttackResult, _interruptDuration);
                         }
-
-                        _owner.TempProperties.SetProperty(LAST_ATTACK_DATA_LH, leftHandAD);
-                        leftHandAD.Target.HandleDamageShields(leftHandAD);
-
-                        // Reflex Attack - Offhand.
-                        if (targetHasReflexAttackRA)
-                            HandleReflexAttack(_owner, leftHandAD.Target, leftHandAD.AttackResult, _interruptDuration);
-                    }
 
                     break;
                 }
@@ -283,22 +281,22 @@ namespace DOL.GS
             {
                 case eAttackResult.NoTarget:
                 case eAttackResult.TargetDead:
-                {
-                    _owner.OnTargetDeadOrNoTarget();
-                    return;
-                }
+                    {
+                        _owner.OnTargetDeadOrNoTarget();
+                        return;
+                    }
                 case eAttackResult.NotAllowed_ServerRules:
                 case eAttackResult.NoValidTarget:
-                {
-                    _owner.attackComponent.StopAttack();
-                    return;
-                }
+                    {
+                        _owner.attackComponent.StopAttack();
+                        return;
+                    }
                 case eAttackResult.OutOfRange:
                 break;
             }
 
             // Unstealth before attack animation.
-            if (_owner is GamePlayer playerOwner)
+            if (_owner is IGamePlayer playerOwner)
                 playerOwner.Stealth(false);
             else if (_owner is MimicNPC mimicOwner)
                 mimicOwner.Stealth(false);
@@ -324,7 +322,10 @@ namespace DOL.GS
 
             // Mobs' heading isn't updated after they start attacking, so we update it after they swing.
             if (_owner is GameNPC npcOwner)
+            {
                 npcOwner.TurnTo(mainHandAD.Target);
+                npcOwner.UpdateNPCEquipmentAppearance();
+            }
 
             return;
         }
@@ -517,7 +518,7 @@ namespace DOL.GS
                     GameObject animationTarget = player != _owner || ActiveWeaponSlot == eActiveWeaponSlot.Distance || _owner.TargetObject == defender ? defender : _owner.TargetObject;
 
                     player.Out.SendCombatAnimation(_owner, animationTarget,
-                                                   (ushort)attackersWeapon, (ushort)defendersWeapon,
+                                                   (ushort) attackersWeapon, (ushort) defendersWeapon,
                                                    animationId, 0, resultByte, defender.HealthPercent);
                 }
             }

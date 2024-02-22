@@ -51,16 +51,16 @@ namespace DOL.GS.Styles
                 }
 
                 switch (style.AttackResultRequirement)
-                {
-                    case Style.eAttackResultRequirement.Any: requiredAttackResult = eAttackResult.Any; break;
-                    case Style.eAttackResultRequirement.Block: requiredAttackResult = eAttackResult.Blocked; break;
-                    case Style.eAttackResultRequirement.Evade: requiredAttackResult = eAttackResult.Evaded; break;
-                    case Style.eAttackResultRequirement.Fumble: requiredAttackResult = eAttackResult.Fumbled; break;
-                    case Style.eAttackResultRequirement.Hit: requiredAttackResult = eAttackResult.HitUnstyled; break;
-                    case Style.eAttackResultRequirement.Style: requiredAttackResult = eAttackResult.HitStyle; break;
-                    case Style.eAttackResultRequirement.Miss: requiredAttackResult = eAttackResult.Missed; break;
-                    case Style.eAttackResultRequirement.Parry: requiredAttackResult = eAttackResult.Parried; break;
-                }
+				{
+					case Style.eAttackResultRequirement.Any: requiredAttackResult = eAttackResult.Any; break;
+					case Style.eAttackResultRequirement.Block: requiredAttackResult = eAttackResult.Blocked; break;
+					case Style.eAttackResultRequirement.Evade: requiredAttackResult = eAttackResult.Evaded; break;
+					case Style.eAttackResultRequirement.Fumble: requiredAttackResult = eAttackResult.Fumbled; break;
+					case Style.eAttackResultRequirement.Hit: requiredAttackResult = eAttackResult.HitUnstyled; break;
+					case Style.eAttackResultRequirement.Style: requiredAttackResult = eAttackResult.HitStyle; break;
+					case Style.eAttackResultRequirement.Miss: requiredAttackResult = eAttackResult.Missed; break;
+					case Style.eAttackResultRequirement.Parry: requiredAttackResult = eAttackResult.Parried; break;
+				}
 
                 switch (style.OpeningRequirementType)
                 {
@@ -324,7 +324,7 @@ namespace DOL.GS.Styles
 
             // First thing in processors, lock the objects you modify.
             // This way it makes sure the objects are not modified by several different threads at the same time.
-            GamePlayer player = living as GamePlayer;
+            IGamePlayer player = living as IGamePlayer;
 
             lock (living)
             {
@@ -407,10 +407,10 @@ namespace DOL.GS.Styles
                     if (player != null)
                         styleDamage = (int)(styleDamage * player.GetModified(eProperty.StyleDamage) * 0.01);
 
-                    // Style absorb bonus.
-                    if (target is GamePlayer)
-                    {
-                        int absorb = target.GetModified(eProperty.StyleAbsorb);
+					// Style absorb bonus.
+					if (target is IGamePlayer)
+					{
+						int absorb = target.GetModified(eProperty.StyleAbsorb);
 
                         if (absorb > 0)
                         {
@@ -515,9 +515,10 @@ namespace DOL.GS.Styles
             //[StephenxPimentel]
             //1.108 - Valhallas Blessing now has a 75% chance to not use endurance.
 
-            // Apply Valkyrie RA5L effect
-            ValhallasBlessingEffect ValhallasBlessing = living.EffectList.GetOfType<ValhallasBlessingEffect>();
-            if (ValhallasBlessing != null && Util.Chance(75)) return 0;
+			// Apply Valkyrie RA5L effect
+			ValhallasBlessingEffect ValhallasBlessing = living.EffectList.GetOfType<ValhallasBlessingEffect>();
+			if (ValhallasBlessing != null && Util.Chance(75)) 
+				return 0;
 
             //Camelot Herald 1.90 : Battlemaster styles will now cost a flat amount of Endurance, regardless of weapon speed
             if (style.Spec == Specs.Battlemaster)
@@ -531,24 +532,23 @@ namespace DOL.GS.Styles
             return Math.Max(1, fatCost);
         }
 
-        /// <summary>
-        /// Returns whether player has correct weapon
-        /// active for particular style
-        /// </summary>
-        /// <param name="style">The style to execute</param>
-        /// <param name="living">The living wanting to execute the style</param>
-        /// <param name="weapon">The weapon used to execute the style</param>
-        /// <returns>true if correct weapon active</returns>
-        protected static bool CheckWeaponType(Style style, GameLiving living, DbInventoryItem weapon)
-        {
-            if (living is GameNPC && living is not MimicNPC)
-                return true;
+		/// <summary>
+		/// Returns whether player has correct weapon
+		/// active for particular style
+		/// </summary>
+		/// <param name="style">The style to execute</param>
+		/// <param name="living">The living wanting to execute the style</param>
+		/// <param name="weapon">The weapon used to execute the style</param>
+		/// <returns>true if correct weapon active</returns>
+		protected static bool CheckWeaponType(Style style, GameLiving living, DbInventoryItem weapon)
+		{
+			if (living is GameNPC && living is not MimicNPC)
+				return true;
 
-            GamePlayer player = living as GamePlayer;
-            MimicNPC mimic = living as MimicNPC;
+            IGamePlayer player = living as IGamePlayer;
 
-            if (player == null && mimic == null)
-                return false;
+			if (player == null)
+				return false;
 
             switch (style.WeaponTypeRequirement)
             {
@@ -591,16 +591,18 @@ namespace DOL.GS.Styles
             }
         }
 
-        /// <summary>
-        /// Add the magical effect to target
-        /// </summary>
-        /// <param name="caster">The player who execute the style</param>
-        /// <param name="target">The target of the style</param>
-        /// <param name="spellID">The spellid of the magical effect</param>
-        protected static ISpellHandler CreateMagicEffect(GameLiving caster, GameLiving target, int spellID)
-        {
-            SpellLine styleLine = SkillBase.GetSpellLine(GlobalSpellsLines.Combat_Styles_Effect);
-            if (styleLine == null || target == null) return null;
+		/// <summary>
+		/// Add the magical effect to target
+		/// </summary>
+		/// <param name="caster">The player who execute the style</param>
+		/// <param name="target">The target of the style</param>
+		/// <param name="spellID">The spellid of the magical effect</param>
+		protected static ISpellHandler CreateMagicEffect(GameLiving caster, GameLiving target, int spellID)
+		{
+			SpellLine styleLine = SkillBase.GetSpellLine(GlobalSpellsLines.Combat_Styles_Effect);
+
+			if (styleLine == null || target == null) 
+				return null;
 
             List<Spell> spells = SkillBase.GetSpellList(styleLine.KeyName);
 
@@ -618,12 +620,12 @@ namespace DOL.GS.Styles
                 }
             }
 
-            ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(caster, styleSpell, styleLine);
-            if (spellHandler == null && styleSpell != null && caster is GamePlayer)
-            {
-                ((GamePlayer)caster).Out.SendMessage(styleSpell.Name + " not implemented yet (" + styleSpell.SpellType + ")", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return null;
-            }
+			ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(caster, styleSpell, styleLine);
+			if (spellHandler == null && styleSpell != null && caster is IGamePlayer)
+			{
+				((GamePlayer)caster).Out.SendMessage(styleSpell.Name + " not implemented yet (" + styleSpell.SpellType + ")", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				return null;
+			}
 
             // No negative effects can be applied on a keep door or via attacking a keep door
             if ((target is GameKeepComponent || target is GameKeepDoor) && spellHandler?.HasPositiveEffect == false)

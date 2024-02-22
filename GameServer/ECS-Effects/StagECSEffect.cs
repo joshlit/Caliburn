@@ -54,10 +54,8 @@ namespace DOL.GS
 
             double m_amountPercent = (m_level + 0.5 + Util.RandomDouble()) / 10; //+-5% random
 
-            if (OwnerPlayer != null)
-                m_amount = (int)(OwnerPlayer.CalculateMaxHealth(OwnerPlayer.Level, OwnerPlayer.GetModified(eProperty.Constitution)) * m_amountPercent);
-            else if (Owner is MimicNPC mimicOwner)
-                m_amount = (int)(mimicOwner.CalculateMaxHealth(mimicOwner.Level, mimicOwner.GetModified(eProperty.Constitution)) * m_amountPercent);
+            if (Owner is IGamePlayer gamePlayer)
+                m_amount = (int)(gamePlayer.CalculateMaxHealth(gamePlayer.Level, gamePlayer.GetModified(eProperty.Constitution)) * m_amountPercent);
             else
                 m_amount = (int)(Owner.MaxHealth * m_amountPercent);
 
@@ -81,6 +79,7 @@ namespace DOL.GS
             Owner.Model = m_originalModel;
 
             Owner.BaseBuffBonusCategory[(int)eProperty.MaxHealth] -= m_amount;
+
             if (Owner.IsAlive && Owner.Health > Owner.MaxHealth)
                 Owner.Health = Owner.MaxHealth;
 

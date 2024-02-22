@@ -3597,13 +3597,13 @@ namespace DOL.GS
 		#region Spell
 
 		private List<Spell> m_spells = new(0);
-		private ConcurrentDictionary<GameObject, (Spell, SpellLine, long)> m_castSpellLosChecks = new();
-		private bool m_spellCastedFromLosCheck;
+		protected ConcurrentDictionary<GameObject, (Spell, SpellLine, long)> m_castSpellLosChecks = new();
+		protected bool m_spellCastedFromLosCheck;
 
-		/// <summary>
-		/// property of spell array of NPC
-		/// </summary>
-		public virtual IList Spells
+        /// <summary>
+        /// property of spell array of NPC
+        /// </summary>
+        public virtual IList Spells
 		{
 			get { return m_spells; }
 			set

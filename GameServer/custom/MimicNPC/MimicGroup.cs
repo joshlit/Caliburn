@@ -92,7 +92,7 @@ namespace DOL.GS.Scripts
                 return false;
 
             MainTank = living;
-            living.Say("I will tank. Not really though this isn't implemented.");
+            living.Say("I will tank.");
             return true;
         }
 

@@ -10,13 +10,12 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-            MimicEquipment.SetArmor(this, eObjectType.Leather);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
+
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -27,39 +26,59 @@ namespace DOL.GS.Scripts
         {
             SpecName = "FriarSpec";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
-            int randVariance = Util.Random(4);
+            int randVariance = Util.Random(6);
 
             switch (randVariance)
             {
                 case 0:
+                Add(Specs.Rejuvenation, 15, 0.2f);
+                Add(Specs.Enhancement, 35, 0.8f);
+                Add(Specs.Staff, 50, 0.9f);
+                Add(Specs.Parry, 19, 0.1f);
+                break;
+
                 case 1:
-                Add("Rejuvenation", 18, 0.5f);
-                Add("Enhancement", 46, 0.8f);
-                Add("Staff", 50, 0.9f);
-                Add("Parry", 16, 0.1f);
+                Add(Specs.Rejuvenation, 2, 0.0f);
+                Add(Specs.Enhancement, 42, 0.8f);
+                Add(Specs.Staff, 50, 0.9f);
+                Add(Specs.Parry, 9, 0.1f);
                 break;
 
                 case 2:
-                Add("Rejuvenation", 10, 0.1f);
-                Add("Enhancement", 50, 0.8f);
-                Add("Staff", 50, 0.9f);
-                Add("Parry", 10, 0.1f);
+                Add(Specs.Rejuvenation, 7, 0.2f);
+                Add(Specs.Enhancement, 45, 0.8f);
+                Add(Specs.Staff, 44, 0.9f);
+                Add(Specs.Parry, 18, 0.2f);
                 break;
 
                 case 3:
-                Add("Rejuvenation", 44, 0.8f);
-                Add("Enhancement", 45, 0.9f);
-                Add("Staff", 34, 0.6f);
-                Add("Parry", 8, 0.1f);
+                Add(Specs.Rejuvenation, 24, 0.1f);
+                Add(Specs.Enhancement, 45, 0.9f);
+                Add(Specs.Staff, 39, 0.8f);
+                Add(Specs.Parry, 14, 0.2f);
                 break;
 
                 case 4:
-                Add("Rejuvenation", 15, 0.1f);
-                Add("Enhancement", 50, 0.9f);
-                Add("Staff", 44, 0.8f);
-                Add("Parry", 23, 0.2f);
+                Add(Specs.Rejuvenation, 15, 0.1f);
+                Add(Specs.Enhancement, 45, 0.9f);
+                Add(Specs.Staff, 39, 0.8f);
+                Add(Specs.Parry, 23, 0.2f);
+                break;
+
+                case 5:
+                Add(Specs.Rejuvenation, 44, 0.9f);
+                Add(Specs.Enhancement, 37, 0.8f);
+                Add(Specs.Staff, 29, 0.2f);
+                Add(Specs.Parry, 13, 0.1f);
+                break;
+
+                case 6:
+                Add(Specs.Rejuvenation, 34, 0.8f);
+                Add(Specs.Enhancement, 37, 0.5f);
+                Add(Specs.Staff, 39, 0.3f);
+                Add(Specs.Parry, 16, 0.1f);
                 break;
             }
         }

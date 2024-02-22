@@ -10,22 +10,13 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-            MimicEquipment.SetShield(this, 1);
             MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.TwoHandWeapon, eInstrumentType.Lute);
             MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.DistanceWeapon, eInstrumentType.Drum);
             //MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.FirstEmptyBackpack, eInstrumentType.Flute);
-
-            eObjectType objectType = eObjectType.Leather;
-
-            if (level >= 15)
-                objectType = eObjectType.Reinforced;
-
-            MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -41,8 +32,8 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Blades"; break;
-                case 1: WeaponTypeOne = "Blunt"; break;
+                case 0: WeaponTypeOne = eObjectType.Blades; break;
+                case 1: WeaponTypeOne = eObjectType.Blunt; break;
             }
 
             int randVariance = Util.Random(2);
@@ -50,22 +41,22 @@ namespace DOL.GS.Scripts
             switch (randVariance)
             {
                 case 0:
-                Add("Music", 47, 0.8f);
-                Add("Nurture", 43, 0.9f);
-                Add("Regrowth", 16, 0.1f);
+                Add(Specs.Music, 47, 0.8f);
+                Add(Specs.Nurture, 43, 0.9f);
+                Add(Specs.Regrowth, 16, 0.1f);
                 break;
 
                 case 1:
-                Add("Music", 37, 0.4f);
-                Add("Nurture", 43, 0.9f);
-                Add("Regrowth", 33, 0.7f);
+                Add(Specs.Music, 37, 0.4f);
+                Add(Specs.Nurture, 43, 0.9f);
+                Add(Specs.Regrowth, 33, 0.7f);
                 break;
 
                 case 2:
-                Add(WeaponTypeOne, 29, 0.7f);
-                Add("Music", 37, 0.4f);
-                Add("Nurture", 43, 0.9f);
-                Add("Regrowth", 16, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 29, 0.7f);
+                Add(Specs.Music, 37, 0.4f);
+                Add(Specs.Nurture, 43, 0.9f);
+                Add(Specs.Regrowth, 16, 0.1f);
                 break;
             }
         }

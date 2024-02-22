@@ -12,24 +12,14 @@ namespace DOL.GS.Scripts
             MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
 
-            if (MimicSpec.WeaponTypeOne == "Sword")
-            {
+            if (MimicSpec.WeaponTypeOne == eObjectType.Sword)
                 MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-                MimicEquipment.SetShield(this, 1);
-            }
-
-            eObjectType objectType = eObjectType.Leather;
-
-            if (level >= 10)
-                objectType = eObjectType.Studded;
-
-            MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
+                     
             SwitchWeapon(eActiveWeaponSlot.Distance);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -45,34 +35,34 @@ namespace DOL.GS.Scripts
             switch (randBaseWeap)
             {
                 case 0:
-                case 1: WeaponTypeOne = "Spear"; break;
-                case 2: WeaponTypeOne = "Sword"; break;
+                case 1: WeaponTypeOne = eObjectType.Spear; break;
+                case 2: WeaponTypeOne = eObjectType.Sword; break;
             }
 
             int randVariance = Util.Random(4);
-
+            
             switch (randVariance)
             {
                 case 0:
                 case 1:
-                Add(WeaponTypeOne, 39, 0.8f);
-                Add("Composite Bow", 35, 0.9f);
-                Add("Beastcraft", 40, 0.6f);
-                Add("Stealth", 38, 0.3f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.8f);
+                Add(Specs.CompositeBow, 35, 0.9f);
+                Add(Specs.Beastcraft, 40, 0.6f);
+                Add(Specs.Stealth, 38, 0.3f);
                 break;
 
                 case 2:
                 case 3:
-                Add(WeaponTypeOne, 39, 0.8f);
-                Add("Composite Bow", 45, 0.9f);
-                Add("Beastcraft", 32, 0.6f);
-                Add("Stealth", 38, 0.3f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.8f);
+                Add(Specs.CompositeBow, 45, 0.9f);
+                Add(Specs.Beastcraft, 32, 0.6f);
+                Add(Specs.Stealth, 38, 0.3f);
                 break;
 
                 case 4:
-                Add(WeaponTypeOne, 44, 0.9f);
-                Add("Beastcraft", 50, 0.8f);
-                Add("Stealth", 37, 0.5f);
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.9f);
+                Add(Specs.Beastcraft, 50, 0.8f);
+                Add(Specs.Stealth, 37, 0.5f);
                 break;
             }
         }

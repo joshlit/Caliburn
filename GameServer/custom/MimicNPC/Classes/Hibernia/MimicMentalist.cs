@@ -10,12 +10,10 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-            MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             SetCasterSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -26,40 +24,40 @@ namespace DOL.GS.Scripts
         {
             SpecName = "LightMentalist";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(4);
-
+            
             switch (randVariance)
             {
                 case 0:
-                Add("Light", 45, 1.0f);
-                Add("Mentalism", 28, 0.1f);
-                Add("Mana", 10, 0.0f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Mentalism, 28, 0.1f);
+                Add(Specs.Mana, 10, 0.0f);
                 break;
 
                 case 1:
-                Add("Light", 45, 1.0f);
-                Add("Mentalism", 17, 0.0f);
-                Add("Mana", 24, 0.1f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Mentalism, 17, 0.0f);
+                Add(Specs.Mana, 24, 0.1f);
                 break;
 
                 case 2:
-                Add("Light", 45, 1.0f);
-                Add("Mentalism", 6, 0.0f);
-                Add("Mana", 29, 0.1f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Mentalism, 6, 0.0f);
+                Add(Specs.Mana, 29, 0.1f);
                 break;
 
                 case 3:
-                Add("Light", 42, 1.0f);
-                Add("Mentalism", 33, 0.1f);
-                Add("Mana", 7, 0.0f);
+                Add(Specs.Light, 42, 1.0f);
+                Add(Specs.Mentalism, 33, 0.1f);
+                Add(Specs.Mana, 7, 0.0f);
                 break;
 
                 case 4:
-                Add("Light", 42, 1.0f);
-                Add("Mentalism", 23, 0.2f);
-                Add("Mana", 24, 0.1f);
+                Add(Specs.Light, 42, 1.0f);
+                Add(Specs.Mentalism, 23, 0.2f);
+                Add(Specs.Mana, 24, 0.1f);
                 break;
             }
         }
@@ -71,40 +69,40 @@ namespace DOL.GS.Scripts
         {
             SpecName = "ManaMentalist";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(4);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Mana", 48, 1.0f);
-                Add("Mentalism", 24, 0.1f);
-                Add("light", 6, 0.0f);
+                Add(Specs.Mana, 48, 1.0f);
+                Add(Specs.Mentalism, 24, 0.1f);
+                Add(Specs.Light, 6, 0.0f);
                 break;
 
                 case 1:
-                Add("Mana", 48, 1.0f);
-                Add("Mentalism", 6, 0.0f);
-                Add("light", 24, 0.1f);
+                Add(Specs.Mana, 48, 1.0f);
+                Add(Specs.Mentalism, 6, 0.0f);
+                Add(Specs.Light, 24, 0.1f);
                 break;
 
                 case 2:
-                Add("Mana", 46, 1.0f);
-                Add("Mentalism", 28, 0.1f);
-                Add("light", 4, 0.0f);
+                Add(Specs.Mana, 46, 1.0f);
+                Add(Specs.Mentalism, 28, 0.1f);
+                Add(Specs.Light, 4, 0.0f);
                 break;
 
                 case 3:
-                Add("Mana", 44, 1.0f);
-                Add("Mentalism", 31, 0.1f);
-                Add("light", 4, 0.0f);
+                Add(Specs.Mana, 44, 1.0f);
+                Add(Specs.Mentalism, 31, 0.1f);
+                Add(Specs.Light, 4, 0.0f);
                 break;
 
                 case 4:
-                Add("Mana", 44, 1.0f);
-                Add("Mentalism", 4, 0.0f);
-                Add("light", 31, 0.1f);
+                Add(Specs.Mana, 44, 1.0f);
+                Add(Specs.Mentalism, 4, 0.0f);
+                Add(Specs.Light, 31, 0.1f);
                 break;
             }
         }
@@ -116,34 +114,34 @@ namespace DOL.GS.Scripts
         {
             SpecName = "MentalismMentalist";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Mentalism", 50, 1.0f);
-                Add("Mana", 4, 0.0f);
-                Add("light", 20, 0.1f);
+                Add(Specs.Mentalism, 50, 1.0f);
+                Add(Specs.Mana, 4, 0.0f);
+                Add(Specs.Light, 20, 0.1f);
                 break;
 
                 case 1:
-                Add("Mentalism", 50, 1.0f);
-                Add("Mana", 14, 0.1f);
-                Add("light", 14, 0.0f);
+                Add(Specs.Mentalism, 50, 1.0f);
+                Add(Specs.Mana, 14, 0.1f);
+                Add(Specs.Light, 14, 0.0f);
                 break;
 
                 case 2:
-                Add("Mentalism", 42, 1.0f);
-                Add("Mana", 7, 0.0f);
-                Add("light", 33, 0.1f);
+                Add(Specs.Mentalism, 42, 1.0f);
+                Add(Specs.Mana, 7, 0.0f);
+                Add(Specs.Light, 33, 0.1f);
                 break;
 
                 case 3:
-                Add("Mentalism", 41, 0.9f);
-                Add("Mana", 34, 0.1f);
-                Add("light", 8, 0.0f);
+                Add(Specs.Mentalism, 41, 0.9f);
+                Add(Specs.Mana, 34, 0.1f);
+                Add(Specs.Light, 8, 0.0f);
                 break;
             }
         }

@@ -28,32 +28,19 @@ namespace DOL.GS
 
         public override void OnStartEffect()
         {
-            if (OwnerPlayer != null)
+            if (Owner != null && Owner is IGamePlayer gamePlayer)
             {
-                int regen = OwnerPlayer.GetModified(eProperty.EnduranceRegenerationRate);
-                var enduranceChant = OwnerPlayer.GetModified(eProperty.FatigueConsumption);
+                int regen = gamePlayer.GetModified(eProperty.EnduranceRegenerationRate);
+                var enduranceChant = gamePlayer.GetModified(eProperty.FatigueConsumption);
                 var cost = -5 + regen;
 
                 if (enduranceChant > 1)
                     cost = (int) Math.Ceiling(cost * enduranceChant * 0.01);
 
-                OwnerPlayer.Endurance += cost;
-                OwnerPlayer.Out.SendUpdateMaxSpeed();
-                OwnerPlayer.Out.SendMessage(LanguageMgr.GetTranslation(OwnerPlayer.Client.Account.Language, "GamePlayer.Sprint.PrepareSprint"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                Owner.StartEnduranceRegeneration();
-            }
-            else if (Owner is MimicNPC mimic)
-            {
-                int regen = mimic.GetModified(eProperty.EnduranceRegenerationRate);
-                var endchant = mimic.GetModified(eProperty.FatigueConsumption);
-                var cost = -5 + regen;
-
-                if (endchant > 1)
-                    cost = (int)Math.Ceiling(cost * endchant * 0.01);
-
-                mimic.Endurance += cost;
-
-                Owner.StartEnduranceRegeneration();
+                gamePlayer.Endurance += cost;
+                gamePlayer.Out.SendUpdateMaxSpeed();
+                gamePlayer.Out.SendMessage(LanguageMgr.GetTranslation(gamePlayer.Client.Account.Language, "GamePlayer.Sprint.PrepareSprint"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                ((GameLiving)gamePlayer).StartEnduranceRegeneration();
             }
         }
 

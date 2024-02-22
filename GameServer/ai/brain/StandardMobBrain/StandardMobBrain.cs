@@ -581,6 +581,9 @@ namespace DOL.AI.Brain
                     return true;
             }
 
+            if (Body is GameKeepGuard && realTarget is IGamePlayer && realTarget.Realm != Body.Realm)
+                return true;
+
             // We put this here to prevent aggroing non-factions npcs
             return (Body.Realm != eRealm.None || realTarget is not GameNPC) && AggroLevel > 0;
         }

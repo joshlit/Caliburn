@@ -63,7 +63,6 @@ namespace DOL.GS
                             EffectService.RequestDisableEffect(this);
                         }
                     }
-                    
                     else
                         ApplyBonus(Owner, eBuffBonusCategory.BaseBuff, prop, SpellHandler.Spell.Value, Effectiveness, false);
                 }

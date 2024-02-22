@@ -1,45 +1,42 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using DOL.AI;
+﻿using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
-using DOL.GS.API;
-using DOL.GS.Behaviour.Actions;
 using DOL.GS.Effects;
-using DOL.GS.Housing;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.PacketHandler.Client.v168;
 using DOL.GS.PlayerClass;
-using DOL.GS.PlayerTitles;
 using DOL.GS.PropertyCalc;
-using DOL.GS.Quests;
 using DOL.GS.Realm;
 using DOL.GS.RealmAbilities;
 using DOL.GS.ServerProperties;
-using DOL.GS.ServerRules;
-using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
 using DOL.GS.Styles;
 using DOL.GS.Utils;
 using DOL.Language;
-using DOL.Network;
 using JNogueira.Discord.Webhook.Client;
-using log4net;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using static DOL.GS.AttackData;
+using static DOL.GS.GamePlayer;
 
 namespace DOL.GS.Scripts
 {
-    public class MimicNPC : GameNPC
+    public class MimicNPC : GameNPC, IGamePlayer
     {
+        private DummyPacketLib _dummyLib;
+        private DummyClient _dummyClient;
+
+        public AttackComponent AttackComponent { get { return attackComponent; } }
+        public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
+        public StyleComponent StyleComponent { get { return styleComponent; } }
+        public EffectListComponent EffectListComponent { get { return effectListComponent; } }
+
+        public IPacketLib Out { get { return _dummyLib; } }
+        public GameClient Client { get { return _dummyClient; } }
         public GamePlayer Dev { private get; set; }
 
         public void DevOut(string message)
@@ -98,12 +95,18 @@ namespace DOL.GS.Scripts
 
         public MimicNPC(ICharacterClass cClass, byte level, eGender gender = eGender.Neutral)
         {
+            _dummyClient = new DummyClient(GameServer.Instance);
+            _dummyLib = new DummyPacketLib();
+
             Inventory = new MimicNPCInventory();
             MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
 
             SetCharacterClass(cClass.ID);
             SetRaceAndName();
             SetLevel(level);
+            SetArmor();
+            SetJewelry();
+            SetShield();
 
             MimicBrain = new MimicBrain();
             MimicBrain.MimicBody = this;
@@ -119,6 +122,50 @@ namespace DOL.GS.Scripts
             }));
 
             Dev = ClientService.GetPlayers()[0];
+        }
+
+        private void SetJewelry()
+        {
+            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
+        }
+
+        private void SetShield()
+        {
+            MimicEquipment.SetShield(this, BestShieldLevel);
+        }
+
+        private void SetArmor()
+        {
+            int armorLevel = BestArmorLevel;
+            eObjectType armorType = eObjectType.GenericArmor;
+
+            switch (armorLevel)
+            {
+                case 1: armorType = eObjectType.Cloth; break;
+                case 2: armorType = eObjectType.Leather; break;
+
+                case 3:
+                {
+                    if (Realm == eRealm.Hibernia)
+                        armorType = eObjectType.Reinforced;
+                    else
+                        armorType = eObjectType.Studded;
+                    break;
+                }
+
+                case 4:
+                {
+                    if (Realm == eRealm.Hibernia)
+                        armorType = eObjectType.Scale;
+                    else
+                        armorType = eObjectType.Chain;
+                    break;
+                }
+
+                case 5: armorType = eObjectType.Plate; break;
+            }
+
+            MimicEquipment.SetArmor(this, armorType);
         }
 
         public void GetTauntStyles()
@@ -585,7 +632,7 @@ namespace DOL.GS.Scripts
             return base.SayReceive(source, str);
         }
 
-        // TODO: Will need a different method for when leveling up after being created or adjust 
+        // TODO: Will need a different method for when leveling up after being created or adjust
         public void SpendSpecPoints(byte fromLevel = 2, bool mimicCreation = true)
         {
             MimicSpec.SpecLines = MimicSpec.SpecLines.OrderByDescending(ratio => ratio.levelRatio).ToList();
@@ -613,7 +660,7 @@ namespace DOL.GS.Scripts
                         if (specLine.levelRatio <= 0 && Level < 50)
                             continue;
 
-                        Specialization spec = GetSpecializationByName(specLine.SpecName);
+                        Specialization spec = GetSpecializationByName(specLine.Spec);
 
                         if (spec != null)
                         {
@@ -776,8 +823,8 @@ namespace DOL.GS.Scripts
                                                              && x.Frequency == currentSpell.Frequency
                                                              && x.CastTime == currentSpell.CastTime
                                                              && x.Target == currentSpell.Target);
-                                                             //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
-                
+                //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
+
                 if (matchingItem == null || currentSpell.Level > matchingItem.Level)
                 {
                     //TODO: Some spells meet this critera but shouldn't be removed. All Healer spells have various conflict, Thane DD spells, Skald DD spells are some.
@@ -796,7 +843,7 @@ namespace DOL.GS.Scripts
                                        && x.Frequency == currentSpell.Frequency
                                        && x.CastTime == currentSpell.CastTime
                                        && x.Target == currentSpell.Target);
-                                       //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
+                    //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
 
                     result.Add(currentSpell);
                 }
@@ -1065,6 +1112,10 @@ namespace DOL.GS.Scripts
                 }
                 else if (spell.IsHealing && !spell.IsPulsing)
                 {
+                    // TODO: Move pet heals somewhere else
+                    if (spell.Target == eSpellTarget.PET)
+                        continue;
+
                     if (HealSpells == null)
                         HealSpells = new List<Spell>(1);
                     HealSpells.Add(spell);
@@ -1088,6 +1139,11 @@ namespace DOL.GS.Scripts
             } // foreach
 
             //SortedSpells = true;
+        }
+
+        public override void DisableSkill(Skill skill, int duration)
+        {
+            base.DisableSkill(skill, duration);
         }
 
         public void SetLevel(byte level)
@@ -1141,13 +1197,6 @@ namespace DOL.GS.Scripts
                     Realm = keyValuePair.Key;
                     break;
                 }
-            }
-
-            switch (Realm)
-            {
-                case eRealm.Albion: Faction = MimicManager.alb; break;
-                case eRealm.Hibernia: Faction = MimicManager.hib; break;
-                case eRealm.Midgard: Faction = MimicManager.mid; break;
             }
 
             Name = MimicNames.GetName(Gender, Realm);
@@ -1273,9 +1322,6 @@ namespace DOL.GS.Scripts
         /// </summary>
         private ArrayList m_mlSteps = new ArrayList();
 
-        private bool m_gmStealthed = false;
-        public bool GMStealthed { get { return m_gmStealthed; } set { m_gmStealthed = value; } }
-
         /// <summary>
         /// Gets or sets the targetObject's visibility
         /// </summary>
@@ -1308,15 +1354,15 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// Holds the ground target visibility flag
         /// </summary>
-        protected bool m_groundtargetInView;
+        protected bool _groundTargetInView;
 
         /// <summary>
         /// Gets or sets the GroundTargetObject's visibility
         /// </summary>
         public override bool GroundTargetInView
         {
-            get { return m_groundtargetInView; }
-            set { m_groundtargetInView = value; }
+            get { return _groundTargetInView; }
+            set { _groundTargetInView = value; }
         }
 
         protected int m_OutOfClassROGPercent = 0;
@@ -1330,20 +1376,12 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// Player is in BG ?
         /// </summary>
-        protected bool m_isInBG;
+        protected bool _isInBG;
 
         public bool isInBG
         {
-            get { return m_isInBG; }
-            set { m_isInBG = value; }
-        }
-
-        /// <summary>
-        /// Returns the GameClient of this Player
-        /// </summary>
-        public virtual GameClient Client
-        {
-            get { return m_client; }
+            get { return _isInBG; }
+            set { _isInBG = value; }
         }
 
         /// <summary>
@@ -1355,48 +1393,9 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// Has this player entered the game for the first
-        /// time after logging on (not Zoning!)
-        /// </summary>
-        public bool EnteredGame
-        {
-            get { return m_enteredGame; }
-            set { m_enteredGame = value; }
-        }
-
-        protected DateTime m_previousLoginDate = DateTime.MinValue;
-
-        /// <summary>
-        /// What was the last time this player logged in?
-        /// </summary>
-        public DateTime PreviousLoginDate
-        {
-            get { return m_previousLoginDate; }
-            set { m_previousLoginDate = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the anonymous flag for this player
-        /// (delegate to property in PlayerCharacter)
-        /// </summary>
-        public bool IsAnonymous
-        {
-            get { return DBCharacter != null ? DBCharacter.IsAnonymous && (ServerProperties.Properties.ANON_MODIFIER != -1) : false; }
-            set
-            {
-                var old = IsAnonymous;
-                if (DBCharacter != null)
-                    DBCharacter.IsAnonymous = value;
-
-                if (old != IsAnonymous)
-                    GameEventMgr.Notify(GamePlayerEvent.ChangeAnonymous, this);
-            }
-        }
-
-        /// <summary>
         /// Can this player use cross realm items
         /// </summary>
-        public virtual bool CanUseCrossRealmItems { get { return ServerProperties.Properties.ALLOW_CROSS_REALM_ITEMS; } }
+        public virtual bool CanUseCrossRealmItems { get { return Properties.ALLOW_CROSS_REALM_ITEMS; } }
 
         protected bool _lastDeathPvP;
 
@@ -1527,16 +1526,6 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// Gets/sets the characters option to receive ROGs /eventrog
-        /// (delegate to property in DBCharacter)
-        /// </summary>
-        public bool ReceiveROG
-        {
-            get { return DBCharacter != null ? DBCharacter.ReceiveROG : true; }
-            set { if (DBCharacter != null) DBCharacter.ReceiveROG = value; }
-        }
-
-        /// <summary>
         /// Gets or sets the BindRegion for this player
         /// (delegate to property in DBCharacter)
         /// </summary>
@@ -1653,100 +1642,6 @@ namespace DOL.GS.Scripts
         #endregion Database Accessor
 
         #endregion Client/Character/VariousFlags
-
-        #region Player Quitting
-
-        /// <summary>
-        /// quit timer
-        /// </summary>
-        protected AuxECSGameTimer m_quitTimer;
-
-        /// <summary>
-        /// Timer callback for quit
-        /// </summary>
-        /// <param name="callingTimer">the calling timer</param>
-        /// <returns>the new intervall</returns>
-        protected virtual int QuitTimerCallback(AuxECSGameTimer callingTimer)
-        {
-            if (!IsAlive || ObjectState != eObjectState.Active)
-            {
-                m_quitTimer = null;
-                return 0;
-            }
-
-            bool bInstaQuit = false;
-
-            if (Client.Account.PrivLevel > 1) // GMs can always insta quit
-                bInstaQuit = true;
-            else if (ServerProperties.Properties.DISABLE_QUIT_TIMER && Client.Player.InCombat == false)  // Players can only insta quit if they aren't in combat
-                bInstaQuit = true;
-
-            if (bInstaQuit == false)
-            {
-                //if (CraftTimer != null && CraftTimer.IsAlive)
-                //{
-                //    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Quit.CantQuitCrafting"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                //    m_quitTimer = null;
-                //    return 0;
-                //}
-
-                long lastCombatAction = LastAttackedByEnemyTick;
-                if (lastCombatAction < LastAttackTick)
-                {
-                    lastCombatAction = LastAttackTick;
-                }
-                long secondsleft = 60 - (GameLoop.GameLoopTime - lastCombatAction + 500) / 1000; // 500 is for rounding
-                if (secondsleft > 0)
-                {
-                    if (secondsleft == 15 || secondsleft == 10 || secondsleft == 5)
-                    {
-                        // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Quit.YouWillQuit1", secondsleft), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                    }
-                    return 1000;
-                }
-            }
-
-            if (CharacterClass.ID == (int)eCharacterClass.Necromancer && IsShade)
-                Shade(false);
-
-            // Out.SendPlayerQuit(false);
-            //Quit(true);
-            //CraftingProgressMgr.FlushAndSaveInstance(this);
-            SaveIntoDatabase();
-            m_quitTimer?.Stop();
-            m_quitTimer = null;
-            return 0;
-        }
-
-        /// <summary>
-        /// Gets the amount of time the player must wait before quit, in seconds
-        /// </summary>
-        public virtual int QuitTime
-        {
-            get
-            {
-                if (m_quitTimer == null)
-                {
-                    // dirty trick ;-) (20sec min quit time)
-                    //Commenting out the LastAttackTickPvP part as it was messing up the Realm Timer.
-                    // if (GameLoop.GameLoopTime - LastAttackTickPvP > 40000)
-                    //     LastAttackTickPvP = GameLoop.GameLoopTime - 40000;
-                    if (GameLoop.GameLoopTime - LastAttackTickPvE > 40000)
-                        LastAttackTickPvE = GameLoop.GameLoopTime - 40000;
-                }
-                long lastCombatAction = LastAttackTick;
-                if (lastCombatAction < LastAttackedByEnemyTick)
-                {
-                    lastCombatAction = LastAttackedByEnemyTick;
-                }
-
-                return (int)(60 - (GameLoop.GameLoopTime - lastCombatAction + 500) / 1000); // 500 is for rounding
-            }
-            set
-            { }
-        }
-
-        #endregion Player Quitting
 
         #region Combat timer
 
@@ -1873,22 +1768,14 @@ namespace DOL.GS.Scripts
             }
 
             if (!IsAlive)
-            {
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.CantBindDead"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
-            }
 
             //60 second rebind timer
             long lastBindTick = TempProperties.GetProperty<long>(LAST_BIND_TICK, 0);
             long changeTime = CurrentRegion.Time - lastBindTick;
-            if (Client.Account.PrivLevel <= (uint)ePrivLevel.Player && changeTime < BindAllowInterval)
-            {
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.MustWait", (1 + (BindAllowInterval - changeTime) / 1000)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
-            }
 
-            //string description = string.Format("in {0}", GetBindSpotDescription());
-            //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.LastBindPoint", description), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            if (changeTime < BindAllowInterval)
+                return;
 
             bool bound = false;
 
@@ -1970,11 +1857,6 @@ namespace DOL.GS.Scripts
                 }
 
                 TempProperties.SetProperty(LAST_BIND_TICK, CurrentRegion.Time);
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.Bound"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            }
-            else
-            {
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.CantHere"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
             }
         }
 
@@ -2066,18 +1948,13 @@ namespace DOL.GS.Scripts
             }
 
             if (IsAlive)
-            {
-                //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Release.NotDead"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
-            }
 
             if (!forced)
             {
                 if (m_releaseType == eReleaseType.Duel)
-                {
-                    //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Release.CantReleaseDuel"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                     return;
-                }
+
                 m_releaseType = releaseCommand;
                 // we use realtime, because timer window is realtime
                 long diff = m_deathTick - GameLoop.GameLoopTime + RELEASE_MINIMUM_WAIT * 1000;
@@ -2087,7 +1964,7 @@ namespace DOL.GS.Scripts
                     {
                         m_automaticRelease = false;
                         m_releaseType = eReleaseType.Normal;
-                        //Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Release.NoLongerReleaseAuto", diff / 1000), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
                         return;
                     }
 
@@ -2775,14 +2652,16 @@ namespace DOL.GS.Scripts
 
         #region Stats
 
+        private int _totalConstitutionLostAtDeath = 0;
+
         /// <summary>
         /// Gets/sets the player efficacy percent
         /// (delegate to PlayerCharacter)
         /// </summary>
         public virtual int TotalConstitutionLostAtDeath
         {
-            get { return DBCharacter != null ? DBCharacter.ConLostAtDeath : 0; }
-            set { if (DBCharacter != null) DBCharacter.ConLostAtDeath = value; }
+            get { return _totalConstitutionLostAtDeath; }
+            set { _totalConstitutionLostAtDeath = value; }
         }
 
         /// <summary>
@@ -2793,98 +2672,71 @@ namespace DOL.GS.Scripts
         /// <param name="val">The new value</param>
         public override void ChangeBaseStat(eStat stat, short val)
         {
-            int oldstat = GetBaseStat(stat);
             base.ChangeBaseStat(stat, val);
-            short newstat = (short)GetBaseStat(stat);
-            //DbCoreCharacter character = DBCharacter; // to call it only once, if in future there will be some special code to get the character
-            // Graveen: always positive and not null. This allows /player stats to substract values safely
-            if (newstat < 1) newstat = 1;
-            if (oldstat != newstat)
-            {
-                switch (stat)
-                {
-                    case eStat.STR: Strength = newstat; break;
-                    case eStat.DEX: Dexterity = newstat; break;
-                    case eStat.CON: Constitution = newstat; break;
-                    case eStat.QUI: Quickness = newstat; break;
-                    case eStat.INT: Intelligence = newstat; break;
-                    case eStat.PIE: Piety = newstat; break;
-                    case eStat.EMP: Empathy = newstat; break;
-                    case eStat.CHR: Charisma = newstat; break;
-                }
-            }
         }
 
         /// <summary>
         /// Gets player's strength
         /// </summary>
-        public override short Strength
+        public new int Strength
         {
             get { return (short)GetModified(eProperty.Strength); }
-            set { m_charStat[eStat.STR - eStat._First] = value; }
-        }
-
-        /// <summary>
-        /// Gets player's constitution
-        /// </summary>
-        public override short Constitution
-        {
-            get { return (short)GetModified(eProperty.Constitution); }
-            set { m_charStat[eStat.CON - eStat._First] = value; }
         }
 
         /// <summary>
         /// Gets player's dexterity
         /// </summary>
-        public override short Dexterity
+        public new int Dexterity
         {
             get { return (short)GetModified(eProperty.Dexterity); }
-            set { m_charStat[eStat.DEX - eStat._First] = value; }
         }
 
         /// <summary>
-        /// Gets player's quickness
+        /// Gets player's constitution
         /// </summary>
-        public override short Quickness
+        public new int Constitution
+        {
+            get { return (short)GetModified(eProperty.Constitution); }
+        }
+
+        /// <summary>
+        /// Gets mimic's quickness
+        /// </summary>
+        public new int Quickness
         {
             get { return (short)GetModified(eProperty.Quickness); }
-            set { m_charStat[eStat.QUI - eStat._First] = value; }
         }
 
         /// <summary>
         /// Gets player's intelligence
         /// </summary>
-        public override short Intelligence
+        public new int Intelligence
         {
             get { return (short)GetModified(eProperty.Intelligence); }
-            set { m_charStat[eStat.INT - eStat._First] = value; }
         }
 
         /// <summary>
         /// Gets player's piety
         /// </summary>
-        public override short Piety
+        public new int Piety
         {
             get { return (short)GetModified(eProperty.Piety); }
-            set { m_charStat[eStat.PIE - eStat._First] = value; }
         }
 
         /// <summary>
         /// Gets player's empathy
         /// </summary>
-        public override short Empathy
+        public new int Empathy
         {
             get { return (short)GetModified(eProperty.Empathy); }
-            set { m_charStat[eStat.EMP - eStat._First] = value; }
         }
 
         /// <summary>
         /// Gets player's charisma
         /// </summary>
-        public override short Charisma
+        public new int Charisma
         {
-            get { return (short)GetModified(eProperty.Charisma); }
-            set { m_charStat[eStat.CHR - eStat._First] = value; }
+            get { return GetModified(eProperty.Charisma); }
         }
 
         protected IPlayerStatistics m_statistics = null;
@@ -4100,6 +3952,8 @@ namespace DOL.GS.Scripts
             }
         }
 
+        public virtual int BestShieldLevel { get { return GetAbilityLevel("Shield"); } }
+
         #region Abilities
 
         /// <summary>
@@ -4721,15 +4575,15 @@ namespace DOL.GS.Scripts
         //    }
         //}
 
-        private int m_realmLevel;
+        private int _realmLevel;
 
         /// <summary>
         /// Gets/sets player realm rank
         /// </summary>
         public virtual int RealmLevel
         {
-            get { return m_realmLevel; }
-            set { m_realmLevel = value; }
+            get { return _realmLevel; }
+            set { _realmLevel = value; }
         }
 
         /// <summary>
@@ -5762,6 +5616,16 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
+        /// Gets and sets the last ML the player has completed.
+        /// MLLevel is advanced once all steps are completed.
+        /// </summary>
+        public virtual int MLLevel
+        {
+            get { return DBCharacter != null ? DBCharacter.MLLevel : 0; }
+            set { if (DBCharacter != null) DBCharacter.MLLevel = value; }
+        }
+
+        /// <summary>
         /// What level is displayed to another player
         /// </summary>
         public override byte GetDisplayLevel(GamePlayer player)
@@ -5980,6 +5844,99 @@ namespace DOL.GS.Scripts
         #region Combat
 
         /// <summary>
+		/// Cast a spell with LOS check to a player
+		/// </summary>
+		/// <returns>Whether the spellcast started successfully</returns>
+		public override bool CastSpell(Spell spell, SpellLine line)
+        {
+            // Good opportunity to clean up our 'm_spellTargetLosChecks'.
+            // Entries older than 3 seconds are removed, so that another check can be performed in case the previous one never was.
+            for (int i = m_castSpellLosChecks.Count - 1; i >= 0; i--)
+            {
+                var element = m_castSpellLosChecks.ElementAt(i);
+
+                if (GameLoop.GameLoopTime - element.Value.Item3 >= 3000)
+                    m_castSpellLosChecks.TryRemove(element.Key, out _);
+            }
+
+            if (IsIncapacitated)
+                return false;
+
+            if (TargetObject == this || TargetObject == null)
+                return castingComponent.RequestStartCastSpell(spell, line, null, TargetObject as GameLiving);
+
+            GamePlayer LosChecker = TargetObject as GamePlayer;
+
+            if (LosChecker == null)
+            {
+                foreach (GamePlayer playerInRange in GetPlayersInRadius(350))
+                {
+                    if (playerInRange != null)
+                    {
+                        LosChecker = playerInRange;
+                        break;
+                    }
+                }
+            }
+
+            if (LosChecker == null)
+                return castingComponent.RequestStartCastSpell(spell, line, null, TargetObject as GameLiving);
+
+            bool spellCastedFromLosCheck = m_spellCastedFromLosCheck;
+
+            if (spellCastedFromLosCheck)
+                m_spellCastedFromLosCheck = false;
+
+            if (m_castSpellLosChecks.TryAdd(TargetObject, new(spell, line, GameLoop.GameLoopTime)))
+                LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(CastSpellLosCheckReply));
+
+            return spellCastedFromLosCheck;
+        }
+
+        /// <summary>
+        /// Calculate how fast this player can cast a given spell
+        /// </summary>
+        /// <param name="spell"></param>
+        /// <returns></returns>
+        public override int CalculateCastingTime(SpellLine line, Spell spell)
+        {
+            int ticks = spell.CastTime;
+
+            if (spell.InstrumentRequirement != 0 ||
+                line.KeyName == GlobalSpellsLines.Item_Spells ||
+                line.KeyName.StartsWith(GlobalSpellsLines.Champion_Lines_StartWith))
+            {
+                return ticks;
+            }
+
+            if (CharacterClass.CanChangeCastingSpeed(line, spell) == false)
+                return ticks;
+
+            if (EffectListService.GetAbilityEffectOnTarget(this, eEffect.QuickCast) != null)
+            {
+                // Most casters have access to the Quickcast ability (or the Necromancer equivalent, Facilitate Painworking).
+                // This ability will allow you to cast a spell without interruption.
+                // http://support.darkageofcamelot.com/kb/article.php?id=022
+
+                // A: You're right. The answer I should have given was that Quick Cast reduces the time needed to cast to a flat two seconds,
+                // and that a spell that has been quick casted cannot be interrupted. ...
+                // http://www.camelotherald.com/news/news_article.php?storyid=1383
+
+                return 2000;
+            }
+
+
+            double percent = DexterityCastTimeReduction;
+            percent *= 1.0 - GetModified(eProperty.CastingSpeed) * 0.01;
+
+            ticks = (int)(ticks * Math.Max(CastingSpeedReductionCap, percent));
+            if (ticks < MinimumCastingSpeed)
+                ticks = MinimumCastingSpeed;
+
+            return ticks;
+        }
+
+        /// <summary>
         /// Gets/Sets safety flag
         /// (delegate to PlayerCharacter)
         /// </summary>
@@ -6070,10 +6027,6 @@ namespace DOL.GS.Scripts
             set { if (DBCharacter != null) DBCharacter.SpellQueue = value; }
         }
 
-        /// <summary>
-        /// Switches the active weapon to another one
-        /// </summary>
-        /// <param name="slot">the new eActiveWeaponSlot</param>
         public override void SwitchWeapon(eActiveWeaponSlot slot)
         {
             if (attackComponent != null && attackComponent.AttackState && ActiveWeapon != null)
@@ -6086,12 +6039,17 @@ namespace DOL.GS.Scripts
             }
 
             if (CurrentSpellHandler != null)
+            {
+                Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                 StopCurrentSpellcast();
 
             foreach (Spell spell in ActivePulseSpells.Values)
             {
                 if (spell.InstrumentRequirement != 0)
+                {
+                    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                     EffectService.RequestImmediateCancelEffect(EffectListService.GetPulseEffectOnTarget(this, spell));
+                }
             }
 
             DbInventoryItem[] oldActiveSlots = new DbInventoryItem[4];
@@ -6143,7 +6101,13 @@ namespace DOL.GS.Scripts
 
             if (ObjectState == eObjectState.Active)
             {
+                //Send new wield info, no items updated
+                Out.SendInventorySlotsUpdate(null);
+                // Update active weapon appearence (has to be done with all
+                // equipment in the packet else player is naked)
                 UpdateEquipmentAppearance();
+                //Send new weapon stats
+                Out.SendUpdateWeaponAndArmorStats();
             }
         }
 
@@ -6211,12 +6175,12 @@ namespace DOL.GS.Scripts
 
                     // If attacked by a non-damaging spell, we should not show damage numbers.
                     // We need to check the damage on the spell here, not in the AD, since this could in theory be a damaging spell that had its damage modified to 0.
-                    if (ad.AttackType == AttackData.eAttackType.Spell && ad.SpellHandler.Spell?.Damage == 0)
+                    if (ad.AttackType == eAttackType.Spell && ad.SpellHandler.Spell?.Damage == 0)
                         break;
 
                     if (IsStealthed && !effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
                     {
-                        if (!(ad.AttackType == AttackData.eAttackType.Spell && ad.SpellHandler.Spell.SpellType == eSpellType.DamageOverTime))
+                        if (!(ad.AttackType == eAttackType.Spell && ad.SpellHandler.Spell.SpellType == eSpellType.DamageOverTime))
                         {
                             Stealth(false);
                         }
@@ -6255,7 +6219,7 @@ namespace DOL.GS.Scripts
                 }
             }
             // vampiir
-            if (CharacterClass is PlayerClass.ClassVampiir)
+            if (CharacterClass is ClassVampiir)
             {
                 GameSpellEffect removeEffect = SpellHandler.FindEffectOnTarget(this, "VampiirSpeedEnhancement");
                 if (removeEffect != null)
@@ -6346,10 +6310,10 @@ namespace DOL.GS.Scripts
 
             #region PVP DAMAGE
 
-            if (source is GamePlayer || source is MimicNPC || (source is GameNPC && (source as GameNPC).Brain is IControlledBrain && ((source as GameNPC).Brain as IControlledBrain).GetPlayerOwner() != null) || source is GameSiegeWeapon)
+            if (source is IGamePlayer || (source is GameNPC npcSource && npcSource.Brain is IControlledBrain && (npcSource.Brain as IControlledBrain).GetLivingOwner() != null) || source is GameSiegeWeapon)
             {
                 if (Realm != source.Realm && source.Realm != 0)
-                    DamageRvRMemory += (long)(damageAmount + criticalAmount);
+                    DamageRvRMemory += damageAmount + criticalAmount;
             }
 
             #endregion PVP DAMAGE
@@ -6830,7 +6794,7 @@ namespace DOL.GS.Scripts
             //Console.WriteLine(string.Format("OnAttack called on {0}", Name));
 
             // Note that this function is called whenever an attack is made, regardless of whether that attack was successful.
-            // i.e. missed melee swings and resisted spells still trigger 
+            // i.e. missed melee swings and resisted spells still trigger
 
             if (effectListComponent is null)
                 return;
@@ -6869,6 +6833,7 @@ namespace DOL.GS.Scripts
                     (oProcEffect.SpellHandler as OffensiveProcSpellHandler).EventHandler(ad);
                 }
             }
+
             DirtyTricksECSGameEffect dt = (DirtyTricksECSGameEffect)EffectListService.GetAbilityEffectOnTarget(this, eEffect.DirtyTricks);
             if (dt != null)
             {
@@ -6877,13 +6842,14 @@ namespace DOL.GS.Scripts
 
                 dt.EventHandler(ad);
             }
+
             TripleWieldECSGameEffect tw = (TripleWieldECSGameEffect)EffectListService.GetAbilityEffectOnTarget(this, eEffect.TripleWield);
             if (tw != null)
             {
                 tw.EventHandler(ad);
             }
 
-            if (ad.Target is GamePlayer || ad.Target is MimicNPC && ad.Target != this)
+            if (ad.Target is IGamePlayer && ad.Target != this)
             {
                 LastAttackTickPvP = GameLoop.GameLoopTime;
             }
@@ -6891,24 +6857,6 @@ namespace DOL.GS.Scripts
             {
                 LastAttackTickPvE = GameLoop.GameLoopTime;
             }
-
-            //if (this is GameNPC npc)
-            //{
-            //    var brain = npc.Brain as ControlledNpcBrain;
-
-            //    if (ad.Target is GamePlayer)
-            //    {
-            //        LastAttackTickPvP = GameLoop.GameLoopTime;
-            //        if (brain != null)
-            //            brain.Owner.LastAttackedByEnemyTickPvP = GameLoop.GameLoopTime;
-            //    }
-            //    else
-            //    {
-            //        LastAttackTickPvE = GameLoop.GameLoopTime;
-            //        if (brain != null)
-            //            brain.Owner.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
-            //    }
-            //}
 
             // Don't cancel offensive focus spell
             if (ad.AttackType != eAttackType.Spell)
@@ -7486,8 +7434,10 @@ namespace DOL.GS.Scripts
             get
             {
                 IControlledBrain npc = ControlledBrain;
+
                 if (npc != null && npc.Body.InCombat)
                     return true;
+
                 return base.InCombat;
             }
         }
@@ -7511,6 +7461,7 @@ namespace DOL.GS.Scripts
             if (Duel == null)
                 return;
 
+            DuelReady = false;
             Duel = null;
         }
 
@@ -8652,6 +8603,18 @@ namespace DOL.GS.Scripts
 
         #endregion Shade
 
+        #region Guild
+
+        private Guild _guild;
+
+        public Guild Guild
+        {
+            get { return _guild; }
+            set { _guild = value; }
+        }
+
+        #endregion Guild
+
         #region X/Y/Z/Region/Realm/Position...
 
         /// <summary>
@@ -8839,6 +8802,19 @@ namespace DOL.GS.Scripts
 
         public override bool IsMoving => base.IsMoving || IsStrafing;
 
+        private bool _isOnHorse = false;
+
+        public ControlledHorse ActiveHorse
+        {
+            get { return null; }
+        }
+
+        public virtual bool IsOnHorse
+        {
+            get { return false; }
+            set { _isOnHorse = value; }
+        }
+
         public bool IsSprinting => effectListComponent.ContainsEffectForEffectType(eEffect.Sprint);
 
         public virtual bool Sprint(bool state)
@@ -8875,7 +8851,7 @@ namespace DOL.GS.Scripts
 
         public override bool IsStrafing
         {
-            get => m_strafing;
+            get { return false; }
             set
             {
                 m_strafing = value;

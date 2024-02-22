@@ -11,7 +11,6 @@ namespace DOL.GS
     {
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private const int MIN_HEALTH_PERCENT_FOR_MELEE_SWITCH_ON_INTERRUPT = 70;
         // Check interval (upper bound) in ms of entities around this NPC when its main target is out of range. Used to attack other entities on its path.
         private const int NPC_VICINITY_CHECK_INTERVAL = 1000;
         private const int PET_LOS_CHECK_INTERVAL = 1000;
@@ -26,7 +25,6 @@ namespace DOL.GS
         public MimicAttackAction(MimicNPC mimicOwner) : base(mimicOwner)
         {
             _mimicOwner = mimicOwner;
-
             _hasLos = true;
         }
 

@@ -111,9 +111,9 @@ namespace DOL.GS
         /// The chance for a critical hit
         /// </summary>
         /// <param name="weapon">attack weapon</param>
-        public virtual int AttackCriticalChance(WeaponAction action, DbInventoryItem weapon)
+        public int AttackCriticalChance(WeaponAction action, DbInventoryItem weapon)
         {
-            if (owner is GamePlayer || owner is MimicNPC)
+            if (owner is IGamePlayer playerOwner)
             {
                 if (weapon != null)
                 {
@@ -143,7 +143,7 @@ namespace DOL.GS
             if (owner is GameNPC npc)
             {
                 // Player-Summoned pet.
-                if (npc is GameSummonedPet summonedPet && summonedPet.Owner is GamePlayer)
+                if (npc is GameSummonedPet summonedPet && summonedPet.Owner is IGamePlayer)
                     return npc.GetModified(eProperty.CriticalMeleeHitChance);
 
                 // Charmed Pet.
@@ -158,10 +158,12 @@ namespace DOL.GS
         /// Returns the damage type of the current attack
         /// </summary>
         /// <param name="weapon">attack weapon</param>
-        public virtual eDamageType AttackDamageType(DbInventoryItem weapon)
+        public eDamageType AttackDamageType(DbInventoryItem weapon)
         {
-            if (owner is GamePlayer || owner is MimicNPC || owner is CommanderPet)
+            if (owner is IGamePlayer || owner is CommanderPet)
             {
+                var p = owner as IGamePlayer;
+
                 if (weapon == null)
                     return eDamageType.Natural;
 
@@ -172,7 +174,7 @@ namespace DOL.GS
                     case eObjectType.CompositeBow:
                     case eObjectType.RecurvedBow:
                     case eObjectType.Fired:
-                    DbInventoryItem ammo = owner.rangeAttackComponent.Ammo;
+                    DbInventoryItem ammo = p.RangeAttackComponent.Ammo;
 
                     if (ammo == null)
                         return (eDamageType)weapon.Type_Damage;
@@ -205,7 +207,7 @@ namespace DOL.GS
         /// <summary>
         /// Returns this attack's range
         /// </summary>
-        public virtual int AttackRange
+        public int AttackRange
         {
             /* tested with:
             staff					= 125-130
@@ -217,14 +219,15 @@ namespace DOL.GS
 
             get
             {
-                if (owner is GamePlayer || owner is MimicNPC)
+                if (owner is IGamePlayer)
                 {
                     DbInventoryItem weapon = owner.ActiveWeapon;
 
                     if (weapon == null)
                         return 0;
 
-                    GameLiving target = owner.TargetObject as GameLiving;
+                    var player = owner as IGamePlayer;
+                    GameLiving target = player.TargetObject as GameLiving;
 
                     // TODO: Change to real distance of bows.
                     if (weapon.SlotPosition == (int)eInventorySlot.DistanceWeapon)
@@ -256,8 +259,8 @@ namespace DOL.GS
                             break; // Shortbow, crossbow, throwing.
                         }
 
-                        range = Math.Max(32, range * owner.GetModified(eProperty.ArcheryRange) * 0.01);
-                        DbInventoryItem ammo = owner.rangeAttackComponent.Ammo;
+                        range = Math.Max(32, range * player.GetModified(eProperty.ArcheryRange) * 0.01);
+                        DbInventoryItem ammo = player.RangeAttackComponent.Ammo;
 
                         if (ammo != null)
                             switch ((ammo.SPD_ABS >> 2) & 0x3)
@@ -312,9 +315,9 @@ namespace DOL.GS
         /// Gets the current attackspeed of this living in milliseconds
         /// </summary>
         /// <returns>effective speed of the attack. average if more than one weapon.</returns>
-        public virtual int AttackSpeed(DbInventoryItem mainWeapon, DbInventoryItem leftWeapon = null)
+        public int AttackSpeed(DbInventoryItem mainWeapon, DbInventoryItem leftWeapon = null)
         {
-            if (owner is GamePlayer || owner is MimicNPC)
+            if (owner is IGamePlayer player)
             {
                 if (mainWeapon == null)
                     return 0;
@@ -386,7 +389,7 @@ namespace DOL.GS
                         //log.Debug("speed = " + speed + " percent = " + percent + " eProperty.archeryspeed = " + GetModified(eProperty.ArcherySpeed));
 
                         if (owner.rangeAttackComponent.RangedAttackType == eRangedAttackType.Critical)
-                            speed = speed * 2 - (owner.GetAbilityLevel(Abilities.Critical_Shot) - 1) * speed / 10;
+                            speed = speed * 2 - (player.GetAbilityLevel(Abilities.Critical_Shot) - 1) * speed / 10;
                     }
                     else
                     {
@@ -469,12 +472,12 @@ namespace DOL.GS
             }
         }
 
-        public virtual double AttackDamage(DbInventoryItem weapon, out double damageCap)
+        public double AttackDamage(DbInventoryItem weapon, out double damageCap)
         {
             double effectiveness = 1;
             damageCap = 0;
 
-            if (owner is GamePlayer || owner is MimicNPC)
+            if (owner is IGamePlayer player)
             {
                 if (weapon == null)
                     return 0;
@@ -490,7 +493,7 @@ namespace DOL.GS
                 if (weapon.Item_Type == Slot.RANGED)
                 {
                     damageCap *= CalculateTwoHandedDamageModifier(weapon);
-                    DbInventoryItem ammo = owner.rangeAttackComponent.Ammo;
+                    DbInventoryItem ammo = player.RangeAttackComponent.Ammo;
 
                     if (ammo != null)
                     {
@@ -869,7 +872,6 @@ namespace DOL.GS
                 if (owner.rangeAttackComponent.RangedAttackState != eRangedAttackState.Aim && attackAction.CheckInterruptTimer())
                     return false;
 
-                Console.WriteLine(GameLoop.GameLoopTime - attackAction.NextTick);
                 owner.rangeAttackComponent.AttackStartTime = GameLoop.GameLoopTime;
             }
 
@@ -947,24 +949,27 @@ namespace DOL.GS
         /// <summary>
         /// Called whenever a single attack strike is made
         /// </summary>
-        public virtual AttackData MakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield)
+        public AttackData MakeAttack(WeaponAction action, GameObject target, DbInventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield)
         {
-            if (owner is GamePlayer playerOwner)
+            if (owner is IGamePlayer playerOwner)
             {
-                if (playerOwner.IsCrafting)
+                if (playerOwner is GamePlayer gamePlayer)
                 {
-                    playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.InterruptedCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    playerOwner.craftComponent.StopCraft();
-                    playerOwner.CraftTimer = null;
-                    playerOwner.Out.SendCloseTimerWindow();
-                }
+                    if (gamePlayer.IsCrafting)
+                    {
+                        gamePlayer.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.InterruptedCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        gamePlayer.craftComponent.StopCraft();
+                        gamePlayer.CraftTimer = null;
+                        gamePlayer.Out.SendCloseTimerWindow();
+                    }
 
-                if (playerOwner.IsSalvagingOrRepairing)
-                {
-                    playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.InterruptedCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    playerOwner.CraftTimer.Stop();
-                    playerOwner.CraftTimer = null;
-                    playerOwner.Out.SendCloseTimerWindow();
+                    if (gamePlayer.IsSalvagingOrRepairing)
+                    {
+                        gamePlayer.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.InterruptedCrafting"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        gamePlayer.CraftTimer.Stop();
+                        gamePlayer.CraftTimer = null;
+                        gamePlayer.Out.SendCloseTimerWindow();
+                    }
                 }
 
                 AttackData ad = LivingMakeAttack(action, target, weapon, style, effectiveness * playerOwner.Effectiveness, interruptDuration, dualWield);
@@ -976,7 +981,7 @@ namespace DOL.GS
                     {
                         // Keep component.
                         if ((ad.Target is GameKeepComponent || ad.Target is GameKeepDoor || ad.Target is GameSiegeWeapon) &&
-                           ad.Attacker is GamePlayer && ad.Attacker.GetModified(eProperty.KeepDamage) > 0)
+                            ad.Attacker is IGamePlayer && ad.Attacker.GetModified(eProperty.KeepDamage) > 0)
                         {
                             int keepdamage = (int)Math.Floor(ad.Damage * ((double)ad.Attacker.GetModified(eProperty.KeepDamage) / 100));
                             int keepstyle = (int)Math.Floor(ad.StyleDamage * ((double)ad.Attacker.GetModified(eProperty.KeepDamage) / 100));
@@ -1010,13 +1015,13 @@ namespace DOL.GS
                         // Durability percent can reach 0%.
 
                         if (weapon is GameInventoryItem weaponItem)
-                            weaponItem.OnStrikeTarget(playerOwner, target);
+                            weaponItem.OnStrikeTarget((GameLiving)playerOwner, target);
 
                         // Camouflage will be disabled only when attacking a GamePlayer or ControlledNPC of a GamePlayer.
-                        if ((target is GamePlayer || target is MimicNPC && playerOwner.HasAbility(Abilities.Camouflage)) ||
+                        if ((target is IGamePlayer && playerOwner.HasAbility(Abilities.Camouflage)) ||
                             (target is GameNPC targetNpc && targetNpc.Brain is IControlledBrain targetNpcBrain && targetNpcBrain.GetPlayerOwner() != null))
                         {
-                            CamouflageECSGameEffect camouflage = (CamouflageECSGameEffect)EffectListService.GetAbilityEffectOnTarget(playerOwner, eEffect.Camouflage);
+                            CamouflageECSGameEffect camouflage = (CamouflageECSGameEffect)EffectListService.GetAbilityEffectOnTarget((GameLiving)playerOwner, eEffect.Camouflage);
 
                             if (camouflage != null)
                                 EffectService.RequestImmediateCancelEffect(camouflage, false);
@@ -1083,152 +1088,13 @@ namespace DOL.GS
 
                             foreach (GameObject extraTarget in extraTargets)
                             {
-                                if (extraTarget is GamePlayer player && player.IsSitting)
+                                if (extraTarget is IGamePlayer player && player.IsSitting)
                                     effectiveness *= 2;
 
                                 // TODO: Figure out why Shield Swipe is handled differently here.
                                 if (IsNotShieldSwipe)
                                 {
-                                    weaponAction = new WeaponAction(playerOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
-                                    weaponAction.Execute();
-                                }
-                                else
-                                    LivingMakeAttack(action, extraTarget, attackWeapon, null, 1, Properties.SPELL_INTERRUPT_DURATION, false);
-                            }
-                        }
-
-                        break;
-                    }
-                }
-
-                return ad;
-            }
-            else if (owner is MimicNPC mimicOwner)
-            {
-                AttackData ad = LivingMakeAttack(action, target, weapon, style, effectiveness * mimicOwner.Effectiveness, interruptDuration, dualWield);
-
-                switch (ad.AttackResult)
-                {
-                    case eAttackResult.HitStyle:
-                    case eAttackResult.HitUnstyled:
-                    {
-                        // Keep component.
-                        if ((ad.Target is GameKeepComponent || ad.Target is GameKeepDoor || ad.Target is GameSiegeWeapon) &&
-                            (ad.Attacker is MimicNPC) && ad.Attacker.GetModified(eProperty.KeepDamage) > 0)
-                        {
-                            int keepdamage = (int)Math.Floor(ad.Damage * ((double)ad.Attacker.GetModified(eProperty.KeepDamage) / 100));
-                            int keepstyle = (int)Math.Floor(ad.StyleDamage * ((double)ad.Attacker.GetModified(eProperty.KeepDamage) / 100));
-                            ad.Damage += keepdamage;
-                            ad.StyleDamage += keepstyle;
-                        }
-
-                        // Vampiir.
-                        if (mimicOwner.CharacterClass is PlayerClass.ClassVampiir &&
-                            target is not GameKeepComponent and not GameKeepDoor and not GameSiegeWeapon)
-                        {
-                            int perc = Convert.ToInt32((double)(ad.Damage + ad.CriticalDamage) / 100 * (55 - mimicOwner.Level));
-                            perc = (perc < 1) ? 1 : ((perc > 15) ? 15 : perc);
-                            mimicOwner.Mana += Convert.ToInt32(Math.Ceiling((decimal)(perc * mimicOwner.MaxMana) / 100));
-                        }
-
-                        break;
-                    }
-                }
-
-                switch (ad.AttackResult)
-                {
-                    case eAttackResult.Blocked:
-                    case eAttackResult.Fumbled:
-                    case eAttackResult.HitStyle:
-                    case eAttackResult.HitUnstyled:
-                    case eAttackResult.Missed:
-                    case eAttackResult.Parried:
-                    {
-                        // Condition percent can reach 70%.
-                        // Durability percent can reach 0%.
-
-                        if (weapon is GameInventoryItem weaponItem)
-                            weaponItem.OnStrikeTarget(mimicOwner, target);
-
-                        // Camouflage will be disabled only when attacking a GamePlayer or ControlledNPC of a GamePlayer.
-                        if ((target is GamePlayer || target is MimicNPC && mimicOwner.HasAbility(Abilities.Camouflage)) ||
-                            (target is GameNPC targetNpc && targetNpc.Brain is IControlledBrain targetNpcBrain && targetNpcBrain.GetPlayerOwner() != null))
-                        {
-                            CamouflageECSGameEffect camouflage = (CamouflageECSGameEffect)EffectListService.GetAbilityEffectOnTarget(mimicOwner, eEffect.Camouflage);
-
-                            if (camouflage != null)
-                                EffectService.RequestImmediateCancelEffect(camouflage, false);
-
-                            mimicOwner.DisableSkill(SkillBase.GetAbility(Abilities.Camouflage), CamouflageSpecHandler.DISABLE_DURATION);
-                        }
-
-                        // Multiple Hit check.
-                        if (ad.AttackResult == eAttackResult.HitStyle)
-                        {
-                            List<GameObject> extraTargets = new();
-                            List<GameObject> listAvailableTargets = new();
-                            DbInventoryItem attackWeapon = owner.ActiveWeapon;
-                            DbInventoryItem leftWeapon = mimicOwner.Inventory?.GetItem(eInventorySlot.LeftHandWeapon);
-
-                            int numTargetsCanHit = style.ID switch
-                            {
-                                374 => 1, // Tribal Assault: Hits 2 targets.
-                                377 => 1, // Clan's Might: Hits 2 targets.
-                                379 => 2, // Totemic Wrath: Hits 3 targets.
-                                384 => 3, // Totemic Sacrifice: Hits 4 targets.
-                                600 => 255, // Shield Swipe: No cap.
-                                _ => 0
-                            };
-
-                            if (numTargetsCanHit <= 0)
-                                break;
-
-                            bool IsNotShieldSwipe = style.ID != 600;
-
-                            if (IsNotShieldSwipe)
-                            {
-                                foreach (GamePlayer playerInRange in owner.GetPlayersInRadius((ushort)AttackRange))
-                                {
-                                    if (GameServer.ServerRules.IsAllowedToAttack(owner, playerInRange, true))
-                                        listAvailableTargets.Add(playerInRange);
-                                }
-                            }
-
-                            foreach (GameNPC npcInRange in owner.GetNPCsInRadius((ushort)AttackRange))
-                            {
-                                if (GameServer.ServerRules.IsAllowedToAttack(owner, npcInRange, true))
-                                    listAvailableTargets.Add(npcInRange);
-                            }
-
-                            // Remove primary target.
-                            listAvailableTargets.Remove(target);
-
-                            if (numTargetsCanHit >= listAvailableTargets.Count)
-                                extraTargets = listAvailableTargets;
-                            else
-                            {
-                                int index;
-                                GameObject availableTarget;
-
-                                for (int i = numTargetsCanHit; i > 0; i--)
-                                {
-                                    index = Util.Random(listAvailableTargets.Count - 1);
-                                    availableTarget = listAvailableTargets[index];
-                                    listAvailableTargets.RemoveAt(index);
-                                    extraTargets.Add(availableTarget);
-                                }
-                            }
-
-                            foreach (GameObject extraTarget in extraTargets)
-                            {
-                                if (extraTarget is GamePlayer player && player.IsSitting ||
-                                    extraTarget is MimicNPC mimic && mimic.IsSitting)
-                                    effectiveness *= 2;
-
-                                // TODO: Figure out why Shield Swipe is handled differently here.
-                                if (IsNotShieldSwipe)
-                                {
-                                    weaponAction = new WeaponAction(mimicOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
+                                    weaponAction = new WeaponAction((GameLiving)playerOwner, extraTarget, attackWeapon, leftWeapon, effectiveness, AttackSpeed(attackWeapon), null);
                                     weaponAction.Execute();
                                 }
                                 else
@@ -1278,8 +1144,7 @@ namespace DOL.GS
             IEnumerable<(Spell, int, int)> rangeProc = style?.Procs.Where(x => x.Item1.SpellType == eSpellType.StyleRange);
             int addRange = rangeProc?.Any() == true ? (int)(rangeProc.First().Item1.Value - AttackRange) : 0;
 
-            if (dualWield && (ad.Attacker is GamePlayer gPlayer) && gPlayer.CharacterClass.ID != (int)eCharacterClass.Savage ||
-                             (ad.Attacker is MimicNPC mimic) && mimic.CharacterClass.ID != (int)eCharacterClass.Savage)
+            if (dualWield && (ad.Attacker is IGamePlayer gPlayer) && gPlayer.CharacterClass.ID != (int)eCharacterClass.Savage)
                 ad.AttackType = AttackData.eAttackType.MeleeDualWield;
             else if (weapon == null)
                 ad.AttackType = AttackData.eAttackType.MeleeOneHand;
@@ -1363,6 +1228,7 @@ namespace DOL.GS
                             eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
 
                     ad.AttackResult = eAttackResult.NoValidTarget;
+
                     SendAttackingCombatMessages(action, ad);
                     return ad;
                 }
@@ -1380,7 +1246,7 @@ namespace DOL.GS
             // Calculate our attack result and attack damage.
             ad.AttackResult = ad.Target.attackComponent.CalculateEnemyAttackResult(action, ad, weapon);
 
-            GamePlayer playerOwner = owner as GamePlayer;
+            IGamePlayer playerOwner = owner as IGamePlayer;
 
             // Strafing miss.
             if (playerOwner != null && playerOwner.IsStrafing && ad.Target is GamePlayer && Util.Chance(30))
@@ -1411,7 +1277,7 @@ namespace DOL.GS
                         weaponForSpecModifier.Object_Type = weapon.Object_Type;
                         weaponForSpecModifier.SlotPosition = weapon.SlotPosition;
 
-                        if ((owner is GamePlayer || owner is MimicNPC) && owner.Realm == eRealm.Albion && Properties.ENABLE_ALBION_ADVANCED_WEAPON_SPEC &&
+                        if (owner is IGamePlayer && owner.Realm == eRealm.Albion && Properties.ENABLE_ALBION_ADVANCED_WEAPON_SPEC &&
                             (GameServer.ServerRules.IsObjectTypesEqual((eObjectType)weapon.Object_Type, eObjectType.TwoHandedWeapon) ||
                             GameServer.ServerRules.IsObjectTypesEqual((eObjectType)weapon.Object_Type, eObjectType.PolearmWeapon)))
                         {
@@ -1433,10 +1299,10 @@ namespace DOL.GS
                     if (action.RangedAttackType == eRangedAttackType.Critical)
                         damageCap *= 2; // This may be incorrect. Critical shot doesn't double damage on >yellow targets.
 
-                    if (playerOwner != null)
+                    if (playerOwner is GamePlayer gamePlayer)
                     {
-                        if (playerOwner.UseDetailedCombatLog)
-                            PrintDetailedCombatLog(playerOwner, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, damageCap);
+                        if (gamePlayer.UseDetailedCombatLog)
+                            PrintDetailedCombatLog(gamePlayer, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, damageCap);
 
                         // Badge Of Valor Calculation 1+ absorb or 1- absorb
                         // if (ad.Attacker.EffectList.GetOfType<BadgeOfValorEffect>() != null)
@@ -1463,9 +1329,9 @@ namespace DOL.GS
                         damage *= 1 + owner.GetModified(eProperty.OffhandDamage) * 0.01;
 
                     // If the target is another player's pet, shouldn't 'PVP_MELEE_DAMAGE' be used?
-                    if (owner is GamePlayer || (owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain && owner.Realm != 0))
+                    if (owner is IGamePlayer || (owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain && owner.Realm != 0))
                     {
-                        if (target is GamePlayer || target is MimicNPC)
+                        if (target is IGamePlayer)
                             damage *= Properties.PVP_MELEE_DAMAGE;
                         else if (target is GameNPC)
                             damage *= Properties.PVE_MELEE_DAMAGE;
@@ -1512,7 +1378,7 @@ namespace DOL.GS
                 {
                     // Reduce endurance by half the style's cost if we missed.
                     if (ad.Style != null && playerOwner != null && weapon != null)
-                        playerOwner.Endurance -= StyleProcessor.CalculateEnduranceCost(playerOwner, ad.Style, weapon.SPD_ABS) / 2;
+                        playerOwner.Endurance -= StyleProcessor.CalculateEnduranceCost((GameLiving)playerOwner, ad.Style, weapon.SPD_ABS) / 2;
 
                     break;
                 }
@@ -1660,7 +1526,7 @@ namespace DOL.GS
                     }
                     else
                     {
-                        if (ad.Attacker is GamePlayer)
+                        if (ad.Attacker is IGamePlayer)
                         {
                             string hitWeapon = "weapon";
                             if (weapon != null)
@@ -1686,10 +1552,9 @@ namespace DOL.GS
 
             #region Prevent Flight
 
-            if (ad.Attacker is GamePlayer)
+            if (ad.Attacker is IGamePlayer)
             {
-                GamePlayer attacker = ad.Attacker as GamePlayer;
-                if (attacker.HasAbilityType(typeof(AtlasOF_PreventFlight)) && Util.Chance(35))
+                if (ad.Attacker.HasAbilityType(typeof(AtlasOF_PreventFlight)) && Util.Chance(35))
                 {
                     if (owner.IsObjectInFront(ad.Target, 120) && ad.Target.IsMoving)
                     {
@@ -1895,9 +1760,9 @@ namespace DOL.GS
             return CalculateWeaponSkill(target, baseWeaponSkill, 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength), specModifier);
         }
 
-        public virtual double CalculateWeaponSkill(GameLiving target, double baseWeaponSkill, double relicBonus, double specModifier)
+        public double CalculateWeaponSkill(GameLiving target, double baseWeaponSkill, double relicBonus, double specModifier)
         {
-            if (owner is GamePlayer || owner is MimicNPC)
+            if (owner is IGamePlayer)
                 return baseWeaponSkill * relicBonus * specModifier;
 
             baseWeaponSkill += target.Level * 65 / 50.0;
@@ -1908,11 +1773,11 @@ namespace DOL.GS
             return baseWeaponSkill;
         }
 
-        public virtual double CalculateSpecModifier(GameLiving target, DbInventoryItem weapon)
+        public double CalculateSpecModifier(GameLiving target, DbInventoryItem weapon)
         {
             double specModifier = 0;
 
-            if (owner is GamePlayer || owner is MimicNPC)
+            if (owner is IGamePlayer playerOwner)
             {
                 int spec = owner.WeaponSpecLevel(weapon);
 
@@ -1926,11 +1791,7 @@ namespace DOL.GS
 
                 double upperLimit = Math.Min(Math.Max(1.25 + (3.0 * (spec - 1) / (target.EffectiveLevel + 1) - 2) * 0.25, 1.25), 1.50);
                 int varianceRange = (int)(upperLimit * 100 - lowerLimit * 100);
-
-                if (owner is GamePlayer playerOwner)
-                    specModifier = playerOwner.SpecLock > 0 ? playerOwner.SpecLock : lowerLimit + Util.Random(varianceRange) * 0.01;
-                else if (owner is MimicNPC mimicOwner)
-                    specModifier = mimicOwner.SpecLock > 0 ? mimicOwner.SpecLock : lowerLimit + Util.Random(varianceRange) * 0.01;
+                specModifier = playerOwner.SpecLock > 0 ? playerOwner.SpecLock : lowerLimit + Util.Random(varianceRange) * 0.01;
             }
             else
             {
@@ -1961,13 +1822,9 @@ namespace DOL.GS
             return CalculateTargetArmor(target, armorSlot, out _, out _, out _);
         }
 
-        public virtual double CalculateTargetArmor(GameLiving target, eArmorSlot armorSlot, out double bonusArmorFactor, out double armorFactor, out double absorb)
+        public double CalculateTargetArmor(GameLiving target, eArmorSlot armorSlot, out double bonusArmorFactor, out double armorFactor, out double absorb)
         {
-            if ((owner is GamePlayer || owner is MimicNPC) && (target is not GamePlayer && target is not MimicNPC))
-                bonusArmorFactor = 2;
-            else
-                bonusArmorFactor = target.Level * ARMOR_FACTOR_LEVEL_SCALAR / 50.0;
-
+            bonusArmorFactor = owner is IGamePlayer && target is not IGamePlayer ? 2 : target.Level * ARMOR_FACTOR_LEVEL_SCALAR / 50.0;
             armorFactor = bonusArmorFactor + target.GetArmorAF(armorSlot);
             absorb = target.GetArmorAbsorb(armorSlot);
             return absorb >= 1 ? double.MaxValue : armorFactor / (1 - absorb);
@@ -1982,7 +1839,7 @@ namespace DOL.GS
 
         public static double CalculateTargetConversion(GameLiving target, double damage)
         {
-            if (target is not GamePlayer && target is not MimicNPC)
+            if (target is not IGamePlayer)
                 return 1.0;
 
             double conversionMod = 1 - target.GetModified(eProperty.Conversion) / 100.0;
@@ -1995,8 +1852,8 @@ namespace DOL.GS
 
         public static void ApplyTargetConversionRegen(GameLiving target, int conversionAmount)
         {
-            if (target is not GamePlayer && target is not MimicNPC)
-                    return;
+            if (target is not IGamePlayer playerTarget)
+                return;
 
             GamePlayer playerTarget = target as GamePlayer;
 
@@ -2025,7 +1882,7 @@ namespace DOL.GS
             ad.BlockChance = blockChance;
             double blockRoll;
 
-            if (!Properties.OVERRIDE_DECK_RNG && owner is GamePlayer player)
+            if (!Properties.OVERRIDE_DECK_RNG && owner is IGamePlayer player)
                 blockRoll = player.RandomNumberDeck.GetPseudoDouble();
             else if (!Properties.OVERRIDE_DECK_RNG && owner is MimicNPC mimic)
                 blockRoll = mimic.RandomNumberDeck.GetPseudoDouble();
@@ -2057,7 +1914,7 @@ namespace DOL.GS
             return false;
         }
 
-        public virtual bool CheckGuard(AttackData ad, bool stealthStyle, double attackerConLevel)
+        public bool CheckGuard(AttackData ad, bool stealthStyle, double attackerConLevel)
         {
             GuardECSGameEffect guard = EffectListService.GetAbilityEffectOnTarget(owner, eEffect.Guard) as GuardECSGameEffect;
 
@@ -2080,7 +1937,7 @@ namespace DOL.GS
             DbInventoryItem leftHand = source.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
             DbInventoryItem rightHand = source.ActiveWeapon;
 
-            if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int)eObjectType.Shield) && (source is not GameNPC || source is MimicNPC))
+            if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || leftHand.Object_Type != (int)eObjectType.Shield) && source is not GameNPC)
                 return false;
 
             // TODO: Insert actual formula for guarding here, this is just a guessed one based on block.
@@ -2101,7 +1958,7 @@ namespace DOL.GS
             {
                 shieldSize = Math.Max(leftHand.Type_Damage, 1);
 
-                if (source is GamePlayer || source is MimicNPC)
+                if (source is IGamePlayer)
                     guardChance += (double)(leftHand.Level - 1) / 50 * 0.15; // Up to 15% extra block chance based on shield level.
             }
 
@@ -2113,7 +1970,7 @@ namespace DOL.GS
 
             if (guardChance < 0.01)
                 guardChance = 0.01;
-            else if (guardChance > Properties.BLOCK_CAP && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && (ad.Target is GamePlayer || ad.Target is MimicNPC))
+            else if (guardChance > Properties.BLOCK_CAP && ad.Attacker is IGamePlayer && ad.Target is IGamePlayer)
                 guardChance = Properties.BLOCK_CAP;
 
             // Possibly intended to be applied in RvR only.
@@ -2129,7 +1986,7 @@ namespace DOL.GS
 
             double guardRoll;
 
-            if (!Properties.OVERRIDE_DECK_RNG && owner is GamePlayer player)
+            if (!Properties.OVERRIDE_DECK_RNG && owner is IGamePlayer player)
                 guardRoll = player.RandomNumberDeck.GetPseudoDouble();
             else if (!Properties.OVERRIDE_DECK_RNG && owner is MimicNPC mimic)
                 guardRoll = mimic.RandomNumberDeck.GetPseudoDouble();
@@ -2281,8 +2138,8 @@ namespace DOL.GS
             AttackData lastAttackData = owner.TempProperties.GetProperty<AttackData>(LAST_ATTACK_DATA, null);
             bool defenseDisabled = ad.Target.IsMezzed | ad.Target.IsStunned | ad.Target.IsSitting;
 
-            GamePlayer playerOwner = owner as GamePlayer;
-            GamePlayer playerAttacker = ad.Attacker as GamePlayer;
+            IGamePlayer playerOwner = owner as IGamePlayer;
+            IGamePlayer playerAttacker = ad.Attacker as IGamePlayer;
 
             MimicNPC mimicOwner = owner as MimicNPC;
             MimicNPC mimicAttacker = ad.Attacker as MimicNPC;
@@ -2324,7 +2181,7 @@ namespace DOL.GS
 
             bool stealthStyle = false;
 
-            if (ad.Style != null && ad.Style.StealthRequirement && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && StyleProcessor.CanUseStyle(lastAttackData, ad.Attacker, ad.Style, attackerWeapon))
+            if (ad.Style != null && ad.Style.StealthRequirement && ad.Attacker is IGamePlayer && StyleProcessor.CanUseStyle(lastAttackData, ad.Attacker, ad.Style, attackerWeapon))
             {
                 stealthStyle = true;
                 defenseDisabled = true;
@@ -2332,25 +2189,24 @@ namespace DOL.GS
                 brittleguard = null;
             }
 
-            //TODO: MimicNPC bodyguarding
-            if (playerOwner != null)
+            if (playerOwner != null && playerOwner is GamePlayer gamePlayer)
             {
                 GameLiving attacker = ad.Attacker;
-                GamePlayer tempPlayerAttacker = playerAttacker ?? ((attacker as GameNPC)?.Brain as IControlledBrain)?.GetPlayerOwner();
+                GamePlayer tempPlayerAttacker = gamePlayer ?? ((attacker as GameNPC)?.Brain as IControlledBrain)?.GetPlayerOwner();
 
                 if (tempPlayerAttacker != null && action.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
                 {
-                    GamePlayer bodyguard = playerOwner.Bodyguard;
+                    GamePlayer bodyguard = gamePlayer.Bodyguard;
 
                     if (bodyguard != null)
                     {
-                        playerOwner.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YouWereProtected"), bodyguard.Name, attacker.Name), eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
-                        bodyguard.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(bodyguard.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YouHaveProtected"), playerOwner.Name, attacker.Name), eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
+                        gamePlayer.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YouWereProtected"), bodyguard.Name, attacker.Name), eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
+                        bodyguard.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(bodyguard.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YouHaveProtected"), gamePlayer.Name, attacker.Name), eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
 
                         if (attacker == tempPlayerAttacker)
-                            tempPlayerAttacker.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(tempPlayerAttacker.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YouAttempt"), playerOwner.Name, playerOwner.Name, bodyguard.Name), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                            tempPlayerAttacker.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(tempPlayerAttacker.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YouAttempt"), gamePlayer.Name, gamePlayer.Name, bodyguard.Name), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
                         else
-                            tempPlayerAttacker.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(tempPlayerAttacker.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YourPetAttempts"), playerOwner.Name, playerOwner.Name, bodyguard.Name), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                            tempPlayerAttacker.Out.SendMessage(string.Format(LanguageMgr.GetTranslation(tempPlayerAttacker.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.YourPetAttempts"), gamePlayer.Name, gamePlayer.Name, bodyguard.Name), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
 
                         return eAttackResult.Bodyguarded;
                     }
@@ -2375,7 +2231,7 @@ namespace DOL.GS
             {
                 ad.Target = intercept.Source;
 
-                if (intercept.Source is GamePlayer || intercept.Source is MimicNPC)
+                if (intercept.Source is IGamePlayer)
                     EffectService.RequestCancelEffect(intercept);
 
                 return eAttackResult.HitUnstyled;
@@ -2546,8 +2402,8 @@ namespace DOL.GS
                 }
             }
 
-            if (playerOwner?.IsOnHorse == true)
-                playerOwner.IsOnHorse = false;
+            //if (playerOwner.IsOnHorse)
+            //    playerOwner.IsOnHorse = false;
 
             return eAttackResult.HitUnstyled;
         }
@@ -2839,7 +2695,7 @@ namespace DOL.GS
                             hitWeapon = string.Empty;
 
                         string attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language,
-                                "GamePlayer.Attack.YouAttack");
+                            "GamePlayer.Attack.YouAttack");
                         if (action.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
                             attackTypeMsg = LanguageMgr.GetTranslation(p.Client.Account.Language,
                                 "GamePlayer.Attack.YouShot");
@@ -2877,12 +2733,12 @@ namespace DOL.GS
             }
         }
 
-        public virtual int CalculateMeleeCriticalDamage(AttackData ad, WeaponAction action, DbInventoryItem weapon)
+        public int CalculateMeleeCriticalDamage(AttackData ad, WeaponAction action, DbInventoryItem weapon)
         {
             if (!Util.Chance(AttackCriticalChance(action, weapon)))
                 return 0;
 
-            if (owner is GamePlayer || owner is MimicNPC)
+            if (owner is IGamePlayer)
             {
                 // triple wield prevents critical hits
                 if (EffectListService.GetAbilityEffectOnTarget(ad.Target, eEffect.TripleWield) != null)
@@ -2909,7 +2765,7 @@ namespace DOL.GS
                     critMin = ad.Damage / 10;
                     // Max crit damage to players is 50%. Berzerkers go up to 99% in Berserk mode.
 
-                    if (ad.Target is GamePlayer || ad.Target is MimicNPC)
+                    if (ad.Target is IGamePlayer)
                         critMax = ad.Damage / 2;
                     else
                         critMax = ad.Damage;
@@ -2921,13 +2777,7 @@ namespace DOL.GS
             }
             else
             {
-                int maxCriticalDamage = 0;
-
-                if (ad.Target is GamePlayer || ad.Target is MimicNPC)
-                    maxCriticalDamage = ad.Damage / 2;
-                else
-                    maxCriticalDamage = ad.Damage;
-
+                int maxCriticalDamage = ad.Target is IGamePlayer ? ad.Damage / 2 : ad.Damage;
                 int minCriticalDamage = (int)(ad.Damage * MinMeleeCriticalDamage);
 
                 if (minCriticalDamage > maxCriticalDamage)
@@ -2937,44 +2787,38 @@ namespace DOL.GS
             }
         }
 
-        public virtual int GetMissChance(WeaponAction action, AttackData ad, AttackData lastAD, DbInventoryItem weapon)
+        public int GetMissChance(WeaponAction action, AttackData ad, AttackData lastAD, DbInventoryItem weapon)
         {
             // No miss if the target is sitting or for Volley attacks.
-            if ((owner is GamePlayer player && player.IsSitting) || (owner is MimicNPC mimic && mimic.IsSitting) || action.RangedAttackType == eRangedAttackType.Volley)
+            if ((owner is IGamePlayer player && player.IsSitting) || action.RangedAttackType == eRangedAttackType.Volley)
                 return 0;
 
-            int missChance = ad.Attacker is GamePlayer || ad.Attacker is GameSummonedPet || ad.Attacker is MimicNPC ? 18 : 25;
+            int missChance = ad.Attacker is IGamePlayer or GameSummonedPet ? 18 : 25;
             missChance -= ad.Attacker.GetModified(eProperty.ToHitBonus);
 
             // PVE group miss rate.
-            //if ((owner is GameNPC && owner is not MimicNPC) && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && ad.Attacker.Group != null && (int)(0.90 * ad.Attacker.Group.Leader.Level) >= ad.Attacker.Level && ad.Attacker.IsWithinRadius(ad.Attacker.Group.Leader, 3000))
-            //    missChance -= (int)(5 * ad.Attacker.Group.Leader.GetConLevel(owner));
-            //else if ((owner is GameNPC && owner is not MimicNPC) || (ad.Attacker is GameNPC && ad.Attacker is not MimicNPC))
-            //{
-            //    GameLiving misscheck = ad.Attacker;
+            if ((owner is GameNPC && owner is not MimicNPC) && ad.Attacker is IGamePlayer playerAttacker && playerAttacker.Group != null && (int)(0.90 * playerAttacker.Group.LivingLeader.Level) >= ad.Attacker.Level && ad.Attacker.IsWithinRadius(playerAttacker.Group.LivingLeader, 3000))
+                missChance -= (int)(5 * ((GameLiving)playerAttacker).Group.Leader.GetConLevel(owner));
+            else if (owner is GameNPC || ad.Attacker is GameNPC && (owner is not MimicNPC && ad.Attacker is not MimicNPC))
+            {
+                GameLiving misscheck = ad.Attacker;
 
             //    if (ad.Attacker is GameSummonedPet petAttacker && petAttacker.Level < petAttacker.Owner.Level)
             //        misscheck = petAttacker.Owner;
 
-            //    missChance += (int)(5 * misscheck.GetConLevel(owner));
-            //}
+                missChance += (int)(5 * misscheck.GetConLevel(owner));
+            }
 
             // Experimental miss rate adjustment for number of attackers.
-            if (((owner is GamePlayer || owner is MimicNPC) && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC)) == false)
+            if ((owner is IGamePlayer && ad.Attacker is IGamePlayer) == false)
                 missChance -= Math.Max(0, Attackers.Count - 1) * Properties.MISSRATE_REDUCTION_PER_ATTACKERS;
 
             // Weapon and armor bonuses.
             int armorBonus = 0;
 
-            if (ad.Target is GamePlayer || ad.Target is MimicNPC)
+            if (ad.Target is IGamePlayer p)
             {
-                GamePlayer p = ad.Target as GamePlayer;
-                MimicNPC m = ad.Target as MimicNPC;
-
-                if (p != null)
-                    ad.ArmorHitLocation = p.CalculateArmorHitLocation(ad);
-                else
-                    ad.ArmorHitLocation = m.CalculateArmorHitLocation(ad);
+                ad.ArmorHitLocation = ((IGamePlayer)ad.Target).CalculateArmorHitLocation(ad);
 
                 if (ad.Target.Inventory != null)
                 {
@@ -3001,7 +2845,7 @@ namespace DOL.GS
                 armorBonus -= weaponBonus;
             }
 
-            if ((ad.Target is GamePlayer || ad.Target is MimicNPC) && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC))
+            if (ad.Target is IGamePlayer && ad.Attacker is IGamePlayer)
                 missChance += armorBonus;
             else
                 missChance += missChance * armorBonus / 100;
@@ -3013,7 +2857,7 @@ namespace DOL.GS
             if (lastAD != null && lastAD.AttackResult == eAttackResult.HitStyle && lastAD.Style != null)
                 missChance += lastAD.Style.BonusToDefense;
 
-            if ((owner is GamePlayer || owner is MimicNPC) && (ad.Attacker is GamePlayer || ad.Attacker is MimicNPC) && weapon != null)
+            if (owner is IGamePlayer && ad.Attacker is IGamePlayer && weapon != null)
                 missChance -= (int)((ad.Attacker.WeaponSpecLevel(weapon) - 1) * 0.1);
 
             if (action.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
@@ -3069,14 +2913,12 @@ namespace DOL.GS
         /// <summary>
         /// Checks whether Living has ability to use lefthanded weapons
         /// </summary>
-        public virtual bool CanUseLefthandedWeapon
+        public bool CanUseLefthandedWeapon
         {
             get
             {
-                if (owner is GamePlayer)
-                    return (owner as GamePlayer).CharacterClass.CanUseLefthandedWeapon;
-                else if (owner is MimicNPC)
-                    return (owner as MimicNPC).CharacterClass.CanUseLefthandedWeapon;
+                if (owner is IGamePlayer)
+                    return (owner as IGamePlayer).CharacterClass.CanUseLefthandedWeapon;
                 else
                     return false;
             }

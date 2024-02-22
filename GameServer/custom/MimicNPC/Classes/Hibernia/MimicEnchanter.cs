@@ -10,12 +10,10 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-            MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             SetCasterSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -26,22 +24,22 @@ namespace DOL.GS.Scripts
         {
             SpecName = "ManaEnchanter";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(1);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Mana", 50, 1.0f);
-                Add("Light", 20, 0.1f);
-                Add("Enchantments", 4, 0.0f);
+                Add(Specs.Mana, 50, 1.0f);
+                Add(Specs.Light, 20, 0.1f);
+                Add(Specs.Enchantments, 4, 0.0f);
                 break;
 
                 case 1:
-                Add("Mana", 49, 1.0f);
-                Add("Light", 22, 0.1f);
-                Add("Enchantments", 5, 0.0f);
+                Add(Specs.Mana, 49, 1.0f);
+                Add(Specs.Light, 22, 0.1f);
+                Add(Specs.Enchantments, 5, 0.0f);
                 break;
             }
         }
@@ -53,22 +51,22 @@ namespace DOL.GS.Scripts
         {
             SpecName = "LightEnchanter";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(1);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Mana", 27, 0.2f);
-                Add("Light", 45, 1.0f);
-                Add("Enchantments", 12, 0.1f);
+                Add(Specs.Mana, 27, 0.2f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Enchantments, 12, 0.1f);
                 break;
 
                 case 1:
-                Add("Mana", 24, 0.2f);
-                Add("Light", 45, 1.0f);
-                Add("Enchantments", 17, 0.1f);
+                Add(Specs.Mana, 24, 0.2f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Enchantments, 17, 0.1f);
                 break;
             }
         }

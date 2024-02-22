@@ -38,10 +38,10 @@ namespace DOL.GS.Scripts
 
         public override int CalcValue(GameLiving living, eProperty property)
         {
-            //			DOLConsole.WriteSystem("calc skill prop "+property+":");
-            if (living is GamePlayer)
+            // DOLConsole.WriteSystem("calc skill prop "+property+":");
+            if (living is IGamePlayer)
             {
-                GamePlayer player = (GamePlayer)living;
+                IGamePlayer player = (IGamePlayer)living;
 
                 int itemCap = player.Level / 5 + 1;
 
@@ -64,32 +64,6 @@ namespace DOL.GS.Scripts
 
                 //log.Info("PLAYER item bonus="+itemBonus+"; buffs=" +buffs+"; realm=" + player.RealmLevel/10);
                 return itemBonus + buffs + player.RealmLevel / 10;
-            }
-            else if (living is MimicNPC)
-            {
-                MimicNPC mimic = (MimicNPC)living;
-
-                int itemCap = mimic.Level / 5 + 1;
-
-                int itemBonus = mimic.ItemBonus[(int)property];
-
-                if (SkillBase.CheckPropertyType(property, ePropertyType.SkillMeleeWeapon))
-                    itemBonus += mimic.ItemBonus[(int)eProperty.AllMeleeWeaponSkills];
-                if (SkillBase.CheckPropertyType(property, ePropertyType.SkillMagical))
-                    itemBonus += mimic.ItemBonus[(int)eProperty.AllMagicSkills];
-                if (SkillBase.CheckPropertyType(property, ePropertyType.SkillDualWield))
-                    itemBonus += mimic.ItemBonus[(int)eProperty.AllDualWieldingSkills];
-                if (SkillBase.CheckPropertyType(property, ePropertyType.SkillArchery))
-                    itemBonus += mimic.ItemBonus[(int)eProperty.AllArcherySkills];
-
-                itemBonus += mimic.ItemBonus[(int)eProperty.AllSkills];
-
-                if (itemBonus > itemCap)
-                    itemBonus = itemCap;
-                int buffs = mimic.BaseBuffBonusCategory[(int)property]; // one buff category just in case..
-
-                //log.Info("MIMIC item bonus="+itemBonus+"; buffs="+buffs+"; realm="+mimic.RealmLevel/10);
-                return itemBonus + buffs + mimic.RealmLevel / 10;
             }
             else
             {

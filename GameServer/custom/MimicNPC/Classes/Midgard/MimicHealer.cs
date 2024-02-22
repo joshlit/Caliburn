@@ -9,22 +9,11 @@ namespace DOL.GS.Scripts
             MimicSpec = MimicManager.Random(this);
 
             SpendSpecPoints();
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-            MimicEquipment.SetShield(this, 1);
-
-            eObjectType objectType = eObjectType.Leather;
-
-            if (level >= 20)
-                objectType = eObjectType.Chain;
-            else if (level >= 10)
-                objectType = eObjectType.Studded;
-
-            MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);    
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -35,29 +24,29 @@ namespace DOL.GS.Scripts
         {
             SpecName = "PacHealer";
 
-            WeaponTypeOne = "Hammer";
+            WeaponTypeOne = eObjectType.Hammer;
 
             int randVariance = Util.Random(3);
-
+            
             switch (randVariance)
             {
                 case 0:
                 case 1:
-                Add("Mending", 31, 0.5f);
-                Add("Augmentation", 4, 0.1f);
-                Add("Pacification", 44, 0.8f);
+                Add(Specs.Mending, 31, 0.5f);
+                Add(Specs.Augmentation, 4, 0.1f);
+                Add(Specs.Pacification, 44, 0.8f);
                 break;
 
                 case 2:
-                Add("Mending", 40, 0.5f);
-                Add("Augmentation", 4, 0.1f);
-                Add("Pacification", 36, 0.8f);
+                Add(Specs.Mending, 40, 0.5f);
+                Add(Specs.Augmentation, 4, 0.1f);
+                Add(Specs.Pacification, 36, 0.8f);
                 break;
 
                 case 3:
-                Add("Mending", 33, 0.5f);
-                Add("Augmentation", 19, 0.1f);
-                Add("Pacification", 38, 0.8f);
+                Add(Specs.Mending, 33, 0.5f);
+                Add(Specs.Augmentation, 19, 0.1f);
+                Add(Specs.Pacification, 38, 0.8f);
                 break;
             }
         }
@@ -69,7 +58,7 @@ namespace DOL.GS.Scripts
         {
             SpecName = "AugHealer";
 
-            WeaponTypeOne = "Hammer";
+            WeaponTypeOne = eObjectType.Hammer;
 
             int randVariance = Util.Random(5);
 
@@ -77,33 +66,33 @@ namespace DOL.GS.Scripts
             {
                 case 0:
                 case 1:
-                Add("Mending", 31, 0.5f);
-                Add("Augmentation", 44, 0.8f);
-                Add("Pacification", 4, 0.2f);
+                Add(Specs.Mending, 31, 0.5f);
+                Add(Specs.Augmentation, 44, 0.8f);
+                Add(Specs.Pacification, 4, 0.2f);
                 break;
 
                 case 2:
-                Add("Mending", 39, 0.5f);
-                Add("Augmentation", 37, 0.8f);
-                Add("Pacification", 4, 0.1f);
+                Add(Specs.Mending, 39, 0.5f);
+                Add(Specs.Augmentation, 37, 0.8f);
+                Add(Specs.Pacification, 4, 0.1f);
                 break;
 
                 case 3:
-                Add("Mending", 40, 0.5f);
-                Add("Augmentation", 36, 0.8f);
-                Add("Pacification", 4, 0.1f);
+                Add(Specs.Mending, 40, 0.5f);
+                Add(Specs.Augmentation, 36, 0.8f);
+                Add(Specs.Pacification, 4, 0.1f);
                 break;
 
                 case 4:
-                Add("Mending", 20, 0.5f);
-                Add("Augmentation", 50, 0.8f);
-                Add("Pacification", 4, 0.1f);
+                Add(Specs.Mending, 20, 0.5f);
+                Add(Specs.Augmentation, 50, 0.8f);
+                Add(Specs.Pacification, 4, 0.1f);
                 break;
 
                 case 5:
-                Add("Mending", 42, 0.8f);
-                Add("Augmentation", 33, 0.5f);
-                Add("Pacification", 7, 0.2f);
+                Add(Specs.Mending, 42, 0.8f);
+                Add(Specs.Augmentation, 33, 0.5f);
+                Add(Specs.Pacification, 7, 0.2f);
                 break;
             }
         }

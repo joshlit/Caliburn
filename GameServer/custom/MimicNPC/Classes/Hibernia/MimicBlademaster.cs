@@ -12,12 +12,10 @@ namespace DOL.GS.Scripts
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
             MimicEquipment.SetRangedWeapon(this, eObjectType.Fired);
-            MimicEquipment.SetArmor(this, eObjectType.Reinforced);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -33,9 +31,9 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Blades"; break;
-                case 1: WeaponTypeOne = "Piercing"; break;
-                case 2: WeaponTypeOne = "Blunt"; break;
+                case 0: WeaponTypeOne = eObjectType.Blades; break;
+                case 1: WeaponTypeOne = eObjectType.Piercing; break;
+                case 2: WeaponTypeOne = eObjectType.Blunt; break;
             }
 
             int randVariance = Util.Random(2);
@@ -44,16 +42,16 @@ namespace DOL.GS.Scripts
             {
                 case 0:
                 case 1:
-                Add(WeaponTypeOne, 50, 0.8f);
-                Add("Celtic Dual", 50, 1.0f);
-                Add("Parry", 28, 0.2f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.8f);
+                Add(Specs.Celtic_Dual, 50, 1.0f);
+                Add(Specs.Parry, 28, 0.2f);
                 break;
 
                 case 2:
-                Add(WeaponTypeOne, 39, 0.8f);
-                Add("Celtic Dual", 50, 1.0f);
-                Add("Shields", 42, 0.5f);
-                Add("Parry", 6, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.8f);
+                Add(Specs.Celtic_Dual, 50, 1.0f);
+                Add(Specs.Shields, 42, 0.5f);
+                Add(Specs.Parry, 6, 0.1f);
                 break;
             }
         }

@@ -31,7 +31,7 @@ namespace DOL.GS.Scripts
 	{
 		public override int CalcValue(GameLiving living, eProperty property)
 		{
-			if (living is GamePlayer || living is MimicNPC)
+			if (living is IGamePlayer)
 			{
 				return Math.Min(10, living.ItemBonus[(int)property]);
 			}

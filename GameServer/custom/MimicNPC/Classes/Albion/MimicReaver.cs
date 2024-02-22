@@ -11,27 +11,11 @@ namespace DOL.GS.Scripts
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
 
-            int shieldSize = 1;
-
-            if (level >= 17)
-                shieldSize = 3;
-            else if (level >= 5)
-                shieldSize = 2;
-
-            MimicEquipment.SetShield(this, shieldSize);
-
-            eObjectType objectType = eObjectType.Studded;
-
-            if (level >= 10)
-                objectType = eObjectType.Chain;
-
-            MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -46,11 +30,11 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Slash"; break;
-                case 1: WeaponTypeOne = "Thrust"; break;
-                case 2: WeaponTypeOne = "Crush"; break;
+                case 0: WeaponTypeOne = eObjectType.SlashingWeapon; break;
+                case 1: WeaponTypeOne = eObjectType.ThrustWeapon; break;
+                case 2: WeaponTypeOne = eObjectType.CrushingWeapon; break;
                 case 3:
-                case 4: WeaponTypeOne = "Flexible"; break;
+                case 4: WeaponTypeOne = eObjectType.Flexible; break;
             }
 
             int randVariance = Util.Random(2);
@@ -59,17 +43,17 @@ namespace DOL.GS.Scripts
             {
                 case 0:
                 case 1:
-                Add(WeaponTypeOne, 50, 0.8f);
-                Add("Soulrending", 41, 1.0f);
-                Add("Shields", 42, 0.5f);
-                Add("Parry", 13, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.8f);
+                Add(Specs.Soulrending, 41, 1.0f);
+                Add(Specs.Shields, 42, 0.5f);
+                Add(Specs.Parry, 13, 0.1f);
                 break;
 
                 case 2:
-                Add(WeaponTypeOne, 50, 0.8f);
-                Add("Soulrending", 50, 1.0f);
-                Add("Shields", 29, 0.4f);
-                Add("Parry", 16, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.8f);
+                Add(Specs.Soulrending, 50, 1.0f);
+                Add(Specs.Shields, 29, 0.4f);
+                Add(Specs.Parry, 16, 0.1f);
                 break;
             }
         }

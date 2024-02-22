@@ -36,7 +36,7 @@ namespace DOL.GS.Scripts
     {
         public override int CalcValue(GameLiving living, eProperty property)
         {
-            if (living is GamePlayer || living is MimicNPC)
+            if (living is IGamePlayer)
             {
                 // GamePlayer player = (GamePlayer)living;
                 return living.Level + living.ItemBonus[(int)property] + living.BaseBuffBonusCategory[(int)property];

@@ -2,13 +2,9 @@
 using DOL.AI.Brain;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
-using log4net;
-using log4net.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using static DOL.Database.DbArtifactBonus;
 
 namespace DOL.GS.Scripts
 {
@@ -20,8 +16,6 @@ namespace DOL.GS.Scripts
     "/m - Create a mimic of a certain class at your position or ground target.")]
     public class SummonCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
             if (args.Length > 0)
@@ -66,8 +60,6 @@ namespace DOL.GS.Scripts
        "/mgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
     public class SummonMimicGroupCommandHandler : AbstractCommandHandler, ICommandHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
         public void OnCommand(GameClient client, string[] args)
         {
             if (args.Length >= 2)
@@ -189,8 +181,6 @@ namespace DOL.GS.Scripts
                                 groupMembers[0].Group.AddMember(living);
 
                                 MimicBrain brain = ((MimicNPC)living).Brain as MimicBrain;
-                                brain.PvPMode = true;
-                                brain.Roam = true;
                                 brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
                             }
                         }
@@ -203,30 +193,50 @@ namespace DOL.GS.Scripts
     [CmdAttribute(
        "&mpvp",
        ePrivLevel.Player,
-       "/mpvp (true/false) - Set PvP mode on selected mimic.")]
+       "/mpvp (true/false) - Set PvP mode on targeted mimic or your group with no target.")]
     public class MimicPvPModeCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
         {
-            if (client.Player != null && client.Player.TargetObject is not MimicNPC)
+            if (client.Player == null)
                 return;
 
+            string message = string.Empty;
             MimicNPC mimic = client.Player.TargetObject as MimicNPC;
 
             if (args.Length > 1)
             {
                 args[1] = args[1].ToLower();
 
+                bool toggle = false;
+
                 switch (args[1])
                 {
                     case "true":
-                    mimic.MimicBrain.PvPMode = true;
+                    toggle = true;
                     break;
 
                     case "false":
-                    mimic.MimicBrain.PvPMode = false;
+                    toggle = false;
                     break;
                 }
+
+                if (mimic != null)
+                {
+                    mimic.MimicBrain.PvPMode = toggle;
+                    message = "PvP mode for " + mimic.Name + " is " + toggle;
+                }
+                else if (client.Player.Group != null)
+                {
+                    foreach (MimicNPC mimicNPC in client.Player.Group.GetMembersInTheGroup())
+                    {
+                        mimicNPC.MimicBrain.PvPMode = toggle;
+                    }
+
+                    message = "PvP mode for your grouped mimics is " + toggle;
+                }
+
+                client.Player.Out.SendMessage(message, eChatType.CT_Say, eChatLoc.CL_ChatWindow);
             }
         }
     }
@@ -234,30 +244,50 @@ namespace DOL.GS.Scripts
     [CmdAttribute(
    "&mpc",
    ePrivLevel.Player,
-   "/mpc (true/false) - Set prevent combat on selected mimic.")]
+   "/mpc (true/false) - Set PreventCombat on targeted mimic or your group with no target.")]
     public class MimicCombatPreventCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
         {
-            if (client.Player != null && client.Player.TargetObject is not MimicNPC)
+            if (client.Player == null)
                 return;
 
+            string message = string.Empty;
             MimicNPC mimic = client.Player.TargetObject as MimicNPC;
 
             if (args.Length > 1)
             {
                 args[1] = args[1].ToLower();
 
+                bool toggle = false;
+
                 switch (args[1])
                 {
                     case "true":
-                    mimic.MimicBrain.PreventCombat = true;
+                    toggle = true;
                     break;
 
                     case "false":
-                    mimic.MimicBrain.PreventCombat = false;
+                    toggle = false;
                     break;
                 }
+
+                if (mimic != null)
+                {
+                    mimic.MimicBrain.PreventCombat = toggle;
+                    message = "PreventCombat for " + mimic.Name + " is " + toggle;
+                }
+                else if (client.Player.Group != null)
+                {
+                    foreach (MimicNPC mimicNPC in client.Player.Group.GetMembersInTheGroup())
+                    {
+                        mimicNPC.MimicBrain.PreventCombat = toggle;
+                    }
+
+                    message = "PreventCombat for your grouped mimics is " + toggle;
+                }
+
+                client.Player.Out.SendMessage(message, eChatType.CT_Say, eChatLoc.CL_ChatWindow);
             }
         }
     }
@@ -441,7 +471,7 @@ namespace DOL.GS.Scripts
                 {
                     case "leader": success = player.Group.MimicGroup.SetLeader(target); break;
                     case "tank": success = player.Group.MimicGroup.SetMainTank(target); break;
-                    case "assist": success =player.Group.MimicGroup.SetMainAssist(target); break;
+                    case "assist": success = player.Group.MimicGroup.SetMainAssist(target); break;
                     case "cc": success = player.Group.MimicGroup.SetMainCC(target); break;
                     case "puller": success = player.Group.MimicGroup.SetMainPuller(target); break;
                 }
@@ -616,11 +646,11 @@ namespace DOL.GS.Scripts
             {
                 args[1] = args[1].ToLower();
 
-                switch(args[1])
+                switch (args[1])
                 {
                     case "thid": MimicBattlegrounds.ThidBattleground.BattlegroundStats(client.Player); break;
                 }
-            }    
+            }
         }
     }
 }

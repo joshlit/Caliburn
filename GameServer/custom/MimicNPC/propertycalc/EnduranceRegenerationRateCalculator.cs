@@ -48,18 +48,11 @@ namespace DOL.GS.Scripts
             // buffs allow to regenerate endurance even in combat and while moving
             double regen = living.BaseBuffBonusCategory[(int)property] + living.ItemBonus[(int)property];
 
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 if (player.IsSitting)
                     regen += 2;
                 else if (!player.IsAttacking && !player.IsCasting && !player.IsMoving && !player.IsSprinting)
-                    regen += 1;
-            }
-            else if (living is MimicNPC mimic)
-            {
-                if (mimic.IsSitting)
-                    regen += 2;
-                else if(!mimic.IsAttacking && !mimic.IsCasting && !mimic.IsMoving && !mimic.IsSprinting)
                     regen += 1;
             }
 

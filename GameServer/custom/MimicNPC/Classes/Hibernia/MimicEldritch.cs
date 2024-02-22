@@ -10,12 +10,10 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-            MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             SetCasterSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -26,32 +24,32 @@ namespace DOL.GS.Scripts
         {
             SpecName = "SunEldritch";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Light", 45, 1.0f);
-                Add("Void", 29, 0.1f);
-                Add("Mana", 6, 0.0f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Void, 29, 0.1f);
+                Add(Specs.Mana, 6, 0.0f);
                 break;
 
                 case 1:
-                Add("Light", 40, 1.0f);
-                Add("Void", 35, 0.1f);
-                Add("Mana", 6, 0.0f);
+                Add(Specs.Light, 40, 1.0f);
+                Add(Specs.Void, 35, 0.1f);
+                Add(Specs.Mana, 6, 0.0f);
                 break;
 
                 case 2:
-                Add("Light", 47, 1.0f);
-                Add("Void", 26, 0.1f);
+                Add(Specs.Light, 47, 1.0f);
+                Add(Specs.Void, 26, 0.1f);
                 break;
 
                 case 3:
-                Add("Light", 45, 1.0f);
-                Add("Mana", 29, 0.1f);
+                Add(Specs.Light, 45, 1.0f);
+                Add(Specs.Mana, 29, 0.1f);
                 break;
             }
         }
@@ -63,30 +61,30 @@ namespace DOL.GS.Scripts
         {
             SpecName = "ManaEldritch";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Mana", 50, 1.0f);
-                Add("Light", 20, 0.1f);
+                Add(Specs.Mana, 50, 1.0f);
+                Add(Specs.Light, 20, 0.1f);
                 break;
 
                 case 1:
-                Add("Mana", 50, 1.0f);
-                Add("Void", 20, 0.1f);
+                Add(Specs.Mana, 50, 1.0f);
+                Add(Specs.Void, 20, 0.1f);
                 break;
 
                 case 2:
-                Add("Mana", 48, 1.0f);
-                Add("Light", 24, 0.1f);
+                Add(Specs.Mana, 48, 1.0f);
+                Add(Specs.Light, 24, 0.1f);
                 break;
 
                 case 3:
-                Add("Mana", 48, 1.0f);
-                Add("Void", 24, 0.1f);
+                Add(Specs.Mana, 48, 1.0f);
+                Add(Specs.Void, 24, 0.1f);
                 break;
             }
         }
@@ -98,32 +96,32 @@ namespace DOL.GS.Scripts
         {
             SpecName = "VoidEldritch";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Void", 49, 1.0f);
-                Add("Light", 19, 0.1f);
-                Add("Mana", 12, 0.0f);
+                Add(Specs.Void, 49, 1.0f);
+                Add(Specs.Light, 19, 0.1f);
+                Add(Specs.Mana, 12, 0.0f);
                 break;
 
                 case 1:
-                Add("Void", 48, 1.0f);
-                Add("Light", 24, 0.1f);
-                Add("Mana", 6, 0.0f);
+                Add(Specs.Void, 48, 1.0f);
+                Add(Specs.Light, 24, 0.1f);
+                Add(Specs.Mana, 6, 0.0f);
                 break;
 
                 case 2:
-                Add("Void", 46, 1.0f);
-                Add("Light", 28, 0.1f);
+                Add(Specs.Void, 46, 1.0f);
+                Add(Specs.Light, 28, 0.1f);
                 break;
 
                 case 3:
-                Add("Void", 46, 1.0f);
-                Add("Mana", 28, 0.1f);
+                Add(Specs.Void, 46, 1.0f);
+                Add(Specs.Mana, 28, 0.1f);
                 break;
             }
         }
@@ -135,32 +133,32 @@ namespace DOL.GS.Scripts
         {
             SpecName = "HybridEldritch";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                Add("Void", 27, 1.0f);
-                Add("Light", 24, 0.1f);
-                Add("Mana", 39, 0.0f);
+                Add(Specs.Void, 27, 1.0f);
+                Add(Specs.Light, 24, 0.1f);
+                Add(Specs.Mana, 39, 0.0f);
                 break;
 
                 case 1:
-                Add("Void", 48, 1.0f);
-                Add("Light", 24, 0.1f);
-                Add("Mana", 6, 0.0f);
+                Add(Specs.Void, 48, 1.0f);
+                Add(Specs.Light, 24, 0.1f);
+                Add(Specs.Mana, 6, 0.0f);
                 break;
 
                 case 2:
-                Add("Void", 46, 1.0f);
-                Add("Light", 28, 0.1f);
+                Add(Specs.Void, 46, 1.0f);
+                Add(Specs.Light, 28, 0.1f);
                 break;
 
                 case 3:
-                Add("Void", 46, 1.0f);
-                Add("Mana", 28, 0.1f);
+                Add(Specs.Void, 46, 1.0f);
+                Add(Specs.Mana, 28, 0.1f);
                 break;
             }
         }

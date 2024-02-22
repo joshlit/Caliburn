@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using DOL.AI.Brain;
+using DOL.GS.API;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.GS.Spells;
@@ -34,23 +35,11 @@ namespace DOL.GS
             HandleLiving(Starter, this);
             HandleLiving(Target, this);
 
-            static void HandleLiving(GameLiving participant, GameDuel duel)
+            static void HandleLiving(GameLiving living, GameDuel duel)
             {
-                GamePlayer player = participant as GamePlayer;
-                MimicNPC mimic = participant as MimicNPC;
-
-                if (player != null)
-                {
-                    player.OnDuelStart(duel);
-                    player.TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKTICKPVP, player.LastAttackTickPvP);
-                    player.TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP, player.LastAttackedByEnemyTickPvP);
-                }
-                else if (mimic != null)
-                {
-                    mimic.OnDuelStart(duel);
-                    mimic.TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKTICKPVP, mimic.LastAttackTickPvP);
-                    mimic.TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP, mimic.LastAttackedByEnemyTickPvP);
-                }
+                ((IGamePlayer)living).OnDuelStart(duel);
+                living.TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKTICKPVP, living.LastAttackTickPvP);
+                living.TempProperties.SetProperty(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP, living.LastAttackedByEnemyTickPvP);
             }
         }
 
@@ -59,37 +48,22 @@ namespace DOL.GS
             HandleLiving(Starter, Target);
             HandleLiving(Target, Starter);
 
-            static void HandleLiving(GameLiving participant, GameLiving partner)
+            static void HandleLiving(GameLiving living, GameLiving partner)
             {
-                GamePlayer player = participant as GamePlayer;
-                MimicNPC mimic = participant as MimicNPC;
+                IGamePlayer player = living as IGamePlayer;
 
-                if (player != null)
+                player.OnDuelStop();
+                living.LastAttackTickPvP = living.TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
+                living.LastAttackedByEnemyTickPvP = living.TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
+
+                lock (living.XPGainers.SyncRoot)
                 {
-                    player.OnDuelStop();
-                    player.LastAttackTickPvP = player.TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
-                    player.LastAttackedByEnemyTickPvP = player.TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
-
-                    lock (player.XPGainers.SyncRoot)
-                    {
-                        player.XPGainers.Clear();
-                    }
-
-                    player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client, "GamePlayer.DuelStop.DuelEnds"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                }
-                else if (mimic != null)
-                {
-                    mimic.OnDuelStop();
-                    mimic.LastAttackTickPvP = mimic.TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKTICKPVP);
-                    mimic.LastAttackedByEnemyTickPvP = mimic.TempProperties.GetProperty<long>(DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP);
-
-                    lock (mimic.XPGainers.SyncRoot)
-                    {
-                        mimic.XPGainers.Clear();
-                    }
+                    living.XPGainers.Clear();
                 }
 
-                StopEffects(participant, partner);
+                player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client, "GamePlayer.DuelStop.DuelEnds"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+
+                StopEffects(living, partner);
             }
 
             static void StopEffects(GameLiving living, GameLiving caster)
@@ -107,9 +81,6 @@ namespace DOL.GS
 
                     foreach (ECSGameEffect effect in effects)
                     {
-                        if (effect.HasPositiveEffect)
-                            continue;
-
                         ISpellHandler spellHandler = effect.SpellHandler;
 
                         if (spellHandler == null)

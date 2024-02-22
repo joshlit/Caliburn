@@ -24,8 +24,8 @@ namespace DOL.GS.Scripts
                                                     new Point3D(37200, 51200, 3950),
                                                     new Point3D(19820, 19305, 4050),
                                                     new Point3D(53300, 26100, 4270),
-                                                    6,
-                                                    60,
+                                                    30,
+                                                    120,
                                                     20,
                                                     24);
         }
@@ -69,7 +69,7 @@ namespace DOL.GS.Scripts
 
             private byte m_minLevel;
             private byte m_maxLevel;
-            
+
             private int m_minTotalMimics;
             private int m_maxTotalMimics;
 
@@ -277,7 +277,7 @@ namespace DOL.GS.Scripts
                 SetGroupMembers(m_hibStagingList);
                 SetGroupMembers(m_midStagingList);
 
-                m_spawnTimer = new ECSGameTimer(null, new ECSGameTimer.ECSTimerCallback(Spawn), 500);
+                m_spawnTimer = new ECSGameTimer(null, new ECSGameTimer.ECSTimerCallback(Spawn), 1000);
             }
 
             private int Spawn(ECSGameTimer timer)
@@ -313,7 +313,7 @@ namespace DOL.GS.Scripts
                 if (albDone && hibDone && midDone)
                     return 0;
                 else
-                    return 3000;
+                    return 5000;
             }
 
             private void SetGroupMembers(List<MimicNPC> list)
@@ -506,22 +506,8 @@ namespace DOL.GS.Scripts
 
         public static List<MimicNPC> MimicNPCs = new List<MimicNPC>();
 
-        public static Faction alb = new Faction();
-        public static Faction hib = new Faction();
-        public static Faction mid = new Faction();
-
         public static bool Initialize()
         {
-            // Factions
-            alb.AddEnemyFaction(hib);
-            alb.AddEnemyFaction(mid);
-
-            hib.AddEnemyFaction(alb);
-            hib.AddEnemyFaction(mid);
-
-            mid.AddEnemyFaction(alb);
-            mid.AddEnemyFaction(hib);
-
             // Battlegrounds
             MimicBattlegrounds.Initialize();
 
@@ -537,7 +523,7 @@ namespace DOL.GS.Scripts
                 mimic.Z = position.Z;
 
                 mimic.CurrentRegionID = region;
-                
+
                 if (mimic.AddToWorld())
                     return true;
             }
@@ -554,45 +540,45 @@ namespace DOL.GS.Scripts
 
             switch (mimicClass)
             {
-                case eMimicClass.Armsman:      mimic = new MimicArmsman(level); break;
-                case eMimicClass.Cabalist:     mimic = new MimicCabalist(level); break;
-                case eMimicClass.Cleric:       mimic = new MimicCleric(level); break;
-                case eMimicClass.Friar:        mimic = new MimicFriar(level); break;
-                case eMimicClass.Infiltrator:  mimic = new MimicInfiltrator(level); break;
-                case eMimicClass.Mercenary:    mimic = new MimicMercenary(level); break;
-                case eMimicClass.Minstrel:     mimic = new MimicMinstrel(level); break;
-                case eMimicClass.Paladin:      mimic = new MimicPaladin(level); break;
-                case eMimicClass.Reaver:       mimic = new MimicReaver(level); break;
-                case eMimicClass.Scout:        mimic = new MimicScout(level); break;
-                case eMimicClass.Sorcerer:     mimic = new MimicSorcerer(level); break;
-                case eMimicClass.Theurgist:    mimic = new MimicTheurgist(level); break;
-                case eMimicClass.Wizard:       mimic = new MimicWizard(level); break;
+                case eMimicClass.Armsman: mimic = new MimicArmsman(level); break;
+                case eMimicClass.Cabalist: mimic = new MimicCabalist(level); break;
+                case eMimicClass.Cleric: mimic = new MimicCleric(level); break;
+                case eMimicClass.Friar: mimic = new MimicFriar(level); break;
+                case eMimicClass.Infiltrator: mimic = new MimicInfiltrator(level); break;
+                case eMimicClass.Mercenary: mimic = new MimicMercenary(level); break;
+                case eMimicClass.Minstrel: mimic = new MimicMinstrel(level); break;
+                case eMimicClass.Paladin: mimic = new MimicPaladin(level); break;
+                case eMimicClass.Reaver: mimic = new MimicReaver(level); break;
+                case eMimicClass.Scout: mimic = new MimicScout(level); break;
+                case eMimicClass.Sorcerer: mimic = new MimicSorcerer(level); break;
+                case eMimicClass.Theurgist: mimic = new MimicTheurgist(level); break;
+                case eMimicClass.Wizard: mimic = new MimicWizard(level); break;
 
-                case eMimicClass.Bard:         mimic = new MimicBard(level); break;
-                case eMimicClass.Blademaster:  mimic = new MimicBlademaster (level); break;
-                case eMimicClass.Champion:     mimic = new MimicChampion(level); break;
-                case eMimicClass.Druid:        mimic = new MimicDruid(level); break;
-                case eMimicClass.Eldritch:     mimic = new MimicEldritch(level); break;
-                case eMimicClass.Enchanter:    mimic = new MimicEnchanter(level); break;
-                case eMimicClass.Hero:         mimic = new MimicHero(level); break;
-                case eMimicClass.Mentalist:    mimic = new MimicMentalist(level); break;
-                case eMimicClass.Nightshade:   mimic = new MimicNightshade(level); break;
-                case eMimicClass.Ranger:       mimic = new MimicRanger(level); break;
-                case eMimicClass.Valewalker:   mimic = new MimicValewalker(level); break;
-                case eMimicClass.Warden:       mimic = new MimicWarden(level); break;
+                case eMimicClass.Bard: mimic = new MimicBard(level); break;
+                case eMimicClass.Blademaster: mimic = new MimicBlademaster(level); break;
+                case eMimicClass.Champion: mimic = new MimicChampion(level); break;
+                case eMimicClass.Druid: mimic = new MimicDruid(level); break;
+                case eMimicClass.Eldritch: mimic = new MimicEldritch(level); break;
+                case eMimicClass.Enchanter: mimic = new MimicEnchanter(level); break;
+                case eMimicClass.Hero: mimic = new MimicHero(level); break;
+                case eMimicClass.Mentalist: mimic = new MimicMentalist(level); break;
+                case eMimicClass.Nightshade: mimic = new MimicNightshade(level); break;
+                case eMimicClass.Ranger: mimic = new MimicRanger(level); break;
+                case eMimicClass.Valewalker: mimic = new MimicValewalker(level); break;
+                case eMimicClass.Warden: mimic = new MimicWarden(level); break;
 
-                case eMimicClass.Berserker:    mimic = new MimicBerserker(level); break;
-                case eMimicClass.Bonedancer:   mimic = new MimicBonedancer(level); break;
-                case eMimicClass.Healer:       mimic = new MimicHealer(level); break;
-                case eMimicClass.Hunter:       mimic = new MimicHunter(level); break;
-                case eMimicClass.Runemaster:   mimic = new MimicRunemaster(level); break;
-                case eMimicClass.Savage:       mimic = new MimicSavage(level); break;
-                case eMimicClass.Shadowblade:  mimic = new MimicShadowblade (level); break;
-                case eMimicClass.Shaman:       mimic = new MimicShaman(level); break;
-                case eMimicClass.Skald:        mimic = new MimicSkald(level); break;
+                case eMimicClass.Berserker: mimic = new MimicBerserker(level); break;
+                case eMimicClass.Bonedancer: mimic = new MimicBonedancer(level); break;
+                case eMimicClass.Healer: mimic = new MimicHealer(level); break;
+                case eMimicClass.Hunter: mimic = new MimicHunter(level); break;
+                case eMimicClass.Runemaster: mimic = new MimicRunemaster(level); break;
+                case eMimicClass.Savage: mimic = new MimicSavage(level); break;
+                case eMimicClass.Shadowblade: mimic = new MimicShadowblade(level); break;
+                case eMimicClass.Shaman: mimic = new MimicShaman(level); break;
+                case eMimicClass.Skald: mimic = new MimicSkald(level); break;
                 case eMimicClass.Spiritmaster: mimic = new MimicSpiritmaster(level); break;
-                case eMimicClass.Thane:        mimic = new MimicThane(level); break;
-                case eMimicClass.Warrior:      mimic = new MimicWarrior(level); break;
+                case eMimicClass.Thane: mimic = new MimicThane(level); break;
+                case eMimicClass.Warrior: mimic = new MimicWarrior(level); break;
             }
 
             if (mimic != null)
@@ -668,7 +654,7 @@ namespace DOL.GS.Scripts
                 else
                     meleeClasses.Add(i);
             }
-                
+
             int randomIndex = Util.Random(meleeClasses.Count - 1);
 
             return (eMimicClass)meleeClasses[randomIndex];
@@ -774,206 +760,180 @@ namespace DOL.GS.Scripts
             //    log.Info("Added " + item.Name + " to slot " + slot);
         }
 
-        public static void SetMeleeWeapon(GameLiving living, string weapType, eHand hand, eWeaponDamageType damageType = 0)
+        public static void SetMeleeWeapon(IGamePlayer player, eObjectType weapType, eHand hand, eWeaponDamageType damageType = 0)
         {
-            eObjectType objectType = GetObjectType(weapType);
-
-            int min = Math.Max(1, living.Level - 6);
-            int max = Math.Min(51, living.Level + 4);
+            int min = Math.Max(1, player.Level - 6);
+            int max = Math.Min(51, player.Level + 4);
 
             IList<DbItemTemplate> itemList;
 
             itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
                                                                        DB.Column("Level").IsLessOrEqualTo(max).And(
-                                                                       DB.Column("Object_Type").IsEqualTo((int)objectType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
+                                                                       DB.Column("Object_Type").IsEqualTo((int)weapType).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
             if (itemList.Any())
             {
-                // This allows for left handed weapons to be equipped to the right hand. Prevents Twohanded midgard weapons from being selected.
-                if (hand == eHand.oneHand)
-                {
-                    List<DbItemTemplate> oneHandItemsToKeep = new List<DbItemTemplate>();
-
-                    foreach (DbItemTemplate item in itemList)
-                    {
-                        if (item.Hand != (int)eHand.twoHand)
-                            oneHandItemsToKeep.Add(item);
-                    }
-
-                    if (oneHandItemsToKeep.Any())
-                    {
-                        DbItemTemplate oneHandItemTemplate = oneHandItemsToKeep[Util.Random(oneHandItemsToKeep.Count - 1)];
-                        AddItem(living, oneHandItemTemplate, hand);
-
-                        return;
-                    }
-                }
-
                 List<DbItemTemplate> itemsToKeep = new List<DbItemTemplate>();
 
                 foreach (DbItemTemplate item in itemList)
                 {
-                    // Only used for Armsman and Paladin to ensure twohand weapon matches one handed spec.
-                    if (damageType != 0)
+                    bool shouldAddItem = false;
+
+                    switch (hand)
                     {
-                        if (item.Hand == (int)hand && item.Type_Damage == (int)damageType)
-                            itemsToKeep.Add(item);
+                        case eHand.oneHand:
+                        shouldAddItem = item.Item_Type == Slot.RIGHTHAND || item.Item_Type == Slot.LEFTHAND;
+                        break;
+
+                        case eHand.leftHand:
+                        shouldAddItem = item.Item_Type == Slot.LEFTHAND;
+                        break;
+
+                        case eHand.twoHand:
+                        shouldAddItem = item.Item_Type == Slot.TWOHAND && (damageType == 0 || item.Type_Damage == (int)damageType);
+                        break;
+
+                        default:
+                        break;
                     }
-                    else if (item.Hand == (int)hand)
+
+                    if (shouldAddItem)
                         itemsToKeep.Add(item);
+                }
 
-                    if (itemsToKeep.Any())
-                    {
-                        DbItemTemplate itemTemplate = itemsToKeep[Util.Random(itemsToKeep.Count - 1)];
-                        AddItem(living, itemTemplate, hand);
-
-                        return;
-                    }
+                if (itemsToKeep.Any())
+                {
+                    DbItemTemplate itemTemplate = itemsToKeep[Util.Random(itemsToKeep.Count - 1)];
+                    AddItem(player, itemTemplate, hand);
                 }
             }
             else
-                log.Info("No melee weapon found for " + living.Name);
+                log.Info("No melee weapon found for " + player.Name);
         }
 
-        public static void SetRangedWeapon(GameLiving living, eObjectType weapType)
+        public static void SetRangedWeapon(IGamePlayer player, eObjectType weapType)
         {
-            int min = Math.Max(1, living.Level - 6);
-            int max = Math.Min(51, living.Level + 3);
+            int min = Math.Max(1, player.Level - 6);
+            int max = Math.Min(51, player.Level + 3);
 
             IList<DbItemTemplate> itemList;
             itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
                                                                        DB.Column("Level").IsLessOrEqualTo(max).And(
                                                                        DB.Column("Object_Type").IsEqualTo((int)weapType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
-                                                                       DB.Column("IsPickable").IsEqualTo(1)))));
+                                                                       DB.Column("Item_Type").IsEqualTo(13).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
+                                                                       DB.Column("IsPickable").IsEqualTo(1))))));
 
             if (itemList.Any())
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
-                AddItem(living, itemTemplate);
+                AddItem(player, itemTemplate);
 
                 return;
             }
             else
-                log.Info("No Ranged weapon found for " + living.Name);
+                log.Info("No Ranged weapon found for " + player.Name);
         }
 
-        public static void SetShield(GameLiving living, int shieldSize)
+        public static void SetShield(IGamePlayer player, int shieldSize)
         {
-            int min = Math.Max(1, living.Level - 6);
-            int max = Math.Min(51, living.Level + 3);
+            if (shieldSize < 1)
+                return;
+
+            int min = Math.Max(1, player.Level - 6);
+            int max = Math.Min(51, player.Level + 3);
 
             IList<DbItemTemplate> itemList;
 
             itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
                                                                        DB.Column("Level").IsLessOrEqualTo(max).And(
                                                                        DB.Column("Object_Type").IsEqualTo((int)eObjectType.Shield).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("Type_Damage").IsEqualTo(shieldSize).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1))))));
 
             if (itemList.Any())
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
-                AddItem(living, itemTemplate);
+                AddItem(player, itemTemplate);
 
                 return;
             }
             else
-                log.Info("No Shield found for " + living.Name);
+                log.Info("No Shield found for " + player.Name);
         }
 
-        public static void SetArmor(GameLiving living, eObjectType armorType)
+        public static void SetArmor(IGamePlayer player, eObjectType armorType)
         {
-            int min = Math.Max(1, living.Level - 6);
-            int max = Math.Min(51, living.Level + 3);
+            int min = Math.Max(1, player.Level - 6);
+            int max = Math.Min(51, player.Level + 3);
 
             IList<DbItemTemplate> itemList;
-
-            List<DbItemTemplate> armsList = new List<DbItemTemplate>();
-            List<DbItemTemplate> handsList = new List<DbItemTemplate>();
-            List<DbItemTemplate> legsList = new List<DbItemTemplate>();
-            List<DbItemTemplate> feetList = new List<DbItemTemplate>();
-            List<DbItemTemplate> torsoList = new List<DbItemTemplate>();
-            List<DbItemTemplate> helmList = new List<DbItemTemplate>();
 
             itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
                                                                        DB.Column("Level").IsLessOrEqualTo(max).And(
                                                                        DB.Column("Object_Type").IsEqualTo((int)armorType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
 
             if (itemList.Any())
             {
+                Dictionary<int, List<DbItemTemplate>> armorSlots = new Dictionary<int, List<DbItemTemplate>>();
+
                 foreach (DbItemTemplate template in itemList)
                 {
-                    if (template.Item_Type == Slot.ARMS)
-                        armsList.Add(template);
-                    else if (template.Item_Type == Slot.HANDS)
-                        handsList.Add(template);
-                    else if (template.Item_Type == Slot.LEGS)
-                        legsList.Add(template);
-                    else if (template.Item_Type == Slot.FEET)
-                        feetList.Add(template);
-                    else if (template.Item_Type == Slot.TORSO)
-                        torsoList.Add(template);
-                    else if (template.Item_Type == Slot.HELM)
-                        helmList.Add(template);
+                    if (!armorSlots.TryGetValue(template.Item_Type, out List<DbItemTemplate> slotList))
+                    {
+                        slotList = new List<DbItemTemplate>();
+                        armorSlots[template.Item_Type] = slotList;
+                    }
+
+                    slotList.Add(template);
                 }
 
-                List<List<DbItemTemplate>> masterList = new List<List<DbItemTemplate>>
+                foreach (var pair in armorSlots)
                 {
-                    armsList,
-                    handsList,
-                    legsList,
-                    feetList,
-                    torsoList,
-                    helmList
-                };
-
-                foreach (List<DbItemTemplate> list in masterList)
-                {
-                    if (list.Any())
+                    if (pair.Value.Any())
                     {
-                        DbItemTemplate itemTemplate = list[Util.Random(list.Count - 1)];
-                        AddItem(living, itemTemplate);
+                        DbItemTemplate itemTemplate = pair.Value[Util.Random(pair.Value.Count - 1)];
+                        AddItem(player, itemTemplate);
                     }
                 }
             }
             else
-                log.Info("No armor found for " + living.Name);
+                log.Info("No armor found for " + player.Name);
         }
 
-        public static void SetInstrument(GameLiving living, eObjectType weapType, eInventorySlot slot, eInstrumentType instrumentType)
+        public static void SetInstrument(IGamePlayer player, eObjectType weapType, eInventorySlot slot, eInstrumentType instrumentType)
         {
-            int min = Math.Max(1, living.Level - 6);
-            int max = Math.Min(51, living.Level + 3);
+            int min = Math.Max(1, player.Level - 6);
+            int max = Math.Min(51, player.Level + 3);
 
             IList<DbItemTemplate> itemList;
             itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
                                                                        DB.Column("Level").IsLessOrEqualTo(max).And(
                                                                        DB.Column("Object_Type").IsEqualTo((int)weapType).And(
                                                                        DB.Column("DPS_AF").IsEqualTo((int)instrumentType).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1))))));
 
             if (itemList.Any())
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
                 DbInventoryItem item = GameInventoryItem.Create(itemTemplate);
-                living.Inventory.AddItem(slot, item);
+                player.Inventory.AddItem(slot, item);
 
                 return;
             }
             else
-                log.Info("No instrument found for " + living.Name);
+                log.Info("No instrument found for " + player.Name);
         }
 
-        public static void SetJewelry(GameLiving living)
+        public static void SetJewelry(IGamePlayer player)
         {
-            int min = Math.Max(1, living.Level - 30);
-            int max = Math.Min(51, living.Level + 1);
+            int min = Math.Max(1, player.Level - 30);
+            int max = Math.Min(51, player.Level + 3);
 
             IList<DbItemTemplate> itemList;
             List<DbItemTemplate> cloakList = new List<DbItemTemplate>();
@@ -986,7 +946,7 @@ namespace DOL.GS.Scripts
             itemList = GameServer.Database.SelectObjects<DbItemTemplate>(DB.Column("Level").IsGreaterOrEqualTo(min).And(
                                                                        DB.Column("Level").IsLessOrEqualTo(max).And(
                                                                        DB.Column("Object_Type").IsEqualTo((int)eObjectType.Magical).And(
-                                                                       DB.Column("Realm").IsEqualTo((int)living.Realm)).And(
+                                                                       DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
             if (itemList.Any())
             {
@@ -1022,7 +982,7 @@ namespace DOL.GS.Scripts
                     if (list.Any())
                     {
                         DbItemTemplate itemTemplate = list[Util.Random(list.Count - 1)];
-                        AddItem(living, itemTemplate);
+                        AddItem(player, itemTemplate);
                     }
                 }
 
@@ -1032,29 +992,29 @@ namespace DOL.GS.Scripts
                     if (ringList.Any())
                     {
                         DbItemTemplate itemTemplate = ringList[Util.Random(ringList.Count - 1)];
-                        AddItem(living, itemTemplate);
+                        AddItem(player, itemTemplate);
                     }
 
                     if (wristList.Any())
                     {
                         DbItemTemplate itemTemplate = wristList[Util.Random(wristList.Count - 1)];
-                        AddItem(living, itemTemplate);
+                        AddItem(player, itemTemplate);
                     }
                 }
 
                 // Not sure this is needed what were you thinking past self?
-                if (living.Inventory.GetItem(eInventorySlot.Cloak) == null)
+                if (player.Inventory.GetItem(eInventorySlot.Cloak) == null)
                 {
                     DbItemTemplate cloak = GameServer.Database.FindObjectByKey<DbItemTemplate>("cloak");
                     cloak.Color = Util.Random((Enum.GetValues(typeof(eColor)).Length));
-                    AddItem(living, cloak);
+                    AddItem(player, cloak);
                 }
             }
             else
-                log.Info("No jewelry of any kind found for " + living.Name);
+                log.Info("No jewelry of any kind found for " + player.Name);
         }
 
-        private static void AddItem(GameLiving living, DbItemTemplate itemTemplate, eHand hand = eHand.None)
+        private static void AddItem(IGamePlayer player, DbItemTemplate itemTemplate, eHand hand = eHand.None)
         {
             if (itemTemplate == null)
                 log.Info("itemTemplate in AddItem is null");
@@ -1063,66 +1023,41 @@ namespace DOL.GS.Scripts
 
             if (item != null)
             {
-                if (itemTemplate.Item_Type == Slot.LEFTRING || itemTemplate.Item_Type == Slot.RIGHTRING)
+                if (item.Item_Type == Slot.LEFTRING || item.Item_Type == Slot.RIGHTRING)
                 {
-                    living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
+                    player.Inventory.AddItem(player.Inventory.FindFirstEmptySlot(eInventorySlot.LeftRing, eInventorySlot.RightRing), item);
                     return;
                 }
-                else if (itemTemplate.Item_Type == Slot.LEFTWRIST || itemTemplate.Item_Type == Slot.RIGHTWRIST)
+                else if (item.Item_Type == Slot.LEFTWRIST || item.Item_Type == Slot.RIGHTWRIST)
                 {
-                    living.Inventory.AddItem(living.Inventory.FindFirstEmptySlot(eInventorySlot.LeftBracer, eInventorySlot.RightBracer), item);
+                    player.Inventory.AddItem(player.Inventory.FindFirstEmptySlot(eInventorySlot.LeftBracer, eInventorySlot.RightBracer), item);
                     return;
                 }
-                else if (itemTemplate.Item_Type == Slot.LEFTHAND && itemTemplate.Object_Type != (int)eObjectType.Shield && hand == eHand.oneHand)
+                else if (item.Item_Type == Slot.LEFTHAND && item.Object_Type != (int)eObjectType.Shield && hand == eHand.oneHand)
                 {
-                    living.Inventory.AddItem(eInventorySlot.RightHandWeapon, item);
+                    player.Inventory.AddItem(eInventorySlot.RightHandWeapon, item);
                     return;
                 }
                 else
-                    living.Inventory.AddItem((eInventorySlot)itemTemplate.Item_Type, item);
+                {
+                    if (item.Object_Type == (int)eObjectType.Shield &&
+                        (player.CharacterClass.ID == (int)eCharacterClass.Infiltrator ||
+                        player.CharacterClass.ID == (int)eCharacterClass.Mercenary ||
+                        player.CharacterClass.ID == (int)eCharacterClass.Nightshade ||
+                        player.CharacterClass.ID == (int)eCharacterClass.Ranger ||
+                        player.CharacterClass.ID == (int)eCharacterClass.Blademaster ||
+                        player.CharacterClass.ID == (int)eCharacterClass.Shadowblade ||
+                        player.CharacterClass.ID == (int)eCharacterClass.Berserker ||
+                        (player.CharacterClass.ID == (int)eCharacterClass.Savage)))
+                    {
+                        player.Inventory.AddItem(player.Inventory.FindFirstEmptySlot(eInventorySlot.FirstEmptyBackpack, eInventorySlot.LastEmptyBackpack), item);
+                    }
+                    else
+                        player.Inventory.AddItem((eInventorySlot)item.Item_Type, item);
+                }
             }
             else
-                log.Info("Item failed to be created for " + living.Name);
-        }
-
-        public static eObjectType GetObjectType(string obj)
-        {
-            eObjectType objectType = 0;
-
-            switch (obj)
-            {
-                case "Staff": objectType = eObjectType.Staff; break;
-
-                case "Slash": objectType = eObjectType.SlashingWeapon; break;
-                case "Thrust": objectType = eObjectType.ThrustWeapon; break;
-                case "Crush": objectType = eObjectType.CrushingWeapon; break;
-                case "Flexible": objectType = eObjectType.Flexible; break;
-                case "Polearm": objectType = eObjectType.PolearmWeapon; break;
-                case "Two Handed": objectType = eObjectType.TwoHandedWeapon; break;
-
-                case "Blades": objectType = eObjectType.Blades; break;
-                case "Piercing": objectType = eObjectType.Piercing; break;
-                case "Blunt": objectType = eObjectType.Blunt; break;
-                case "Large Weapons": objectType = eObjectType.LargeWeapons; break;
-                case "Celtic Spear": objectType = eObjectType.CelticSpear; break;
-                case "Scythe": objectType = eObjectType.Scythe; break;
-
-                case "Sword": objectType = eObjectType.Sword; break;
-                case "Axe": objectType = eObjectType.Axe; break;
-                case "Hammer": objectType = eObjectType.Hammer; break;
-                case "Hand to Hand": objectType = eObjectType.HandToHand; break;
-
-                case "Cloth": objectType = eObjectType.Cloth; break;
-                case "Leather": objectType = eObjectType.Leather; break;
-                case "Studded": objectType = eObjectType.Studded; break;
-                case "Chain": objectType = eObjectType.Chain; break;
-                case "Plate": objectType = eObjectType.Plate; break;
-
-                case "Reinforced": objectType = eObjectType.Reinforced; break;
-                case "Scale": objectType = eObjectType.Scale; break;
-            }
-
-            return objectType;
+                log.Info("Item failed to be created for " + player.Name);
         }
     }
 
@@ -1133,8 +1068,8 @@ namespace DOL.GS.Scripts
     public class MimicSpec
     {
         public static string SpecName;
-        public string WeaponTypeOne;
-        public string WeaponTypeTwo;
+        public eObjectType WeaponTypeOne;
+        public eObjectType WeaponTypeTwo;
         public eWeaponDamageType DamageType = 0;
 
         public bool is2H;
@@ -1144,28 +1079,30 @@ namespace DOL.GS.Scripts
         public MimicSpec()
         { }
 
-        protected void Add(string name, uint cap, float ratio)
+        protected void Add(string spec, uint cap, float ratio)
         {
-            SpecLines.Add(new SpecLine(name, cap, ratio));
+            SpecLines.Add(new SpecLine(spec, cap, ratio));
+        }
+
+        protected string ObjToSpec(eObjectType obj)
+        {
+            string spec = SkillBase.ObjectTypeToSpec(obj);
+
+            return spec;
         }
     }
 
     public struct SpecLine
     {
-        public string SpecName;
+        public string Spec;
         public uint SpecCap;
         public float levelRatio;
 
-        public SpecLine(string name, uint cap, float ratio)
+        public SpecLine(string spec, uint cap, float ratio)
         {
-            SpecName = name;
+            Spec = spec;
             SpecCap = cap;
             levelRatio = ratio;
-        }
-
-        public void SetName(string name)
-        {
-            SpecName = name;
         }
     }
 

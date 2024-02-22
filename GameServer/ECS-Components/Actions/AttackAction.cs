@@ -188,9 +188,7 @@ namespace DOL.GS
             }
 
             // Damage is doubled on sitting players, but only with melee weapons; arrows and magic do normal damage.
-            if (_target is GamePlayer playerTarget && playerTarget.IsSitting)
-                _effectiveness *= 2;
-            else if (_target is MimicNPC mimicTarget && mimicTarget.IsSitting)
+            if (_target is IGamePlayer playerTarget && playerTarget.IsSitting)
                 _effectiveness *= 2;
 
             _interruptDuration = mainHandAttackSpeed;

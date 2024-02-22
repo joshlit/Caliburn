@@ -153,7 +153,7 @@ namespace DOL.GS.Scripts
             m_mimicOne.Mana = m_mimicOne.MaxMana;
             m_mimicOne.Endurance = m_mimicOne.MaxEndurance;
 
-            m_mimicOne.effectListComponent.CancelAll();
+            //m_mimicOne.effectListComponent.CancelAll();
 
             foreach (Skill skill in m_mimicOne.GetAllDisabledSkills())
                 m_mimicOne.RemoveDisabledSkill(skill);
@@ -223,6 +223,20 @@ namespace DOL.GS.Scripts
             Level = 75;
 
             return base.AddToWorld();
+        }
+
+        public override bool RemoveFromWorld()
+        {
+            if (!base.RemoveFromWorld())
+                return false;
+
+            if (m_mimicOne != null)
+                m_mimicOne.Delete();
+
+            if (m_mimicTwo != null)
+                m_mimicTwo.Delete();
+
+            return true;
         }
     }
 

@@ -39,12 +39,12 @@ namespace DOL.GS.Scripts
 
 		public override int CalcValue(GameLiving living, eProperty property)
 		{
-			if (living is GamePlayer)
+			if (living is IGamePlayer)
 			{
 				int itemBonus = living.ItemBonus[(int)property];
 				int focusLevel = living.BaseBuffBonusCategory[(int)property];
 				if (SkillBase.CheckPropertyType(property, ePropertyType.Focus)
-				 && ((GamePlayer)living).CharacterClass.ClassType == eClassType.ListCaster)
+				 && ((IGamePlayer)living).CharacterClass.ClassType == eClassType.ListCaster)
 				{
 					focusLevel += living.BaseBuffBonusCategory[(int)eProperty.AllFocusLevels];
 					itemBonus = Math.Max(itemBonus, living.ItemBonus[(int)eProperty.AllFocusLevels]);
@@ -52,19 +52,6 @@ namespace DOL.GS.Scripts
 
 				return focusLevel + Math.Min(50, itemBonus);
 			}
-			else if (living is MimicNPC)
-			{
-                int itemBonus = living.ItemBonus[(int)property];
-                int focusLevel = living.BaseBuffBonusCategory[(int)property];
-                if (SkillBase.CheckPropertyType(property, ePropertyType.Focus)
-                 && ((MimicNPC)living).CharacterClass.ClassType == eClassType.ListCaster)
-                {
-                    focusLevel += living.BaseBuffBonusCategory[(int)eProperty.AllFocusLevels];
-                    itemBonus = Math.Max(itemBonus, living.ItemBonus[(int)eProperty.AllFocusLevels]);
-                }
-
-                return focusLevel + Math.Min(50, itemBonus);
-            }
 			else
 			{
 				// TODO other living types

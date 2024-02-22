@@ -37,15 +37,10 @@ namespace DOL.GS.Scripts
         {
             int chance = 0;
 
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 chance += (player.Dexterity * 2 - 100) / 4 + (player.GetModifiedSpecLevel(Specs.Shields) - 1) * (10 / 2) + 50;
                 chance += player.AbilityBonus[(int)property] * 10;
-            }
-            else if (living is MimicNPC mimic)
-            {
-                chance += (mimic.Dexterity * 2 - 100) / 4 + (mimic.GetModifiedSpecLevel(Specs.Shields) - 1) * (10 / 2) + 50;
-                chance += mimic.AbilityBonus[(int)property] * 10;
             }
             else if (living is GameNPC npc)
                 chance += npc.BlockChance * 10;

@@ -23,16 +23,11 @@ namespace DOL.GS.Scripts
 		{
 			int chance = living.AbilityBonus[(int)property];
 
-			if (living is GamePlayer player)
+			if (living is IGamePlayer player)
 			{
 				if (player.CharacterClass.ClassType == eClassType.ListCaster)
 					chance += 10;
 			}
-			else if (living is MimicNPC mimic)
-			{
-                if (mimic.CharacterClass.ClassType == eClassType.ListCaster)
-                    chance += 10;
-            }
 			else if (living is NecromancerPet necroPet)
 			{
 				chance += 10;
@@ -41,7 +36,7 @@ namespace DOL.GS.Scripts
             // Summoned or Charmed pet.
             else if (living is GameNPC npc && ServerProperties.Properties.EXPAND_WILD_MINION)
             {
-                if (npc.Brain is IControlledBrain petBrain && petBrain.GetPlayerOwner() is GamePlayer playerOwner)
+                if (npc.Brain is IControlledBrain petBrain && petBrain.GetLivingOwner() is IGamePlayer playerOwner)
                     chance += playerOwner.GetAbility<RealmAbilities.AtlasOF_WildMinionAbility>()?.Amount ?? 0;
             }
 
@@ -69,7 +64,7 @@ namespace DOL.GS.Scripts
 		{
 			int chance = living.AbilityBonus[(int)property];
 
-			if (living is NecromancerPet necroPet && necroPet.Brain is IControlledBrain necroBrain && necroBrain.GetPlayerOwner() is GamePlayer playerOwner)
+			if (living is NecromancerPet necroPet && necroPet.Brain is IControlledBrain necroBrain && necroBrain.GetLivingOwner() is IGamePlayer playerOwner)
 				chance += playerOwner.GetAbility<RealmAbilities.AtlasOF_WildArcanaAbility>()?.Amount ?? 0;
 
 			return Math.Min(chance, 50);

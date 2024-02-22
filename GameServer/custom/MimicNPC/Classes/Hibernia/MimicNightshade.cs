@@ -10,14 +10,12 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
-            MimicEquipment.SetArmor(this, eObjectType.Leather);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
+            MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);        
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -33,28 +31,28 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Blades"; break;
-                case 1: WeaponTypeOne = "Piercing"; break;
+                case 0: WeaponTypeOne = eObjectType.Blades; break;
+                case 1: WeaponTypeOne = eObjectType.Piercing; break;
             }
 
             int randVariance = Util.Random(2);
-
+            
             switch (randVariance)
             {
                 case 0:
                 case 1:
-                Add(WeaponTypeOne, 39, 0.8f);
-                Add("Celtic Dual", 15, 0.1f);
-                Add("Critical Strike", 44, 0.9f);
-                Add("Stealth", 37, 0.5f);
-                Add("Envenom", 37, 0.6f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.8f);
+                Add(Specs.Celtic_Dual, 15, 0.1f);
+                Add(Specs.Critical_Strike, 44, 0.9f);
+                Add(Specs.Stealth, 37, 0.5f);
+                Add(Specs.Envenom, 37, 0.6f);
                 break;
 
                 case 2:
-                Add(WeaponTypeOne, 39, 0.9f);
-                Add("Celtic Dual", 50, 1.0f);
-                Add("Stealth", 34, 0.5f);
-                Add("Envenom", 34, 0.6f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.9f);
+                Add(Specs.Celtic_Dual, 50, 1.0f);
+                Add(Specs.Stealth, 34, 0.5f);
+                Add(Specs.Envenom, 34, 0.6f);
                 break;
             }
         }

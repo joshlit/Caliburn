@@ -9,6 +9,7 @@ namespace DOL.GS.Commands
          ePrivLevel.Player,
          "Duel another player",
          "/duel")]
+
     public class DuelCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         private const string DUEL_STARTER_WEAK = "DuelStarter";
@@ -31,8 +32,8 @@ namespace DOL.GS.Commands
             }
 
             WeakRef weak = null;
-            GameLiving duelStarter = null;
-            GameLiving duelTarget = null;
+            IGamePlayer duelStarter = null;
+            IGamePlayer duelTarget = null;
 
             if (args.Length > 1)
             {
@@ -40,61 +41,58 @@ namespace DOL.GS.Commands
                 {
                     case "challenge":
                     {
-                        GamePlayer targetPlayer = client.Player.TargetObject as GamePlayer;
-                        MimicNPC targetMimic = client.Player.TargetObject as MimicNPC;
-
-                        if ((targetPlayer == null || targetPlayer == client.Player) && (targetMimic == null))
+                        if (client.Player.TargetObject == null || client.Player.TargetObject == client.Player || client.Player.TargetObject is not IGamePlayer)
                         {
                             client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NeedTarget"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                             return;
                         }
 
-                        GameLiving targetLiving = client.Player.TargetObject as GameLiving;
+                        GameLiving target = client.Player.TargetObject as GameLiving;
 
-                        if (!CheckDuelStart(client.Player, targetLiving))
+                        if (!CheckDuelStart(client.Player, target))
                             return;
 
                         lock (client.Player.TempProperties)
                         {
                             weak = client.Player.TempProperties.GetProperty<WeakRef>(CHALLENGE_TARGET_WEAK, null);
-                            if (weak != null && (duelTarget = weak.Target as GameLiving) != null)
+                            if (weak != null && (duelTarget = weak.Target as IGamePlayer) != null)
                             {
                                 client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouAlreadyChallenging", duelTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                             weak = client.Player.TempProperties.GetProperty<WeakRef>(DUEL_STARTER_WEAK, null);
-                            if (weak != null && (duelStarter = weak.Target as GameLiving) != null)
+                            if (weak != null && (duelStarter = weak.Target as IGamePlayer) != null)
                             {
                                 client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouAlreadyConsidering", duelStarter.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
 
-                        lock (targetLiving.TempProperties)
+                        lock (target.TempProperties)
                         {
-                            if (targetLiving.TempProperties.GetProperty<WeakRef>(DUEL_STARTER_WEAK, null) != null)
+                            if (target.TempProperties.GetProperty<WeakRef>(DUEL_STARTER_WEAK, null) != null)
                             {
-                                client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAlreadyConsidering", targetLiving.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                                client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAlreadyConsidering", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                                 return;
                             }
-                            if (targetLiving.TempProperties.GetProperty<WeakRef>(CHALLENGE_TARGET_WEAK, null) != null)
+                            if (target.TempProperties.GetProperty<WeakRef>(CHALLENGE_TARGET_WEAK, null) != null)
                             {
-                                client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAlreadyChallenging", targetLiving.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                                client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAlreadyChallenging", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                                 return;
                             }
 
-                            targetLiving.TempProperties.SetProperty(DUEL_STARTER_WEAK, new WeakRef(client.Player));
+                            target.TempProperties.SetProperty(DUEL_STARTER_WEAK, new WeakRef(client.Player));
                         }
 
                         lock (client.Player.TempProperties)
                         {
-                            client.Player.TempProperties.SetProperty(CHALLENGE_TARGET_WEAK, new WeakRef(targetLiving));
+                            client.Player.TempProperties.SetProperty(CHALLENGE_TARGET_WEAK, new WeakRef(target));
                         }
 
-                        client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouChallenge", targetLiving.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-                        targetPlayer?.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.ChallengesYou", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                        client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouChallenge", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                        ((IGamePlayer)target).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.ChallengesYou", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
 
-                        if (targetMimic != null)
+                        if (target is MimicNPC targetMimic)
                         {
                             if (Util.Chance(95))
                             {
@@ -106,10 +104,10 @@ namespace DOL.GS.Commands
                                 }
 
                                 // Considering. Probably not needed as mimics immediately accept or decline.
-                                if (weak == null || (duelStarter = weak.Target as GameLiving) == null)
+                                if (weak == null || (duelStarter = weak.Target as IGamePlayer) == null)
                                     return;
 
-                                if (!CheckDuelStart(client.Player, duelStarter))
+                                if (!CheckDuelStart(client.Player, (GameLiving)duelStarter))
                                     return;
 
                                 GameDuel duel = new(client.Player, targetMimic);
@@ -122,9 +120,9 @@ namespace DOL.GS.Commands
                                     targetMimic.TempProperties.RemoveProperty(DUEL_STARTER_WEAK);
                                 }
 
-                                lock (duelStarter.TempProperties)
+                                lock (((GameLiving)duelStarter).TempProperties)
                                 {
-                                    (duelStarter).TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
+                                    ((GameLiving)duelStarter).TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
                                 }
                             }
                             else
@@ -135,7 +133,7 @@ namespace DOL.GS.Commands
                                     client.Player.TempProperties.RemoveProperty(DUEL_STARTER_WEAK);
                                 }
 
-                                if (weak == null || (duelStarter = weak.Target as GameLiving) == null)
+                                if (weak == null || (duelStarter = weak.Target as IGamePlayer) == null)
                                 {
                                     client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                                     return;
@@ -146,10 +144,7 @@ namespace DOL.GS.Commands
                                     duelStarter.TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
                                 }
 
-                                if (duelStarter is GamePlayer)
-                                    ((GamePlayer)duelStarter).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetDeclines", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
-                                client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouDecline", duelStarter.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                                duelStarter.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetDeclines", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                             }
                         }
 
@@ -163,30 +158,28 @@ namespace DOL.GS.Commands
                             weak = client.Player.TempProperties.GetProperty<WeakRef>(DUEL_STARTER_WEAK, null);
                         }
 
-                        if (weak == null || (duelStarter = weak.Target as GameLiving) == null)
+                        if (weak == null || (duelStarter = weak.Target as IGamePlayer) == null)
                         {
                             client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.ConsideringDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                             return;
                         }
 
-                        if (!CheckDuelStart(client.Player, duelStarter))
+                        if (!CheckDuelStart(client.Player, (GameLiving)duelStarter))
                             return;
 
-                        GameDuel duel = new(duelStarter, client.Player);
+                        GameDuel duel = new((GameLiving)duelStarter, client.Player);
                         duel.Start();
 
-                        if (duelStarter is GamePlayer)
-                            ((GamePlayer)duelStarter).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAccept", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
+                        duelStarter.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetAccept", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                         client.Player.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouAccept"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
 
                         lock (client.Player.TempProperties)
                         {
                             client.Player.TempProperties.RemoveProperty(DUEL_STARTER_WEAK);
                         }
-                        lock (duelStarter.TempProperties)
+                        lock (((GameLiving)duelStarter).TempProperties)
                         {
-                            duelStarter.TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
+                            ((GameLiving)duelStarter).TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
                         }
 
                         return;
@@ -200,7 +193,7 @@ namespace DOL.GS.Commands
                             client.Player.TempProperties.RemoveProperty(DUEL_STARTER_WEAK);
                         }
 
-                        if (weak == null || (duelStarter = weak.Target as GameLiving) == null)
+                        if (weak == null || (duelStarter = weak.Target as GamePlayer) == null)
                         {
                             client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                             return;
@@ -211,9 +204,7 @@ namespace DOL.GS.Commands
                             duelStarter.TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
                         }
 
-                        if (duelStarter is GamePlayer)
-                            ((GamePlayer)duelStarter).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetDeclines", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
+                        duelStarter.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetDeclines", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                         client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouDecline", duelStarter.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                         return;
                     }
@@ -226,20 +217,18 @@ namespace DOL.GS.Commands
                             client.Player.TempProperties.RemoveProperty(CHALLENGE_TARGET_WEAK);
                         }
 
-                        if (weak == null || (duelTarget = weak.Target as GameLiving) == null)
+                        if (weak == null || (duelTarget = weak.Target as GamePlayer) == null)
                         {
                             client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouHaventChallenged"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                             return;
                         }
 
-                        lock (duelTarget.TempProperties)
+                        lock (((GameLiving)duelTarget).TempProperties)
                         {
-                            duelTarget.TempProperties.RemoveProperty(DUEL_STARTER_WEAK);
+                            ((GameLiving)duelTarget).TempProperties.RemoveProperty(DUEL_STARTER_WEAK);
                         }
 
-                        if (duelStarter is GamePlayer)
-                            ((GamePlayer)duelStarter).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetCancel", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
+                        duelTarget.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetCancel", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                         client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouCancel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                         return;
                     }
@@ -248,20 +237,32 @@ namespace DOL.GS.Commands
                     {
                         GameLiving target = client.Player.DuelPartner;
 
-						if (target == null)
-						{
-							client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-							return;
-						}
+                        if (target == null)
+                        {
+                            client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.NotInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                            return;
+                        }
 
                         client.Player.Duel.Stop();
-
                         client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.YouSurrender", target.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
-                        if (target is GamePlayer)
-                            ((GamePlayer)target).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetSurrender", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
-
+                        ((IGamePlayer)target).Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.TargetSurrender", client.Player.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                         Message.SystemToArea(client.Player, LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Duel.PlayerVsPlayer", client.Player.Name, target.Name), eChatType.CT_Emote, client.Player, target);
+
+                        return;
+                    }
+
+                    case "ready":
+                    {
+                        client.Player.DuelReady = !client.Player.DuelReady;
+
+                        string message;
+
+                        if (client.Player.DuelReady)
+                            message = "You are ready for your next duel.";
+                        else
+                            message = "You are no longer ready for your next duel.";
+
+                        client.Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
                         return;
                     }
@@ -279,59 +280,51 @@ namespace DOL.GS.Commands
         /// <returns>true if players can start a duel</returns>
         private static bool CheckDuelStart(GameLiving actionSource, GameLiving actionTarget)
         {
-            GamePlayer playerActionSource = actionSource as GamePlayer;
-            GamePlayer playerActionTarget = actionTarget as GamePlayer;
-            MimicNPC mimicActionSource = actionSource as MimicNPC;
-            MimicNPC mimicActionTarget = actionTarget as MimicNPC;
+            IGamePlayer playerActionSource = actionSource as IGamePlayer;
 
             if (!GameServer.ServerRules.IsSameRealm(actionSource, actionTarget, true))
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.EnemyRealm"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.EnemyRealm"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
-
-            if (playerActionSource?.DuelPartner != null)
+            if (playerActionSource.DuelPartner != null)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInDuel"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
-            if (playerActionTarget?.DuelPartner != null)
+            if (((IGamePlayer)actionTarget).DuelPartner != null)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInDuel", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInDuel", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
-
-            if (mimicActionSource?.DuelPartner != null || mimicActionTarget?.DuelPartner != null)
-                return false;
-
             if (actionTarget.InCombat)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInCombat", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInCombat", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
             if (actionSource.InCombat)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInCombat"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInCombat"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
             if (actionTarget.Group != null)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInGroup", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetInGroup", actionTarget.Name), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
             if (actionSource.Group != null)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInGroup"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouInGroup"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
             if (actionSource.Health < actionSource.MaxHealth)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.YouHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
             if (actionTarget.Health < actionTarget.MaxHealth)
             {
-                playerActionSource?.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
+                playerActionSource.Out.SendMessage(LanguageMgr.GetTranslation(playerActionSource.Client, "Scripts.Players.Duel.TargetHealth"), eChatType.CT_Emote, eChatLoc.CL_SystemWindow);
                 return false;
             }
 

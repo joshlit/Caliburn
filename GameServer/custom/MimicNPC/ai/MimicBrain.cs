@@ -17,9 +17,6 @@ using System.Text;
 
 namespace DOL.AI.Brain
 {
-    /// <summary>
-    /// Standard brain for standard mobs
-    /// </summary>
     public class MimicBrain : ABrain, IOldAggressiveBrain
     {
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -41,12 +38,12 @@ namespace DOL.AI.Brain
         public bool IsMainAssist
         { get { return Body.Group?.MimicGroup.MainAssist == Body; } }
 
-        private MimicNPC m_mimicBody;
+        private MimicNPC _mimicBody;
 
         public MimicNPC MimicBody
         {
-            get { return m_mimicBody; }
-            set { m_mimicBody = value; }
+            get { return _mimicBody; }
+            set { _mimicBody = value; }
         }
 
         public const int MAX_AGGRO_DISTANCE = 3600;
@@ -151,11 +148,14 @@ namespace DOL.AI.Brain
             FireAmbientSentence();
 
             // Check aggro only if our aggro list is empty and we're not in combat.
-            if (AggroLevel > 0 && aggroRange > 0 && !HasAggro && !Body.AttackState && Body.CurrentSpellHandler == null)
-            {
-                CheckPlayerAggro();
-                CheckNPCAggro(aggroRange);
-            }
+            //if (AggroLevel > 0 && aggroRange > 0 && !HasAggro && !Body.AttackState && Body.CurrentSpellHandler == null)
+            //{
+            //    CheckPlayerAggro();
+            //    CheckNPCAggro(aggroRange);
+            //}
+
+            CheckPlayerAggro();
+            CheckNPCAggro(aggroRange);
 
             // Some calls rely on this method to return if there's something in the aggro list, not necessarily to perform a proximity aggro check.
             // But this doesn't necessarily return whether or not the check was positive, only the current state (LoS checks take time).
@@ -425,11 +425,9 @@ namespace DOL.AI.Brain
                             {
                                 if (Body.TargetObject is GameLiving target)
                                 {
-                                    GamePlayer gamePlayer = target as GamePlayer;
-                                    MimicNPC mimic = target as MimicNPC;
+                                    IGamePlayer gamePlayer = target as IGamePlayer;
 
-                                    if ((gamePlayer != null && gamePlayer.CharacterClass.ClassType == eClassType.ListCaster) ||
-                                        (mimic != null && mimic.CharacterClass.ClassType == eClassType.ListCaster))
+                                    if (gamePlayer != null && gamePlayer.CharacterClass.ClassType == eClassType.ListCaster)
                                         break;
 
                                     if (Body.IsWithinRadius(Body.TargetObject, Body.AttackRange) &&
@@ -630,7 +628,7 @@ namespace DOL.AI.Brain
         {
             if (Body.Group.MimicGroup.CCTargets.Count > 0)
             {
-                if (CheckSpells(MimicBrain.eCheckSpellType.CrowdControl))
+                if (CheckSpells(eCheckSpellType.CrowdControl))
                     return;
             }
 
@@ -885,8 +883,6 @@ namespace DOL.AI.Brain
         /// </summary>
         public virtual void ClearAggroList()
         {
-            CanBAF = true; // Mobs that drop out of combat can BAF again
-
             lock ((AggroTable as ICollection).SyncRoot)
             {
                 AggroTable.Clear();
@@ -912,7 +908,10 @@ namespace DOL.AI.Brain
             if (Body.TargetObject != null)
             {
                 if (!IsFleeing && CheckSpells(eCheckSpellType.Offensive))
-                    Body.StopAttack();
+                {
+                    //if (Body.IsAttacking)
+                    //    Body.StopAttack();
+                }
                 else
                 {
                     CheckOffensiveAbilities();
@@ -969,37 +968,40 @@ namespace DOL.AI.Brain
 
                     if (Body.TargetObject != LastTargetObject)
                         ResetFlanking();
-
-                    if (MimicBody.CanUsePositionalStyles && !IsMainTank && Body.ActiveWeapon != null && Body.ActiveWeapon.Item_Type != (int)eInventorySlot.DistanceWeapon)
+                    
+                    if (Body.ActiveWeapon?.Item_Type != (int)eInventorySlot.DistanceWeapon && Body.IsWithinRadius(Body.TargetObject, Body.attackComponent.AttackRange))
                     {
-                        if (Body.TargetObject is GameLiving livingTarget)
+                        if (MimicBody.CanUsePositionalStyles && !IsMainTank && Body.ActiveWeapon != null)
                         {
-                            if (livingTarget.IsMoving || livingTarget.TargetObject == Body)
-                                ResetFlanking();
+                            if (Body.TargetObject is GameLiving livingTarget)
+                            {
+                                if (livingTarget.IsMoving || livingTarget.TargetObject == Body)
+                                    ResetFlanking();
 
-                            if (TargetFlankPosition == null && !IsFlanking && !livingTarget.IsMoving && livingTarget.TargetObject != Body)
-                            {
-                                LastTargetObject = Body.TargetObject;
-                                TargetFlankPosition = GetStylePositionPoint(livingTarget, GetPositional());
-                                Body.StopFollowing();
-                                Body.StopAttack();
-                                Body.WalkTo(new Point3D(TargetFlankPosition.X, TargetFlankPosition.Y, livingTarget.Z), Body.MaxSpeed);
-                                return;
-                            }
-
-                            if (Body.IsTargetPositionValid)
-                            {
-                                if (TargetFlankPosition == null)
-                                    Body.Follow(Body.TargetObject, 75, 5000);
-                                else
-                                    return;
-                            }
-                            else if (TargetFlankPosition != null)
-                            {
-                                if (Body.GetDistance(TargetFlankPosition) < 5)
+                                if (TargetFlankPosition == null && !IsFlanking && !livingTarget.IsMoving && livingTarget.TargetObject != Body)
                                 {
-                                    IsFlanking = true;
-                                    TargetFlankPosition = null;
+                                    LastTargetObject = Body.TargetObject;
+                                    TargetFlankPosition = GetStylePositionPoint(livingTarget, GetPositional());
+                                    Body.StopFollowing();
+                                    Body.StopAttack();
+                                    Body.WalkTo(new Point3D(TargetFlankPosition.X, TargetFlankPosition.Y, livingTarget.Z), Body.MaxSpeed);
+                                    return;
+                                }
+
+                                if (Body.IsTargetPositionValid)
+                                {
+                                    if (TargetFlankPosition == null)
+                                        Body.Follow(Body.TargetObject, 75, 5000);
+                                    else
+                                        return;
+                                }
+                                else if (TargetFlankPosition != null)
+                                {
+                                    if (Body.GetDistance(TargetFlankPosition) < 5)
+                                    {
+                                        IsFlanking = true;
+                                        TargetFlankPosition = null;
+                                    }
                                 }
                             }
                         }
@@ -1219,6 +1221,9 @@ namespace DOL.AI.Brain
             // We keep shades in aggro lists so that mobs attack them after their pet dies, but we must never return one.
             GameLiving nextTarget = aggroList.Find(x => EffectListService.GetEffectOnTarget(x.Key, eEffect.Shade) == null).Key;
 
+            if (nextTarget != null && nextTarget as GameNPC != null && ((GameNPC)nextTarget).Brain is IControlledBrain brain)
+                nextTarget = brain.GetLivingOwner();
+
             // TODO: Make target selection a little more random in PvP.
             //var random = aggroList.FindAll(x => EffectListService.GetEffectOnTarget(x.Key, eEffect.Shade) == null);
             //GameLiving nextTarget = null;
@@ -1244,24 +1249,21 @@ namespace DOL.AI.Brain
             // Get owner if target is pet or subpet
             GameLiving realTarget = target;
 
-            if (realTarget is GameNPC npcTarget && npcTarget.Brain is IControlledBrain npcTargetBrain)
+            if (realTarget as GameNPC != null && ((GameNPC)realTarget).Brain is IControlledBrain npcTargetBrain)
                 realTarget = npcTargetBrain.GetLivingOwner();
 
             // Only attack if green+ to target
             if (realTarget.IsObjectGreyCon(Body))
                 return false;
 
-            // If this npc have Faction return the AggroAmount to Player
-            if (Body.Faction != null)
-            {
-                if (realTarget is GameNPC && realTarget is not MimicNPC && realTarget is not GameKeepGuard && PvPMode)
-                    return false;
+            if (realTarget is IGamePlayer && realTarget.Realm != Body.Realm)
+                return true;
 
-                if (realTarget is GamePlayer && realTarget.Realm != Body.Realm)
-                    return true;
-                else if (realTarget is GameNPC realTargetNpc && Body.Faction.EnemyFactions.Contains(realTargetNpc.Faction))
-                    return true;
-            }
+            if (realTarget is GameKeepGuard && realTarget.Realm != Body.Realm)
+                return true;
+
+            if (realTarget is GameNPC && realTarget is not MimicNPC && realTarget is not GameKeepGuard && PvPMode)
+                return false;
 
             // We put this here to prevent aggroing non-factions npcs
             return (Body.Realm != eRealm.None || realTarget is not GameNPC) && AggroLevel > 0;
@@ -1326,180 +1328,6 @@ namespace DOL.AI.Brain
 
         #endregion Aggro
 
-        #region Bring a Friend
-
-        /// <summary>
-        /// Initial range to try to get BAFs from.
-        /// May be overloaded for specific brain types, ie. dragons or keep guards
-        /// </summary>
-        protected virtual ushort BAFInitialRange => 250;
-
-        /// <summary>
-        /// Max range to try to get BAFs from.
-        /// May be overloaded for specific brain types, ie.dragons or keep guards
-        /// </summary>
-        protected virtual ushort BAFMaxRange => 2000;
-
-        /// <summary>
-        /// Max range to try to look for nearby players.
-        /// May be overloaded for specific brain types, ie.dragons or keep guards
-        /// </summary>
-        protected virtual ushort BAFPlayerRange => 5000;
-
-        /// <summary>
-        /// Can the mob bring a friend?
-        /// Set to false when a mob BAFs or is brought by a friend.
-        /// </summary>
-        public virtual bool CanBAF { get; set; } = true;
-
-        /// <summary>
-        /// Bring friends when this mob aggros
-        /// </summary>
-        /// <param name="attacker">Whoever triggered the BAF</param>
-        protected virtual void BringFriends(GameLiving attacker)
-        {
-            if (!CanBAF)
-                return;
-
-            GamePlayer puller;  // player that triggered the BAF
-            GameLiving actualPuller;
-
-            // Only BAF on players and pets of players
-            if (attacker is GamePlayer)
-            {
-                puller = (GamePlayer)attacker;
-                actualPuller = puller;
-            }
-            else if (attacker is GameSummonedPet pet && pet.Owner is GamePlayer owner)
-            {
-                puller = owner;
-                actualPuller = attacker;
-            }
-            else if (attacker is BDSubPet bdSubPet && bdSubPet.Owner is GameSummonedPet bdPet && bdPet.Owner is GamePlayer bdOwner)
-            {
-                puller = bdOwner;
-                actualPuller = bdPet;
-            }
-            else
-                return;
-
-            CanBAF = false; // Mobs only BAF once per fight
-
-            int numAttackers = 0;
-
-            List<GamePlayer> victims = null; // Only instantiated if we're tracking potential victims
-
-            // These are only used if we have to check for duplicates
-            HashSet<string> countedVictims = null;
-            HashSet<string> countedAttackers = null;
-
-            BattleGroup bg = puller.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
-
-            // Check group first to minimize the number of HashSet.Add() calls
-            if (puller.Group is Group group)
-            {
-                if (Properties.BAF_MOBS_COUNT_BG_MEMBERS && bg != null)
-                    countedAttackers = new HashSet<string>(); // We have to check for duplicates when counting attackers
-
-                if (!Properties.BAF_MOBS_ATTACK_PULLER)
-                {
-                    if (Properties.BAF_MOBS_ATTACK_BG_MEMBERS && bg != null)
-                    {
-                        // We need a large enough victims list for group and BG, and also need to check for duplicate victims
-                        victims = new List<GamePlayer>(group.MemberCount + bg.PlayerCount - 1);
-                        countedVictims = new HashSet<string>();
-                    }
-                    else
-                        victims = new List<GamePlayer>(group.MemberCount);
-                }
-
-                foreach (GamePlayer player in group.GetPlayersInTheGroup())
-                {
-                    if (player != null && (player.InternalID == puller.InternalID || player.IsWithinRadius(puller, BAFPlayerRange, true)))
-                    {
-                        numAttackers++;
-                        countedAttackers?.Add(player.InternalID);
-
-                        if (victims != null)
-                        {
-                            victims.Add(player);
-                            countedVictims?.Add(player.InternalID);
-                        }
-                    }
-                }
-            }
-
-            // Do we have to count BG members, or add them to victims list?
-            if (bg != null && (Properties.BAF_MOBS_COUNT_BG_MEMBERS || (Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !Properties.BAF_MOBS_ATTACK_PULLER)))
-            {
-                if (victims == null && Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !Properties.BAF_MOBS_ATTACK_PULLER)
-                    // Puller isn't in a group, so we have to create the victims list for the BG
-                    victims = new List<GamePlayer>(bg.PlayerCount);
-
-                foreach (GamePlayer player2 in bg.Members.Keys)
-                {
-                    if (player2 != null && (player2.InternalID == puller.InternalID || player2.IsWithinRadius(puller, BAFPlayerRange, true)))
-                    {
-                        if (Properties.BAF_MOBS_COUNT_BG_MEMBERS && (countedAttackers == null || !countedAttackers.Contains(player2.InternalID)))
-                            numAttackers++;
-
-                        if (victims != null && (countedVictims == null || !countedVictims.Contains(player2.InternalID)))
-                            victims.Add(player2);
-                    }
-                }
-            }
-
-            if (numAttackers == 0)
-                // Player is alone
-                numAttackers = 1;
-
-            int percentBAF = Properties.BAF_INITIAL_CHANCE
-                + ((numAttackers - 1) * Properties.BAF_ADDITIONAL_CHANCE);
-
-            int maxAdds = percentBAF / 100; // Multiple of 100 are guaranteed BAFs
-
-            // Calculate chance of an addition add based on the remainder
-            if (Util.Chance(percentBAF % 100))
-                maxAdds++;
-
-            if (maxAdds > 0)
-            {
-                int numAdds = 0; // Number of mobs currently BAFed
-                ushort range = BAFInitialRange; // How far away to look for friends
-
-                // Try to bring closer friends before distant ones.
-                while (numAdds < maxAdds && range <= BAFMaxRange)
-                {
-                    foreach (GameNPC npc in Body.GetNPCsInRadius(range))
-                    {
-                        if (numAdds >= maxAdds)
-                            break;
-
-                        // If it's a friend, have it attack
-                        if (npc.IsFriend(Body) && npc.IsAggressive && npc.IsAvailable && npc.Brain is StandardMobBrain brain)
-                        {
-                            brain.CanBAF = false; // Mobs brought cannot bring friends of their own
-                            GameLiving target;
-
-                            if (victims != null && victims.Count > 0)
-                                target = victims[Util.Random(0, victims.Count - 1)];
-                            else
-                                target = actualPuller;
-
-                            brain.AddToAggroList(target, 0);
-                            brain.AttackMostWanted();
-                            numAdds++;
-                        }
-                    }
-
-                    // Increase the range for finding friends to join the fight.
-                    range *= 2;
-                }
-            }
-        }
-
-        #endregion Bring a Friend
-
         #region Spells
 
         public enum eCheckSpellType
@@ -1521,17 +1349,17 @@ namespace DOL.AI.Brain
             bool casted = false;
             List<Spell> spellsToCast = new();
 
-            //if (QueuedOffensiveSpell != null)
-            //{
-            //    if (CheckOffensiveSpells(QueuedOffensiveSpell))
-            //    {
-            //        casted = true;
-            //        QueuedOffensiveSpell = null;
-            //    }
-            //}
+            if (QueuedOffensiveSpell != null)
+            {
+                if (CheckOffensiveSpells(QueuedOffensiveSpell))
+                {
+                    casted = true;
+                    QueuedOffensiveSpell = null;
+                }
+            }
 
             // Healers should heal whether in combat or out of it.
-            if (Body.CanCastHealSpells)
+            if (!casted && Body.CanCastHealSpells)
             {
                 GameLiving livingToHeal = null;
 
@@ -1581,10 +1409,7 @@ namespace DOL.AI.Brain
 
                 // Just pick a rando for now.
                 Spell spellToCast = Body.HealSpells[Util.Random(Body.HealSpells.Count - 1)];
-                if (CheckHealSpells(spellToCast, numNeedHealing, singleEmergency, groupEmergency, livingToHeal))
-                {
-                    casted = true;
-                }
+                casted = CheckHealSpells(spellToCast, numNeedHealing, singleEmergency, groupEmergency, livingToHeal);
             }
 
             if (!casted && type == eCheckSpellType.CrowdControl)
@@ -1603,8 +1428,6 @@ namespace DOL.AI.Brain
                     {
                         Spell spell = spellsToCast[Util.Random(spellsToCast.Count - 1)];
 
-                        Body.TurnTo(Body.TargetObject);
-
                         casted = Body.CastSpell(spell, m_mobSpellLine);
 
                         if (casted)
@@ -1615,7 +1438,7 @@ namespace DOL.AI.Brain
                                 Body.StopFollowing();
                             else if (Body.FollowTarget != Body.TargetObject)
                             {
-                                Body.Follow(Body.TargetObject, spell.Range - 30, 5000);
+                                Body.Follow(Body.TargetObject, spell.Range - 10, 5000);
                             }
                         }
                     }
@@ -1706,6 +1529,12 @@ namespace DOL.AI.Brain
                 {
                     foreach (Spell spell in Body.Spells)
                     {
+                        if (spell.SpellType == eSpellType.Charm ||
+                            spell.SpellType == eSpellType.Amnesia ||
+                            spell.SpellType == eSpellType.Confusion ||
+                            spell.SpellType == eSpellType.Taunt)
+                            continue;
+
                         if (CanCastOffensiveSpell(spell))
                             spellsToCast.Add(spell);
                     }
@@ -1941,13 +1770,21 @@ namespace DOL.AI.Brain
                 #region Summon
 
                 case eSpellType.SummonMinion:
-                case eSpellType.SummonUnderhill:
-                case eSpellType.SummonDruidPet:
+
+                if (Body.ControlledBrain == null)
+                    break;
+                else
+                    goto case eSpellType.SummonCommander;
+
                 case eSpellType.SummonCommander:
+                case eSpellType.SummonUnderhill:
+                case eSpellType.SummonDruidPet: 
                 case eSpellType.SummonSimulacrum:
                 case eSpellType.SummonSpiritFighter:
+                
+
                 if (Body.ControlledBrain != null)
-                    break;
+                    return false;
 
                 if (Body.ControlledNpcList == null)
                     Body.SetControlledBrain(Body.ControlledBrain);
@@ -1973,17 +1810,6 @@ namespace DOL.AI.Brain
                 break;
 
                 case eSpellType.PetSpell:
-                if (Body.ControlledBrain != null)
-                {
-                    if (Body.ControlledBrain.Body != null)
-                    {
-                        if (spell.Target == eSpellTarget.PET && !LivingHasEffect(Body.ControlledBrain.Body, spell))
-                            Body.TargetObject = Body.ControlledBrain.Body;
-                    }
-                }
-                break;
-
-                case eSpellType.Pet:
                 break;
 
                 #endregion Summon
@@ -1991,6 +1817,9 @@ namespace DOL.AI.Brain
                 #region Pulse
 
                 case eSpellType.SpeedEnhancement:
+
+                if (spell.Target == eSpellTarget.PET)
+                    goto case eSpellType.Bladeturn;
 
                 if (!Body.InCombat && !LivingHasEffect(Body, spell))
                     Body.TargetObject = Body;
@@ -2009,20 +1838,12 @@ namespace DOL.AI.Brain
                 case eSpellType.ColdResistBuff:
                 case eSpellType.BodyResistBuff:
                 case eSpellType.MatterResistBuff:
-                {
-                    // Temp to stop Paladins from spamming.
-                    // TODO: Smarter use of resist chants.
-                    if (spell.Pulse > 0)
-                        break;
-
-                    goto case eSpellType.Bladeturn;
-                }
+                case eSpellType.AllMagicResistBuff:
                 case eSpellType.EnduranceRegenBuff:
                 case eSpellType.PowerRegenBuff:
                 case eSpellType.AblativeArmor:
                 case eSpellType.AcuityBuff:
                 case eSpellType.AFHitsBuff:
-                case eSpellType.AllMagicResistBuff:
                 case eSpellType.ArmorAbsorptionBuff:
                 case eSpellType.ArmorFactorBuff:
                 case eSpellType.Buff:
@@ -2058,8 +1879,25 @@ namespace DOL.AI.Brain
                 case eSpellType.DamageShield:
                 case eSpellType.Bladeturn:
                 {
+                    if (spell.Concentration > 0)
+                    {
+                        if (spell.Concentration > Body.Concentration - Body.UsedConcentration)
+                            return false;
+                    }
+
                     if (spell.Target == eSpellTarget.PET)
+                    {
+                        // TODO: Add logic for damage shield use
+                        if (spell.SpellType == eSpellType.DamageShield)
+                            return false;
+
+                        if (Body.ControlledBrain?.Body != null)
+                        {
+                            if (!LivingHasEffect(Body.ControlledBrain.Body, spell))
+                                Body.TargetObject = Body.ControlledBrain.Body;
+                        }
                         break;
+                    }
 
                     // Buff self
                     if (!LivingHasEffect(Body, spell))
@@ -2240,7 +2078,8 @@ namespace DOL.AI.Brain
 
             if (Body?.TargetObject != null)
             {
-                //log.Info("Tried to cast " + spell.Name + spell.SpellType.ToString());
+                //log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString());
+
                 casted = Body.CastSpell(spell, m_mobSpellLine, false);
             }
 
@@ -2252,8 +2091,7 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual bool CheckOffensiveSpells(Spell spell, bool quickCast = false)
         {
-            if (spell.SpellType == eSpellType.Charm || spell.SpellType == eSpellType.Amnesia || spell.SpellType == eSpellType.Confusion)
-                return false;
+            
 
             if (spell.SpellType == eSpellType.Taunt)
                 return false;
@@ -2263,7 +2101,7 @@ namespace DOL.AI.Brain
 
             if (!Body.IsWithinRadius(Body.TargetObject, spell.Range))
             {
-                Body.Follow(Body.TargetObject, spell.Range - 30, 5000);
+                Body.Follow(Body.TargetObject, spell.Range - 10, 5000);
                 QueuedOffensiveSpell = spell;
                 return false;
             }
@@ -2272,20 +2110,7 @@ namespace DOL.AI.Brain
 
             if (Body.TargetObject is GameLiving living && (spell.Duration == 0 || !LivingHasEffect(living, spell) || spell.SpellType == eSpellType.DirectDamageWithDebuff || spell.SpellType == eSpellType.DamageSpeedDecrease))
             {
-                if (Body.TargetObject != Body)
-                    Body.TurnTo(Body.TargetObject);
-
                 casted = Body.CastSpell(spell, m_mobSpellLine);
-
-                if (casted)
-                {
-                    if (spell.CastTime > 0)
-                        Body.StopFollowing();
-                    else if (Body.FollowTarget != Body.TargetObject)
-                    {
-                        Body.Follow(Body.TargetObject, spell.Range - 30, spell.Range + 500);
-                    }
-                }
             }
 
             return casted;
@@ -2296,8 +2121,7 @@ namespace DOL.AI.Brain
             if (spell.HasRecastDelay && Body.GetSkillDisabledDuration(spell) > 0)
                 return false;
 
-            GameObject lastTarget = Body.TargetObject;
-            Body.TargetObject = null;
+            bool castSpell = false;
 
             switch (spell.SpellType)
             {
@@ -2309,9 +2133,6 @@ namespace DOL.AI.Brain
                 case eSpellType.SavageParryBuff:
                 case eSpellType.SavageEvadeBuff:
 
-                //if (Body.HealthPercent < 10)
-                //    break;
-
                 if (spell.SpellType == eSpellType.SavageCrushResistanceBuff ||
                     spell.SpellType == eSpellType.SavageSlashResistanceBuff ||
                     spell.SpellType == eSpellType.SavageThrustResistanceBuff &&
@@ -2319,10 +2140,26 @@ namespace DOL.AI.Brain
                     break;
 
                 if (!LivingHasEffect(Body, spell))
-                    Body.TargetObject = Body;
+                    castSpell = true;
 
                 break;
 
+                case eSpellType.BodySpiritEnergyBuff:
+                case eSpellType.HeatColdMatterBuff:
+                case eSpellType.SpiritResistBuff:
+                case eSpellType.EnergyResistBuff:
+                case eSpellType.HeatResistBuff:
+                case eSpellType.ColdResistBuff:
+                case eSpellType.BodyResistBuff:
+                case eSpellType.MatterResistBuff:
+                {
+                    // Temp to stop Paladins/Skalds from spamming.
+                    // TODO: Smarter use of resist chants.
+                    if (spell.Pulse > 0)
+                        break;
+
+                    break;
+                }
                 case eSpellType.CombatHeal:
                 case eSpellType.DamageAdd:
                 case eSpellType.ArmorFactorBuff:
@@ -2332,37 +2169,24 @@ namespace DOL.AI.Brain
                 case eSpellType.AblativeArmor:
                 case eSpellType.Bladeturn:
                 case eSpellType.OffensiveProc:
-                case eSpellType.MatterResistBuff:
-                case eSpellType.ColdResistBuff:
-                case eSpellType.HeatResistBuff:
-                case eSpellType.EnergyResistBuff:
-                case eSpellType.SpiritResistBuff:
-                case eSpellType.BodyResistBuff:
                 case eSpellType.SummonHunterPet:
 
                 if (spell.SpellType == eSpellType.CombatSpeedBuff)
                 {
-                    if (!Body.IsWithinRadius(lastTarget, Body.AttackRange))
+                    if (Body.TargetObject != null && !Body.IsWithinRadius(Body.TargetObject, Body.AttackRange))
                         break;
                 }
 
                 if (!LivingHasEffect(Body, spell))
-                {
-                    Body.TargetObject = Body;
-                }
+                    castSpell = true;
 
                 break;
             }
 
-            if (Body.TargetObject != null)
-            {
+            if (castSpell)
                 Body.CastSpell(spell, m_mobSpellLine);
-                Body.TargetObject = lastTarget;
-                return true;
-            }
 
-            Body.TargetObject = lastTarget;
-            return false;
+            return castSpell;
         }
 
         /// <summary>
@@ -2410,7 +2234,7 @@ namespace DOL.AI.Brain
                 // Try to limit the debuffs cast to save mana and time spent doing so.
                 if (spell.IsInstantCast && MimicBody.CharacterClass.ClassType == eClassType.ListCaster)
                 {
-                    if (!Util.Chance(20))
+                    if (!Util.Chance(25))
                         break;
                 }
 
@@ -2430,9 +2254,6 @@ namespace DOL.AI.Brain
 
             if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && !(LivingHasEffect(living, spell)))))
             {
-                if (Body.TargetObject != Body)
-                    Body.TurnTo(Body.TargetObject);
-
                 Body.CastSpell(spell, m_mobSpellLine, true);
                 Body.TargetObject = lastTarget;
                 return true;

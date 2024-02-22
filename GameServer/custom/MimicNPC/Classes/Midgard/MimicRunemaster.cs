@@ -10,12 +10,10 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-            MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             SetCasterSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -26,43 +24,43 @@ namespace DOL.GS.Scripts
         {
             SpecName = "RunemasterSpec";
 
-            WeaponTypeOne = "Staff";
+            WeaponTypeOne = eObjectType.Staff;
 
             int randVariance = Util.Random(7);
-
+            
             switch (randVariance)
             {
                 case 0:
                 case 1:
-                Add("Darkness", 47, 1.0f);
-                Add("Suppression", 26, 0.1f);
-                Add("Runecarving", 5, 0.0f);
+                Add(Specs.Darkness, 47, 1.0f);
+                Add(Specs.Suppression, 26, 0.1f);
+                Add(Specs.Runecarving, 5, 0.0f);
                 break;
 
                 case 2:
                 case 3:
-                Add("Darkness", 24, 0.5f);
-                Add("Suppression", 6, 0.1f);
-                Add("Runecarving", 48, 1.0f);
+                Add(Specs.Darkness, 24, 0.5f);
+                Add(Specs.Suppression, 6, 0.1f);
+                Add(Specs.Runecarving, 48, 1.0f);
                 break;
 
                 case 4:
-                Add("Darkness", 5, 0.0f);
-                Add("Suppression", 26, 0.1f);
-                Add("Runecarving", 47, 1.0f);
+                Add(Specs.Darkness, 5, 0.0f);
+                Add(Specs.Suppression, 26, 0.1f);
+                Add(Specs.Runecarving, 47, 1.0f);
                 break;
 
                 case 5:
                 case 6:
-                Add("Darkness", 20, 0.1f);
-                Add("Suppression", 50, 1.0f);
-                Add("Runecarving", 4, 0.0f);
+                Add(Specs.Darkness, 20, 0.1f);
+                Add(Specs.Suppression, 50, 1.0f);
+                Add(Specs.Runecarving, 4, 0.0f);
                 break;
 
                 case 7:
-                Add("Darkness", 31, 0.1f);
-                Add("Suppression", 44, 1.0f);
-                Add("Runecarving", 4, 0.0f);
+                Add(Specs.Darkness, 31, 0.1f);
+                Add(Specs.Suppression, 44, 1.0f);
+                Add(Specs.Runecarving, 4, 0.0f);
                 break;
             }
         }

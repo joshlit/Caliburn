@@ -24,7 +24,7 @@ namespace DOL.GS.Scripts
 
 			//Volley effect apply crit chance during volley effect
 			ECSGameEffect volley = EffectListService.GetEffectOnTarget(living, eEffect.Volley);
-			if (living is GamePlayer || living is MimicNPC && volley != null)
+			if (living is IGamePlayer && volley != null)
 			{
 				chance += 10;
 
@@ -35,7 +35,7 @@ namespace DOL.GS.Scripts
 			if (living is GameSummonedPet gamePet)
 			{
 				if (ServerProperties.Properties.EXPAND_WILD_MINION && gamePet.Brain is IControlledBrain playerBrain
-					&& playerBrain.GetPlayerOwner() is GamePlayer player
+					&& playerBrain.GetLivingOwner() is IGamePlayer player
 					&& player.GetAbility<RealmAbilities.AtlasOF_WildMinionAbility>() is RealmAbilities.AtlasOF_WildMinionAbility ab)
 					chance += ab.Amount;
 			}

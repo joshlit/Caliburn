@@ -171,6 +171,11 @@ namespace DOL.GS
             return m_groupMembers.OfType<GamePlayer>().ToArray();
         }
 
+        public ICollection<IGamePlayer> GetIPlayersInTheGroup()
+        {
+            return m_groupMembers.OfType<IGamePlayer>().ToArray();
+        }
+
         public ICollection<GamePlayer> GetNearbyPlayersInTheGroup(GamePlayer source)
         {
             return m_groupMembers.OfType<GamePlayer>().Where(groupmate =>

@@ -40,22 +40,9 @@ namespace DOL.AI.Brain
             if (!Init)
             {
                 _brain.AggroLevel = 100;
+                _brain.AggroRange = 3600;
 
-                if (_brain.MimicBody.Duel != null)
-                {
-                    _brain.PvPMode = true;
-                    _brain.AggroRange = 3600;
-                }
-                else
-                {
-                    if (_brain.Body.CurrentRegion.IsRvR || _brain.Body.CurrentRegionID == 252)
-                        _brain.PvPMode = true;
-                    else
-                        _brain.PvPMode = false;
-
-                    _brain.AggroRange = _brain.PvPMode ? 3600 : 1500;
-                }
-
+                _brain.PvPMode = true;
                 _brain.Roam = true;
                 _brain.Defend = false;
 
@@ -233,9 +220,10 @@ namespace DOL.AI.Brain
 
     public class MimicState_Aggro : MimicState
     {
-        private const int LEAVE_WHEN_OUT_OF_COMBAT_FOR = 25000;
+        private const int LEAVE_WHEN_OUT_OF_COMBAT_FOR = 10000;
 
         private long _aggroTime = GameLoop.GameLoopTime; // Used to prevent leaving on the first think tick, due to `InCombatInLast` returning false.
+        private long _checkAggroTime = GameLoop.GameLoopTime + 5000;
 
         public MimicState_Aggro(MimicBrain brain) : base(brain)
         {
@@ -247,8 +235,7 @@ namespace DOL.AI.Brain
             if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
                 Console.WriteLine($"{_brain.Body} is entering AGGRO");
 
-            if (_brain.Body.IsSitting)
-                _brain.MimicBody.Sit(false);
+            _brain.MimicBody.Sit(false);
 
             _aggroTime = GameLoop.GameLoopTime;
             base.Enter();
@@ -261,7 +248,6 @@ namespace DOL.AI.Brain
 
             _brain.Body.TargetObject = null;
 
-            //_brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
             base.Exit();
         }
 
@@ -269,6 +255,12 @@ namespace DOL.AI.Brain
         {
             if (_brain.PvPMode && !_brain.HasAggro)
                 _brain.CheckProximityAggro(_brain.AggroRange);
+
+            if (_checkAggroTime < GameLoop.GameLoopTime)
+            {
+                _brain.CheckProximityAggro(_brain.AggroRange);
+                _checkAggroTime = GameLoop.GameLoopTime + 5000;
+            }
 
             //if (_brain.IsFleeing)
             //{
@@ -320,6 +312,8 @@ namespace DOL.AI.Brain
                             else
                                 _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
                         }
+                        else
+                            _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
                     }
 
                     return;
@@ -457,7 +451,8 @@ namespace DOL.AI.Brain
             _brain.ClearAggroList();
             _brain.Body.ReturnToSpawnPoint(_brain.Body.MaxSpeed);
             _brain.IsPulling = false;
-
+            _brain.PvPMode = false;
+            
             base.Enter();
         }
 

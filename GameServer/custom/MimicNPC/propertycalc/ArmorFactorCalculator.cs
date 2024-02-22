@@ -22,8 +22,7 @@ namespace DOL.GS.Scripts
         {
             switch (living)
             {
-                case GamePlayer:
-                case MimicNPC:
+                case IGamePlayer:
                 case GameTrainingDummy:
                 return CalculatePlayerArmorFactor(living, property);
                 case GameKeepDoor:

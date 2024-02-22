@@ -10,26 +10,23 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
 
-            if (MimicSpec.WeaponTypeOne == "Hand to Hand")
+            if (MimicSpec.is2H)
+            {
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
+                SwitchWeapon(eActiveWeaponSlot.TwoHanded);
+            }                
+            else
             {
                 MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
                 MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.leftHand);
-            }
-            else
-                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-
-            MimicEquipment.SetArmor(this, eObjectType.Studded);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
-
-            if (MimicSpec.WeaponTypeOne == "Hand to Hand")
                 SwitchWeapon(eActiveWeaponSlot.Standard);
-            else
-                SwitchWeapon(eActiveWeaponSlot.TwoHanded);
+            }
 
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -44,39 +41,42 @@ namespace DOL.GS.Scripts
 
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Sword"; break;
-                case 1: WeaponTypeOne = "Axe"; break;
-                case 2: WeaponTypeOne = "Hammer"; break;
+                case 0: WeaponTypeOne = eObjectType.Sword; break;
+                case 1: WeaponTypeOne = eObjectType.Axe; break;
+                case 2: WeaponTypeOne = eObjectType.Hammer; break;
                 case 3:
-                case 4: WeaponTypeOne = "Hand to Hand"; break;
+                case 4: WeaponTypeOne = eObjectType.HandToHand; break;
             }
 
+            if (WeaponTypeOne != eObjectType.HandToHand)
+                is2H = true;
+            
             int randVariance = Util.Random(3);
 
             switch (randVariance)
             {
                 case 0:
-                Add(WeaponTypeOne, 44, 0.7f);
-                Add("Savagery", 49, 0.9f);
-                Add("Parry", 4, 0.0f);
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.7f);
+                Add(Specs.Savagery, 49, 0.9f);
+                Add(Specs.Parry, 4, 0.0f);
                 break;
 
                 case 1:
-                Add(WeaponTypeOne, 39, 0.7f);
-                Add("Savagery", 49, 0.9f);
-                Add("Parry", 20, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.7f);
+                Add(Specs.Savagery, 49, 0.9f);
+                Add(Specs.Parry, 20, 0.1f);
                 break;
 
                 case 2:
-                Add(WeaponTypeOne, 44, 0.7f);
-                Add("Savagery", 48, 0.9f);
-                Add("Parry", 10, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.7f);
+                Add(Specs.Savagery, 48, 0.9f);
+                Add(Specs.Parry, 10, 0.1f);
                 break;
 
                 case 3:
-                Add(WeaponTypeOne, 50, 0.7f);
-                Add("Savagery", 42, 0.9f);
-                Add("Parry", 9, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.7f);
+                Add(Specs.Savagery, 42, 0.9f);
+                Add(Specs.Parry, 9, 0.1f);
                 break;
             }
         }

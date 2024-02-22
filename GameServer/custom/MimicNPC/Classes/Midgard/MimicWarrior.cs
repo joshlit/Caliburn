@@ -11,24 +11,7 @@ namespace DOL.GS.Scripts
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.oneHand);
-            //MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown);
-
-            int shieldSize = 1;
-
-            if (level >= 10)
-                shieldSize = 3;
-            else if (level >= 5)
-                shieldSize = 2;
-
-            MimicEquipment.SetShield(this, shieldSize);
-
-            eObjectType objectType = eObjectType.Studded;
-
-            if (level >= 10)
-                objectType = eObjectType.Chain;
-
-            MimicEquipment.SetArmor(this, objectType);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
+            //MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown);      
             RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
@@ -44,12 +27,12 @@ namespace DOL.GS.Scripts
             SpecName = "WarriorSpec";
 
             int randBaseWeap = Util.Random(2);
-
+            
             switch (randBaseWeap)
             {
-                case 0: WeaponTypeOne = "Sword"; break;
-                case 1: WeaponTypeOne = "Axe"; break;
-                case 2: WeaponTypeOne = "Hammer"; break;
+                case 0: WeaponTypeOne = eObjectType.Sword; break;
+                case 1: WeaponTypeOne = eObjectType.Axe; break;
+                case 2: WeaponTypeOne = eObjectType.Hammer; break;
             }
 
             int randVariance = Util.Random(1);
@@ -57,15 +40,15 @@ namespace DOL.GS.Scripts
             switch (randVariance)
             {
                 case 0:
-                Add(WeaponTypeOne, 50, 0.8f);
-                Add("Shields", 42, 0.5f);
-                Add("Parry", 39, 0.2f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.8f);
+                Add(Specs.Shields, 42, 0.5f);
+                Add(Specs.Parry, 39, 0.2f);
                 break;
 
                 case 1:
-                Add(WeaponTypeOne, 50, 0.8f);
-                Add("Shields", 50, 0.5f);
-                Add("Parry", 28, 0.2f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.8f);
+                Add(Specs.Shields, 50, 0.5f);
+                Add(Specs.Parry, 28, 0.2f);
                 break;
             }
         }

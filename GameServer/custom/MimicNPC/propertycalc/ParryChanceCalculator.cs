@@ -38,7 +38,7 @@ namespace DOL.GS.Scripts
         {
             int chance = 0;
 
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 if (player.HasSpecialization(Specs.Parry))
                     chance += (player.Dexterity * 2 - 100) / 4 + (player.GetModifiedSpecLevel(Specs.Parry) - 1) * (10 / 2) + 50;
@@ -48,17 +48,6 @@ namespace DOL.GS.Scripts
                 chance -= player.DebuffCategory[(int)property] * 10;
                 chance += player.BuffBonusCategory4[(int)property] * 10;
                 chance += player.AbilityBonus[(int)property] * 10;
-            }
-            else if (living is MimicNPC mimic)
-            {
-                if (mimic.HasSpecialization(Specs.Parry))
-                    chance += (mimic.Dexterity * 2 - 100) / 4 + (mimic.GetModifiedSpecLevel(Specs.Parry) - 1) * (10 / 2) + 50;
-
-                chance += mimic.BaseBuffBonusCategory[(int)property] * 10;
-                chance += mimic.SpecBuffBonusCategory[(int)property] * 10;
-                chance -= mimic.DebuffCategory[(int)property] * 10;
-                chance += mimic.BuffBonusCategory4[(int)property] * 10;
-                chance += mimic.AbilityBonus[(int)property] * 10;
             }
             else if (living is GameNPC npc)
             {

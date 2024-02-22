@@ -51,7 +51,7 @@ namespace DOL.GS.Scripts
 
             double speed = living.BuffBonusMultCategory1.Get((int)property);
 
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 // Since Dark Age of Camelot's launch, we have heard continuous feedback from our community about the movement speed in our game. The concerns over how slow
                 // our movement is has continued to grow as we have added more and more areas in which to travel. Because we believe these concerns are valid, we have decided
@@ -63,7 +63,7 @@ namespace DOL.GS.Scripts
                 // - The new run speed will not stack with any other run speed spell or ability, except for Sprint.
                 // - Pets that are not in combat have also received the new run speed, only when they are following, to allow them to keep up with their owners.
 
-                double horseSpeed = player.IsOnHorse ? player.ActiveHorse.Speed * 0.01 : 1.0;
+                double horseSpeed = player.IsOnHorse && player.ActiveHorse != null ? player.ActiveHorse.Speed * 0.01 : 1.0;
 
                 if (speed > horseSpeed)
                     horseSpeed = 1.0;
@@ -110,11 +110,11 @@ namespace DOL.GS.Scripts
                     //if (bloodrage != null)
                     //    speed *= 1 + (bloodrage.Spell.Value * 0.01); // 25 * 0.01 = 0.25 (a.k 25%) value should be 25.5
 
-                    if (player.effectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
+                    if (player.EffectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
                         speed *= 2;
                 }
 
-                if (GameRelic.IsPlayerCarryingRelic(player))
+                if (player is GamePlayer && GameRelic.IsPlayerCarryingRelic((GamePlayer)player))
                 {
                     if (speed > 1.0)
                         speed = 1.0;
@@ -125,50 +125,7 @@ namespace DOL.GS.Scripts
                 if (player.IsSprinting)
                     speed *= 1.3;
 
-                speed *= horseSpeed;
-            }
-            else if (living is MimicNPC mimic)
-            {
-                if (ServerProperties.Properties.ENABLE_PVE_SPEED)
-                {
-                    // OF zones technically aren't in a RvR region and will allow the bonus to be applied.
-                    if (speed == 1 && !mimic.InCombat && !mimic.IsStealthed && !mimic.CurrentRegion.IsRvR)
-                        speed *= 1.25; // New run speed is 125% when no buff.
-                }
-
-                if (mimic.IsStealthed)
-                {
-                    AtlasOF_MasteryOfStealth mos = mimic.GetAbility<AtlasOF_MasteryOfStealth>();
-                    //GameSpellEffect bloodrage = SpellHandler.FindEffectOnTarget(player, "BloodRage");
-                    //VanishEffect vanish = mimic.EffectList.GetOfType<VanishEffect>();
-                    double stealthSpec = mimic.GetModifiedSpecLevel(Specs.Stealth);
-                    
-                    if (stealthSpec > mimic.Level)
-                        stealthSpec = mimic.Level;
-
-                    speed *= 0.3 + (stealthSpec + 10) * 0.3 / (mimic.Level + 10);
-
-                    //if (vanish != null)
-                        //speed *= vanish.SpeedBonus;
-
-                    if (mos != null)
-                        speed *= 1 + mos.GetAmountForLevel(mos.Level) / 100.0;
-
-                    //if (bloodrage != null)
-                    //    speed *= 1 + (bloodrage.Spell.Value * 0.01); // 25 * 0.01 = 0.25 (a.k 25%) value should be 25.5
-
-                    if (mimic.effectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
-                        speed *= 2;
-                }
-
-                //if (GameRelic.IsPlayerCarryingRelic(mimic))
-                //{
-                //    if (speed > 1.0)
-                //        speed = 1.0;
-                //}
-
-                if (mimic.IsSprinting)
-                    speed *= 1.3;                
+                speed *= horseSpeed;          
             }
             else if (living is GameNPC npc)
             {
@@ -181,7 +138,7 @@ namespace DOL.GS.Scripts
                         GameLiving owner = brain.Owner;
                         if (owner != null && owner == brain.Body.FollowTarget)
                         {
-                            if (owner is GameNPC)
+                            if (owner is GameNPC && owner is not MimicNPC)
                                 owner = brain.GetLivingOwner();
 
                             int distance = brain.Body.GetDistanceTo(owner);
@@ -197,17 +154,12 @@ namespace DOL.GS.Scripts
                             if (ownerSpeedAdjust > 1.0)
                                 speed *= ownerSpeedAdjust;
 
-                            if (owner is GamePlayer playerOwner)
+                            if (owner is IGamePlayer playerOwner)
                             {
                                 if (playerOwner.IsOnHorse)
                                     speed *= 3.0;
 
                                 if (playerOwner.IsSprinting)
-                                    speed *= 1.4;
-                            }
-                            else if (owner is MimicNPC mimicOwner)
-                            {
-                                if (mimicOwner.IsSprinting)
                                     speed *= 1.4;
                             }
                         }
@@ -221,8 +173,10 @@ namespace DOL.GS.Scripts
                     {
                         if (owner is GameNPC && owner is not MimicNPC)
                             owner = brain.GetPlayerOwner();
+                        else if (owner is MimicNPC)
+                            owner = brain.GetLivingOwner();
 
-                        if (owner is GamePlayer playerOwner && playerOwner.IsSprinting)
+                        if (owner is IGamePlayer playerOwner && playerOwner.IsSprinting)
                             speed *= 1.3;
                     }
                 }

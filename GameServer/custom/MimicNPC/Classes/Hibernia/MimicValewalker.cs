@@ -10,13 +10,11 @@ namespace DOL.GS.Scripts
 
             SpendSpecPoints();
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
-            MimicEquipment.SetArmor(this, eObjectType.Cloth);
-            MimicEquipment.SetJewelryROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Magical);
-            RefreshItemBonuses();
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
             GetTauntStyles();
             SetSpells();
+            RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }
     }
@@ -27,46 +25,46 @@ namespace DOL.GS.Scripts
         {
             SpecName = "ValewalkerSpec";
 
-            WeaponTypeOne = "Scythe";
+            WeaponTypeOne = eObjectType.Scythe;
 
             int randVariance = Util.Random(5);
-
+            
             switch (randVariance)
             {
                 case 0:
-                Add("Arboreal Path", 43, 0.8f);
-                Add("Parry", 23, 0.3f);
-                Add("Scythe", 44, 0.9f);
+                Add(Specs.Arboreal_Path, 43, 0.8f);
+                Add(Specs.Parry, 23, 0.3f);
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.9f);
                 break;
 
                 case 1:
-                Add("Arboreal Path", 43, 0.8f);
-                Add("Parry", 2, 0.1f);
-                Add("Scythe", 50, 0.9f);
+                Add(Specs.Arboreal_Path, 43, 0.8f);
+                Add(Specs.Parry, 2, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.9f);
                 break;
 
                 case 2:
-                Add("Arboreal Path", 34, 0.8f);
-                Add("Parry", 26, 0.1f);
-                Add("Scythe", 50, 0.9f);
+                Add(Specs.Arboreal_Path, 34, 0.8f);
+                Add(Specs.Parry, 26, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.9f);
                 break;
 
                 case 3:
-                Add("Arboreal Path", 50, 0.9f);
-                Add("Parry", 18, 0.2f);
-                Add("Scythe", 39, 0.8f);
+                Add(Specs.Arboreal_Path, 50, 0.9f);
+                Add(Specs.Parry, 18, 0.2f);
+                Add(ObjToSpec(WeaponTypeOne), 39, 0.8f);
                 break;
 
                 case 4:
-                Add("Arboreal Path", 43, 0.8f);
-                Add("Parry", 2, 0.1f);
-                Add("Scythe", 50, 0.9f);
+                Add(Specs.Arboreal_Path, 43, 0.8f);
+                Add(Specs.Parry, 2, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 50, 0.9f);
                 break;
 
                 case 5:
-                Add("Arboreal Path", 48, 0.8f);
-                Add("Parry", 10, 0.1f);
-                Add("Scythe", 44, 0.9f);
+                Add(Specs.Arboreal_Path, 48, 0.8f);
+                Add(Specs.Parry, 10, 0.1f);
+                Add(ObjToSpec(WeaponTypeOne), 44, 0.9f);
                 break;
             }
         }
