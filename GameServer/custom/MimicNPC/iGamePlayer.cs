@@ -42,8 +42,11 @@ namespace DOL.GS.Scripts
         public GameLiving DuelPartner { get; }
         public bool IsDuelPartner(GameLiving living);
 
+        public void AddXPGainer(GameObject xpGainer, float damageAmount);
+        public void GainRealmPoints(long amount, bool modify);
         public int GetDistanceTo(IPoint3D point);
         public bool IsWithinRadius(GameObject obj, int radius);
+        public void CommandNpcRelease();
 
         public RangeAttackComponent RangeAttackComponent { get; }
         public AttackComponent AttackComponent { get; }
@@ -56,7 +59,6 @@ namespace DOL.GS.Scripts
         public IPropertyIndexer SpecBuffBonusCategory { get; }
         public IPropertyIndexer DebuffCategory { get; }
         public IPropertyIndexer BuffBonusCategory4 { get; }
-
 
         public GameObject TargetObject { get; set; }
 
@@ -103,7 +105,6 @@ namespace DOL.GS.Scripts
         public ControlledHorse ActiveHorse { get; }
         public bool IsOnHorse { get; set; }
 
-
         public int MaxHealth { get; }
         public int Mana { get; set; }
         public int MaxMana { get; }
@@ -111,6 +112,7 @@ namespace DOL.GS.Scripts
         public int Endurance { get; set; }
         public  short MaxSpeedBase { get; set; }
 
+        public int Strength { get; }
         public int Dexterity { get; }
         public int Quickness { get; }
         public int Intelligence { get; }

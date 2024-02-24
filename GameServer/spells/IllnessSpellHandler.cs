@@ -13,6 +13,7 @@ namespace DOL.GS.Spells
 		public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
 		{
 			GamePlayer targetPlayer = Target as GamePlayer;
+
 			if (targetPlayer != null)
             {
                 // Higher level rez spells reduce duration of rez sick.

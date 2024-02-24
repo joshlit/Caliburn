@@ -25,6 +25,7 @@ using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.PropertyCalc;
+using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS.Spells
@@ -41,11 +42,12 @@ namespace DOL.GS.Spells
 
 		public override bool CheckBeginCast(GameLiving selectedTarget)
 		{
-			if (Caster is GamePlayer && ((GamePlayer)Caster).ControlledBrain != null)
+			if (Caster is IGamePlayer && ((IGamePlayer)Caster).ControlledBrain != null)
 			{
                 MessageToCaster(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonCommanderPet.CheckBeginCast.Text"), eChatType.CT_SpellResisted);
                 return false;
             }
+
 			return base.CheckBeginCast(selectedTarget);
 		}
 
@@ -64,6 +66,7 @@ namespace DOL.GS.Spells
 						GameEventMgr.Notify(GameLivingEvent.PetReleased, cnpc.Body);
 				}
 			}
+
 			base.OnNpcReleaseCommand(e, sender, arguments);
 		}
 

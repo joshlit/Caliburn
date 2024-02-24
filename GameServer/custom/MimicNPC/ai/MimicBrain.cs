@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using static DOL.GS.Styles.Style;
 
 namespace DOL.AI.Brain
 {
@@ -1077,43 +1078,43 @@ namespace DOL.AI.Brain
             return new Point3D((int)target?.X, (int)target?.Y, (int)target?.Z);
         }
 
-        private ePositional GetPositional()
+        private eOpeningPosition GetPositional()
         {
-            ePositional positional = ePositional.None;
+            eOpeningPosition positional = 0;
 
             if (MimicBody.CanUseSideStyles && MimicBody.CanUseBackStyles)
             {
                 if (Util.RandomBool())
-                    positional = ePositional.Back;
+                    positional = eOpeningPosition.Back;
                 else
-                    positional = ePositional.Side;
+                    positional = eOpeningPosition.Side;
             }
             else if (MimicBody.CanUseSideStyles)
-                positional = ePositional.Side;
+                positional = eOpeningPosition.Side;
             else if (MimicBody.CanUseBackStyles)
-                positional = ePositional.Back;
+                positional = eOpeningPosition.Back;
 
             return positional;
         }
 
-        private Point2D GetStylePositionPoint(GameLiving living, ePositional positional)
+        private Point2D GetStylePositionPoint(GameLiving living, eOpeningPosition positional)
         {
             ushort heading = 0;
 
             switch (positional)
             {
-                case ePositional.Side:
+                case eOpeningPosition.Side:
                 if (Util.RandomBool())
                     heading = (ushort)(living.Heading - 1024);
                 else
                     heading = (ushort)(living.Heading + 1024);
                 break;
 
-                case ePositional.Back:
+                case eOpeningPosition.Back:
                 heading = (ushort)(living.Heading - 2048);
                 break;
 
-                case ePositional.Front:
+                case eOpeningPosition.Front:
                 heading = living.Heading;
                 break;
             }

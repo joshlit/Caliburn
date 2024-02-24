@@ -106,15 +106,6 @@ namespace DOL.GS.Scripts
         MainCC
     }
 
-    public enum ePositional
-    {
-        None = -1,
-
-        Back,
-        Side,
-        Front
-    }
-
     public enum eQueueMessage
     {
         None = -1,

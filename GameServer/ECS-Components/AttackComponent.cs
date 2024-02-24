@@ -113,7 +113,7 @@ namespace DOL.GS
         /// <param name="weapon">attack weapon</param>
         public int AttackCriticalChance(WeaponAction action, DbInventoryItem weapon)
         {
-            if (owner is IGamePlayer playerOwner)
+            if (owner is IGamePlayer)
             {
                 if (weapon != null)
                 {
@@ -360,14 +360,7 @@ namespace DOL.GS
                     break;
                 }
 
-                MimicNPC mimicOwner = owner as MimicNPC;
-
-                int qui;
-
-                if (mimicOwner != null)
-                    qui = Math.Min(250, (int)mimicOwner.Quickness); //250 soft cap on quickness
-                else
-                    qui = Math.Min(250, ((GamePlayer)owner).Quickness); //250 soft cap on quickness
+                int qui = Math.Min(250, player.Quickness); //250 soft cap on quickness
 
                 if (bowWeapon)
                 {
@@ -482,13 +475,7 @@ namespace DOL.GS
                 if (weapon == null)
                     return 0;
 
-                MimicNPC mimicOwner = owner as MimicNPC;
-                GamePlayer playerOwner = owner as GamePlayer;
-
-                if (mimicOwner != null)
-                    damageCap = mimicOwner.WeaponDamageWithoutQualityAndCondition(weapon) * weapon.SPD_ABS * 0.1 * CalculateSlowWeaponDamageModifier(weapon);
-                else
-                    damageCap = playerOwner.WeaponDamageWithoutQualityAndCondition(weapon) * weapon.SPD_ABS * 0.1 * CalculateSlowWeaponDamageModifier(weapon);
+                damageCap = player.WeaponDamageWithoutQualityAndCondition(weapon) * weapon.SPD_ABS * 0.1 * CalculateSlowWeaponDamageModifier(weapon);
 
                 if (weapon.Item_Type == Slot.RANGED)
                 {
@@ -538,14 +525,10 @@ namespace DOL.GS
 
                 damageCap *= effectiveness;
 
-                double damage;
-
-                if (mimicOwner != null)
-                    damage = mimicOwner.ApplyWeaponQualityAndConditionToDamage(weapon, damageCap);
-                else
-                    damage = playerOwner.ApplyWeaponQualityAndConditionToDamage(weapon, damageCap);
+                double damage = player.ApplyWeaponQualityAndConditionToDamage(weapon, damageCap);
 
                 damageCap *= 3;
+
                 return damage *= effectiveness;
             }
             else
@@ -1249,7 +1232,7 @@ namespace DOL.GS
             IGamePlayer playerOwner = owner as IGamePlayer;
 
             // Strafing miss.
-            if (playerOwner != null && playerOwner.IsStrafing && ad.Target is GamePlayer && Util.Chance(30))
+            if (playerOwner != null && playerOwner.IsStrafing && ad.Target is IGamePlayer && Util.Chance(30))
             {
                 // Used to tell the difference between a normal miss and a strafing miss.
                 // Ugly, but we shouldn't add a new field to 'AttackData' just for that purpose.
@@ -1852,7 +1835,7 @@ namespace DOL.GS
 
         public static void ApplyTargetConversionRegen(GameLiving target, int conversionAmount)
         {
-            if (target is not IGamePlayer playerTarget)
+            if (target is not IGamePlayer)
                 return;
 
             GamePlayer playerTarget = target as GamePlayer;

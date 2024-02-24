@@ -2,6 +2,7 @@ using System;
 using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -32,7 +33,7 @@ namespace DOL.GS.Spells
 		/// <returns></returns>
 		public override double CalculateDamageBase(GameLiving target)
 		{
-			GamePlayer player = Caster as GamePlayer;
+            IGamePlayer player = Caster as IGamePlayer;
 
 			// % damage procs
 			if (Spell.Damage < 0)

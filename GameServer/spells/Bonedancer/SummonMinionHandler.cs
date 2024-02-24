@@ -24,224 +24,229 @@ using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS.Spells
 {
-	/// <summary>
-	/// Pet summon spell handler
-	///
-	/// Spell.LifeDrainReturn is used for pet ID.
-	///
-	/// Spell.Value is used for hard pet level cap
-	/// Spell.Damage is used to set pet level:
-	/// less than zero is considered as a percent (0 .. 100+) of target level;
-	/// higher than zero is considered as level value.
-	/// Resulting value is limited by the Byte field type.
-	/// Spell.DamageType is used to determine which type of pet is being cast:
-	/// 0 = melee
-	/// 1 = healer
-	/// 2 = mage
-	/// 3 = debuffer
-	/// 4 = Buffer
-	/// 5 = Range
-	/// </summary>
-	[SpellHandler("SummonMinion")]
-	public class SummonMinionHandler : SummonSpellHandler
-	{
-		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+    /// <summary>
+    /// Pet summon spell handler
+    ///
+    /// Spell.LifeDrainReturn is used for pet ID.
+    ///
+    /// Spell.Value is used for hard pet level cap
+    /// Spell.Damage is used to set pet level:
+    /// less than zero is considered as a percent (0 .. 100+) of target level;
+    /// higher than zero is considered as level value.
+    /// Resulting value is limited by the Byte field type.
+    /// Spell.DamageType is used to determine which type of pet is being cast:
+    /// 0 = melee
+    /// 1 = healer
+    /// 2 = mage
+    /// 3 = debuffer
+    /// 4 = Buffer
+    /// 5 = Range
+    /// </summary>
+    [SpellHandler("SummonMinion")]
+    public class SummonMinionHandler : SummonSpellHandler
+    {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		public SummonMinionHandler(GameLiving caster, Spell spell, SpellLine line)
-			: base(caster, spell, line) { }
+        public SummonMinionHandler(GameLiving caster, Spell spell, SpellLine line)
+            : base(caster, spell, line) { }
 
-		/// <summary>
-		/// All checks before any casting begins
-		/// </summary>
-		/// <param name="selectedTarget"></param>
-		/// <returns></returns>
-		public override bool CheckBeginCast(GameLiving selectedTarget)
-		{
-			if (Caster is GamePlayer && ((GamePlayer)Caster).ControlledBrain == null)
-			{
+        /// <summary>
+        /// All checks before any casting begins
+        /// </summary>
+        /// <param name="selectedTarget"></param>
+        /// <returns></returns>
+        public override bool CheckBeginCast(GameLiving selectedTarget)
+        {
+            if (Caster is IGamePlayer && ((IGamePlayer)Caster).ControlledBrain == null)
+            {
                 MessageToCaster(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonMinionHandler.CheckBeginCast.Text1"), eChatType.CT_SpellResisted);
                 return false;
-			}
+            }
 
-			if (Caster is GamePlayer && (((GamePlayer)Caster).ControlledBrain.Body.ControlledNpcList == null || ((GamePlayer)Caster).ControlledBrain.Body.PetCount >= ((GamePlayer)Caster).ControlledBrain.Body.ControlledNpcList.Length))
-			{
-                MessageToCaster(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonMinionHandler.CheckBeginCast.Text2"), eChatType.CT_SpellResisted);
+            if (Caster is IGamePlayer && (((IGamePlayer)Caster).ControlledBrain.Body.ControlledNpcList == null || ((IGamePlayer)Caster).ControlledBrain.Body.PetCount >= ((IGamePlayer)Caster).ControlledBrain.Body.ControlledNpcList.Length))
+            {
+                MessageToCaster(LanguageMgr.GetTranslation((Caster as IGamePlayer).Client, "SummonMinionHandler.CheckBeginCast.Text2"), eChatType.CT_SpellResisted);
 
                 return false;
-			}
-			
-			if (Caster is GamePlayer && ((GamePlayer) Caster).ControlledBrain != null &&
-			    ((GamePlayer) Caster).ControlledBrain.Body.ControlledNpcList != null)
-			{
-				int cumulativeLevel = 0;
-				foreach (var petBrain in ((GamePlayer) Caster).ControlledBrain.Body.ControlledNpcList)
-				{
-					cumulativeLevel += petBrain != null && petBrain.Body != null ? petBrain.Body.Level : 0;
-				}
+            }
 
-				byte newpetlevel = (byte)(Caster.Level * m_spell.Damage * -0.01);
-				if (newpetlevel > m_spell.Value)
-					newpetlevel = (byte)m_spell.Value;
+            if (Caster is IGamePlayer && ((IGamePlayer)Caster).ControlledBrain != null &&
+                ((IGamePlayer)Caster).ControlledBrain.Body.ControlledNpcList != null)
+            {
+                int cumulativeLevel = 0;
+                foreach (var petBrain in ((IGamePlayer)Caster).ControlledBrain.Body.ControlledNpcList)
+                {
+                    cumulativeLevel += petBrain != null && petBrain.Body != null ? petBrain.Body.Level : 0;
+                }
 
-				if (cumulativeLevel + newpetlevel > 75)
-				{
-					MessageToCaster("Your commander is not powerful enough to control a subpet of this level.", eChatType.CT_SpellResisted);
-					return false;
-				}
-			}
-			return base.CheckBeginCast(selectedTarget);
-		}
+                byte newpetlevel = (byte)(Caster.Level * m_spell.Damage * -0.01);
+                if (newpetlevel > m_spell.Value)
+                    newpetlevel = (byte)m_spell.Value;
 
-		public override void ApplyEffectOnTarget(GameLiving target)
-		{
-			if (Caster == null || Caster.ControlledBrain == null)
-				return;
+                if (cumulativeLevel + newpetlevel > 75)
+                {
+                    MessageToCaster("Your commander is not powerful enough to control a subpet of this level.", eChatType.CT_SpellResisted);
+                    return false;
+                }
+            }
+            return base.CheckBeginCast(selectedTarget);
+        }
 
-			GameNPC temppet = Caster.ControlledBrain.Body;
-			//Lets let NPC's able to cast minions.  Here we make sure that the Caster is a GameNPC
-			//and that m_controlledNpc is initialized (since we aren't thread safe).
-			if (temppet == null)
-			{
-				if (Caster is GameNPC)
-				{
-					temppet = (GameNPC)Caster;
-					//We'll give default NPCs 2 minions!
-					if (temppet.ControlledNpcList == null)
-						temppet.InitControlledBrainArray(2);
-				}
-				else
-					return;
-			}
+        public override void ApplyEffectOnTarget(GameLiving target)
+        {
+            if (Caster == null || Caster.ControlledBrain == null)
+                return;
 
-			base.ApplyEffectOnTarget(target);
+            GameNPC temppet = Caster.ControlledBrain.Body;
+            //Lets let NPC's able to cast minions.  Here we make sure that the Caster is a GameNPC
+            //and that m_controlledNpc is initialized (since we aren't thread safe).
+            if (temppet == null)
+            {
+                if (Caster is GameNPC)
+                {
+                    temppet = (GameNPC)Caster;
+                    //We'll give default NPCs 2 minions!
+                    if (temppet.ControlledNpcList == null)
+                        temppet.InitControlledBrainArray(2);
+                }
+                else
+                    return;
+            }
 
-			if (m_pet.Brain is BDPetBrain brain && !brain.MinionsAssisting)
-				brain.SetAggressionState(eAggressionState.Passive);
+            base.ApplyEffectOnTarget(target);
 
-			// Assign weapons
-			if (m_pet is BDSubPet subPet)
-				switch (subPet.Brain)
-				{
-					case BDArcherBrain archer:
-						subPet.MinionGetWeapon(CommanderPet.eWeaponType.OneHandSword);
-						subPet.MinionGetWeapon(CommanderPet.eWeaponType.Bow);
-						break;
-					case BDDebufferBrain debuffer:
-						subPet.MinionGetWeapon(CommanderPet.eWeaponType.OneHandHammer);
-						break;
-					case BDBufferBrain buffer:
-					case BDCasterBrain caster:
-						subPet.MinionGetWeapon(CommanderPet.eWeaponType.Staff);
-						break;
-					case BDMeleeBrain melee:
-						if(Util.Chance(60))
-							subPet.MinionGetWeapon(CommanderPet.eWeaponType.TwoHandAxe);
-						else
-							subPet.MinionGetWeapon(CommanderPet.eWeaponType.OneHandAxe);
-						break;
-				}
-		}
+            if (m_pet.Brain is BDPetBrain brain && !brain.MinionsAssisting)
+                brain.SetAggressionState(eAggressionState.Passive);
 
-		/// <summary>
-		/// Called when owner release NPC
-		/// </summary>
-		/// <param name="e"></param>
-		/// <param name="sender"></param>
-		/// <param name="arguments"></param>
-		protected override void OnNpcReleaseCommand(DOLEvent e, object sender, EventArgs arguments)
-		{
-			GameNPC pet = sender as GameNPC;
-			if (pet == null)
-				return;
+            // Assign weapons
+            if (m_pet is BDSubPet subPet)
+                switch (subPet.Brain)
+                {
+                    case BDArcherBrain archer:
+                    subPet.MinionGetWeapon(CommanderPet.eWeaponType.OneHandSword);
+                    subPet.MinionGetWeapon(CommanderPet.eWeaponType.Bow);
+                    break;
 
-			GameEventMgr.RemoveHandler(pet, GameLivingEvent.PetReleased, new DOLEventHandler(OnNpcReleaseCommand));
+                    case BDDebufferBrain debuffer:
+                    subPet.MinionGetWeapon(CommanderPet.eWeaponType.OneHandHammer);
+                    break;
 
-			//GameSpellEffect effect = FindEffectOnTarget(pet, this);
-			//if (effect != null)
-			//	effect.Cancel(false);
-			if (pet.effectListComponent.Effects.TryGetValue(eEffect.Pet, out var petEffect))
-				EffectService.RequestImmediateCancelEffect(petEffect.FirstOrDefault());
-		}
+                    case BDBufferBrain buffer:
+                    case BDCasterBrain caster:
+                    subPet.MinionGetWeapon(CommanderPet.eWeaponType.Staff);
+                    break;
 
-		public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
-		{
-			if ((effect.Owner is BDPet) && ((effect.Owner as BDPet).Brain is IControlledBrain) && (((effect.Owner as BDPet).Brain as IControlledBrain).Owner is CommanderPet))
-			{
-				BDPet pet = effect.Owner as BDPet;
-				CommanderPet commander = (pet.Brain as IControlledBrain).Owner as CommanderPet;
-				commander.RemoveControlledNpc(pet.Brain as IControlledBrain);
-			}
-			return base.OnEffectExpires(effect, noMessages);
-		}
+                    case BDMeleeBrain melee:
+                    if (Util.Chance(60))
+                        subPet.MinionGetWeapon(CommanderPet.eWeaponType.TwoHandAxe);
+                    else
+                        subPet.MinionGetWeapon(CommanderPet.eWeaponType.OneHandAxe);
+                    break;
+                }
+        }
 
-		protected override IControlledBrain GetPetBrain(GameLiving owner)
-		{
-			IControlledBrain controlledBrain = null;
-			BDSubPet.SubPetType type = (BDSubPet.SubPetType)(byte)this.Spell.DamageType;
-			owner = owner.ControlledBrain.Body;
+        /// <summary>
+        /// Called when owner release NPC
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="sender"></param>
+        /// <param name="arguments"></param>
+        protected override void OnNpcReleaseCommand(DOLEvent e, object sender, EventArgs arguments)
+        {
+            GameNPC pet = sender as GameNPC;
 
-			switch (type)
-			{
-				//Melee
-				case BDSubPet.SubPetType.Melee:
-					controlledBrain = new BDMeleeBrain(owner);
-					break;
-				//Healer
-				case BDSubPet.SubPetType.Healer:
-					controlledBrain = new BDHealerBrain(owner);
-					break;
-				//Mage
-				case BDSubPet.SubPetType.Caster:
-					controlledBrain = new BDCasterBrain(owner);
-					break;
-				//Debuffer
-				case BDSubPet.SubPetType.Debuffer:
-					controlledBrain = new BDDebufferBrain(owner);
-					break;
-				//Buffer
-				case BDSubPet.SubPetType.Buffer:
-					controlledBrain = new BDBufferBrain(owner);
-					break;
-				//Range
-				case BDSubPet.SubPetType.Archer:
-					controlledBrain = new BDArcherBrain(owner);
-					break;
-				//Other
-				default:
-					controlledBrain = new ControlledNpcBrain(owner);
-					break;
-			}
+            if (pet == null)
+                return;
 
-			return controlledBrain;
-		}
+            GameEventMgr.RemoveHandler(pet, GameLivingEvent.PetReleased, new DOLEventHandler(OnNpcReleaseCommand));
 
-		protected override GameSummonedPet GetGamePet(INpcTemplate template)
-		{
-			return new BDSubPet(template);
-		}
+            //GameSpellEffect effect = FindEffectOnTarget(pet, this);
+            //if (effect != null)
+            //	effect.Cancel(false);
+            if (pet.effectListComponent.Effects.TryGetValue(eEffect.Pet, out var petEffect))
+                EffectService.RequestImmediateCancelEffect(petEffect.FirstOrDefault());
+        }
 
-		protected override void SetBrainToOwner(IControlledBrain brain)
-		{
-			Caster.ControlledBrain.Body.AddControlledNpc(brain);
-		}
+        public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
+        {
+            if ((effect.Owner is BDPet) && ((effect.Owner as BDPet).Brain is IControlledBrain) && (((effect.Owner as BDPet).Brain as IControlledBrain).Owner is CommanderPet))
+            {
+                BDPet pet = effect.Owner as BDPet;
+                CommanderPet commander = (pet.Brain as IControlledBrain).Owner as CommanderPet;
+                commander.RemoveControlledNpc(pet.Brain as IControlledBrain);
+            }
+            return base.OnEffectExpires(effect, noMessages);
+        }
 
-		/// <summary>
-		/// Delve Info
-		/// </summary>
-		public override IList<string> DelveInfo
-		{
-			get
-			{
-				var delve = new List<string>();
+        protected override IControlledBrain GetPetBrain(GameLiving owner)
+        {
+            IControlledBrain controlledBrain = null;
+            BDSubPet.SubPetType type = (BDSubPet.SubPetType)(byte)this.Spell.DamageType;
+            owner = owner.ControlledBrain.Body;
+
+            switch (type)
+            {
+                //Melee
+                case BDSubPet.SubPetType.Melee:
+                controlledBrain = new BDMeleeBrain(owner);
+                break;
+                //Healer
+                case BDSubPet.SubPetType.Healer:
+                controlledBrain = new BDHealerBrain(owner);
+                break;
+                //Mage
+                case BDSubPet.SubPetType.Caster:
+                controlledBrain = new BDCasterBrain(owner);
+                break;
+                //Debuffer
+                case BDSubPet.SubPetType.Debuffer:
+                controlledBrain = new BDDebufferBrain(owner);
+                break;
+                //Buffer
+                case BDSubPet.SubPetType.Buffer:
+                controlledBrain = new BDBufferBrain(owner);
+                break;
+                //Range
+                case BDSubPet.SubPetType.Archer:
+                controlledBrain = new BDArcherBrain(owner);
+                break;
+                //Other
+                default:
+                controlledBrain = new ControlledNpcBrain(owner);
+                break;
+            }
+
+            return controlledBrain;
+        }
+
+        protected override GameSummonedPet GetGamePet(INpcTemplate template)
+        {
+            return new BDSubPet(template);
+        }
+
+        protected override void SetBrainToOwner(IControlledBrain brain)
+        {
+            Caster.ControlledBrain.Body.AddControlledNpc(brain);
+        }
+
+        /// <summary>
+        /// Delve Info
+        /// </summary>
+        public override IList<string> DelveInfo
+        {
+            get
+            {
+                var delve = new List<string>();
                 delve.Add(String.Format(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonMinionHandler.DelveInfo.Text1", Spell.Target)));
                 delve.Add(String.Format(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonMinionHandler.DelveInfo.Text2", Math.Abs(Spell.Power))));
                 delve.Add(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonMinionHandler.DelveInfo.Text3", (Spell.CastTime / 1000).ToString("0.0## " + LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "Effects.DelveInfo.Seconds"))));
-				return delve;
-			}
-		}
-	}
+                return delve;
+            }
+        }
+    }
 }

@@ -6027,6 +6027,10 @@ namespace DOL.GS.Scripts
             set { if (DBCharacter != null) DBCharacter.SpellQueue = value; }
         }
 
+        /// <summary>
+        /// Switches the active weapon to another one
+        /// </summary>
+        /// <param name="slot">the new eActiveWeaponSlot</param>
         public override void SwitchWeapon(eActiveWeaponSlot slot)
         {
             if (attackComponent != null && attackComponent.AttackState && ActiveWeapon != null)
@@ -6042,6 +6046,7 @@ namespace DOL.GS.Scripts
             {
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                 StopCurrentSpellcast();
+            }
 
             foreach (Spell spell in ActivePulseSpells.Values)
             {
@@ -6101,13 +6106,7 @@ namespace DOL.GS.Scripts
 
             if (ObjectState == eObjectState.Active)
             {
-                //Send new wield info, no items updated
-                Out.SendInventorySlotsUpdate(null);
-                // Update active weapon appearence (has to be done with all
-                // equipment in the packet else player is naked)
                 UpdateEquipmentAppearance();
-                //Send new weapon stats
-                Out.SendUpdateWeaponAndArmorStats();
             }
         }
 

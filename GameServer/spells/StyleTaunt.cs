@@ -19,6 +19,7 @@
 
 using System;
 using DOL.AI.Brain;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -47,7 +48,7 @@ namespace DOL.GS.Spells
 
         public override void OnDirectEffect(GameLiving target)
         {
-            if (target is GameNPC)
+            if (target is GameNPC && target is not MimicNPC)
             {
                 AttackData ad = Caster.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
                 if (ad != null)
