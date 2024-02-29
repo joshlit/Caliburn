@@ -16,8 +16,6 @@ namespace DOL.GS.Spells
         // constructor
         public HealSpellHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
 
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         /// <summary>
         /// Execute heal spell
         /// </summary>
@@ -531,6 +529,7 @@ namespace DOL.GS.Spells
             }
 
             int upperLimit = (int)(spellValue * 1.25);
+
             if (upperLimit < 1)
             {
                 upperLimit = 1;
@@ -549,16 +548,19 @@ namespace DOL.GS.Spells
                 if (Spell.Level > 0)
                 {
                     eff += (lineSpec - 1.0) / Spell.Level;
+
                     if (eff > 1.25)
                         eff = 1.25;
                 }
             }
 
             int lowerLimit = (int)(spellValue * eff);
+
             if (lowerLimit < 1)
             {
                 lowerLimit = 1;
             }
+
             if (lowerLimit > upperLimit)
             {
                 lowerLimit = upperLimit;
@@ -566,6 +568,7 @@ namespace DOL.GS.Spells
 
             min = lowerLimit;
             max = upperLimit;
+
             return;
         }
     }

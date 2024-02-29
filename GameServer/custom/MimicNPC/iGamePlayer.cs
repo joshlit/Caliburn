@@ -1,10 +1,12 @@
 ﻿using DOL.AI.Brain;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Utils;
 using System.Collections.Generic;
+using static DOL.GS.GameObject;
 using static DOL.GS.GamePlayer;
 
 namespace DOL.GS.Scripts
@@ -13,6 +15,8 @@ namespace DOL.GS.Scripts
     {
         public IPacketLib Out { get; }
         public GameClient Client { get; }
+        public void Notify(DOLEvent e, object sender);
+        public eObjectState ObjectState { get; set; }
 
         public int GetModified(eProperty property);
 
@@ -46,6 +50,8 @@ namespace DOL.GS.Scripts
         public void GainRealmPoints(long amount, bool modify);
         public int GetDistanceTo(IPoint3D point);
         public bool IsWithinRadius(GameObject obj, int radius);
+
+        public bool IsControlledNPC(GameNPC npc);
         public void CommandNpcRelease();
 
         public RangeAttackComponent RangeAttackComponent { get; }
@@ -76,6 +82,7 @@ namespace DOL.GS.Scripts
         public int TotalConstitutionLostAtDeath { get; set; }
 
         public ICharacterClass CharacterClass { get; }
+        public eGender Gender { get; set; }
         public  short Race { get; set; }
         public string Name { get; set; }
         public byte Level { get; set; }
@@ -105,7 +112,16 @@ namespace DOL.GS.Scripts
         public ControlledHorse ActiveHorse { get; }
         public bool IsOnHorse { get; set; }
 
+        public void Shade(bool state);
+        public ShadeECSGameEffect ShadeEffect { get; set; }
+        public bool IsShade { get; }
+        public ushort ShadeModel { get; }
+        public ushort Model { get; set; }
+        public ushort CreationModel { get; }
+
+        public  int Health { get; set; }
         public int MaxHealth { get; }
+        public byte HealthPercent { get; }
         public int Mana { get; set; }
         public int MaxMana { get; }
         

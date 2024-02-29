@@ -23,9 +23,14 @@ namespace DOL.AI.Brain
             _brain = brain;
         }
 
-        public override void Think() { }
-        public override void Enter() { }
-        public override void Exit() { }
+        public override void Think()
+        { }
+
+        public override void Enter()
+        { }
+
+        public override void Exit()
+        { }
     }
 
     public class MimicState_WakingUp : MimicState
@@ -146,7 +151,7 @@ namespace DOL.AI.Brain
 
     public class MimicState_FollowLeader : MimicState
     {
-        GameLiving leader;
+        private GameLiving leader;
 
         public MimicState_FollowLeader(MimicBrain brain) : base(brain)
         {
@@ -175,12 +180,12 @@ namespace DOL.AI.Brain
             {
                 _brain.Body.StopFollowing();
                 _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
-                
+
                 return;
             }
 
             if (leader == null)
-                leader = _brain.Body.Group.LivingLeader;          
+                leader = _brain.Body.Group.LivingLeader;
 
             //if (!_brain.PreventCombat)
             //{
@@ -238,15 +243,15 @@ namespace DOL.AI.Brain
             _brain.MimicBody.Sit(false);
 
             _aggroTime = GameLoop.GameLoopTime;
+
             base.Enter();
         }
 
         public override void Exit()
         {
-            if (_brain.Body.attackComponent.AttackState)
-                _brain.Body.StopAttack();
-
+            _brain.Body.StopAttack();
             _brain.Body.TargetObject = null;
+            _brain.ClearAggroList();
 
             base.Exit();
         }
@@ -256,11 +261,11 @@ namespace DOL.AI.Brain
             if (_brain.PvPMode && !_brain.HasAggro)
                 _brain.CheckProximityAggro(_brain.AggroRange);
 
-            if (_checkAggroTime < GameLoop.GameLoopTime)
-            {
-                _brain.CheckProximityAggro(_brain.AggroRange);
-                _checkAggroTime = GameLoop.GameLoopTime + 5000;
-            }
+            //if (_checkAggroTime < GameLoop.GameLoopTime)
+            //{
+            //    _brain.CheckProximityAggro(_brain.AggroRange);
+            //    _checkAggroTime = GameLoop.GameLoopTime + 5000;
+            //}
 
             //if (_brain.IsFleeing)
             //{
@@ -366,6 +371,7 @@ namespace DOL.AI.Brain
             {
                 if (_brain.CheckProximityAggro(_brain.AggroRange))
                 {
+                    log.Info("Aggroing");
                     _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
                     return;
                 }
@@ -373,40 +379,26 @@ namespace DOL.AI.Brain
 
             if (!_brain.Body.InCombat)
             {
-                delayRoam = false;
+                delayRoam = _brain.CheckDelayRoam();
 
-                if (!_brain.Body.InCombat)
+                if (delayRoam && _brain.Body.IsTargetPositionValid)
                 {
-                    if (_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive) || _brain.MimicBody.Sit(_brain.CheckStats(75)))
-                        delayRoam = true;
-
-                    if (_brain.Body.Group != null)
-                    {
-                        foreach (GameLiving groupMember in _brain.Body.Group.GetMembersInTheGroup())
-                            if (groupMember is MimicNPC mimic)
-                                if (groupMember.IsCasting || groupMember.IsSitting ||
-                                    (mimic.MimicBrain.FSM.GetCurrentState() == mimic.MimicBrain.FSM.GetState(eFSMStateType.FOLLOW_THE_LEADER) &&
-                                    !_brain.Body.IsWithinRadius(groupMember, 1000)))
-                                    delayRoam = true;
-                    }
-                }
-
-                if (_brain.Body.IsTargetPositionValid && delayRoam)
                     _brain.Body.StopMoving();
-
-                if (!delayRoam && !_brain.Body.IsCasting && !_brain.Body.IsSitting)
+                }
+                else if (!delayRoam && !_brain.Body.IsCasting && !_brain.Body.IsSitting)
                 {
                     int chance = Properties.GAMENPC_RANDOMWALK_CHANCE;
 
                     if (_brain.PvPMode)
-                    {
-                        if (_brain.Roam)
-                            chance = ROAM_CHANCE_ROAM;
-                    }
+                        chance = ROAM_CHANCE_ROAM;
 
                     if (_lastRoamTick + ROAM_COOLDOWN <= GameLoop.GameLoopTime && Util.Chance(chance))
                     {
-                        _brain.Body.Roam(_brain.Body.MaxSpeed);
+                        if (!_brain.Body.IsMoving)
+                        {
+                            _brain.Body.Roam(_brain.Body.MaxSpeed);
+                        }
+
                         _lastRoamTick = GameLoop.GameLoopTime;
                     }
                 }
@@ -452,7 +444,7 @@ namespace DOL.AI.Brain
             _brain.Body.ReturnToSpawnPoint(_brain.Body.MaxSpeed);
             _brain.IsPulling = false;
             _brain.PvPMode = false;
-            
+
             base.Enter();
         }
 
@@ -531,7 +523,7 @@ namespace DOL.AI.Brain
                 {
                     if (_brain.Body.Group != null && _brain.Body.Group.MimicGroup.CampPoint != null)
                         _brain.FSM.SetCurrentState(eFSMStateType.CAMP);
-                    
+
                     _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
                     return;
                 }

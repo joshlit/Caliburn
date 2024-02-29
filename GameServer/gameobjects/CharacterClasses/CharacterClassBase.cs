@@ -4,6 +4,7 @@ using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.PacketHandler;
 using DOL.GS.Realm;
+using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS
@@ -87,7 +88,7 @@ namespace DOL.GS
 		/// <summary>
 		/// The GamePlayer for this character
 		/// </summary>
-		public GamePlayer Player { get; private set; }
+		public IGamePlayer Player { get; private set; }
 
 		private static readonly string[] AutotrainableSkills = new string[0];
 
@@ -114,7 +115,7 @@ namespace DOL.GS
 			}
 		}
 
-		public virtual void Init(GamePlayer player)
+		public virtual void Init(IGamePlayer player)
 		{
 			// TODO : Should Throw Exception Here.
 			if (Player != null && log.IsWarnEnabled)
@@ -157,7 +158,7 @@ namespace DOL.GS
 		{
 			get
 			{
-				return LanguageMgr.TryTranslateOrDefault(Player, m_profession, m_profession);
+				return LanguageMgr.TryTranslateOrDefault((GamePlayer)Player, m_profession, m_profession);
 			}
 		}
 
@@ -296,7 +297,9 @@ namespace DOL.GS
 
 		public virtual void SetControlledBrain(IControlledBrain controlledBrain)
 		{
-			if (controlledBrain == Player.ControlledBrain) return;
+			if (controlledBrain == Player.ControlledBrain) 
+				return;
+
 			if (controlledBrain == null)
 			{
 				Player.Out.SendPetWindow(null, ePetWindowAction.Close, 0, 0);
@@ -309,12 +312,16 @@ namespace DOL.GS
 			{
 				if (controlledBrain.Owner != Player)
 					throw new ArgumentException("ControlledNpc with wrong owner is set (player=" + Player.Name + ", owner=" + controlledBrain.Owner.Name + ")", "controlledNpc");
+
 				if (Player.ControlledBrain == null)
-					Player.InitControlledBrainArray(1);
+					((GamePlayer)Player).InitControlledBrainArray(1);
+
 				Player.Out.SendPetWindow(controlledBrain.Body, ePetWindowAction.Open, controlledBrain.AggressionState, controlledBrain.WalkState);
+
 				if (controlledBrain.Body != null)
 				{
 					Player.Out.SendNPCCreate(controlledBrain.Body); // after open pet window again send creation NPC packet
+
 					if (controlledBrain.Body.Inventory != null)
 						Player.Out.SendLivingEquipmentUpdate(controlledBrain.Body);
 				}
@@ -329,7 +336,7 @@ namespace DOL.GS
 		/// </summary>
 		public virtual void CommandNpcRelease()
 		{
-			IControlledBrain controlledBrain = Player.ControlledBrain;
+			IControlledBrain controlledBrain = ((IGamePlayer)Player).ControlledBrain;
 
 			if (controlledBrain == null)
 				return;
@@ -378,7 +385,7 @@ namespace DOL.GS
 		/// <returns></returns>
 		public virtual ShadeECSGameEffect CreateShadeEffect()
 		{
-			return new ShadeECSGameEffect(new ECSGameEffectInitParams(Player, 0, 1));
+			return new ShadeECSGameEffect(new ECSGameEffectInitParams((GamePlayer)Player, 0, 1));
 		}
 
 		/// <summary>

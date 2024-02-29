@@ -20,6 +20,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using static DOL.GS.AttackData;
 using static DOL.GS.GamePlayer;
 
@@ -723,41 +724,20 @@ namespace DOL.GS.Scripts
 
         public void SetSpells()
         {
-            IList<Specialization> specs = GetSpecList();
-
-            List<Skill> skills;
             List<Spell> spells = new List<Spell>();
 
-            foreach (Specialization spec in specs)
+            List<Tuple<Skill, Skill>> usableSkills = GetAllUsableSkills();
+
+            for (int i = 0; i < usableSkills.Count; i++)
             {
-                var dict = GetLinesSpellsForLiving(this, spec.Level, spec);
+                Skill skill = usableSkills[i].Item1;
 
-                if (dict != null && dict.Count > 0)
-                {
-                    foreach (KeyValuePair<SpellLine, List<Skill>> kvp in dict)
-                    {
-                        dict.TryGetValue(kvp.Key, out skills);
-
-                        foreach (Skill skill in skills)
-                        {
-                            if (skill is Spell)
-                            {
-                                Spell spell = skill as Spell;
-
-                                spells.Add(spell);
-                            }
-                        }
-                    }
-                }
+                if (skill is Spell)
+                    spells.Add((Spell)skill);
             }
 
-            List<Spell> result = GetHighestLevelSpells(spells);
-
-            //foreach (Spell spell in result)
-            //    log.Info(spell.Name + " " + spell.Level);
-
-            if (result.Count > 0)
-                Spells = result;
+            if (spells.Count > 0)
+                Spells = spells;
         }
 
         public void SetCasterSpells()
@@ -773,19 +753,6 @@ namespace DOL.GS.Scripts
                 {
                     foreach (Tuple<SpellLine, List<Skill>> tuple in dict)
                     {
-                        switch (tuple.Item1.Name)
-                        {
-                            case "Banelord":
-                            case "Battlemaster":
-                            case "Convoker":
-                            case "Perfecter:":
-                            case "Sojourner":
-                            case "Spymaster":
-                            case "Stormlord":
-                            case "Warlord":
-                            continue;
-                        }
-
                         if (tuple.Item2.Count > 0)
                         {
                             foreach (Skill skill in tuple.Item2)
@@ -793,7 +760,9 @@ namespace DOL.GS.Scripts
                                 if (skill is Spell)
                                 {
                                     Spell spell = skill as Spell;
-                                    spells.Add(spell);
+
+                                    if (!spells.Contains(spell))
+                                        spells.Add(spell);
                                 }
                             }
                         }
@@ -801,206 +770,46 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            List<Spell> result = GetHighestLevelSpells(spells);
+            List<Spell> highestSpellLevels = GetHighestLevelSpells(spells);
 
-            //foreach (Spell spell in result)
-            //    log.Info(spell.Name + " " + spell.Level);
-
-            if (result.Count > 0)
-                Spells = result;
+            if (highestSpellLevels.Count > 0)
+                Spells = highestSpellLevels;
         }
 
         public List<Spell> GetHighestLevelSpells(List<Spell> spells)
         {
-            List<Spell> result = new List<Spell>();
+            spells = spells.OrderByDescending(spell => spell.Level).ToList();
 
-            for (int i = 0; i < spells.Count; i++)
+            List<Spell> highestLevelSpells = new List<Spell>();
+
+            foreach (Spell currentSpell in spells)
             {
-                Spell currentSpell = spells[i];
-                Spell matchingItem = result.FirstOrDefault(x => x.DamageType == currentSpell.DamageType
-                                                             && x.SpellType == currentSpell.SpellType
-                                                             && x.Radius == currentSpell.Radius
-                                                             && x.Frequency == currentSpell.Frequency
-                                                             && x.CastTime == currentSpell.CastTime
-                                                             && x.Target == currentSpell.Target);
-                //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
+                Spell existingSpell = highestLevelSpells.FirstOrDefault(x => AreSpellsEqual(x, currentSpell));
 
-                if (matchingItem == null || currentSpell.Level > matchingItem.Level)
+                if (existingSpell != null)
                 {
-                    //TODO: Some spells meet this critera but shouldn't be removed. All Healer spells have various conflict, Thane DD spells, Skald DD spells are some.
-                    //if (currentSpell.SpellType == "Heal")
-                    //{
-                    //    if (matchingItem != null && matchingItem.Level != 46 && )
-                    //    {
-                    //        result.Add(currentSpell);
-                    //        continue;
-                    //    }
-                    //}
-
-                    result.RemoveAll(x => x.DamageType == currentSpell.DamageType
-                                       && x.SpellType == currentSpell.SpellType
-                                       && x.Radius == currentSpell.Radius
-                                       && x.Frequency == currentSpell.Frequency
-                                       && x.CastTime == currentSpell.CastTime
-                                       && x.Target == currentSpell.Target);
-                    //&& x.SharedTimerGroup == currentSpell.SharedTimerGroup);
-
-                    result.Add(currentSpell);
+                    if (existingSpell.Level < currentSpell.Level)
+                        highestLevelSpells.Remove(existingSpell);
+                    else
+                        continue;
                 }
+                
+                highestLevelSpells.Add(currentSpell);
             }
 
-            return result;
+            return highestLevelSpells;
         }
 
-        /// <summary>
-        //        /// Default getter for Ability
-        //        /// Return Abilities it lists depending on spec level
-        //        /// Override to change the condition...
-        //        /// </summary>
-        //        /// <param name="living"></param>
-        //        /// <param name="level">level is only used when called for pretending some level (for trainer display)</param>
-        //        /// <returns></returns>
-        protected virtual List<Ability> GetAbilitiesForMimic(string keyName, GameLiving living, int level)
+        private bool AreSpellsEqual(Spell spellOne, Spell spellTwo)
         {
-            // Select only Enabled and Max Level Abilities
-            List<Ability> abs = SkillBase.GetSpecAbilityList(keyName, ((MimicNPC)living).CharacterClass.ID);
-
-            // Get order of first appearing skills
-            IOrderedEnumerable<Ability> order = abs.GroupBy(item => item.KeyName)
-                .Select(ins => ins.OrderBy(it => it.SpecLevelRequirement).First())
-                .Where(item => item.SpecLevelRequirement <= level)
-                .OrderBy(item => item.SpecLevelRequirement)
-                .ThenBy(item => item.ID);
-
-            // Get best of skills
-            List<Ability> best = abs.Where(item => item.SpecLevelRequirement <= level)
-                .GroupBy(item => item.KeyName)
-                .Select(ins => ins.OrderByDescending(it => it.SpecLevelRequirement).First()).ToList();
-
-            List<Ability> results = new List<Ability>();
-            // make some kind of "Join" between the order of appearance and the best abilities.
-            foreach (Ability ab in order)
-            {
-                for (int r = 0; r < best.Count; r++)
-                {
-                    if (best[r].KeyName == ab.KeyName)
-                    {
-                        results.Add(best[r]);
-                        best.RemoveAt(r);
-                        break;
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// Default Getter For Styles
-        /// Return Styles depending on spec level
-        /// </summary>
-        /// <param name="living"></param>
-        /// <param name="level">level is only used when called for pretending some level (for trainer display)</param>
-        /// <returns></returns>
-        protected virtual List<Style> GetStylesForMimic(string keyName, GameLiving living, int level)
-        {
-            // Try with Class ID 0 if no class id styles
-            int classid = ((MimicNPC)living).CharacterClass.ID;
-
-            List<Style> styles = SkillBase.GetStyleList(keyName, classid);
-
-            if (styles.Count == 0)
-                styles = SkillBase.GetStyleList(keyName, 0);
-
-            // Select only enabled Styles and Order them
-            return styles.Where(item => item.SpecLevelRequirement <= level)
-                .OrderBy(item => item.SpecLevelRequirement)
-                .ThenBy(item => item.ID).ToList();
-        }
-
-        /// <summary>
-        //        /// Default Getter For Spells
-        //        /// Retrieve Spell index by SpellLine, List Spell by Level Order
-        //        /// Select Only enabled Spells by spec or living level constraint.
-        //        /// </summary>
-        //        /// <param name="living"></param>
-        //        /// <param name="level">level is only used when called for pretending some level (for trainer display)</param>
-        //        /// <returns></returns>
-        protected virtual IDictionary<SpellLine, List<Skill>> GetLinesSpellsForLiving(GameLiving living, int level, Specialization spec)
-        {
-            IDictionary<SpellLine, List<Skill>> dict = new Dictionary<SpellLine, List<Skill>>();
-
-            foreach (SpellLine sl in GetSpellLinesForMimic(living, level, spec.KeyName))
-            {
-                dict.Add(sl, SkillBase.GetSpellList(sl.KeyName)
-                         .Where(item => item.Level <= sl.Level)
-                         .OrderBy(item => item.Level)
-                         .ThenBy(item => item.ID).Cast<Skill>().ToList());
-            }
-
-            return dict;
-        }
-
-        /// <summary>
-        //        /// Default getter for SpellLines
-        //        /// Retrieve spell line depending on advanced class and class hint
-        //        /// Order by Baseline
-        //        /// </summary>
-        //        /// <param name="living"></param>
-        //        /// <param name="level">level is only used when called for pretending some level (for trainer display)</param>
-        //        /// <returns></returns>
-        protected virtual List<SpellLine> GetSpellLinesForMimic(GameLiving living, int level, string KeyName)
-        {
-            List<SpellLine> list = new List<SpellLine>();
-            IList<Tuple<SpellLine, int>> spsl = SkillBase.GetSpecsSpellLines(KeyName);
-
-            // Get Spell Lines by order of appearance
-            if (living is MimicNPC mimic)
-            {
-                // select only spec line if is advanced class...
-                var tmp = spsl.Where(item => (item.Item1.IsBaseLine || mimic.CharacterClass.HasAdvancedFromBaseClass()))
-                    .OrderBy(item => (item.Item1.IsBaseLine ? 0 : 1)).ThenBy(item => item.Item1.ID);
-
-                // try with class hint
-                var baseline = tmp.Where(item => item.Item1.IsBaseLine && item.Item2 == mimic.CharacterClass.ID);
-                if (baseline.Any())
-                {
-                    foreach (Tuple<SpellLine, int> ls in baseline)
-                    {
-                        ls.Item1.Level = mimic.Level;
-                        list.Add(ls.Item1);
-                    }
-                }
-                else
-                {
-                    foreach (Tuple<SpellLine, int> ls in tmp.Where(item => item.Item1.IsBaseLine && item.Item2 == 0))
-                    {
-                        ls.Item1.Level = mimic.Level;
-                        list.Add(ls.Item1);
-                    }
-                }
-
-                // try spec with class hint
-                var specline = tmp.Where(item => !item.Item1.IsBaseLine && item.Item2 == mimic.CharacterClass.ID);
-                if (specline.Any())
-                {
-                    foreach (Tuple<SpellLine, int> ls in specline)
-                    {
-                        ls.Item1.Level = level;
-                        list.Add(ls.Item1);
-                    }
-                }
-                else
-                {
-                    foreach (Tuple<SpellLine, int> ls in tmp.Where(item => !item.Item1.IsBaseLine && item.Item2 == 0))
-                    {
-                        ls.Item1.Level = level;
-                        list.Add(ls.Item1);
-                    }
-                }
-            }
-
-            return list;
+            return spellOne.DamageType == spellTwo.DamageType &&
+                   spellOne.SpellType == spellTwo.SpellType &&
+                   spellOne.Frequency == spellTwo.Frequency &&
+                   spellOne.CastTime == spellTwo.CastTime &&
+                   spellOne.Target == spellTwo.Target &&
+                   spellOne.Group == spellTwo.Group &&
+                   spellOne.IsPBAoE == spellTwo.IsPBAoE &&
+                   ((!spellOne.IsAoE && !spellTwo.IsAoE) || (spellOne.IsAoE && spellTwo.IsAoE));
         }
 
         private List<Spell> m_spells = new(0);
@@ -1043,16 +852,19 @@ namespace DOL.GS.Scripts
             // Clear the lists
             if (InstantHarmfulSpells != null)
                 InstantHarmfulSpells.Clear();
+
             if (HarmfulSpells != null)
                 HarmfulSpells.Clear();
 
             if (InstantHealSpells != null)
                 InstantHealSpells.Clear();
+
             if (HealSpells != null)
                 HealSpells.Clear();
 
             if (InstantCrowdControlSpells != null)
                 InstantCrowdControlSpells.Clear();
+
             if (CrowdControlSpells != null)
                 CrowdControlSpells.Clear();
 
@@ -1061,6 +873,7 @@ namespace DOL.GS.Scripts
 
             if (InstantMiscSpells != null)
                 InstantMiscSpells.Clear();
+
             if (MiscSpells != null)
                 MiscSpells.Clear();
 
@@ -1078,9 +891,11 @@ namespace DOL.GS.Scripts
                 {
                     if (BoltSpells == null)
                         BoltSpells = new List<Spell>(1);
+
                     BoltSpells.Add(spell);
                 }
-                else if (spell.SpellType == eSpellType.Mesmerize || (spell.SpellType == eSpellType.SpeedDecrease && spell.Value >= 99))
+                else if (spell.SpellType == eSpellType.Mesmerize || 
+                        (spell.SpellType == eSpellType.SpeedDecrease && spell.Value >= 99))
                 {
                     //if (spell.IsInstantCast)
                     //{
@@ -1092,6 +907,7 @@ namespace DOL.GS.Scripts
                     //{
                     if (CrowdControlSpells == null)
                         CrowdControlSpells = new List<Spell>(1);
+
                     CrowdControlSpells.Add(spell);
                     //}
                 }
@@ -1101,12 +917,14 @@ namespace DOL.GS.Scripts
                     {
                         if (InstantHarmfulSpells == null)
                             InstantHarmfulSpells = new List<Spell>(1);
+
                         InstantHarmfulSpells.Add(spell);
                     }
                     else
                     {
                         if (HarmfulSpells == null)
                             HarmfulSpells = new List<Spell>(1);
+
                         HarmfulSpells.Add(spell);
                     }
                 }
@@ -1116,9 +934,20 @@ namespace DOL.GS.Scripts
                     if (spell.Target == eSpellTarget.PET)
                         continue;
 
-                    if (HealSpells == null)
-                        HealSpells = new List<Spell>(1);
-                    HealSpells.Add(spell);
+                    if (spell.IsInstantCast)
+                    {
+                        if (InstantHealSpells == null)
+                            InstantHealSpells = new List<Spell>(1);
+
+                        InstantHealSpells.Add(spell);
+                    }
+                    else
+                    {
+                        if (HealSpells == null)
+                            HealSpells = new List<Spell>(1);
+
+                        HealSpells.Add(spell);
+                    }
                 }
                 else
                 {
@@ -1127,12 +956,14 @@ namespace DOL.GS.Scripts
                     {
                         if (InstantMiscSpells == null)
                             InstantMiscSpells = new List<Spell>(1);
+
                         InstantMiscSpells.Add(spell);
                     }
                     else
                     {
                         if (MiscSpells == null)
                             MiscSpells = new List<Spell>(1);
+
                         MiscSpells.Add(spell);
                     }
                 }
@@ -3339,7 +3170,7 @@ namespace DOL.GS.Scripts
             }
 
             m_characterClass = cl;
-            //m_characterClass.Init(this);
+            m_characterClass.Init(this);
 
             //DBCharacter.Class = m_characterClass.ID;
 
@@ -3693,34 +3524,17 @@ namespace DOL.GS.Scripts
             // Remove All Trainable Specialization or "Career Spec" that aren't managed by This Data Career anymore
             var speclist = GetSpecList();
             var careerslist = careers.Keys.Select(k => k.KeyName.ToLower());
+
             foreach (var spec in speclist.Where(sp => sp.Trainable || !sp.AllowSave))
             {
                 if (!careerslist.Contains(spec.KeyName.ToLower()))
                     RemoveSpecialization(spec.KeyName);
             }
 
-            // sort ML Spec depending on ML Line
-            byte mlindex = 0;
             foreach (KeyValuePair<Specialization, int> constraint in careers)
             {
-                //if (constraint.Key is IMasterLevelsSpecialization)
-                //{
-                //    if (mlindex != MLLine)
-                //    {
-                //        if (HasSpecialization(constraint.Key.KeyName))
-                //            RemoveSpecialization(constraint.Key.KeyName);
-
-                //        mlindex++;
-                //        continue;
-                //    }
-
-                //    mlindex++;
-
-                //    if (!MLGranted || MLLevel < 1)
-                //    {
-                //        continue;
-                //    }
-                //}
+                if (constraint.Key is IMasterLevelsSpecialization)
+                    continue;
 
                 // load if the spec doesn't exists
                 if (Level >= constraint.Value)
@@ -4221,9 +4035,9 @@ namespace DOL.GS.Scripts
                 // Add Lists spells ordered.
                 foreach (Specialization spec in GetSpecList().Where(item => !item.HybridSpellList))
                 {
-                    var spells = GetLinesSpellsForLiving(this, spec.Level, spec);
+                    var spells = spec.GetLinesSpellsForLiving(this);
 
-                    foreach (SpellLine sl in GetSpellLinesForMimic(this, Level, spec.KeyName))
+                    foreach (SpellLine sl in spec.GetSpellLinesForLiving(this))
                     {
                         List<Tuple<SpellLine, List<Skill>>> working;
                         if (sl.IsBaseLine)
@@ -4445,14 +4259,14 @@ namespace DOL.GS.Scripts
                 foreach (Specialization spec in m_specialization.Values)
                 {
                     // check for new Abilities
-                    foreach (Ability ab in GetAbilitiesForMimic(spec.KeyName, this, Level))
+                    foreach (Ability ab in spec.GetAbilitiesForLiving(this))
                     {
                         if (!HasAbility(ab.KeyName) || GetAbility(ab.KeyName).Level < ab.Level)
                             AddAbility(ab, false);
                     }
 
                     // check for new Styles
-                    foreach (Style st in GetStylesForMimic(spec.KeyName, this, spec.Level))
+                    foreach (Style st in spec.GetStylesForLiving(this))
                     {
                         if (st.SpecLevelRequirement == 2 && Level > 5)
                         {
@@ -4470,7 +4284,7 @@ namespace DOL.GS.Scripts
                     }
 
                     // check for new SpellLine
-                    foreach (SpellLine sl in GetSpellLinesForMimic(this, spec.Level, spec.KeyName))
+                    foreach (SpellLine sl in spec.GetSpellLinesForLiving(this))
                     {
                         AddSpellLine(sl, false);
                     }
@@ -5615,14 +5429,36 @@ namespace DOL.GS.Scripts
             get { return DBCharacter != null ? (byte)DBCharacter.Level : base.BaseLevel; }
         }
 
+        private int _mlLevel;
         /// <summary>
         /// Gets and sets the last ML the player has completed.
         /// MLLevel is advanced once all steps are completed.
         /// </summary>
         public virtual int MLLevel
         {
-            get { return DBCharacter != null ? DBCharacter.MLLevel : 0; }
-            set { if (DBCharacter != null) DBCharacter.MLLevel = value; }
+            get { return 0; }
+            set { _mlLevel = value; }
+        }
+
+        private bool _mlGranted;
+
+        /// <summary>
+        /// True if player has started Master Levels
+        /// </summary>
+        public virtual bool MLGranted
+        {
+            get { return false; }
+            set { _mlGranted = value; }
+        }
+
+        private byte _ml;
+        /// <summary>
+        /// What ML line has this character chosen
+        /// </summary>
+        public virtual byte MLLine
+        {
+            get { return 0; }
+            set { _ml = value; }
         }
 
         /// <summary>
@@ -5924,7 +5760,6 @@ namespace DOL.GS.Scripts
 
                 return 2000;
             }
-
 
             double percent = DexterityCastTimeReduction;
             percent *= 1.0 - GetModified(eProperty.CastingSpeed) * 0.01;
@@ -7040,7 +6875,7 @@ namespace DOL.GS.Scripts
                 // on normal server type send messages only to the killer and dead players realm
                 // check for gameplayer is needed because killers realm don't see deaths by guards
                 if (player.Realm == Realm
-                    || (Properties.DEATH_MESSAGES_ALL_REALMS && (killer is GamePlayer || killer is MimicNPC || killer is GameKeepGuard))) //Only show Player/Guard kills if shown to all realms
+                    || (Properties.DEATH_MESSAGES_ALL_REALMS && (killer is IGamePlayer || killer is GameKeepGuard))) //Only show Player/Guard kills if shown to all realms
 
                     player.Out.SendMessage(publicMessage, messageType, eChatLoc.CL_SystemWindow);
             }
@@ -7048,11 +6883,12 @@ namespace DOL.GS.Scripts
             IsSitting = false;
             IsSwimming = false;
 
-            //if (ControlledBrain != null)
-            //    CommandNpcRelease();
-
             // then buffs drop messages
             //GameLivingProcessDeath(killer);
+
+            if (ControlledBrain != null)
+                CommandNpcRelease();
+
             base.ProcessDeath(killer);
 
             if (m_releaseType == eReleaseType.Duel)
@@ -8543,7 +8379,7 @@ namespace DOL.GS.Scripts
         {
             get
             {
-                return (ushort)m_client.Account.Characters[m_client.ActiveCharIndex].CreationModel;
+                return Model;
             }
         }
 
@@ -8877,7 +8713,7 @@ namespace DOL.GS.Scripts
             if (attackComponent.AttackState)
             {
                 if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                { 
+                {
                     attackComponent.StopAttack();
                 }
                 else
@@ -8994,6 +8830,7 @@ namespace DOL.GS.Scripts
         {
             if (controlledBrain == ControlledBrain)
                 return;
+
             //if (controlledBrain.Owner != this)
             //throw new ArgumentException("ControlledNpc with wrong owner is set (mimic=" + Name + ", owner=" + controlledBrain.Owner.Name + ")", "controlledNpc");
 

@@ -17,15 +17,15 @@
  *
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.Language;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DOL.GS.Spells
 {
@@ -50,8 +50,6 @@ namespace DOL.GS.Spells
     [SpellHandler("SummonMinion")]
     public class SummonMinionHandler : SummonSpellHandler
     {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         public SummonMinionHandler(GameLiving caster, Spell spell, SpellLine line)
             : base(caster, spell, line) { }
 
@@ -64,7 +62,7 @@ namespace DOL.GS.Spells
         {
             if (Caster is IGamePlayer && ((IGamePlayer)Caster).ControlledBrain == null)
             {
-                MessageToCaster(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SummonMinionHandler.CheckBeginCast.Text1"), eChatType.CT_SpellResisted);
+                MessageToCaster(LanguageMgr.GetTranslation((Caster as IGamePlayer).Client, "SummonMinionHandler.CheckBeginCast.Text1"), eChatType.CT_SpellResisted);
                 return false;
             }
 
@@ -79,12 +77,14 @@ namespace DOL.GS.Spells
                 ((IGamePlayer)Caster).ControlledBrain.Body.ControlledNpcList != null)
             {
                 int cumulativeLevel = 0;
+
                 foreach (var petBrain in ((IGamePlayer)Caster).ControlledBrain.Body.ControlledNpcList)
                 {
                     cumulativeLevel += petBrain != null && petBrain.Body != null ? petBrain.Body.Level : 0;
                 }
 
                 byte newpetlevel = (byte)(Caster.Level * m_spell.Damage * -0.01);
+
                 if (newpetlevel > m_spell.Value)
                     newpetlevel = (byte)m_spell.Value;
 
@@ -94,6 +94,7 @@ namespace DOL.GS.Spells
                     return false;
                 }
             }
+
             return base.CheckBeginCast(selectedTarget);
         }
 

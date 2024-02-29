@@ -1,3 +1,4 @@
+using DOL.Database;
 using DOL.GS;
 using DOL.GS.Effects;
 using DOL.GS.Keeps;
@@ -8,6 +9,7 @@ using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
 using DOL.Language;
+using log4net;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,7 +63,6 @@ namespace DOL.AI.Brain
         public bool IsFlanking;
         public Point2D TargetFlankPosition;
 
-        public Spell QueuedOffensiveSpell;
         public Point3D TargetFleePosition;
 
         // Used for AmbientBehaviour "Seeing" - maintains a list of GamePlayer in range
@@ -148,15 +149,15 @@ namespace DOL.AI.Brain
         {
             FireAmbientSentence();
 
-            // Check aggro only if our aggro list is empty and we're not in combat.
-            //if (AggroLevel > 0 && aggroRange > 0 && !HasAggro && !Body.AttackState && Body.CurrentSpellHandler == null)
-            //{
-            //    CheckPlayerAggro();
-            //    CheckNPCAggro(aggroRange);
-            //}
+            //Check aggro only if our aggro list is empty and we're not in combat.
+            if (AggroLevel > 0 && aggroRange > 0 && !HasAggro && !Body.AttackState && Body.CurrentSpellHandler == null)
+            {
+                CheckPlayerAggro();
+                CheckNPCAggro(aggroRange);
+            }
 
-            CheckPlayerAggro();
-            CheckNPCAggro(aggroRange);
+            //CheckPlayerAggro();
+            //CheckNPCAggro(aggroRange);
 
             // Some calls rely on this method to return if there's something in the aggro list, not necessarily to perform a proximity aggro check.
             // But this doesn't necessarily return whether or not the check was positive, only the current state (LoS checks take time).
@@ -236,33 +237,11 @@ namespace DOL.AI.Brain
                         theirOwner.Out.SendCheckLOS(Body, npc, new CheckLOSResponse(LosCheckForAggroCallback));
                         continue;
                     }
-                    //else if (this is ControlledNpcBrain ourControlledNpcBrain && ourControlledNpcBrain.GetPlayerOwner() is GamePlayer ourOwner)
-                    //{
-                    //    ourOwner.Out.SendCheckLOS(Body, npc, new CheckLOSResponse(LosCheckForAggroCallback));
-                    //    continue;
-                    //}
                 }
-
-                //if (!PvPMode && Body.Group != null)
-                //{
-                //    bool isAttacking = false;
-
-                //    if (Body.Group.MimicGroup.CampPoint != null)
-                //        isAttacking = true;
-
-                //    foreach (GameLiving groupMember in Body.Group.GetMembersInTheGroup())
-                //    {
-                //        if (npc.TargetObject == groupMember)
-                //            isAttacking = true;
-                //    }
-
-                //    if (!isAttacking)
-                //        continue;
-                //}
 
                 AddToAggroList(npc, 1);
 
-                //return;
+                return;
             }
         }
 
@@ -969,7 +948,7 @@ namespace DOL.AI.Brain
 
                     if (Body.TargetObject != LastTargetObject)
                         ResetFlanking();
-                    
+
                     if (Body.ActiveWeapon?.Item_Type != (int)eInventorySlot.DistanceWeapon && Body.IsWithinRadius(Body.TargetObject, Body.attackComponent.AttackRange))
                     {
                         if (MimicBody.CanUsePositionalStyles && !IsMainTank && Body.ActiveWeapon != null)
@@ -1253,6 +1232,9 @@ namespace DOL.AI.Brain
             if (realTarget as GameNPC != null && ((GameNPC)realTarget).Brain is IControlledBrain npcTargetBrain)
                 realTarget = npcTargetBrain.GetLivingOwner();
 
+            if (realTarget == null)
+                return false;
+
             // Only attack if green+ to target
             if (realTarget.IsObjectGreyCon(Body))
                 return false;
@@ -1350,15 +1332,6 @@ namespace DOL.AI.Brain
             bool casted = false;
             List<Spell> spellsToCast = new();
 
-            if (QueuedOffensiveSpell != null)
-            {
-                if (CheckOffensiveSpells(QueuedOffensiveSpell))
-                {
-                    casted = true;
-                    QueuedOffensiveSpell = null;
-                }
-            }
-
             // Healers should heal whether in combat or out of it.
             if (!casted && Body.CanCastHealSpells)
             {
@@ -1408,9 +1381,23 @@ namespace DOL.AI.Brain
                     }
                 }
 
-                // Just pick a rando for now.
-                Spell spellToCast = Body.HealSpells[Util.Random(Body.HealSpells.Count - 1)];
-                casted = CheckHealSpells(spellToCast, numNeedHealing, singleEmergency, groupEmergency, livingToHeal);
+                Spell spellTocast;
+
+                if ((singleEmergency || groupEmergency) && Body.CanCastInstantHealSpells)
+                    spellTocast = Body.InstantHealSpells[Util.Random(Body.InstantHealSpells.Count - 1)];
+                else
+                {
+                    Spell cureDisease = null;
+
+                    if (livingToHeal != null && livingToHeal.IsDiseased && (cureDisease = Body.HealSpells.FirstOrDefault(spell => spell.SpellType == eSpellType.CureDisease)) != null)
+                    {
+                        spellTocast = cureDisease;
+                    }
+                    else
+                        spellTocast = Body.HealSpells[Util.Random(Body.HealSpells.Count - 1)];
+                }
+
+                casted = CheckHealSpells(spellTocast, numNeedHealing, singleEmergency, groupEmergency, livingToHeal);
             }
 
             if (!casted && type == eCheckSpellType.CrowdControl)
@@ -1557,14 +1544,11 @@ namespace DOL.AI.Brain
                             {
                                 if (Body.GetSkillDisabledDuration(quickCast) <= 0)
                                 {
-                                    Body.DisableSkill(quickCast, 180000);
-
                                     // Give mimics a small bump in duration, they don't use it as well as humans.
                                     new QuickCastECSGameEffect(new ECSGameEffectInitParams(Body, QuickCastECSGameEffect.DURATION + 1000, 1));
+                                    Body.DisableSkill(quickCast, 180000);
 
                                     casted = CheckOffensiveSpells(spellToCast);
-
-                                    //QueuedOffensiveSpell = spellToCast;
                                 }
                             }
                         }
@@ -1577,7 +1561,7 @@ namespace DOL.AI.Brain
 
         protected bool CanCastOffensiveSpell(Spell spell)
         {
-            if (Body.GetSkillDisabledDuration(spell) == 0)
+            if (Body.GetSkillDisabledDuration(spell) <= 0)
             {
                 if (spell.CastTime > 0)
                 {
@@ -1599,7 +1583,7 @@ namespace DOL.AI.Brain
                 return false;
 
             // Make sure the spell isn't disabled.
-            if (spell.HasRecastDelay || Body.GetSkillDisabledDuration(spell) > 0)
+            if (Body.GetSkillDisabledDuration(spell) > 0)
                 return false;
 
             return true;
@@ -1617,6 +1601,7 @@ namespace DOL.AI.Brain
             {
                 switch (spell.SpellType)
                 {
+                    case eSpellType.CureDisease:
                     case eSpellType.CombatHeal:
                     case eSpellType.Heal:
                     case eSpellType.HealOverTime:
@@ -1627,12 +1612,9 @@ namespace DOL.AI.Brain
 
                     if (spell.IsInstantCast)
                     {
-                        if (groupEmergency || singleEmergency)
-                        {
-                            if (Body.IsWithinRadius(livingToHeal, spell.Range))
-                                Body.TargetObject = livingToHeal;
-                            break;
-                        }
+                        if (Body.IsWithinRadius(livingToHeal, spell.Range))
+                            Body.TargetObject = livingToHeal;
+                        break;
                     }
 
                     if (spell.Target == eSpellTarget.GROUP && numNeedHealing < 2)
@@ -1772,28 +1754,9 @@ namespace DOL.AI.Brain
 
                 case eSpellType.SummonMinion:
 
-                if (Body.ControlledBrain == null)
-                    break;
-                else
-                    goto case eSpellType.SummonCommander;
-
-                case eSpellType.SummonCommander:
-                case eSpellType.SummonUnderhill:
-                case eSpellType.SummonDruidPet: 
-                case eSpellType.SummonSimulacrum:
-                case eSpellType.SummonSpiritFighter:
-                
-
                 if (Body.ControlledBrain != null)
-                    return false;
-
-                if (Body.ControlledNpcList == null)
-                    Body.SetControlledBrain(Body.ControlledBrain);
-                else
                 {
-                    //Let's check to see if the list is full - if it is, we can't cast another minion.
-                    //If it isn't, let them cast.
-                    IControlledBrain[] icb = Body.ControlledNpcList;
+                    IControlledBrain[] icb = Body.ControlledBrain.Body.ControlledNpcList;
                     int numberofpets = 0;
 
                     for (int i = 0; i < icb.Length; i++)
@@ -1804,7 +1767,35 @@ namespace DOL.AI.Brain
 
                     if (numberofpets >= icb.Length)
                         break;
+
+                    int cumulativeLevel = 0;
+
+                    foreach (var petBrain in Body.ControlledBrain.Body.ControlledNpcList)
+                    {
+                        cumulativeLevel += petBrain != null && petBrain.Body != null ? petBrain.Body.Level : 0;
+                    }
+
+                    byte newpetlevel = (byte)(Body.Level * spell.Damage * -0.01);
+
+                    if (newpetlevel > spell.Value)
+                        newpetlevel = (byte)spell.Value;
+
+                    if (cumulativeLevel + newpetlevel > 75)
+                        break;
+
+                    Body.TargetObject = Body;
                 }
+
+                break;
+
+                case eSpellType.SummonCommander:
+                case eSpellType.SummonUnderhill:
+                case eSpellType.SummonDruidPet:
+                case eSpellType.SummonSimulacrum:
+                case eSpellType.SummonSpiritFighter:
+
+                if (Body.ControlledBrain != null)
+                    return false;
 
                 Body.TargetObject = Body;
 
@@ -1817,12 +1808,9 @@ namespace DOL.AI.Brain
 
                 #region Pulse
 
-                case eSpellType.SpeedEnhancement:
+                case eSpellType.SpeedEnhancement when spell.Target != eSpellTarget.PET:
 
-                if (spell.Target == eSpellTarget.PET)
-                    goto case eSpellType.Bladeturn;
-
-                if (!Body.InCombat && !LivingHasEffect(Body, spell))
+                if (!LivingHasEffect(Body, spell))
                     Body.TargetObject = Body;
 
                 break;
@@ -1831,6 +1819,8 @@ namespace DOL.AI.Brain
 
                 #region Buffs
 
+                case eSpellType.SpeedEnhancement when spell.Target == eSpellTarget.PET:
+                case eSpellType.CombatSpeedBuff when spell.Duration > 20:
                 case eSpellType.BodySpiritEnergyBuff:
                 case eSpellType.HeatColdMatterBuff:
                 case eSpellType.SpiritResistBuff:
@@ -1849,7 +1839,6 @@ namespace DOL.AI.Brain
                 case eSpellType.ArmorFactorBuff:
                 case eSpellType.Buff:
                 case eSpellType.CelerityBuff:
-                case eSpellType.CombatSpeedBuff:
                 case eSpellType.ConstitutionBuff:
                 case eSpellType.CourageBuff:
                 case eSpellType.CrushSlashTrustBuff:
@@ -1897,6 +1886,7 @@ namespace DOL.AI.Brain
                             if (!LivingHasEffect(Body.ControlledBrain.Body, spell))
                                 Body.TargetObject = Body.ControlledBrain.Body;
                         }
+
                         break;
                     }
 
@@ -1925,6 +1915,7 @@ namespace DOL.AI.Brain
                         }
                     }
                 }
+
                 break;
 
                 #endregion Buffs
@@ -2079,12 +2070,14 @@ namespace DOL.AI.Brain
 
             if (Body?.TargetObject != null)
             {
-                //log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString());
-
-                casted = Body.CastSpell(spell, m_mobSpellLine, false);
+                //log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString() + " on " + Body.TargetObject.Name);
+                //log.Info(Body.TargetObject.Name + " effect is " + LivingHasEffect((GameLiving)Body.TargetObject, spell));
+                    
+                Body.CastSpell(spell, m_mobSpellLine, false);
+                return true;
             }
 
-            return casted;
+            return false;
         }
 
         /// <summary>
@@ -2092,18 +2085,12 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual bool CheckOffensiveSpells(Spell spell, bool quickCast = false)
         {
-            
-
-            if (spell.SpellType == eSpellType.Taunt)
-                return false;
-
             if (spell.NeedInstrument && Body.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
                 Body.SwitchWeapon(eActiveWeaponSlot.Distance);
 
             if (!Body.IsWithinRadius(Body.TargetObject, spell.Range))
             {
                 Body.Follow(Body.TargetObject, spell.Range - 10, 5000);
-                QueuedOffensiveSpell = spell;
                 return false;
             }
 
@@ -2112,6 +2099,14 @@ namespace DOL.AI.Brain
             if (Body.TargetObject is GameLiving living && (spell.Duration == 0 || !LivingHasEffect(living, spell) || spell.SpellType == eSpellType.DirectDamageWithDebuff || spell.SpellType == eSpellType.DamageSpeedDecrease))
             {
                 casted = Body.CastSpell(spell, m_mobSpellLine);
+            }
+
+            if (casted)
+            {
+                if (spell.CastTime > 0)
+                    Body.StopFollowing();
+                else if (Body.FollowTarget != Body.TargetObject)
+                    Body.Follow(Body.TargetObject, spell.Range - 10, GameNPC.STICK_MAXIMUM_RANGE);
             }
 
             return casted;
@@ -2161,6 +2156,7 @@ namespace DOL.AI.Brain
 
                     break;
                 }
+
                 case eSpellType.CombatHeal:
                 case eSpellType.DamageAdd:
                 case eSpellType.ArmorFactorBuff:
@@ -2243,6 +2239,7 @@ namespace DOL.AI.Brain
                 {
                     Body.TargetObject = lastTarget;
                 }
+
                 break;
 
                 #endregion Enemy Spells
