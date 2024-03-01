@@ -92,7 +92,7 @@ namespace DOL.GS.Spells
 				}
 				if (checkPlayer != null)
 				{
-					checkPlayer.Out.SendCheckLOS(Caster, target, new CheckLOSResponse(DealDamageCheckLOS));
+					checkPlayer.Out.SendCheckLos(Caster, target, new CheckLosResponse(DealDamageCheckLos));
 				}
 				else
 				{
@@ -105,12 +105,9 @@ namespace DOL.GS.Spells
 			}
 		}
 
-		protected virtual void DealDamageCheckLOS(GamePlayer player, ushort response, ushort targetOID)
+		protected virtual void DealDamageCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
 		{
-			if (player == null || Caster.ObjectState != GameObject.eObjectState.Active)
-				return;
-
-			if ((response & 0x100) == 0x100)
+			if (response is eLosCheckResponse.TRUE)
 			{
 				try
 				{
@@ -163,7 +160,7 @@ namespace DOL.GS.Spells
 			if (target is GamePlayer)
 			{
 				GamePlayer player = target as GamePlayer;
-				player.Out.SendCheckLOS(Caster, player, new CheckLOSResponse(ResistSpellCheckLOS));
+				player.Out.SendCheckLos(Caster, player, new CheckLosResponse(ResistSpellCheckLos));
 			}
 			else
 			{
@@ -171,9 +168,9 @@ namespace DOL.GS.Spells
 			}
 		}
 
-		private void ResistSpellCheckLOS(GamePlayer player, ushort response, ushort targetOID)
+		private void ResistSpellCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
 		{
-			if ((response & 0x100) == 0x100)
+			if (response is eLosCheckResponse.TRUE)
 			{
 				try
 				{

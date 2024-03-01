@@ -29,50 +29,46 @@ namespace DOL.GS.Spells
             if (target == null)
                 return;
 
-            if (Spell.Target == eSpellTarget.CONE || (Spell.Target == eSpellTarget.ENEMY && Spell.IsPBAoE))
-            {
-                GamePlayer player = null;
+			if (Spell.Target == eSpellTarget.CONE || (Spell.Target == eSpellTarget.ENEMY && Spell.IsPBAoE))
+			{
+				GamePlayer player = null;
+				if (target is GamePlayer)
+				{
+					player = target as GamePlayer;
+				}
+				else
+				{
+					if (Caster is GamePlayer)
+						player = Caster as GamePlayer;
+					else if (Caster is GameNPC && (Caster as GameNPC).Brain is AI.Brain.IControlledBrain)
+					{
+						AI.Brain.IControlledBrain brain = (Caster as GameNPC).Brain as AI.Brain.IControlledBrain;
+						//Ryan: edit for BD
+						if (brain.Owner is GamePlayer)
+							player = (GamePlayer)brain.Owner;
+						else
+							player = (GamePlayer)((AI.Brain.IControlledBrain)((GameNPC)brain.Owner).Brain).Owner;
+					}
+				}
+				if (player != null)
+					player.Out.SendCheckLos(Caster, target, new CheckLosResponse(DealDamageCheckLos));
+				else
+					DealDamage(target);
+			}
 
-                if (target is GamePlayer)
-                {
-                    player = target as GamePlayer;
-                }
-                else
-                {
-                    if (Caster is GamePlayer)
-                        player = Caster as GamePlayer;
-                    else if (Caster is GameNPC && (Caster as GameNPC).Brain is AI.Brain.IControlledBrain)
-                    {
-                        AI.Brain.IControlledBrain brain = (Caster as GameNPC).Brain as AI.Brain.IControlledBrain;
-                        //Ryan: edit for BD
-                        if (brain.Owner is GamePlayer)
-                            player = (GamePlayer)brain.Owner;
-                        else
-                            player = (GamePlayer)((AI.Brain.IControlledBrain)((GameNPC)brain.Owner).Brain).Owner;
-                    }
-                }
+			else DealDamage(target);
+		}
 
-                if (player != null)
-                    player.Out.SendCheckLOS(Caster, target, new CheckLOSResponse(DealDamageCheckLOS));
-                else
-                    DealDamage(target);
-            }
-            else DealDamage(target);
-        }
-
-        private void DealDamageCheckLOS(GamePlayer player, ushort response, ushort targetOID)
-        {
-            if (player == null || targetOID == 0)
-                return;
-
-            if ((response & 0x100) == 0x100)
-            {
-                try
-                {
-                    GameLiving target = Caster.CurrentRegion.GetObject(targetOID) as GameLiving;
-                    if (target != null)
-                    {
-                        DealDamage(target);
+		private void DealDamageCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
+		{
+			if (response is eLosCheckResponse.TRUE)
+			{
+				try
+				{
+					GameLiving target = Caster.CurrentRegion.GetObject(targetOID) as GameLiving;
+					if (target != null)
+					{
+						DealDamage(target);
 
                         // Due to LOS check delay the actual cast happens after FinishSpellCast does a notify, so we notify again
                         GameEventMgr.Notify(GameLivingEvent.CastFinished, m_caster, new CastingEventArgs(this, target, m_lastAttackData));
@@ -136,24 +132,33 @@ namespace DOL.GS.Spells
             else
                 SpellResisted(target);
         }
+		protected override void OnSpellResisted(GameLiving target)
+		{
+			if (target is GamePlayer && Caster.TempProperties.GetProperty("player_in_keep_property", false))
+			{
+				GamePlayer player = target as GamePlayer;
+				player.Out.SendCheckLos(Caster, player, new CheckLosResponse(ResistSpellCheckLos));
+			}
+			else SpellResisted(target);
+		}
 
-        private void ResistSpellCheckLOS(GamePlayer player, ushort response, ushort targetOID)
-        {
-            if ((response & 0x100) == 0x100)
-            {
-                try
-                {
-                    GameLiving target = Caster.CurrentRegion.GetObject(targetOID) as GameLiving;
-                    if (target != null)
-                        SpellResisted(target);
-                }
-                catch (Exception e)
-                {
-                    if (log.IsErrorEnabled)
-                        log.Error(string.Format("targetOID:{0} caster:{1} exception:{2}", targetOID, Caster, e));
-                }
-            }
-        }
+		private void ResistSpellCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
+		{
+			if (response is eLosCheckResponse.TRUE)
+			{
+				try
+				{
+					GameLiving target = Caster.CurrentRegion.GetObject(targetOID) as GameLiving;
+					if (target != null)
+						SpellResisted(target);
+				}
+				catch (Exception e)
+				{
+					if (log.IsErrorEnabled)
+						log.Error(string.Format("targetOID:{0} caster:{1} exception:{2}", targetOID, Caster, e));
+				}
+			}
+		}
 
         private void SpellResisted(GameLiving target)
         {

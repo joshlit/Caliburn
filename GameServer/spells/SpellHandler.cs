@@ -845,28 +845,22 @@ namespace DOL.GS.Spells
             return true;
         }
 
-        private void CheckPlayerLosDuringCastCallback(GamePlayer player, ushort response, ushort sourceOID, ushort targetOID)
-        {
-            if (player == null || sourceOID == 0 || targetOID == 0)
-                return;
+		private void CheckPlayerLosDuringCastCallback(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
+		{
+			HasLos = response is eLosCheckResponse.TRUE;
 
-            HasLos = (response & 0x100) == 0x100;
-
-            if (!HasLos && Properties.CHECK_LOS_DURING_CAST_INTERRUPT)
-            {
-                if (IsInCastingPhase)
-                    MessageToCaster("You can't see your target from here!", eChatType.CT_SpellResisted);
+			if (!HasLos && Properties.CHECK_LOS_DURING_CAST_INTERRUPT)
+			{
+				if (IsInCastingPhase)
+					MessageToCaster("You can't see your target from here!", eChatType.CT_SpellResisted);
 
                 InterruptCasting();
             }
         }
 
-        private void CheckPetLosDuringCastCallback(GameLiving living, ushort response, ushort sourceOID, ushort targetOID)
-        {
-            if (living == null || sourceOID == 0 || targetOID == 0)
-                return;
-
-            HasLos = (response & 0x100) == 0x100;
+		private void CheckPetLosDuringCastCallback(GameLiving living, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
+		{
+			HasLos = response is eLosCheckResponse.TRUE;
 
             if (!HasLos && Properties.CHECK_LOS_DURING_CAST_INTERRUPT)
                 InterruptCasting();
@@ -1105,12 +1099,12 @@ namespace DOL.GS.Spells
                     {
                         _lastDuringCastLosCheckTime = GameLoop.GameLoopTime;
 
-                        if (Caster is GameNPC npc && npc.Brain is IControlledBrain npcBrain)
-                            npcBrain.GetPlayerOwner()?.Out.SendCheckLOS(npc, target, CheckPetLosDuringCastCallback);
-                        else if (Caster is GamePlayer player)
-                            player.Out.SendCheckLOS(player, target, CheckPlayerLosDuringCastCallback);
-                    }
-                }
+						if (Caster is GameNPC npc && npc.Brain is IControlledBrain npcBrain)
+							npcBrain.GetPlayerOwner()?.Out.SendCheckLos(npc, target, CheckPetLosDuringCastCallback);
+						else if (Caster is GamePlayer player)
+							player.Out.SendCheckLos(player, target, CheckPlayerLosDuringCastCallback);
+					}
+				}
 
                 switch (m_spell.Target)
                 {
