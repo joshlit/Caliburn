@@ -5724,7 +5724,7 @@ namespace DOL.GS.Scripts
                 m_spellCastedFromLosCheck = false;
 
             if (m_castSpellLosChecks.TryAdd(TargetObject, new(spell, line, GameLoop.GameLoopTime)))
-                LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(CastSpellLosCheckReply));
+                LosChecker.Out.SendCheckLos(this, TargetObject, new CheckLosResponse(CastSpellLosCheckReply));
 
             return spellCastedFromLosCheck;
         }
@@ -7521,8 +7521,6 @@ namespace DOL.GS.Scripts
                     {
                         if (!canSeePlayer)
                             npc.TurnTo(mimic, 10000);
-                        //    mimic.Out.SendCheckLOS(mimic, npc, new CheckLOSResponse(mimic.UncoverLOSHandler));
-                        //else
                     }
                 }
 
@@ -7533,14 +7531,14 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// This handler is called by the unstealth check of mobs
         /// </summary>
-        public void UncoverLOSHandler(GamePlayer player, ushort response, ushort targetOID)
+        public void UncoverLosHandler(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
         {
             GameObject target = CurrentRegion.GetObject(targetOID);
 
             if ((target == null) || (player.IsStealthed == false))
                 return;
 
-            if ((response & 0x100) == 0x100)
+            if (response is eLosCheckResponse.TRUE)
             {
                 player.Out.SendMessage(target.GetName(0, true) + " uncovers you!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 player.Stealth(false);

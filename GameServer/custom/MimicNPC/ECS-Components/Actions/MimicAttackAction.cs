@@ -18,7 +18,6 @@ namespace DOL.GS
         private MimicNPC _mimicOwner;
         // Next check for NPCs in attack range to hit while on the way to main target.
         private long _nextVicinityCheck = 0;
-        private GamePlayer _npcOwnerOwner;
         private int _petLosCheckInterval = PET_LOS_CHECK_INTERVAL;
         private bool _hasLos;
 
@@ -166,19 +165,19 @@ namespace DOL.GS
                                               _targetNpc.Brain is IControlledBrain _targetNpcBrain &&
                                               _targetNpcBrain.GetPlayerOwner() != null))
                 // Target is either a player or a pet owned by a player.
-                _npcOwnerOwner.Out.SendCheckLOS(_mimicOwner, _target, new CheckLOSResponse(LosCheckCallback));
+                _mimicOwner.Out.SendCheckLos(_mimicOwner, _target, new CheckLosResponse(LosCheckCallback));
             else
                 _hasLos = true;
 
             return _petLosCheckInterval;
         }
 
-        private void LosCheckCallback(GamePlayer player, ushort response, ushort targetOID)
+        private void LosCheckCallback(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
         {
             if (targetOID == 0)
                 return;
 
-            _hasLos = (response & 0x100) == 0x100;
+            _hasLos = response is eLosCheckResponse.TRUE;
         }
     }
 }

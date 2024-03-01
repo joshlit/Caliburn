@@ -73,11 +73,7 @@ namespace DOL.GS.Scripts
         {
         }
 
-        public void SendCheckLOS(GameObject Checker, GameObject Target, CheckLOSResponse callback)
-        {
-        }
-
-        public void SendCheckLOS(GameObject source, GameObject target, CheckLOSMgrResponse callback)
+        public void SendCheckLos(GameObject source, GameObject target, CheckLosResponse callback)
         {
         }
 

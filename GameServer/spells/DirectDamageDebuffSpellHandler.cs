@@ -122,16 +122,6 @@ namespace DOL.GS.Spells
 		 * so you could be inside keep and resist the spell and be interupted when not in view
 		 */
 
-        protected override void OnSpellResisted(GameLiving target)
-        {
-            if (target is GamePlayer && Caster.TempProperties.GetProperty("player_in_keep_property", false))
-            {
-                GamePlayer player = target as GamePlayer;
-                player.Out.SendCheckLOS(Caster, player, new CheckLOSResponse(ResistSpellCheckLOS));
-            }
-            else
-                SpellResisted(target);
-        }
 		protected override void OnSpellResisted(GameLiving target)
 		{
 			if (target is GamePlayer && Caster.TempProperties.GetProperty("player_in_keep_property", false))
