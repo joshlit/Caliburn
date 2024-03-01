@@ -669,8 +669,7 @@ namespace DOL.GS
         /// </summary>
         public virtual bool IsAttacking
         {
-            //get { return (AttackState && (m_attackAction != null) && m_attackAction.IsAlive); }
-            get { return (attackComponent.AttackState && (attackComponent.attackAction != null)); }
+            get { return attackComponent.AttackState; }
         }
 
         /// <summary>
@@ -1208,27 +1207,18 @@ namespace DOL.GS
             return true;
         }
 
-        /// <summary>
-        /// Creates an attack action for this living
-        /// </summary>
-        /// <returns></returns>
-        public virtual AttackAction CreateAttackAction()
-        {
-            return attackComponent.attackAction ?? AttackAction.Create(this);
-        }
-
-        /// <summary>
-        /// Does this living allow procs to be cast on it?
-        /// </summary>
-        /// <param name="ad"></param>
-        /// <param name="weapon"></param>
-        /// <returns></returns>
-        public virtual bool AllowWeaponMagicalEffect(AttackData ad, DbInventoryItem weapon, Spell weaponSpell)
-        {
-            if (weapon.Flags == 10) //Itemtemplates with "Flags" set to 10 will not proc on living (ex. Bruiser)
-                return false;
-            else return true;
-        }
+		/// <summary>
+		/// Does this living allow procs to be cast on it?
+		/// </summary>
+		/// <param name="ad"></param>
+		/// <param name="weapon"></param>
+		/// <returns></returns>
+		public virtual bool AllowWeaponMagicalEffect(AttackData ad, DbInventoryItem weapon, Spell weaponSpell)
+		{
+			if (weapon.Flags == 10) //Itemtemplates with "Flags" set to 10 will not proc on living (ex. Bruiser)
+				return false;
+			else return true;
+		}
 
         /// <summary>
         /// Check if we can make a proc on a weapon go off.  Weapon Procs
@@ -2610,15 +2600,15 @@ namespace DOL.GS
             DbInventoryItem twoHandSlot = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
             DbInventoryItem distanceSlot = Inventory.GetItem(eInventorySlot.DistanceWeapon);
 
-            // simple active slot logic:
-            // 0=right hand, 1=left hand, 2=two-hand, 3=range, F=none
-            int rightHand = (VisibleActiveWeaponSlots & 0x0F);
-            int leftHand = (VisibleActiveWeaponSlots & 0xF0) >> 4;
+			// simple active slot logic:
+			// 0=right hand, 1=left hand, 2=two-hand, 3=range, F=none
+			int rightHand = VisibleActiveWeaponSlots & 0x0F;
+			int leftHand = (VisibleActiveWeaponSlots & 0xF0) >> 4;
 
-            // set new active weapon slot
-            switch (slot)
-            {
-                case eActiveWeaponSlot.Standard:
+			// set new active weapon slot
+			switch (slot)
+			{
+				case eActiveWeaponSlot.Standard:
                 {
                     if (rightHandSlot == null)
                         rightHand = 0xFF;
@@ -2629,66 +2619,68 @@ namespace DOL.GS
                         leftHand = 0xFF;
                     else
                         leftHand = 0x01;
+
+                    break;
                 }
-                break;
 
-                case eActiveWeaponSlot.TwoHanded:
-                {
-                    if (twoHandSlot != null && (twoHandSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC))) // 2h
-                    {
-                        rightHand = leftHand = 0x02;
-                        break;
-                    }
+				case eActiveWeaponSlot.TwoHanded:
+				{
+					if (twoHandSlot != null && (twoHandSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC))) // 2h
+					{
+						rightHand = leftHand = 0x02;
+						break;
+					}
 
-                    // 1h weapon in 2h slot
-                    if (twoHandSlot == null)
-                        rightHand = 0xFF;
-                    else
-                        rightHand = 0x02;
+					// 1h weapon in 2h slot
+					if (twoHandSlot == null)
+						rightHand = 0xFF;
+					else
+						rightHand = 0x02;
 
-                    if (leftHandSlot == null)
-                        leftHand = 0xFF;
-                    else
-                        leftHand = 0x01;
-                }
-                break;
+					if (leftHandSlot == null)
+						leftHand = 0xFF;
+					else
+						leftHand = 0x01;
 
-                case eActiveWeaponSlot.Distance:
-                {
-                    leftHand = 0xFF; // cannot use left-handed weapons if ranged slot active
+					break;
+				}
 
-                    if (distanceSlot == null)
-                        rightHand = 0xFF;
-                    else if (distanceSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC)) // NPC equipment does not have hand so always assume 2 handed bow
+				case eActiveWeaponSlot.Distance:
+				{
+					leftHand = 0xFF; // cannot use left-handed weapons if ranged slot active
+
+					if (distanceSlot == null)
+						rightHand = 0xFF;
+					else if (distanceSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC)) // NPC equipment does not have hand so always assume 2 handed bow
+
                         rightHand = leftHand = 0x03; // bows use 2 hands, throwing axes 1h
-                    else
-                        rightHand = 0x03;
-                }
-                break;
-            }
+					else
+						rightHand = 0x03;
+
+					break;
+				}
+			}
 
             m_activeWeaponSlot = slot;
 
-            // pack active weapon slots value back
-            m_visibleActiveWeaponSlots = (byte)(((leftHand & 0x0F) << 4) | (rightHand & 0x0F));
-        }
+			// pack active weapon slots value back
+			m_visibleActiveWeaponSlots = (byte)(((leftHand & 0x0F) << 4) | (rightHand & 0x0F));
+		}
 
-        #endregion Combat
+		#endregion
 
-        #region Property/Bonus/Buff/PropertyCalculator fields
-
-        /// <summary>
-        /// Array for property boni for abilities
-        /// </summary>
-        protected IPropertyIndexer m_abilityBonus = new PropertyIndexer();
-
-        /// <summary>
-        /// Ability bonus property
-        /// </summary>
-        public virtual IPropertyIndexer AbilityBonus
-        {
-            get { return m_abilityBonus; }
-        }
+		#region Property/Bonus/Buff/PropertyCalculator fields
+		/// <summary>
+		/// Array for property boni for abilities
+		/// </summary>
+		protected IPropertyIndexer m_abilityBonus = new PropertyIndexer();
+		/// <summary>
+		/// Ability bonus property
+		/// </summary>
+		public virtual IPropertyIndexer AbilityBonus
+		{
+			get { return m_abilityBonus; }
+		}
 
         /// <summary>
         /// Array for property boni by items
@@ -3676,13 +3668,13 @@ namespace DOL.GS
             }
         }
 
-        public virtual bool IsTurningDisabled => movementComponent.IsTurningDisabled;
+		public virtual short CurrentSpeed
+		{
+			get => movementComponent.CurrentSpeed;
+			set => movementComponent.CurrentSpeed = value;
+		}
 
-        public virtual short CurrentSpeed
-        {
-            get => movementComponent.CurrentSpeed;
-            set => movementComponent.CurrentSpeed = value;
-        }
+        public virtual bool IsTurningDisabled => movementComponent.IsTurningDisabled;
 
         public virtual short MaxSpeed => movementComponent.MaxSpeed;
 
@@ -3692,81 +3684,27 @@ namespace DOL.GS
             set => movementComponent.MaxSpeedBase = value;
         }
 
-        public virtual bool FixedSpeed
-        {
-            set => movementComponent.FixedSpeed = value;
-        }
+		public virtual bool IsMoving => movementComponent.IsMoving;
 
-        public virtual bool IsMoving => movementComponent.IsMoving;
+		public virtual void DisableTurning(bool add)
+		{
+			movementComponent.DisableTurning(add);
+		}
 
-        public long MovementElapsedTicks => movementComponent.MovementElapsedTicks;
-
-        public long MovementStartTick
-        {
-            set => movementComponent.MovementStartTick = value;
-        }
-
-        public virtual void DisableTurning(bool add)
-        {
-            movementComponent.DisableTurning(add);
-        }
-
-        public virtual void TurnTo(ushort heading, int duration = 0)
-        {
-            movementComponent.TurnTo(heading, duration);
-        }
-
-        public virtual void TurnTo(int x, int y, int duration = 0)
-        {
-            movementComponent.TurnTo(x, y, duration);
-        }
-
-        public virtual void TurnTo(GameObject target, int duration = 0)
-        {
-            movementComponent.TurnTo(target, duration);
-        }
-
-        /// <summary>
-        /// The current X position of this living.
-        /// </summary>
-        public override int X
-        {
-            get => IsMoving ? (int)(base.X + MovementElapsedTicks * movementComponent.TickSpeedX) : base.X;
-            set => base.X = value;
-        }
-
-        /// <summary>
-        /// The current Y position of this living.
-        /// </summary>
-        public override int Y
-        {
-            get => IsMoving ? (int)(base.Y + MovementElapsedTicks * movementComponent.TickSpeedY) : base.Y;
-            set => base.Y = value;
-        }
-
-        /// <summary>
-        /// The current Z position of this living.
-        /// </summary>
-        public override int Z
-        {
-            get => IsMoving ? (int)(base.Z + MovementElapsedTicks * movementComponent.TickSpeedZ) : base.Z;
-            set => base.Z = value;
-        }
-
-        /// <summary>
-        /// Moves the item from one spot to another spot, possible even
-        /// over region boundaries
-        /// </summary>
-        /// <param name="regionID">new regionid</param>
-        /// <param name="x">new x</param>
-        /// <param name="y">new y</param>
-        /// <param name="z">new z</param>
-        /// <param name="heading">new heading</param>
-        /// <returns>true if moved</returns>
-        public override bool MoveTo(ushort regionID, int x, int y, int z, ushort heading)
-        {
-            // if (regionID != CurrentRegionID)
-            // 	CancelAllConcentrationEffects();
+		/// <summary>
+		/// Moves the item from one spot to another spot, possible even
+		/// over region boundaries
+		/// </summary>
+		/// <param name="regionID">new regionid</param>
+		/// <param name="x">new x</param>
+		/// <param name="y">new y</param>
+		/// <param name="z">new z</param>
+		/// <param name="heading">new heading</param>
+		/// <returns>true if moved</returns>
+		public override bool MoveTo(ushort regionID, int x, int y, int z, ushort heading)
+		{
+			// if (regionID != CurrentRegionID)
+			// 	CancelAllConcentrationEffects();
 
             return base.MoveTo(regionID, x, y, z, heading);
         }
@@ -4466,17 +4404,17 @@ namespace DOL.GS
                 attackerLiving.EnemyKilled(this);
             }
 
-            attackComponent.Attackers.Clear();
-            StopHealthRegeneration();
-            StopPowerRegeneration();
-            StopEnduranceRegeneration();
-            attackComponent.attackAction?.CleanUp();
-            m_healthRegenerationTimer?.Stop();
-            m_powerRegenerationTimer?.Stop();
-            m_enduRegenerationTimer?.Stop();
-            m_healthRegenerationTimer = null;
-            m_powerRegenerationTimer = null;
-            m_enduRegenerationTimer = null;
+			attackComponent.Attackers.Clear();
+			StopHealthRegeneration();
+			StopPowerRegeneration();
+			StopEnduranceRegeneration();
+			attackComponent.attackAction.CleanUp();
+			m_healthRegenerationTimer?.Stop();
+			m_powerRegenerationTimer?.Stop();
+			m_enduRegenerationTimer?.Stop();
+			m_healthRegenerationTimer = null;
+			m_powerRegenerationTimer = null;
+			m_enduRegenerationTimer = null;
 
             return true;
         }

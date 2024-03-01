@@ -371,7 +371,6 @@ namespace DOL.AI.Brain
             {
                 if (_brain.CheckProximityAggro(_brain.AggroRange))
                 {
-                    log.Info("Aggroing");
                     _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
                     return;
                 }
@@ -381,7 +380,7 @@ namespace DOL.AI.Brain
             {
                 delayRoam = _brain.CheckDelayRoam();
 
-                if (delayRoam && _brain.Body.IsTargetPositionValid)
+                if (delayRoam && _brain.Body.IsDestinationValid)
                 {
                     _brain.Body.StopMoving();
                 }
@@ -450,7 +449,7 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (!_brain.IsPulling && _brain.Body.IsTargetPositionValid)
+            if (!_brain.IsPulling && _brain.Body.IsDestinationValid)
                 return;
 
             if (_brain.IsMainPuller)

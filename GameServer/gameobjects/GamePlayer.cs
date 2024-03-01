@@ -5986,14 +5986,13 @@ namespace DOL.GS
             set { if (DBCharacter != null) DBCharacter.SpellQueue = value; }
         }
 
-
         /// <summary>
         /// Switches the active weapon to another one
         /// </summary>
         /// <param name="slot">the new eActiveWeaponSlot</param>
         public override void SwitchWeapon(eActiveWeaponSlot slot)
         {
-            if (attackComponent != null && attackComponent.AttackState && ActiveWeapon != null)
+            if (attackComponent.AttackState)
                 attackComponent.StopAttack();
 
             if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
@@ -9135,7 +9134,6 @@ namespace DOL.GS
             List<GamePlayer> playersInRadius = GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
 
             CurrentSpeed = 0;
-            movementComponent.MovementStartTick = GameLoop.GameLoopTime;
             Point3D originalPoint = new(X, Y, Z);
             X = x;
             Y = y;
@@ -9614,8 +9612,8 @@ namespace DOL.GS
 
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
-                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                            attackComponent.attackAction.ResetNextTick();
+                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange))
+                            attackComponent.attackAction.OnEnterMeleeRange();
                     }
                 }
             }
@@ -9985,8 +9983,8 @@ namespace DOL.GS
 
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
-                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                            attackComponent.attackAction.ResetNextTick();
+                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange))
+                            attackComponent.attackAction.OnEnterMeleeRange();
                     }
                 }
             }
@@ -10483,12 +10481,6 @@ namespace DOL.GS
                     Out.SendMessage(string.Format(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnItemUnequipped.RightHandFree", item.GetName(0, false))), eChatType.CT_Skill, eChatLoc.CL_SystemWindow);
                 }
             }
-
-            if(item.Item_Type == Slot.RANGED && (rangeAttackComponent.RangedAttackState == eRangedAttackState.Aim
-               || rangeAttackComponent.RangedAttackState == eRangedAttackState.AimFire ||
-               rangeAttackComponent.RangedAttackState == eRangedAttackState.AimFireReload ||
-               rangeAttackComponent.RangedAttackState == eRangedAttackState.ReadyToFire
-               )) attackComponent.attackAction = null;
 
             if (prevSlot == Slot.MYTHICAL && item.Item_Type == (int)eInventorySlot.Mythical && item is GameMythirian)
             {

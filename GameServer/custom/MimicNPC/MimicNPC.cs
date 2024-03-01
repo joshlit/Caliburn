@@ -5703,9 +5703,12 @@ namespace DOL.GS.Scripts
 
             GamePlayer LosChecker = TargetObject as GamePlayer;
 
-            if (LosChecker == null)
+            if (LosChecker == null && Brain is IControlledBrain controlledBrain)
+                LosChecker = controlledBrain.GetPlayerOwner();
+
+            if (LosChecker == null && Brain is StandardMobBrain brain)
             {
-                foreach (GamePlayer playerInRange in GetPlayersInRadius(350))
+                foreach (GamePlayer playerInRange in GetPlayersInRadius((ushort)brain.AggroRange))
                 {
                     if (playerInRange != null)
                     {
@@ -5868,7 +5871,7 @@ namespace DOL.GS.Scripts
         /// <param name="slot">the new eActiveWeaponSlot</param>
         public override void SwitchWeapon(eActiveWeaponSlot slot)
         {
-            if (attackComponent != null && attackComponent.AttackState && ActiveWeapon != null)
+            if (attackComponent.AttackState)
                 attackComponent.StopAttack();
 
             if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
@@ -6118,23 +6121,6 @@ namespace DOL.GS.Scripts
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Does needed interrupt checks and interrupts if needed
-        /// </summary>
-        /// <param name="attacker">the attacker that is interrupting</param>
-        /// <param name="attackType">The attack type</param>
-        /// <returns>true if interrupted successfully</returns>
-        protected override bool CheckRangedAttackInterrupt(GameLiving attacker, AttackData.eAttackType attackType)
-        {
-            if (base.CheckRangedAttackInterrupt(attacker, attackType))
-            {
-                attackComponent.attackAction?.OnAimInterrupt(attacker);
-                return true;
-            }
-
-            return false;
         }
 
         public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
@@ -8536,15 +8522,11 @@ namespace DOL.GS.Scripts
                 if (attackComponent.AttackState && ActiveWeaponSlot != eActiveWeaponSlot.Distance)
                 {
                     AttackData ad = TempProperties.GetProperty<AttackData>(LAST_ATTACK_DATA, null);
+
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
-                        //Does the target can be attacked ?
-                        //if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, AttackRange) && m_attackAction != null)
-                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                        {
-                            //m_attackAction.Start(1);
-                            attackComponent.attackAction.ResetNextTick();
-                        }
+                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange))
+                            attackComponent.attackAction.OnEnterMeleeRange();
                     }
                 }
             }
@@ -8720,8 +8702,8 @@ namespace DOL.GS.Scripts
 
                     if (ad != null && ad.IsMeleeAttack && (ad.AttackResult == eAttackResult.TargetNotVisible || ad.AttackResult == eAttackResult.OutOfRange))
                     {
-                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange) && attackComponent.attackAction != null)
-                            attackComponent.attackAction.ResetNextTick();
+                        if (ad.Target != null && IsObjectInFront(ad.Target, 120) && IsWithinRadius(ad.Target, attackComponent.AttackRange))
+                            attackComponent.attackAction.OnEnterMeleeRange();
                     }
                 }
             }

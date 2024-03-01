@@ -922,7 +922,7 @@ namespace DOL.AI.Brain
                                 return;
                             }
 
-                            if (Body.IsTargetPositionValid)
+                            if (Body.IsDestinationValid)
                                 return;
                             else if (TargetFleePosition != null)
                             {
@@ -968,7 +968,7 @@ namespace DOL.AI.Brain
                                     return;
                                 }
 
-                                if (Body.IsTargetPositionValid)
+                                if (Body.IsDestinationValid)
                                 {
                                     if (TargetFlankPosition == null)
                                         Body.Follow(Body.TargetObject, 75, 5000);
