@@ -18,25 +18,7 @@ namespace DOL.GS
                 _objects[i] = new();
         }
 
-        public void AddObjectNode(eGameObjectType objectType, LinkedListNode<GameObject> node)
-        {
-            _objects[(byte) objectType].AddLast(node);
-        }
-
-        public void RemoveObjectNode(eGameObjectType objectType, LinkedListNode<GameObject> node)
-        {
-            _objects[(byte) objectType].Remove(node);
-        }
-
-        public ConcurrentLinkedList<GameObject>.IteratorLock GetIteratorLock(eGameObjectType objectType)
-        {
-            return _objects[(byte) objectType].GetIteratorLock();
-        }
-
-        public bool Any(eGameObjectType objectType)
-        {
-            return _objects[(int) objectType].Any;
-        }
+        public ConcurrentLinkedList<GameObject> this[eGameObjectType objectType] => _objects[(byte) objectType];
     }
 
     // A wrapper for a 'LinkedListNode<GameObject>'.

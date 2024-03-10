@@ -54,22 +54,22 @@ namespace DOL.GS
                 eGameObjectType objectType = node.Value.GameObjectType;
 
                 // Acquire locks on both subzones. We want the removal and addition to happen at the same time from a reader's point of view.
-                using ConcurrentLinkedList<GameObject>.IteratorLock currentSubZoneIteratorLock = currentSubZone?.GetIteratorLock(objectType);
-                using ConcurrentLinkedList<GameObject>.IteratorLock destinationSubZoneIteratorLock = destinationSubZone?.GetIteratorLock(objectType);
+                using SimpleDisposableLock currentSubZoneLock = currentSubZone?[objectType].GetLock();
+                using SimpleDisposableLock destinationSubZoneLock = destinationSubZone?[objectType].GetLock();
 
-                if (currentSubZoneIteratorLock != null)
+                if (currentSubZoneLock != null)
                 {
-                    currentSubZoneIteratorLock.LockWrite();
-
-                    if (destinationSubZoneIteratorLock != null)
+                    if (destinationSubZoneLock != null)
                     {
+                        currentSubZoneLock.EnterWriteLock();
+
                         // Spin until we can acquire a lock on the other subzone.
-                        while (!destinationSubZoneIteratorLock.TryLockWrite())
+                        while (!destinationSubZoneLock.TryEnterWriteLock())
                         {
                             // Relinquish then reacquire our current lock to prevent dead-locks.
-                            currentSubZoneIteratorLock.Dispose();
+                            currentSubZoneLock.Dispose();
                             Thread.Sleep(0);
-                            currentSubZoneIteratorLock.LockWrite();
+                            currentSubZoneLock.EnterWriteLock();
                         }
 
                         RemoveObjectFromCurrentSubZone();
@@ -79,14 +79,11 @@ namespace DOL.GS
                         RemoveObjectFromCurrentSubZone();
                 }
                 else
-                {
-                    destinationSubZoneIteratorLock.LockWrite();
                     AddObjectToDestinationSubZone();
-                }
 
                 void AddObjectToDestinationSubZone()
                 {
-                    destinationSubZone.AddObjectNode(objectType, node);
+                    destinationSubZone[objectType].AddLast(node);
                     subZoneObject.CurrentSubZone = destinationSubZone;
 
                     if (changingZone)
@@ -95,7 +92,7 @@ namespace DOL.GS
 
                 void RemoveObjectFromCurrentSubZone()
                 {
-                    currentSubZone.RemoveObjectNode(objectType, node);
+                    currentSubZone[objectType].Remove(node);
 
                     if (changingZone)
                         currentZone.OnObjectRemovedFromZone();

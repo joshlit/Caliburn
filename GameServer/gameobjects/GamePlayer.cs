@@ -13431,6 +13431,7 @@ namespace DOL.GS
             }
 
             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CommandNpcAttack.FollowYou", npc.Body.GetName(0, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            npc.CheckAggressionStateOnPlayerOrder();
             npc.Disengage();
             npc.Follow(this);
         }
@@ -13451,6 +13452,7 @@ namespace DOL.GS
             }
 
             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CommandNpcAttack.Stay", npc.Body.GetName(0, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            npc.CheckAggressionStateOnPlayerOrder();
             npc.Disengage();
             npc.Stay();
         }
@@ -13471,6 +13473,7 @@ namespace DOL.GS
             }
 
             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CommandNpcAttack.ComeHere", npc.Body.GetName(0, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            npc.CheckAggressionStateOnPlayerOrder();
             npc.Disengage();
             npc.ComeHere();
         }
@@ -13504,6 +13507,7 @@ namespace DOL.GS
             }
 
             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.CommandNpcAttack.GoToTarget", npc.Body.GetName(0, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            npc.CheckAggressionStateOnPlayerOrder();
             npc.Disengage();
             npc.Goto(target);
         }

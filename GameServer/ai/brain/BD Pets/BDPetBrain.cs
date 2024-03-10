@@ -87,8 +87,8 @@ namespace DOL.AI.Brain
         /// </summary>
         public override void FollowOwner()
         {
-            if (Body.attackComponent.AttackState)
-                Body.StopAttack();
+            if (Body.IsAttacking)
+                Disengage();
 
             Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
         }
@@ -164,27 +164,11 @@ namespace DOL.AI.Brain
         }
 
         /// <summary>
-        /// Lost follow target event
-        /// </summary>
-        /// <param name="target"></param>
-        protected override void OnFollowLostTarget(GameObject target)
-        {
-            if (target == Owner)
-            {
-                GameEventMgr.Notify(GameLivingEvent.PetReleased, Body);
-                return;
-            }
-
-            FollowOwner();
-        }
-
-        /// <summary>
         /// Standard think method for all the pets
         /// </summary>
         public override void Think()
         {
             CheckAbilities();
-            CheckSpells(eCheckSpellType.Defensive);
             base.Think();
         }
 
@@ -192,15 +176,6 @@ namespace DOL.AI.Brain
         {
             base.Attack(target);
             CheckAbilities();
-        }
-
-        public override void Disengage()
-        {
-            m_orderAttackTarget = null;
-            ClearAggroList();
-            Body.StopAttack();
-            Body.StopCurrentSpellcast();
-            Body.TargetObject = null;
         }
 
         public override eWalkState WalkState

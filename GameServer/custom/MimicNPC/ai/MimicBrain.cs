@@ -1268,8 +1268,7 @@ namespace DOL.AI.Brain
             if (FSM.GetCurrentState() == FSM.GetState(eFSMStateType.PASSIVE))
                 return;
 
-            int damage = ad.Damage + ad.CriticalDamage + Math.Abs(ad.Modifier);
-            ConvertDamageToAggroAmount(ad.Attacker, Math.Max(1, damage));
+            ConvertDamageToAggroAmount(ad.Attacker, Math.Max(1, ad.Damage + ad.CriticalDamage));
 
             if (!Body.attackComponent.AttackState && FSM.GetCurrentState() != FSM.GetState(eFSMStateType.AGGRO))
             {

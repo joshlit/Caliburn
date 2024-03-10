@@ -400,7 +400,7 @@ namespace DOL.GS
                     subZoneIndex = GetSubZoneOffset(line, column);
                     subZone = _subZones[subZoneIndex];
 
-                    if (!subZone.Any(objectType))
+                    if (!subZone[objectType].Any)
                         continue;
 
                     if (subZoneIndex != referenceSubZoneIndex)
@@ -420,10 +420,7 @@ namespace DOL.GS
                     else
                         ignoreDistance = false;
 
-                    using ConcurrentLinkedList<GameObject>.IteratorLock iteratorLock = subZone.GetIteratorLock(objectType);
-                    iteratorLock.LockRead();
-
-                    for (LinkedListNode<GameObject> node = iteratorLock.Current(); node != null; node = iteratorLock.Next())
+                    foreach (LinkedListNode<GameObject> node in subZone[objectType])
                     {
                         GameObject gameObject = node.Value;
 
@@ -693,10 +690,7 @@ namespace DOL.GS
             {
                 foreach (SubZone subZone in _subZones)
                 {
-                    using ConcurrentLinkedList<GameObject>.IteratorLock iteratorLock = subZone.GetIteratorLock(eGameObjectType.NPC);
-                    iteratorLock.LockRead();
-
-                    for (LinkedListNode<GameObject> node = iteratorLock.Current(); node != null; node = iteratorLock.Next())
+                    foreach (LinkedListNode<GameObject> node in subZone[eGameObjectType.NPC])
                     {
                         currentNPC = (GameNPC)node.Value;
 

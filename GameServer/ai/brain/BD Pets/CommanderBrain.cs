@@ -1,21 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
 using DOL.GS;
 
 namespace DOL.AI.Brain
@@ -121,8 +103,10 @@ namespace DOL.AI.Brain
 		/// <param name="ad"></param>
 		public void DefendMinion(GameLiving attacker)
 		{
-			AddToAggroList(attacker, 1);
-			AttackMostWanted();
+			if (AggressionState == eAggressionState.Passive || Body.IsAttacking || Body.TargetObject == attacker)
+				return;
+
+			Attack(attacker);
 		}
 
 		/// <summary>
@@ -132,13 +116,13 @@ namespace DOL.AI.Brain
 		public override void Follow(GameObject target)
 		{
 			base.Follow(target);
-			SubpetFollow();
+			SubPetFollow();
 		}
 
 		/// <summary>
 		/// Direct all the sub pets to follow the commander
 		/// </summary>
-		private void SubpetFollow()
+		private void SubPetFollow(bool force = true)
 		{
 			if (Body.ControlledNpcList != null)
 			{
@@ -146,7 +130,10 @@ namespace DOL.AI.Brain
 				{
 					foreach (BDPetBrain icb in Body.ControlledNpcList)
 					{
-						if (icb != null)
+						if (icb == null)
+							continue;
+
+						if (force || !icb.Body.IsAttacking)
 							icb.FollowOwner();
 					}
 				}
@@ -159,7 +146,7 @@ namespace DOL.AI.Brain
 		public override void Stay()
 		{
 			base.Stay();
-			SubpetFollow();
+			SubPetFollow();
 		}
 
 		/// <summary>
@@ -168,7 +155,7 @@ namespace DOL.AI.Brain
 		public override void ComeHere()
 		{
 			base.ComeHere();
-			SubpetFollow();
+			SubPetFollow();
 		}
 
 		/// <summary>
@@ -178,7 +165,7 @@ namespace DOL.AI.Brain
 		public override void Goto(GameObject target)
 		{
 			base.Goto(target);
-			SubpetFollow();
+			SubPetFollow();
 		}
 
 		public override void SetAggressionState(eAggressionState state)
@@ -195,6 +182,12 @@ namespace DOL.AI.Brain
 					}
 				}
 			}
+		}
+
+		public override void FollowOwner()
+		{
+			base.FollowOwner();
+			SubPetFollow(false);
 		}
 
 		/// <summary>

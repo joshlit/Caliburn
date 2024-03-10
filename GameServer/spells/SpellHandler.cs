@@ -492,9 +492,8 @@ namespace DOL.GS.Spells
                 }
             }
 
-
-            // Initial LoS state.
-            HasLos = Caster.TargetInView;
+			// Initial LoS state.
+			HasLos = Caster.TargetInView;
 
             if (Caster is GameNPC npcOwner)
             {

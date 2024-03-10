@@ -260,21 +260,24 @@ namespace DOL.AI.Brain
             AttackMostWanted();
         }
 
-        public virtual void Disengage()
-        {
-            // We switch to defensive mode if we're in aggressive and have a target, so that we don't immediately aggro back
-            if (AggressionState == eAggressionState.Aggressive && Body.TargetObject != null)
-            {
-                AggressionState = eAggressionState.Defensive;
-                UpdatePetWindow();
-            }
+		public virtual void CheckAggressionStateOnPlayerOrder()
+		{
+			// We switch to defensive mode if we're in aggressive and have a target, so that we don't immediately aggro back
+			if (AggressionState == eAggressionState.Aggressive && Body.TargetObject != null)
+			{
+				AggressionState = eAggressionState.Defensive;
+				UpdatePetWindow();
+			}
+		}
 
-            m_orderAttackTarget = null;
-            ClearAggroList();
-            Body.StopAttack();
-            Body.StopCurrentSpellcast();
-            Body.TargetObject = null;
-        }
+		public virtual void Disengage()
+		{
+			m_orderAttackTarget = null;
+			ClearAggroList();
+			Body.StopAttack();
+			Body.StopCurrentSpellcast();
+			Body.TargetObject = null;
+		}
 
         /// <summary>
         /// Follow the target on command
@@ -331,31 +334,30 @@ namespace DOL.AI.Brain
             UpdatePetWindow();
         }
 
-        /// <summary>
-        /// Updates the pet window
-        /// </summary>
-        public virtual void UpdatePetWindow()
-        {
-            if (m_owner is GamePlayer)
-                ((GamePlayer)m_owner).Out.SendPetWindow(Body, ePetWindowAction.Update, m_aggressionState, m_walkState);
-        }
+		/// <summary>
+		/// Updates the pet window
+		/// </summary>
+		public virtual void UpdatePetWindow()
+		{
+			(m_owner as GamePlayer)?.Out.SendPetWindow(Body, ePetWindowAction.Update, m_aggressionState, m_walkState);
+		}
 
-        /// <summary>
-        /// Start following the owner
-        /// </summary>
-        public virtual void FollowOwner()
-        {
-            if (Body.IsAttacking)
-                Body.StopAttack();
+		/// <summary>
+		/// Start following the owner
+		/// </summary>
+		public virtual void FollowOwner()
+		{
+			if (Body.IsAttacking)
+				Disengage();
 
-            if (Owner is GamePlayer
-                && IsMainPet
-                && ((GamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Animist
-                && ((GamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Theurgist)
-                Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
-            else if (Owner is GameNPC)
-                Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
-        }
+			if (Owner is GamePlayer
+			    && IsMainPet
+			    && ((GamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Animist
+			    && ((GamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Theurgist)
+				Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
+			else if (Owner is GameNPC)
+				Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
+		}
 
         #endregion Control
 
@@ -908,29 +910,14 @@ namespace DOL.AI.Brain
             return base.CheckOffensiveSpells(spell);
         }
 
-        /// <summary>
-        /// Lost follow target event
-        /// </summary>
-        /// <param name="target"></param>
-        protected override void OnFollowLostTarget(GameObject target)
-        {
-            if (target == Owner)
-            {
-                GameEventMgr.Notify(GameLivingEvent.PetReleased, Body);
-                return;
-            }
+		public override bool CanAggroTarget(GameLiving target)
+		{
+			// Only attack if target (or target's owner) is green+ to our owner
+			if (target is GameNPC npc && npc.Brain is IControlledBrain controlledBrain && controlledBrain.Owner != null)
+				target = controlledBrain.Owner;
 
-            FollowOwner();
-        }
-
-        public override bool CanAggroTarget(GameLiving target)
-        {
-            // Only attack if target (or target's owner) is green+ to our owner
-            if (target is GameNPC npc && npc.Brain is IControlledBrain controlledBrain && controlledBrain.Owner != null)
-                target = controlledBrain.Owner;
-
-            if (!GameServer.ServerRules.IsAllowedToAttack(Body, target, true) || Owner.IsObjectGreyCon(target))
-                return false;
+			if (!GameServer.ServerRules.IsAllowedToAttack(Body, target, true) || GetPlayerOwner().IsObjectGreyCon(target))
+				return false;
 
             return AggroLevel > 0;
         }
@@ -1038,16 +1025,14 @@ namespace DOL.AI.Brain
                 {
                     Body.StartAttack(target);
 
-                    if (Body.FollowTarget != target)
-                        Body.Follow(target, MIN_ENEMY_FOLLOW_DIST, MAX_ENEMY_FOLLOW_DIST);
-                }
-            }
-            else
-            {
-                Body.TargetObject = null;
-
-                if (Body.IsAttacking)
-                    Body.StopAttack();
+					if (Body.FollowTarget != target)
+						Body.Follow(target, MIN_ENEMY_FOLLOW_DIST, MAX_ENEMY_FOLLOW_DIST);
+				}
+			}
+			else
+			{
+				if (Body.IsAttacking)
+					Disengage();
 
                 if (WalkState == eWalkState.Follow)
                     FollowOwner();
