@@ -11,13 +11,8 @@ namespace DOL.GS
     {
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        // Check interval (upper bound) in ms of entities around this NPC when its main target is out of range. Used to attack other entities on its path.
-        private const int NPC_VICINITY_CHECK_INTERVAL = 1000;
         private const int PET_LOS_CHECK_INTERVAL = 1000;
-
         private MimicNPC _mimicOwner;
-        // Next check for NPCs in attack range to hit while on the way to main target.
-        private long _nextVicinityCheck = 0;
         private int _petLosCheckInterval = PET_LOS_CHECK_INTERVAL;
         private bool _hasLos;
 
@@ -40,65 +35,19 @@ namespace DOL.GS
             if (!base.PrepareMeleeAttack())
                 return false;
 
+            int attackRange = AttackComponent.AttackRange;
+
             // The target isn't in melee range yet. Check if another target is in range to attack on the way to the main target.
-            if (_target != null &&
-                _mimicOwner.Brain is not IControlledBrain &&
-                _mimicOwner.Brain is StandardMobBrain npcBrain &&
-                npcBrain.AggroTable.Count > 0 &&
-                !_mimicOwner.IsWithinRadius(_target, AttackComponent.AttackRange))
+            if (!_mimicOwner.IsWithinRadius(_target, attackRange) &&
+                 _mimicOwner.Brain is MimicBrain mimicBrain)
             {
-                GameLiving possibleTarget = null;
-                long maxaggro = 0;
-                long aggro;
+                _target = mimicBrain.LastHighestThreatInAttackRange;
 
-                foreach (GamePlayer playerInRadius in _mimicOwner.GetPlayersInRadius((ushort)AttackComponent.AttackRange))
-                {
-                    if (npcBrain.AggroTable.ContainsKey(playerInRadius))
-                    {
-                        aggro = npcBrain.GetAggroAmountForLiving(playerInRadius);
-
-                        if (aggro <= 0)
-                            continue;
-
-                        if (aggro > maxaggro)
-                        {
-                            possibleTarget = playerInRadius;
-                            maxaggro = aggro;
-                        }
-                    }
-                }
-
-                // Check for NPCs in attack range. Only check if the NPCNextNPCVicinityCheck is less than the current GameLoop Time.
-                if (_nextVicinityCheck < GameLoop.GameLoopTime)
-                {
-                    // Set the next check for NPCs. Will be in a range from 100ms -> NPC_VICINITY_CHECK_DELAY.
-                    _nextVicinityCheck = GameLoop.GameLoopTime + Util.Random(100, NPC_VICINITY_CHECK_INTERVAL);
-
-                    foreach (GameNPC npcInRadius in _mimicOwner.GetNPCsInRadius((ushort)AttackComponent.AttackRange))
-                    {
-                        if (npcBrain.AggroTable.ContainsKey(npcInRadius))
-                        {
-                            aggro = npcBrain.GetAggroAmountForLiving(npcInRadius);
-
-                            if (aggro <= 0)
-                                continue;
-
-                            if (aggro > maxaggro)
-                            {
-                                possibleTarget = npcInRadius;
-                                maxaggro = aggro;
-                            }
-                        }
-                    }
-                }
-
-                if (possibleTarget == null)
+                if (_target == null || !_mimicOwner.IsWithinRadius(_target, attackRange))
                 {
                     _interval = TICK_INTERVAL_FOR_NON_ATTACK;
                     return false;
                 }
-                else
-                    _target = possibleTarget;
             }
 
             return true;

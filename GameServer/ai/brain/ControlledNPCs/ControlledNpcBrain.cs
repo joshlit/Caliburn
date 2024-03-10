@@ -922,25 +922,21 @@ namespace DOL.AI.Brain
             return AggroLevel > 0;
         }
 
-        protected override bool ShouldThisLivingBeFilteredOutFromAggroList(GameLiving living)
-        {
-            if (living.IsMezzed ||
-                !living.IsAlive ||
-                living.ObjectState != GameObject.eObjectState.Active ||
-                living.CurrentRegion != Body.CurrentRegion ||
-                !Body.IsWithinRadius(living, MAX_AGGRO_LIST_DISTANCE) ||
-                !GameServer.ServerRules.IsAllowedToAttack(Body, living, true))
-                return true;
-            else
-            {
-                ECSGameSpellEffect root = EffectListService.GetSpellEffectOnTarget(living, eEffect.MovementSpeedDebuff);
+		protected override bool ShouldBeRemovedFromAggroList(GameLiving living)
+		{
+			if (living.IsMezzed ||
+				!living.IsAlive ||
+				living.ObjectState != GameObject.eObjectState.Active ||
+				living.CurrentRegion != Body.CurrentRegion ||
+				!Body.IsWithinRadius(living, MAX_AGGRO_LIST_DISTANCE) ||
+				!GameServer.ServerRules.IsAllowedToAttack(Body, living, true))
+			{
+				return true;
+			}
 
-                if (root != null && root.SpellHandler.Spell.Value == 99)
-                    return true;
-            }
-
-            return false;
-        }
+			ECSGameSpellEffect root = EffectListService.GetSpellEffectOnTarget(living, eEffect.MovementSpeedDebuff);
+			return root != null && root.SpellHandler.Spell.Value == 99;
+		}
 
         /// <summary>
         /// Perform some checks on 'm_orderAttackTarget'. Returns it if it's still a valid target, sets it to null otherwise.

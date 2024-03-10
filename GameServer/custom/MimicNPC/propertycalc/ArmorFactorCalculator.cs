@@ -1,7 +1,6 @@
 ﻿using DOL.GS.Keeps;
 using DOL.GS.PropertyCalc;
 using System;
-using System.Linq;
 
 namespace DOL.GS.Scripts
 {
@@ -25,17 +24,17 @@ namespace DOL.GS.Scripts
                 case IGamePlayer:
                 case GameTrainingDummy:
                 return CalculatePlayerArmorFactor(living, property);
+
                 case GameKeepDoor:
                 case GameKeepComponent:
                 return CalculateKeepComponentArmorFactor(living);
-                case GameEpicNPC:
-                case GameEpicBoss:
-                {
-                    double epicScaleFactor = CalculateEpicScaleFactor(living);
-                    return CalculateLivingArmorFactor(living, property, 12.0 * epicScaleFactor, 50.0, false);
-                }
+
+                case IGameEpicNpc:
+                return CalculateLivingArmorFactor(living, property, 12.0 * (living as IGameEpicNpc).ArmorFactorScalingFactor, 50.0, false);
+
                 case GameSummonedPet:
                 return CalculateLivingArmorFactor(living, property, 12.0, living is NecromancerPet ? 121.0 : 175.0, true);
+
                 default:
                 return CalculateLivingArmorFactor(living, property, 12.0, living is GuardLord ? 134.0 : 200.0, false);
             }
@@ -81,45 +80,6 @@ namespace DOL.GS.Scripts
             double keepLevelMod = 1 + component.Keep.Level * 0.1;
             int typeMod = component.Keep is GameKeep ? 4 : 2;
             return Math.Max(1, (int)(component.Keep.BaseLevel * keepLevelMod * typeMod));
-        }
-
-        private static double CalculateEpicScaleFactor(GameLiving living)
-        {
-            double epicScaleFactor;
-            int petCap;
-
-            if (living is GameEpicBoss)
-            {
-                epicScaleFactor = 1.6;
-                petCap = 24;
-            }
-            else
-            {
-                epicScaleFactor = 0.8;
-                petCap = 16;
-            }
-
-            int petCount = 0;
-
-            // TODO: Find a way to remove `ToList` call.
-            foreach (GameLiving attacker in living.attackComponent.Attackers.Keys)
-            {
-                if (attacker is GamePlayer || attacker is MimicNPC)
-                    epicScaleFactor -= 0.04;
-                else if (attacker is GameSummonedPet && petCount <= petCap)
-                {
-                    epicScaleFactor -= 0.01;
-                    petCount++;
-                }
-
-                if (epicScaleFactor < 0.4)
-                {
-                    epicScaleFactor = 0.4;
-                    break;
-                }
-            }
-
-            return epicScaleFactor;
         }
     }
 }
