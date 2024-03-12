@@ -16,6 +16,7 @@ namespace DOL.GS.Scripts
         public IPacketLib Out { get; }
         public GameClient Client { get; }
         public void Notify(DOLEvent e, object sender);
+        public  string InternalID { get; set; }
         public eObjectState ObjectState { get; set; }
 
         public int GetModified(eProperty property);
@@ -81,6 +82,7 @@ namespace DOL.GS.Scripts
         public List<int> SelfBuffChargeIDs { get; }
         public int TotalConstitutionLostAtDeath { get; set; }
 
+        public string GetName(int article, bool firstLetterUppercase);
         public ICharacterClass CharacterClass { get; }
         public eGender Gender { get; set; }
         public  short Race { get; set; }
@@ -102,6 +104,7 @@ namespace DOL.GS.Scripts
         public int Encumberance { get; }
         public int MaxEncumberance { get; }
         public bool IsOverencumbered { get; set; }
+        public bool IsIncapacitated { get; }
         public bool IsStunned { get; set; }
         public bool IsMezzed { get; set; }
         public bool IsMoving { get; }

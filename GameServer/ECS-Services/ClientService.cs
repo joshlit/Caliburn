@@ -18,9 +18,10 @@ namespace DOL.GS
         private const string SERVICE_NAME = nameof(ClientService);
         private const int PING_TIMEOUT = 60000;
         private const int HARD_TIMEOUT = 600000;
+        private const int POSITION_UPDATE_TIMEOUT = 5000;
 
         private static List<GameClient> _clients = new();
-        private static SimpleDisposableLock _lock = new();
+        private static SimpleDisposableLock _lock = new(LockRecursionPolicy.SupportsRecursion);
         private static int _lastValidIndex;
         private static int _clientCount;
 
@@ -66,7 +67,7 @@ namespace DOL.GS
                 }
                 case GameClient.eClientState.Playing:
                 {
-                    CheckPingTimeout(client);
+                    CheckPositionUpdateTimeout(client);
                     GamePlayer player = client.Player;
 
                     if (player?.ObjectState == GameObject.eObjectState.Active)
@@ -532,7 +533,7 @@ namespace DOL.GS
 
         private static void CheckPingTimeout(GameClient client)
         {
-            if (client.PingTime + PING_TIMEOUT < GameLoop.GetCurrentTime())
+            if (ServiceUtils.ShouldTickNoEarly(client.PingTime + PING_TIMEOUT))
             {
                 if (log.IsWarnEnabled)
                     log.Warn($"Ping timeout for client {client}");
@@ -543,12 +544,23 @@ namespace DOL.GS
 
         private static void CheckHardTimeout(GameClient client)
         {
-            if (client.PingTime + HARD_TIMEOUT < GameLoop.GetCurrentTime())
+            if (ServiceUtils.ShouldTickNoEarly(client.PingTime + HARD_TIMEOUT))
             {
                 if (log.IsWarnEnabled)
                     log.Warn($"Hard timeout for client {client}");
 
                 GameServer.Instance.Disconnect(client);
+            }
+        }
+
+        private static void CheckPositionUpdateTimeout(GameClient client)
+        {
+            if (ServiceUtils.ShouldTickNoEarly(client.PositionUpdateTime + POSITION_UPDATE_TIMEOUT) && !client.Player.HasLinkDeathTimerActive)
+            {
+                if (log.IsWarnEnabled)
+                    log.Warn($"Position update timeout for client {client}");
+
+                client.OnLinkDeath(true);
             }
         }
 

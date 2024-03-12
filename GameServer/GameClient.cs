@@ -198,7 +198,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Holds the time of the last ping
 		/// </summary>
-		protected long m_pingTime = GameLoop.GetCurrentTime(); // give ping time on creation
+		protected long m_pingTime = GameLoop.GameLoopTime;
 
 		/// <summary>
 		/// This variable holds all info about the active player
@@ -218,7 +218,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Holds the time of the last UDP ping
 		/// </summary>
-		protected long m_udpPingTime = GameLoop.GetCurrentTime();
+		protected long m_udpPingTime = GameLoop.GameLoopTime;
 
 		/// <summary>
 		/// Custom Account Params
@@ -245,7 +245,7 @@ namespace DOL.GS
 			m_tooltipRequestTimes.TryAdd(type, new());
 
 			// Queries cleanup
-			foreach (Tuple<int, int> keys in m_tooltipRequestTimes.SelectMany(e => e.Value.Where(it => it.Value < GameLoop.GetCurrentTime()).Select(el => new Tuple<int, int>(e.Key, el.Key))))
+			foreach (Tuple<int, int> keys in m_tooltipRequestTimes.SelectMany(e => e.Value.Where(it => it.Value < GameLoop.GameLoopTime).Select(el => new Tuple<int, int>(e.Key, el.Key))))
 				m_tooltipRequestTimes[keys.Item1].TryRemove(keys.Item2, out _);
 			
 			// Query hit ?
@@ -253,7 +253,7 @@ namespace DOL.GS
 				return false;
 		
 			// Query register
-			m_tooltipRequestTimes[type].TryAdd(id, GameLoop.GetCurrentTime()+3600000);
+			m_tooltipRequestTimes[type].TryAdd(id, GameLoop.GameLoopTime + 3600000);
 			return true;
 		}
 
@@ -286,12 +286,12 @@ namespace DOL.GS
 				if ((oldState != eClientState.Playing && value == eClientState.Playing) ||
 				    (oldState != eClientState.CharScreen && value == eClientState.CharScreen))
 				{
-					PingTime = GameLoop.GetCurrentTime();
+					PingTime = GameLoop.GameLoopTime;
+					PositionUpdateTime = GameLoop.GameLoopTime;
 				}
 
 				m_clientState = value;
 				GameEventMgr.Notify(GameClientEvent.StateChanged, this);
-				//DOLConsole.WriteSystem("New State="+value.ToString());
 			}
 		}
 
@@ -299,6 +299,10 @@ namespace DOL.GS
 		/// When the linkdeath occured. 0 if there wasn't any
 		/// </summary>
 		public long LinkDeathTime { get; set; }
+
+		public long PositionUpdateTime { get; set; }
+
+		public GSPacketIn LastPositionUpdatePacketReceived { get; set; }
 
 		/// <summary>
 		/// Variable is false if account/player is Ban, for a wrong password, if server is closed etc ... 
@@ -539,13 +543,16 @@ namespace DOL.GS
 		/// </summary>
 		public override void OnDisconnect()
 		{
+			bool wasPlaying = false;
+
 			try
 			{
 				//If we went linkdead and we were inside the game
 				//we don't let the player disappear!
 				if (ClientState == eClientState.Playing)
 				{
-					OnLinkdeath();
+					wasPlaying = true;
+					OnLinkDeath(false);
 					return;
 				}
 
@@ -560,7 +567,7 @@ namespace DOL.GS
 			finally
 			{
 				// Make sure the client is disconnected even on errors but only if OnLinkDeath() wasn't called.
-				if (ClientState != eClientState.Linkdead)
+				if (!wasPlaying)
 					Quit();
 			}
 		}
@@ -659,44 +666,20 @@ namespace DOL.GS
 					//<**loki**>
 					if (Properties.KICK_IDLE_PLAYER_STATUS)
 					{
-						//Time playing
-						var connectedtime = DateTime.Now.Subtract(m_account.LastLogin).TotalMinutes;
-						//Lets get our player from DB.
-						var getp = GameServer.Database.FindObjectByKey<DbCoreCharacter>(m_player.InternalID);
-						//Let get saved poistion from DB.
-						int[] oldloc = { getp.Xpos, getp.Ypos, getp.Zpos, getp.Direction, getp.Region };
-						//Lets get current player Gloc.
-						int[] currentloc = { m_player.X, m_player.Y, m_player.Z, m_player.Heading, m_player.CurrentRegionID };
-						//Compapre Old and Current.
-						bool check = oldloc.SequenceEqual(currentloc);
-						//If match
-						if (check)
+						if (ServiceUtils.ShouldTickNoEarly(PositionUpdateTime + Properties.KICK_IDLE_PLAYER_TIME))
 						{
-							if (connectedtime > Properties.KICK_IDLE_PLAYER_TIME)
-							{
-								//Kick player
-								m_player.Out.SendPlayerQuit(true);
-								m_player.SaveIntoDatabase();
-								m_player.Quit(true);
-								//log
-								if (log.IsErrorEnabled)
-									log.Debug("Player " + m_player.Name + " Kicked due to Inactivity ");
-							}
+							ServiceUtils.KickPlayerToCharScreen(m_player);
+
+							if (log.IsInfoEnabled)
+								log.Info($"Player {m_player.Name} kicked due to inactivity.");
 						}
 						else
-						{
 							m_player.SaveIntoDatabase();
-						}
 					}
-
 					else
-					{
 						m_player.SaveIntoDatabase();
-					}
-
 				}
 			}
-
 			catch (Exception e)
 			{
 				if (log.IsErrorEnabled)
@@ -704,13 +687,19 @@ namespace DOL.GS
 			}
 		}
 
+		public bool OnUpdatePosition()
+		{
+			PositionUpdateTime = GameLoop.GameLoopTime;
+			return m_player.OnUpdatePosition();
+		}
+
 		/// <summary>
 		/// Called when a player goes linkdead
 		/// </summary>
-		protected void OnLinkdeath()
+		public void OnLinkDeath(bool soft)
 		{
 			if (log.IsDebugEnabled)
-				log.Debug("Linkdeath called (" + Account.Name + ")  client state=" + ClientState);
+				log.Debug($"OnLinkDeath called (Account: {Account.Name}) (State: {ClientState}) (Soft: {soft})");
 
 			//If we have no sessionid we simply disconnect
 			GamePlayer curPlayer = Player;
@@ -720,11 +709,13 @@ namespace DOL.GS
 			}
 			else
 			{
-				ClientState = eClientState.Linkdead;
+				if (!soft)
+					ClientState = eClientState.Linkdead;
+
 				LinkDeathTime = GameLoop.GameLoopTime;
 				// If we have a good sessionid, we won't remove the client yet!
 				// OnLinkdeath() can start a timer to remove the client "a bit later"
-				curPlayer.OnLinkdeath();
+				curPlayer.OnLinkDeath();
 			}
 		}
 
@@ -735,13 +726,14 @@ namespace DOL.GS
 		{
 			lock (this)
 			{
+				if (ClientState is eClientState.Disconnected)
+					return;
+
 				try
 				{
-					eClientState oldClientState = ClientState;
-
 					if (SessionID != 0)
 					{
-						if (oldClientState is eClientState.Playing or eClientState.WorldEnter or eClientState.Linkdead)
+						if (ClientState is eClientState.Playing or eClientState.WorldEnter or eClientState.Linkdead)
 						{
 							try
 							{
@@ -751,15 +743,6 @@ namespace DOL.GS
 							{
 								log.Error("player cleanup on client quit", e);
 							}
-						}
-
-						try
-						{
-							Player?.Delete();
-						}
-						catch (Exception e)
-						{
-							log.Error("client cleanup on quit", e);
 						}
 					}
 

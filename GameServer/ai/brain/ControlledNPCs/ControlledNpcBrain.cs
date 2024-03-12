@@ -716,19 +716,18 @@ namespace DOL.AI.Brain
 
                 player = GetPlayerOwner();
 
-                if (player.Group != null)
-                {
-                    foreach (GamePlayer p in player.Group.GetPlayersInTheGroup())
-                    {
-                        if (p.IsDiseased && Body.IsWithinRadius(p, spell.Range))
-                        {
-                            Body.TargetObject = p;
-                            break;
-                        }
-                    }
-                }
-                break;
-
+					if (player?.Group != null)
+					{
+						foreach (GamePlayer p in player.Group.GetPlayersInTheGroup())
+						{
+							if (p.IsDiseased && Body.IsWithinRadius(p, spell.Range))
+							{
+								Body.TargetObject = p;
+								break;
+							}
+						}
+					}
+					break;
                 case eSpellType.CurePoison:
                 //Cure owner
                 owner = (this as IControlledBrain).Owner;
@@ -749,19 +748,18 @@ namespace DOL.AI.Brain
 
                 player = GetPlayerOwner();
 
-                if (player.Group != null)
-                {
-                    foreach (GamePlayer p in player.Group.GetPlayersInTheGroup())
-                    {
-                        if (LivingIsPoisoned(p) && Body.IsWithinRadius(p, spell.Range))
-                        {
-                            Body.TargetObject = p;
-                            break;
-                        }
-                    }
-                }
-                break;
-
+					if (player?.Group != null)
+					{
+						foreach (GamePlayer p in player.Group.GetPlayersInTheGroup())
+						{
+							if (LivingIsPoisoned(p) && Body.IsWithinRadius(p, spell.Range))
+							{
+								Body.TargetObject = p;
+								break;
+							}
+						}
+					}
+					break;
                 case eSpellType.Summon:
                 Body.TargetObject = Body;
                 break;
@@ -814,12 +812,12 @@ namespace DOL.AI.Brain
                     break;
                 }
 
-                // Heal group
-                player = GetPlayerOwner();
-                ICollection<GamePlayer> playerGroup = null;
-                if (player.Group != null && (spell.Target is eSpellTarget.REALM or eSpellTarget.GROUP))
-                {
-                    playerGroup = player.Group.GetPlayersInTheGroup();
+					// Heal group
+					player = GetPlayerOwner();
+					ICollection<GamePlayer> playerGroup = null;
+					if (player?.Group != null && (spell.Target is eSpellTarget.REALM or eSpellTarget.GROUP))
+					{
+						playerGroup = player.Group.GetPlayersInTheGroup();
 
                     foreach (GamePlayer p in playerGroup)
                     {
@@ -916,7 +914,10 @@ namespace DOL.AI.Brain
 			if (target is GameNPC npc && npc.Brain is IControlledBrain controlledBrain && controlledBrain.Owner != null)
 				target = controlledBrain.Owner;
 
-			if (!GameServer.ServerRules.IsAllowedToAttack(Body, target, true) || GetPlayerOwner().IsObjectGreyCon(target))
+			GameLiving ownerToCheck = GetPlayerOwner();
+			ownerToCheck ??= Owner;
+
+			if (!GameServer.ServerRules.IsAllowedToAttack(Body, target, true) || ownerToCheck.IsObjectGreyCon(target))
 				return false;
 
             return AggroLevel > 0;

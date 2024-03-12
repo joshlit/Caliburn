@@ -2775,23 +2775,22 @@ namespace DOL.GS.Spells
 
         #region messages
 
-        /// <summary>
-        /// Sends a message to the caster, if the caster is a controlled
-        /// creature, to the player instead (only spell hit and resisted
-        /// messages).
-        /// </summary>
-        public void MessageToCaster(string message, eChatType type)
-        {
-            if (Caster is GamePlayer playerCaster)
-                playerCaster.MessageToSelf(message, type);
-            else if (Caster is GameNPC npcCaster && npcCaster.Brain is IControlledBrain npcCasterBrain
-                     && (type is eChatType.CT_YouHit or eChatType.CT_SpellResisted or eChatType.CT_Spell))
-            {
-                GamePlayer playerOwner = npcCasterBrain.GetPlayerOwner();
-                if (npcCasterBrain.GetPlayerOwner() != null)
-                    playerOwner.MessageToSelf(message, type);
-            }
-        }
+		/// <summary>
+		/// Sends a message to the caster, if the caster is a controlled
+		/// creature, to the player instead (only spell hit and resisted
+		/// messages).
+		/// </summary>
+		public void MessageToCaster(string message, eChatType type)
+		{
+			if (Caster is GamePlayer playerCaster)
+				playerCaster.MessageToSelf(message, type);
+			else if (Caster is GameNPC npcCaster && npcCaster.Brain is IControlledBrain npcCasterBrain
+					 && (type is eChatType.CT_YouHit or eChatType.CT_SpellResisted or eChatType.CT_Spell))
+			{
+				GamePlayer playerOwner = npcCasterBrain.GetPlayerOwner();
+				playerOwner?.MessageToSelf(message, type);
+			}
+		}
 
         /// <summary>
         /// sends a message to a living

@@ -2,7 +2,6 @@
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.ServerProperties;
-using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace DOL.GS
 {
@@ -24,7 +23,9 @@ namespace DOL.GS
             if (Properties.ALWAYS_CHECK_PET_LOS && npcOwner.Brain is IControlledBrain npcOwnerBrain)
             {
                 _npcOwnerOwner = npcOwnerBrain.GetPlayerOwner();
-                new ECSGameTimer(_npcOwner, new ECSGameTimer.ECSTimerCallback(CheckLos), 1);
+
+                if (_npcOwnerOwner != null)
+                    new ECSGameTimer(_npcOwner, new ECSGameTimer.ECSTimerCallback(CheckLos), 1);
             }
             else
                 _hasLos = true;

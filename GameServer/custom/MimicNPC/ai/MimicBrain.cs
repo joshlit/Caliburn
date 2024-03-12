@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using static DOL.AI.Brain.StandardMobBrain;
 using static DOL.GS.Styles.Style;
 
@@ -211,7 +212,7 @@ namespace DOL.AI.Brain
                     player.Out.SendCheckLos(Body, player, new CheckLosResponse(LosCheckForAggroCallback));
                 else
                 {
-                    AddToAggroList(player, 0);
+                    AddToAggroList(player, 1);
                     return;
                 }
             }
@@ -739,49 +740,50 @@ namespace DOL.AI.Brain
             if (AggroList.IsEmpty)
                 Body.FireAmbientSentence(GameNPC.eAmbientTrigger.aggroing, living);
 
-            // Only protect if gameplayer and aggroAmount > 0
-            if (living is GamePlayer player && aggroAmount > 0)
+            if (living is IGamePlayer player)
             {
-                // If player is in group, add whole group to aggro list
+                // Add the whole group to the aggro list.
                 if (player.Group != null)
                 {
-                    foreach (GamePlayer playerInGroup in player.Group.GetPlayersInTheGroup())
-                        AggroList.TryAdd(playerInGroup, new());
+                    foreach (GameLiving livingInGroup in player.Group.GetMembersInTheGroup())
+                    {
+                        if (livingInGroup is IGamePlayer iPlayer)
+                            AggroList.TryAdd((GameLiving)iPlayer, new());
+                    }
                 }
 
-                foreach (ProtectECSGameEffect protect in player.effectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Protect))
+                // Only protect if `aggroAmount` is positive.
+                if (aggroAmount > 0)
                 {
-                    if (protect.Target != living)
-                        continue;
-
-                    GamePlayer protectSource = (GamePlayer)protect.Source;
-
-                    if (protectSource.IsStunned
-                        || protectSource.IsMezzed
-                        || protectSource.IsSitting
-                        || protectSource.ObjectState != GameObject.eObjectState.Active
-                        || !protectSource.IsAlive
-                        || !protectSource.InCombat)
-                        continue;
-
-                    if (!living.IsWithinRadius(protectSource, ProtectAbilityHandler.PROTECT_DISTANCE))
-                        continue;
-
-                    // P I: prevents 10% of aggro amount
-                    // P II: prevents 20% of aggro amount
-                    // P III: prevents 30% of aggro amount
-                    // guessed percentages, should never be higher than or equal to 50%
-                    int abilityLevel = protectSource.GetAbilityLevel(Abilities.Protect);
-                    long protectAmount = (long)(abilityLevel * 0.1 * aggroAmount);
-
-
-                    if (protectAmount > 0)
+                    foreach (ProtectECSGameEffect protect in player.EffectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Protect))
                     {
-                        aggroAmount -= protectAmount;
-                        protectSource.Out.SendMessage(LanguageMgr.GetTranslation(protectSource.Client.Account.Language, "AI.Brain.StandardMobBrain.YouProtDist", player.GetName(0, false),
-                                                                                 Body.GetName(0, false, protectSource.Client.Account.Language, Body)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        if (protect.Target != living)
+                            continue;
 
-                        AggroList.AddOrUpdate(protectSource, Add, Update, protectAmount);
+                        IGamePlayer protectSource = (IGamePlayer)protect.Source;
+
+                        if (protectSource.IsIncapacitated || protectSource.IsSitting)
+                            continue;
+
+                        if (!living.IsWithinRadius((GameLiving)protectSource, ProtectAbilityHandler.PROTECT_DISTANCE))
+                            continue;
+
+                        // P I: prevents 10% of aggro amount
+                        // P II: prevents 20% of aggro amount
+                        // P III: prevents 30% of aggro amount
+                        // guessed percentages, should never be higher than or equal to 50%
+                        int abilityLevel = protectSource.GetAbilityLevel(Abilities.Protect);
+                        long protectAmount = (long)(abilityLevel * 0.1 * aggroAmount);
+
+
+                        if (protectAmount > 0)
+                        {
+                            aggroAmount -= protectAmount;
+                            protectSource.Out.SendMessage(LanguageMgr.GetTranslation(protectSource.Client.Account.Language, "AI.Brain.StandardMobBrain.YouProtDist", player.GetName(0, false),
+                                                                                     Body.GetName(0, false, protectSource.Client.Account.Language, Body)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
+                            AggroList.AddOrUpdate((GameLiving)protectSource, Add, Update, protectAmount);
+                        }
                     }
                 }
             }
@@ -854,8 +856,7 @@ namespace DOL.AI.Brain
             {
                 if (!IsFleeing && CheckSpells(eCheckSpellType.Offensive))
                 {
-                    //if (Body.IsAttacking)
-                    //    Body.StopAttack();
+                    Body.StopAttack();
                 }
                 else
                 {
@@ -1074,18 +1075,25 @@ namespace DOL.AI.Brain
             return point;
         }
 
+        private long _isHandlingAdditionToAggroListFromLosCheck;
+        private bool StartAddToAggroListFromLosCheck => Interlocked.Exchange(ref _isHandlingAdditionToAggroListFromLosCheck, 1) == 0; // Returns true the first time it's called.
+
+
         protected virtual void LosCheckForAggroCallback(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
         {
-            // If we kept adding to the aggro list it would make mobs go from one target immediately to another.
-            if (HasAggro)
-                return;
-
-            if (response is eLosCheckResponse.TRUE)
+            // Make sure only one thread can enter this block to prevent multiple entities from being added to the aggro list.
+            // Otherwise mobs could kill one player and immediately go for another one.
+            if (response is eLosCheckResponse.TRUE && StartAddToAggroListFromLosCheck)
             {
-                GameObject gameObject = Body.CurrentRegion.GetObject(targetOID);
+                if (!HasAggro)
+                {
+                    GameObject gameObject = Body.CurrentRegion.GetObject(targetOID);
 
-                if (gameObject is GameLiving gameLiving)
-                    AddToAggroList(gameLiving, 0);
+                    if (gameObject is GameLiving gameLiving)
+                        AddToAggroList(gameLiving, 1);
+                }
+
+                _isHandlingAdditionToAggroListFromLosCheck = 0;
             }
         }
 
@@ -1114,9 +1122,6 @@ namespace DOL.AI.Brain
             // It isn't built here because ordering all entities in the aggro list can be expensive, and we typically don't need it.
             // It's built on demand, when `GetOrderedAggroList` is called.
             OrderedAggroList.Clear();
-
-            if (AggroList.IsEmpty)
-                return null;
 
             int attackRange = Body.AttackRange;
             GameLiving highestThreat = null;

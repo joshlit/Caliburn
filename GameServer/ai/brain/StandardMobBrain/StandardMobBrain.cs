@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using DOL.GS;
 using DOL.GS.Effects;
 using DOL.GS.Keeps;
@@ -136,7 +137,7 @@ namespace DOL.AI.Brain
                     player.Out.SendCheckLos(Body, player, new CheckLosResponse(LosCheckForAggroCallback));
                 else
                 {
-                    AddToAggroList(player, 0);
+                    AddToAggroList(player, 1);
                     return;
                 }
             }
@@ -170,7 +171,7 @@ namespace DOL.AI.Brain
                     }
                 }
 
-                AddToAggroList(npc, 0);
+                AddToAggroList(npc, 1);
                 return;
             }
         }
@@ -292,57 +293,50 @@ namespace DOL.AI.Brain
             if (Body.IsConfused || !Body.IsAlive || living == null)
                 return;
 
-            BringFriends(living);
-
-            if (AggroList.IsEmpty)
-                Body.FireAmbientSentence(GameNPC.eAmbientTrigger.aggroing, living);
-
-            // Only protect if gameplayer and aggroAmount > 0
-            if (living is GamePlayer player && aggroAmount > 0)
+            if (living is GamePlayer player)
             {
-                // If player is in group, add whole group to aggro list
+                // Add the whole group to the aggro list.
                 if (player.Group != null)
                 {
                     foreach (GamePlayer playerInGroup in player.Group.GetPlayersInTheGroup())
                         AggroList.TryAdd(playerInGroup, new());
                 }
 
-                foreach (ProtectECSGameEffect protect in player.effectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Protect))
+                // Only protect if `aggroAmount` is positive.
+                if (aggroAmount > 0)
                 {
-                    if (protect.Target != living)
-                        continue;
-
-                    GameLiving protectSource = protect.Source;
-
-                    if (protectSource.IsStunned
-                        || protectSource.IsMezzed
-                        || protectSource.IsSitting
-                        || protectSource.ObjectState != GameObject.eObjectState.Active
-                        || !protectSource.IsAlive
-                        || !protectSource.InCombat)
-                        continue;
-
-                    if (!living.IsWithinRadius(protectSource, ProtectAbilityHandler.PROTECT_DISTANCE))
-                        continue;
-
-                    // P I: prevents 10% of aggro amount
-                    // P II: prevents 20% of aggro amount
-                    // P III: prevents 30% of aggro amount
-                    // guessed percentages, should never be higher than or equal to 50%
-                    int abilityLevel = protectSource.GetAbilityLevel(Abilities.Protect);
-                    long protectAmount = (long) (abilityLevel * 0.1 * aggroAmount);
-
-                    if (protectAmount > 0)
+                    foreach (ProtectECSGameEffect protect in player.effectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Protect))
                     {
-                        aggroAmount -= protectAmount;
+                        if (protect.Target != living)
+                            continue;
 
-                        if (protectSource is GamePlayer playerProtectSource)
+                        GameLiving protectSource = protect.Source;
+
+                        if (protectSource.IsIncapacitated || protectSource.IsSitting)
+                            continue;
+
+                        if (!living.IsWithinRadius(protectSource, ProtectAbilityHandler.PROTECT_DISTANCE))
+                            continue;
+
+                        // P I: prevents 10% of aggro amount
+                        // P II: prevents 20% of aggro amount
+                        // P III: prevents 30% of aggro amount
+                        // guessed percentages, should never be higher than or equal to 50%
+                        int abilityLevel = protectSource.GetAbilityLevel(Abilities.Protect);
+                        long protectAmount = (long) (abilityLevel * 0.1 * aggroAmount);
+
+                        if (protectAmount > 0)
                         {
-                            playerProtectSource.Out.SendMessage(LanguageMgr.GetTranslation(playerProtectSource.Client.Account.Language, "AI.Brain.StandardMobBrain.YouProtDist", player.GetName(0, false),
-                                Body.GetName(0, false, playerProtectSource.Client.Account.Language, Body)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        }
+                            aggroAmount -= protectAmount;
 
-                        AggroList.AddOrUpdate(protectSource, Add, Update, protectAmount);
+                            if (protectSource is GamePlayer playerProtectSource)
+                            {
+                                playerProtectSource.Out.SendMessage(LanguageMgr.GetTranslation(playerProtectSource.Client.Account.Language, "AI.Brain.StandardMobBrain.YouProtDist", player.GetName(0, false),
+                                    Body.GetName(0, false, playerProtectSource.Client.Account.Language, Body)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                            }
+
+                            AggroList.AddOrUpdate(protectSource, Add, Update, protectAmount);
+                        }
                     }
                 }
             }
@@ -407,29 +401,43 @@ namespace DOL.AI.Brain
             if (!IsActive)
                 return;
 
-            Body.TargetObject = CalculateNextAttackTarget();
+            GameLiving newTarget = CalculateNextAttackTarget();
 
-            if (Body.TargetObject != null)
+            if (newTarget == null)
+                return;
+
+            if (Body.TargetObject == null)
             {
-                if (CheckSpells(eCheckSpellType.Offensive))
-                    Body.StopAttack();
-                else
-                    Body.StartAttack(Body.TargetObject);
+                BringFriends(newTarget);
+                Body.FireAmbientSentence(GameNPC.eAmbientTrigger.aggroing, newTarget);
             }
+
+            Body.TargetObject = newTarget;
+
+            if (CheckSpells(eCheckSpellType.Offensive))
+                Body.StopAttack();
+            else
+                Body.StartAttack(newTarget);
         }
+
+        private long _isHandlingAdditionToAggroListFromLosCheck;
+        private bool StartAddToAggroListFromLosCheck => Interlocked.Exchange(ref _isHandlingAdditionToAggroListFromLosCheck, 1) == 0; // Returns true the first time it's called.
 
         protected virtual void LosCheckForAggroCallback(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
         {
-            // If we kept adding to the aggro list it would make mobs go from one target immediately to another.
-            if (HasAggro)
-                return;
-
-            if (response is eLosCheckResponse.TRUE)
+            // Make sure only one thread can enter this block to prevent multiple entities from being added to the aggro list.
+            // Otherwise mobs could kill one player and immediately go for another one.
+            if (response is eLosCheckResponse.TRUE && StartAddToAggroListFromLosCheck)
             {
-                GameObject gameObject = Body.CurrentRegion.GetObject(targetOID);
+                if (!HasAggro)
+                {
+                    GameObject gameObject = Body.CurrentRegion.GetObject(targetOID);
 
-                if (gameObject is GameLiving gameLiving)
-                    AddToAggroList(gameLiving, 0);
+                    if (gameObject is GameLiving gameLiving)
+                        AddToAggroList(gameLiving, 1);
+                }
+
+                _isHandlingAdditionToAggroListFromLosCheck = 0;
             }
         }
 
@@ -456,10 +464,6 @@ namespace DOL.AI.Brain
             // It isn't built here because ordering all entities in the aggro list can be expensive, and we typically don't need it.
             // It's built on demand, when `GetOrderedAggroList` is called.
             OrderedAggroList.Clear();
-
-            if (AggroList.IsEmpty)
-                return null;
-
             int attackRange = Body.AttackRange;
             GameLiving highestThreat = null;
             long highestEffectiveAggro = -1; // Assumes that negative aggro amounts aren't allowed in the list.
@@ -636,47 +640,34 @@ namespace DOL.AI.Brain
             if (!CanBAF)
                 return;
 
-            GameLiving puller;  // player that triggered the BAF
-            GameLiving actualPuller;
+            IGamePlayer playerPuller;
 
             // Only BAF on players and pets of players
-            if (attacker is GamePlayer)
+            if (attacker is IGamePlayer)
+                playerPuller = (IGamePlayer)attacker;
+            else if (attacker is GameNPC pet && pet.Brain is ControlledNpcBrain brain)
             {
-                puller = (GamePlayer)attacker;
-                actualPuller = puller;
-            }
-            else if (attacker is MimicNPC)
-            {
-                puller = (MimicNPC)attacker;
-                actualPuller = puller;
-            }
-            else if (attacker is GameSummonedPet pet && pet.Owner is GamePlayer owner)
-            {
-                puller = owner;
-                actualPuller = attacker;
-            }
-            else if (attacker is BDSubPet bdSubPet && bdSubPet.Owner is GameSummonedPet bdPet && bdPet.Owner is GamePlayer bdOwner)
-            {
-                puller = bdOwner;
-                actualPuller = bdPet;
+                playerPuller = brain.GetPlayerOwner();
+
+                if (playerPuller == null)
+                    return;
             }
             else
                 return;
 
             CanBAF = false; // Mobs only BAF once per fight
-
             int numAttackers = 0;
 
-            List<GameLiving> victims = null; // Only instantiated if we're tracking potential victims
+            List<IGamePlayer> victims = null; // Only instantiated if we're tracking potential victims
 
             // These are only used if we have to check for duplicates
             HashSet<string> countedVictims = null;
             HashSet<string> countedAttackers = null;
 
-            BattleGroup bg = puller.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
+            BattleGroup bg = playerPuller.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
 
             // Check group first to minimize the number of HashSet.Add() calls
-            if (puller.Group is Group group)
+            if (playerPuller.Group is Group group)
             {
                 if (Properties.BAF_MOBS_COUNT_BG_MEMBERS && bg != null)
                     countedAttackers = new HashSet<string>(); // We have to check for duplicates when counting attackers
@@ -686,24 +677,24 @@ namespace DOL.AI.Brain
                     if (Properties.BAF_MOBS_ATTACK_BG_MEMBERS && bg != null)
                     {
                         // We need a large enough victims list for group and BG, and also need to check for duplicate victims
-                        victims = new List<GameLiving>(group.MemberCount + bg.PlayerCount - 1);
+                        victims = new List<IGamePlayer>(group.MemberCount + bg.PlayerCount - 1);
                         countedVictims = new HashSet<string>();
                     }
                     else
-                        victims = new List<GameLiving>(group.MemberCount);
+                        victims = new List<IGamePlayer>(group.MemberCount);
                 }
 
                 foreach (GameLiving living in group.GetMembersInTheGroup())
                 {
-                    if (living != null && (living.InternalID == puller.InternalID || living.IsWithinRadius(puller, BAFPlayerRange, true)))
+                    if (living != null && living is IGamePlayer player && (living.InternalID == playerPuller.InternalID || living.IsWithinRadius((GameLiving)playerPuller, BAFPlayerRange, true)))
                     {
                         numAttackers++;
                         countedAttackers?.Add(living.InternalID);
 
                         if (victims != null)
                         {
-                            victims.Add(living);
-                            countedVictims?.Add(living.InternalID);
+                            victims.Add(player);
+                            countedVictims?.Add(player.InternalID);
                         }
                     }
                 }
@@ -714,11 +705,11 @@ namespace DOL.AI.Brain
             {
                 if (victims == null && Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !Properties.BAF_MOBS_ATTACK_PULLER)
                     // Puller isn't in a group, so we have to create the victims list for the BG
-                    victims = new List<GameLiving>(bg.PlayerCount);
+                    victims = new List<IGamePlayer>(bg.PlayerCount);
 
-                foreach (GameLiving player2 in bg.Members.Keys)
+                foreach (IGamePlayer player2 in bg.Members.Keys)
                 {
-                    if (player2 != null && (player2.InternalID == puller.InternalID || player2.IsWithinRadius(puller, BAFPlayerRange, true)))
+                    if (player2 != null && (player2.InternalID == playerPuller.InternalID || ((GameLiving)player2).IsWithinRadius((GameLiving)playerPuller, BAFPlayerRange, true)))
                     {
                         if (Properties.BAF_MOBS_COUNT_BG_MEMBERS && (countedAttackers == null || !countedAttackers.Contains(player2.InternalID)))
                             numAttackers++;
@@ -755,6 +746,9 @@ namespace DOL.AI.Brain
                         if (numAdds >= maxAdds)
                             break;
 
+                        if (npc == Body)
+                            continue;
+
                         // If it's a friend, have it attack
                         if (npc.IsFriend(Body) && npc.IsAggressive && npc.IsAvailable && npc.Brain is StandardMobBrain brain)
                         {
@@ -762,22 +756,13 @@ namespace DOL.AI.Brain
                             GameLiving target;
 
                             if (victims != null && victims.Count > 0)
-                                target = victims[Util.Random(0, victims.Count - 1)];
+                                target = (GameLiving)victims[Util.Random(0, victims.Count - 1)];
                             else
-                                target = actualPuller;
+                                target = attacker;
 
-                            brain.AddToAggroList(target, 0);
+                            brain.AddToAggroList(target, 1);
                             brain.AttackMostWanted();
                             numAdds++;
-
-                            if (npc != Body)
-                            {
-                                MimicNPC mimic = target as MimicNPC;
-                                GamePlayer player = target as GamePlayer;
-
-                                mimic?.Group?.MimicGroup.CCTargets.Add(npc);
-                                player?.Group?.MimicGroup.CCTargets.Add(npc);
-                            }
                         }
                     }
 
