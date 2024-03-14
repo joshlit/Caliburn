@@ -838,8 +838,11 @@ namespace DOL.GS.Spells
                     engage.Cancel(false, false);
             }
 
-            if (Caster is NecromancerPet necromancerPet && necromancerPet.Brain is NecromancerPetBrain necromancerPetBrain)
-                necromancerPetBrain.OnPetBeginCast(Spell, SpellLine);
+			if (UnstealthCasterOnStart)
+				Caster.Stealth(false);
+
+			if (Caster is NecromancerPet necromancerPet && necromancerPet.Brain is NecromancerPetBrain necromancerPetBrain)
+				necromancerPetBrain.OnPetBeginCast(Spell, SpellLine);
 
             return true;
         }
@@ -2641,20 +2644,22 @@ namespace DOL.GS.Spells
         {
             int spellResistChance = CalculateSpellResistChance(target);
 
-            if (spellResistChance > 0)
-            {
-                int spellResistRoll;
+			if (spellResistChance > 0)
+			{
+				double spellResistRoll;
 
-                if (!Properties.OVERRIDE_DECK_RNG && Caster is IGamePlayer player)
-                    spellResistRoll = player.RandomNumberDeck.GetInt();
-                else
-                    spellResistRoll = Util.CryptoNextInt(100);
+				if (!Properties.OVERRIDE_DECK_RNG && Caster is IGamePlayer player)
+					spellResistRoll = player.RandomNumberDeck.GetPseudoDouble();
+				else
+					spellResistRoll = Util.CryptoNextDouble();
 
-                if (Caster is GamePlayer playerCaster && playerCaster.UseDetailedCombatLog)
-                    playerCaster.Out.SendMessage($"Target chance to resist: {spellResistChance} RandomNumber: {spellResistRoll}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+				spellResistRoll *= 100;
 
-                if (target is GamePlayer playerTarget && playerTarget.UseDetailedCombatLog)
-                    playerTarget.Out.SendMessage($"Your chance to resist: {spellResistChance} RandomNumber: {spellResistRoll}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+				if (Caster is GamePlayer playerCaster && playerCaster.UseDetailedCombatLog)
+					playerCaster.Out.SendMessage($"Target chance to resist: {spellResistChance} RandomNumber: {spellResistRoll:0.##}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+
+				if (target is GamePlayer playerTarget && playerTarget.UseDetailedCombatLog)
+					playerTarget.Out.SendMessage($"Your chance to resist: {spellResistChance} RandomNumber: {spellResistRoll:0.##}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
                 if (spellResistChance > spellResistRoll)
                 {

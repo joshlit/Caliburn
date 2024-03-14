@@ -2006,7 +2006,7 @@ namespace DOL.GS
                         if (rvrsick == null) return;
                         Spell rvrillness = SkillBase.FindSpell(8181, rvrsick);
                         //player.CastSpell(rvrillness, rvrsick);
-                        castingComponent.RequestStartCastSpell(rvrillness, rvrsick);
+                        CastSpell(rvrillness, rvrsick);
                         break;
                     case eDeathType.PvP: //PvP sickness is the same as PvE sickness - Curable
                     case eDeathType.PvE:
@@ -2014,7 +2014,7 @@ namespace DOL.GS
                         if (pvesick == null) return;
                         Spell pveillness = SkillBase.FindSpell(2435, pvesick);
                         //player.CastSpell(pveillness, pvesick);
-                        castingComponent.RequestStartCastSpell(pveillness, pvesick);
+                        CastSpell(pveillness, pvesick);
                         break;
                 }
 
@@ -6116,6 +6116,12 @@ namespace DOL.GS
             }
         }
 
+        public override void OnAttackEnemy(AttackData ad)
+        {
+            LastPlayerActivityTime = GameLoop.GameLoopTime;
+            base.OnAttackEnemy(ad);
+        }
+
         /// <summary>
         /// This method is called at the end of the attack sequence to
         /// notify objects if they have been attacked/hit by an attack
@@ -6169,14 +6175,14 @@ namespace DOL.GS
                     if (ad.Damage == -1)
                         break;
 
-                    // If attacked by a non-damaging spell, we should not show damage numbers.
-                    // We need to check the damage on the spell here, not in the AD, since this could in theory be a damaging spell that had its damage modified to 0.
-                    if (ad.AttackType == AttackData.eAttackType.Spell && ad.SpellHandler.Spell?.Damage == 0)
-                        break;
-
-                    if (IsStealthed && !effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
+                    if (ad.AttackType == AttackData.eAttackType.Spell)
                     {
-                        if (!(ad.AttackType == AttackData.eAttackType.Spell && ad.SpellHandler.Spell.SpellType == eSpellType.DamageOverTime))
+                        // If attacked by a non-damaging spell, we should not show damage numbers.
+                        // We need to check the damage on the spell here, not in the AD, since this could in theory be a damaging spell that had its damage modified to 0.
+                        if (ad.SpellHandler.Spell.Damage == 0)
+                            break;
+
+                        if (ad.SpellHandler.Spell.SpellType != eSpellType.DamageOverTime && !effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
                             Stealth(false);
                     }
 
@@ -6284,11 +6290,7 @@ namespace DOL.GS
                 CraftTimer = null;
                 Out.SendCloseTimerWindow();
             }
-
-
-
         }
-
 
         /// <summary>
         /// Launch any reactive effect on an item
@@ -8378,7 +8380,7 @@ namespace DOL.GS
 
                     if (spellHandler != null && spellHandler.CheckBeginCast(TargetObject as GameLiving))
                     {
-                        castingComponent.RequestStartCastSpell(spell, itemSpellLine);
+                        CastSpell(spell, itemSpellLine);
                         TempProperties.SetProperty(LAST_USED_ITEM_SPELL, item);
                         //CurrentSpellHandler = spellHandler;
                         //CurrentSpellHandler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
@@ -8973,17 +8975,15 @@ namespace DOL.GS
 
             RefreshItemBonuses();
 
-            var playerDeck = DOLDB<DbCoreCharacterXDeck>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(this.ObjectId));
-            if (playerDeck != null)
-            {
-                this.RandomNumberDeck.LoadDeckFromJSON((playerDeck.Deck));
-                //Console.WriteLine($"loaded deck. first card: {this.RandomNumberDeck.GetInt()}");
-            }
-            else
-            {
-                this.RandomNumberDeck = new PlayerDeck();
-            }
+            DbCoreCharacterXDeck playerDeck = DOLDB<DbCoreCharacterXDeck>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(ObjectId));
 
+            if (playerDeck != null)
+                RandomNumberDeck.LoadDeckFromJSON(playerDeck.Deck);
+            else
+                RandomNumberDeck = new PlayerDeck();
+
+            LastPositionUpdateTime = GameLoop.GameLoopTime;
+            LastPlayerActivityTime = GameLoop.GameLoopTime;
             return true;
         }
 
@@ -9111,8 +9111,6 @@ namespace DOL.GS
             }
 
             bool hasPetToMove = false;
-            // Remove the last update tick property to prevent speedhack messages during zoning and teleporting.
-            LastPositionUpdateTick = 0;
 
             if (ControlledBrain != null && ControlledBrain.WalkState != eWalkState.Stay)
             {
@@ -9157,7 +9155,7 @@ namespace DOL.GS
                     {
                         if (player != this)
                         {
-                            if (IsStealthed == false || player.CanDetect(this))
+                            if (!IsStealthed || player.CanDetect(this))
                                 player.Out.SendPlayerCreate(this);
                         }
                     }
@@ -9214,12 +9212,10 @@ namespace DOL.GS
             {
                 if (player != null && player != this)
                 {
-                    if (IsStealthed == false || player.CanDetect(this))
-                    {
+                    if (!IsStealthed || player.CanDetect(this))
                         player.Out.SendPlayerCreate(this);
-                    }
 
-                    if (player.IsStealthed == false || CanDetect(player))
+                    if (!player.IsStealthed || CanDetect(player))
                     {
                         Out.SendPlayerCreate(player);
                         Out.SendLivingEquipmentUpdate(player);
@@ -9521,42 +9517,10 @@ namespace DOL.GS
             }
         }
 
-        /// <summary>
-        /// Holds the zone player was in after last position update
-        /// </summary>
-        private Zone m_lastPositionUpdateZone;
-
-        /// <summary>
-        /// Gets or sets the zone after last position update
-        /// </summary>
-        public Zone LastPositionUpdateZone
-        {
-            get { return m_lastPositionUpdateZone; }
-            set { m_lastPositionUpdateZone = value; }
-        }
-
-
-        private long m_lastPositionUpdateTick = 0;
-
-        /// <summary>
-        /// The environment tick count when this players position was last updated
-        /// </summary>
-        public long LastPositionUpdateTick
-        {
-            get { return m_lastPositionUpdateTick; }
-            set { m_lastPositionUpdateTick = value; }
-        }
-
-        private Point3DFloat m_lastPositionUpdatePoint = new Point3DFloat(0, 0, 0);
-
-        /// <summary>
-        /// The last recorded position of this player
-        /// </summary>
-        public Point3DFloat LastPositionUpdatePoint
-        {
-            get { return m_lastPositionUpdatePoint; }
-            set { m_lastPositionUpdatePoint = value; }
-        }
+        public Zone LastPositionUpdateZone { get; set; }
+        public long LastPositionUpdateTime { get; set; }
+        public long LastPlayerActivityTime { get; set; }
+        public Point3DFloat LastPositionUpdatePoint { get; set; } = new(0, 0, 0);
 
         /// <summary>
         /// Holds the players max Z for fall damage
@@ -12161,61 +12125,43 @@ namespace DOL.GS
         /// Property that holds tick when stealth state was changed last time
         /// </summary>
         public const string STEALTH_CHANGE_TICK = "StealthChangeTick";
+
         /// <summary>
         /// The stealth state of this player
         /// </summary>
-        public override bool IsStealthed
-        {
-            get { return effectListComponent.ContainsEffectForEffectType(eEffect.Stealth); }
-        }
+        public override bool IsStealthed => effectListComponent.ContainsEffectForEffectType(eEffect.Stealth);
 
-        public static void Unstealth(DOLEvent ev, object sender, EventArgs args)
-        {
-            AttackedByEnemyEventArgs atkArgs = args as AttackedByEnemyEventArgs;
-            GamePlayer player = sender as GamePlayer;
-            if (player == null || atkArgs == null) return;
-            if (atkArgs.AttackData.AttackResult != eAttackResult.HitUnstyled && atkArgs.AttackData.AttackResult != eAttackResult.HitStyle) return;
-            if (atkArgs.AttackData.Damage == -1) return;
-
-            player.Stealth(false);
-        }
-        /// <summary>
-        /// Set player's stealth state
-        /// </summary>
-        /// <param name="goStealth">true is stealthing, false if unstealthing</param>
-        public virtual void Stealth(bool goStealth)
+        public override void Stealth(bool goStealth)
         {
             if (IsStealthed == goStealth)
                 return;
 
-            if (goStealth && CraftTimer != null && CraftTimer.IsAlive)
-            {
-                Out.SendMessage("You can't stealth while crafting!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
-            }
-
-            if (this.effectListComponent.ContainsEffectForEffectType(eEffect.Pulse) )
-            {
-                Out.SendMessage("You currently have an active, pulsing spell effect and cannot hide!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
-            }
-
-            if (IsOnHorse || IsSummoningMount)
-                IsOnHorse = false;
-
             if (goStealth)
             {
-                new StealthECSGameEffect(new ECSGameEffectInitParams(this, 0, 1));
-            }
-            else
-            {
-                if (effectListComponent.ContainsEffectForEffectType(eEffect.Stealth))
+                if (CraftTimer != null && CraftTimer.IsAlive)
                 {
-                    EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Stealth), false);
+                    Out.SendMessage("You can't stealth while crafting!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    return;
                 }
-                if(effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
-                    EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Vanish));
+
+                if (effectListComponent.ContainsEffectForEffectType(eEffect.Pulse))
+                {
+                    Out.SendMessage("You currently have an active, pulsing spell effect and cannot hide!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    return;
+                }
+
+                if (IsOnHorse || IsSummoningMount)
+                    IsOnHorse = false;
+
+                new StealthECSGameEffect(new ECSGameEffectInitParams(this, 0, 1));
+                return;
             }
+
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Stealth))
+                EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Stealth), false);
+
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
+                EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Vanish));
         }
 
         // UncoverStealthAction is what unstealths player if they are too close to mobs.
@@ -12342,7 +12288,7 @@ namespace DOL.GS
         {
             GameObject target = CurrentRegion.GetObject(targetOID);
 
-            if ((target == null) || (player.IsStealthed == false))
+            if (target == null || !player.IsStealthed)
                 return;
 
             if (response is eLosCheckResponse.TRUE)

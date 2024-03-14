@@ -2281,7 +2281,7 @@ namespace DOL.GS.Scripts
                     if (rvrsick == null) return;
                     Spell rvrillness = SkillBase.FindSpell(8181, rvrsick);
                     //player.CastSpell(rvrillness, rvrsick);
-                    castingComponent.RequestStartCastSpell(rvrillness, rvrsick);
+                    CastSpell(rvrillness, rvrsick);
                     break;
 
                     case eDeathType.PvP: //PvP sickness is the same as PvE sickness - Curable
@@ -2290,7 +2290,7 @@ namespace DOL.GS.Scripts
                     if (pvesick == null) return;
                     Spell pveillness = SkillBase.FindSpell(2435, pvesick);
                     //player.CastSpell(pveillness, pvesick);
-                    castingComponent.RequestStartCastSpell(pveillness, pvesick);
+                    CastSpell(pveillness, pvesick);
                     break;
                 }
 
@@ -5680,59 +5680,6 @@ namespace DOL.GS.Scripts
         #region Combat
 
         /// <summary>
-		/// Cast a spell with LOS check to a player
-		/// </summary>
-		/// <returns>Whether the spellcast started successfully</returns>
-		public override bool CastSpell(Spell spell, SpellLine line)
-        {
-            // Good opportunity to clean up our 'm_spellTargetLosChecks'.
-            // Entries older than 3 seconds are removed, so that another check can be performed in case the previous one never was.
-            for (int i = m_castSpellLosChecks.Count - 1; i >= 0; i--)
-            {
-                var element = m_castSpellLosChecks.ElementAt(i);
-
-                if (GameLoop.GameLoopTime - element.Value.Item3 >= 3000)
-                    m_castSpellLosChecks.TryRemove(element.Key, out _);
-            }
-
-            if (IsIncapacitated)
-                return false;
-
-            if (TargetObject == this || TargetObject == null)
-                return castingComponent.RequestStartCastSpell(spell, line, null, TargetObject as GameLiving);
-
-            GamePlayer LosChecker = TargetObject as GamePlayer;
-
-            if (LosChecker == null && Brain is IControlledBrain controlledBrain)
-                LosChecker = controlledBrain.GetPlayerOwner();
-
-            if (LosChecker == null && Brain is StandardMobBrain brain)
-            {
-                foreach (GamePlayer playerInRange in GetPlayersInRadius((ushort)brain.AggroRange))
-                {
-                    if (playerInRange != null)
-                    {
-                        LosChecker = playerInRange;
-                        break;
-                    }
-                }
-            }
-
-            if (LosChecker == null)
-                return castingComponent.RequestStartCastSpell(spell, line, null, TargetObject as GameLiving);
-
-            bool spellCastedFromLosCheck = m_spellCastedFromLosCheck;
-
-            if (spellCastedFromLosCheck)
-                m_spellCastedFromLosCheck = false;
-
-            if (m_castSpellLosChecks.TryAdd(TargetObject, new(spell, line, GameLoop.GameLoopTime)))
-                LosChecker.Out.SendCheckLos(this, TargetObject, new CheckLosResponse(CastSpellLosCheckReply));
-
-            return spellCastedFromLosCheck;
-        }
-
-        /// <summary>
         /// Calculate how fast this player can cast a given spell
         /// </summary>
         /// <param name="spell"></param>
@@ -6010,17 +5957,15 @@ namespace DOL.GS.Scripts
                     if (ad.Damage == -1)
                         break;
 
-                    // If attacked by a non-damaging spell, we should not show damage numbers.
-                    // We need to check the damage on the spell here, not in the AD, since this could in theory be a damaging spell that had its damage modified to 0.
-                    if (ad.AttackType == eAttackType.Spell && ad.SpellHandler.Spell?.Damage == 0)
-                        break;
-
-                    if (IsStealthed && !effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
+                    if (ad.AttackType == AttackData.eAttackType.Spell)
                     {
-                        if (!(ad.AttackType == eAttackType.Spell && ad.SpellHandler.Spell.SpellType == eSpellType.DamageOverTime))
-                        {
+                        // If attacked by a non-damaging spell, we should not show damage numbers.
+                        // We need to check the damage on the spell here, not in the AD, since this could in theory be a damaging spell that had its damage modified to 0.
+                        if (ad.SpellHandler.Spell.Damage == 0)
+                            break;
+
+                        if (ad.SpellHandler.Spell.SpellType != eSpellType.DamageOverTime && !effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
                             Stealth(false);
-                        }
                     }
 
                     // decrease condition of hitted armor piece
@@ -7346,59 +7291,31 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// The stealth state of this player
         /// </summary>
-        public override bool IsStealthed
-        {
-            get { return effectListComponent.ContainsEffectForEffectType(eEffect.Stealth); }
-        }
-
-        public static void Unstealth(DOLEvent ev, object sender, EventArgs args)
-        {
-            AttackedByEnemyEventArgs atkArgs = args as AttackedByEnemyEventArgs;
-            GamePlayer player = sender as GamePlayer;
-            if (player == null || atkArgs == null) return;
-            if (atkArgs.AttackData.AttackResult != eAttackResult.HitUnstyled && atkArgs.AttackData.AttackResult != eAttackResult.HitStyle) return;
-            if (atkArgs.AttackData.Damage == -1) return;
-
-            player.Stealth(false);
-        }
+        public override bool IsStealthed => effectListComponent.ContainsEffectForEffectType(eEffect.Stealth);
 
         /// <summary>
         /// Set player's stealth state
         /// </summary>
         /// <param name="goStealth">true is stealthing, false if unstealthing</param>
-        public virtual void Stealth(bool goStealth)
+        public override void Stealth(bool goStealth)
         {
             if (IsStealthed == goStealth)
                 return;
 
-            //if (goStealth && CraftTimer != null && CraftTimer.IsAlive)
-            //{
-            //    //Out.SendMessage("You can't stealth while crafting!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            //    return;
-            //}
-
-            if (effectListComponent.ContainsEffectForEffectType(eEffect.Pulse))
+            if (goStealth)
             {
-                //Out.SendMessage("You currently have an active, pulsing spell effect and cannot hide!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                if (effectListComponent.ContainsEffectForEffectType(eEffect.Pulse))
+                    return;
+
+                new StealthECSGameEffect(new ECSGameEffectInitParams(this, 0, 1));
                 return;
             }
 
-            //if (IsOnHorse || IsSummoningMount)
-            //    IsOnHorse = false;
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Stealth))
+                EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Stealth), false);
 
-            if (goStealth)
-            {
-                new StealthECSGameEffect(new ECSGameEffectInitParams(this, 0, 1));
-            }
-            else
-            {
-                if (effectListComponent.ContainsEffectForEffectType(eEffect.Stealth))
-                {
-                    EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Stealth), false);
-                }
-                if (effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
-                    EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Vanish));
-            }
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
+                EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Vanish));
         }
 
         // UncoverStealthAction is what unstealths player if they are too close to mobs.

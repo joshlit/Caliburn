@@ -685,11 +685,9 @@ namespace DOL.GS
 
                 if (player.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
                 {
-                    if (ServerProperties.Properties.ALLOW_OLD_ARCHERY == false)
+                    if (Properties.ALLOW_OLD_ARCHERY == false)
                     {
-                        if ((eCharacterClass)player.CharacterClass.ID == eCharacterClass.Scout ||
-                            (eCharacterClass)player.CharacterClass.ID == eCharacterClass.Hunter ||
-                            (eCharacterClass)player.CharacterClass.ID == eCharacterClass.Ranger)
+                        if ((eCharacterClass) player.CharacterClass.ID is eCharacterClass.Scout or eCharacterClass.Hunter or eCharacterClass.Ranger)
                         {
                             // There is no feedback on live when attempting to fire a bow with arrows
                             return;
@@ -744,6 +742,7 @@ namespace DOL.GS
                         // -Chance to unstealth nocking a crit = stealth / level  0.20
                         int stealthSpec = player.GetModifiedSpecLevel(Specs.Stealth);
                         int stayStealthed = stealthSpec * 100 / player.Level;
+
                         if (player.rangeAttackComponent?.RangedAttackType == eRangedAttackType.Critical)
                             stayStealthed -= 20;
 
@@ -2117,9 +2116,6 @@ namespace DOL.GS
             IGamePlayer playerOwner = owner as IGamePlayer;
             IGamePlayer playerAttacker = ad.Attacker as IGamePlayer;
 
-            MimicNPC mimicOwner = owner as MimicNPC;
-            MimicNPC mimicAttacker = ad.Attacker as MimicNPC;
-
             // If berserk is on, no defensive skills may be used: evade, parry, ...
             // unfortunately this as to be check for every action itself to kepp oder of actions the same.
             // Intercept and guard can still be used on berserked
@@ -2139,14 +2135,14 @@ namespace DOL.GS
             {
                 if (inter.Target == owner && !inter.Source.IsIncapacitated && !inter.Source.IsSitting && owner.IsWithinRadius(inter.Source, InterceptAbilityHandler.INTERCEPT_DISTANCE))
                 {
-                    int interceptRoll;
+                    double interceptRoll;
 
                     if (!Properties.OVERRIDE_DECK_RNG && playerOwner != null)
-                        interceptRoll = playerOwner.RandomNumberDeck.GetInt();
-                    else if (!Properties.OVERRIDE_DECK_RNG && mimicOwner != null)
-                        interceptRoll = mimicOwner.RandomNumberDeck.GetInt();
+                        interceptRoll = playerOwner.RandomNumberDeck.GetPseudoDouble();
                     else
-                        interceptRoll = Util.Random(100);
+                        interceptRoll = Util.CryptoNextDouble();
+
+                    interceptRoll *= 100;
 
                     if (inter.InterceptChance > interceptRoll)
                         intercept = inter;
@@ -2224,8 +2220,6 @@ namespace DOL.GS
 
                 if (!Properties.OVERRIDE_DECK_RNG && playerOwner != null)
                     evadeRoll = playerOwner.RandomNumberDeck.GetPseudoDouble();
-                else if (!Properties.OVERRIDE_DECK_RNG && mimicOwner != null)
-                    evadeRoll = mimicOwner.RandomNumberDeck.GetPseudoDouble();
                 else
                     evadeRoll = Util.CryptoNextDouble();
 
@@ -2249,8 +2243,6 @@ namespace DOL.GS
 
                     if (!Properties.OVERRIDE_DECK_RNG && playerOwner != null)
                         parryRoll = playerOwner.RandomNumberDeck.GetPseudoDouble();
-                    else if (!Properties.OVERRIDE_DECK_RNG && mimicOwner != null)
-                        parryRoll = mimicOwner.RandomNumberDeck.GetPseudoDouble();
                     else
                         parryRoll = Util.CryptoNextDouble();
 
@@ -2295,8 +2287,6 @@ namespace DOL.GS
 
                 if (!Properties.OVERRIDE_DECK_RNG && playerAttacker != null)
                     missRoll = playerAttacker.RandomNumberDeck.GetPseudoDouble();
-                else if (!Properties.OVERRIDE_DECK_RNG && mimicAttacker != null)
-                    missRoll = mimicAttacker.RandomNumberDeck.GetPseudoDouble();
                 else
                     missRoll = Util.CryptoNextDouble();
 
@@ -2343,9 +2333,8 @@ namespace DOL.GS
                 {
                     // 1.62: Penetrating Arrow penetrate only if the caster == target. Longshot and Volley always penetrate BTs.
                     if (ad.Target != bladeturn.SpellHandler.Caster && (playerAttacker != null && playerAttacker.HasAbility(Abilities.PenetratingArrow) ||
-                                                                       mimicAttacker != null && mimicAttacker.HasAbility(Abilities.PenetratingArrow)) ||
                         action.RangedAttackType == eRangedAttackType.Long ||
-                        action.RangedAttackType == eRangedAttackType.Volley)
+                        action.RangedAttackType == eRangedAttackType.Volley))
                     {
                         penetrate = true;
                     }
@@ -2355,7 +2344,7 @@ namespace DOL.GS
 
                 if (penetrate)
                 {
-                    if (playerOwner != null || mimicOwner != null)
+                    if (playerOwner != null)
                     {
                         playerOwner?.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.BlowPenetrated"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                         EffectService.RequestImmediateCancelEffect(bladeturn);
@@ -2363,11 +2352,10 @@ namespace DOL.GS
                 }
                 else
                 {
-                    if (playerOwner != null || mimicOwner != null)
+                    if (playerOwner != null)
                     {
                         playerOwner?.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.BlowAbsorbed"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                         playerOwner?.Stealth(false);
-                        mimicOwner?.Stealth(false);
                     }
 
                     playerAttacker?.Out.SendMessage(LanguageMgr.GetTranslation(playerAttacker.Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.StrikeAbsorbed"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);

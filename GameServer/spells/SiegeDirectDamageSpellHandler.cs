@@ -1,4 +1,5 @@
 ﻿using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -36,9 +37,9 @@ namespace DOL.GS.Spells
         public override AttackData CalculateDamageToTarget(GameLiving target)
         {
             AttackData ad = base.CalculateDamageToTarget(target);
-            if (target is GamePlayer)
+            if (target is IGamePlayer)
             {
-                GamePlayer player = target as GamePlayer;
+                IGamePlayer player = target as IGamePlayer;
                 int id = player.CharacterClass.ID;
                 //50% reduction for tanks
                 if (id == (int)eCharacterClass.Armsman || id == (int)eCharacterClass.Warrior || id == (int)eCharacterClass.Hero)
@@ -49,9 +50,9 @@ namespace DOL.GS.Spells
                 //lvl 1 60%
                 //lvl 2 70%
                 //lvl 3 80%
-                if (player.IsRiding && player.Steed is GameSiegeRam)
+                if (player is GamePlayer gPlayer && gPlayer.IsRiding && gPlayer.Steed is GameSiegeRam)
                 {
-                    ad.Damage = (int)((double)ad.Damage * (1.0 - (50.0 + (double)player.Steed.Level * 10.0) / 100.0));
+                    ad.Damage = (int)((double)ad.Damage * (1.0 - (50.0 + (double)gPlayer.Steed.Level * 10.0) / 100.0));
                 }
             }
             return ad;

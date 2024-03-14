@@ -3886,17 +3886,17 @@ namespace DOL.GS
             return casted;
         }
 
-        /// <summary>
-        /// Cast a spell with LOS check to a player
-        /// </summary>
-        /// <returns>Whether the spellcast started successfully</returns>
-        public override bool CastSpell(Spell spell, SpellLine line)
-        {
-            // Good opportunity to clean up our 'm_spellTargetLosChecks'.
-            // Entries older than 3 seconds are removed, so that another check can be performed in case the previous one never was.
-            for (int i = m_castSpellLosChecks.Count - 1; i >= 0; i--)
-            {
-                var element = m_castSpellLosChecks.ElementAt(i);
+		/// <summary>
+		/// Cast a spell with LOS check to a player
+		/// </summary>
+		/// <returns>Whether the spellcast started successfully</returns>
+		public override bool CastSpell(Spell spell, SpellLine line, ISpellCastingAbilityHandler spellCastingAbilityHandler = null)
+		{
+			// Good opportunity to clean up our 'm_spellTargetLosChecks'.
+			// Entries older than 3 seconds are removed, so that another check can be performed in case the previous one never was.
+			for (int i = m_castSpellLosChecks.Count - 1; i >= 0; i--)
+			{
+				var element = m_castSpellLosChecks.ElementAt(i);
 
                 if (GameLoop.GameLoopTime - element.Value.Item3 >= 3000)
                     m_castSpellLosChecks.TryRemove(element.Key, out _);
@@ -3939,8 +3939,8 @@ namespace DOL.GS
                 }
             }
 
-            if (LosChecker == null)
-                return base.CastSpell(spellToCast, line);
+			if (LosChecker == null)
+				return base.CastSpell(spellToCast, line, spellCastingAbilityHandler);
 
             bool spellCastedFromLosCheck = m_spellCastedFromLosCheck;
 

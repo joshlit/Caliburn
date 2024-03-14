@@ -86,11 +86,8 @@ namespace DOL.GS
             return spellHandler;
         }
 
-        protected virtual void StartCastSpell(StartCastSpellRequest startCastSpellRequest)
+        protected void StartCastSpell(StartCastSpellRequest startCastSpellRequest)
         {
-            if (Owner is MimicNPC mimic && mimic.IsStealthed)
-                mimic.Stealth(false);
-
             SpellHandler newSpellHandler = CreateSpellHandler(startCastSpellRequest);
 
             if (SpellHandler != null)

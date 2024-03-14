@@ -19,20 +19,16 @@ namespace DOL.GS.Spells
             base.FinishSpellCast(target);
         }
 
-        public override void OnDirectEffect(GameLiving target)
-        {
-            if (target == null)
-                return;
+		public override void OnDirectEffect(GameLiving target)
+		{
+			if (target == null || !target.IsAlive || target.ObjectState != GameObject.eObjectState.Active)
+				return;
 
-            if (!target.IsAlive || target.ObjectState != GameLiving.eObjectState.Active)
-                return;
+			// No effect on stealthed players
+			if (target is IGamePlayer || target.IsStealthed)
+				return;
 
-            // no animation on stealthed players
-            if (target is IGamePlayer)
-                if (target.IsStealthed)
-                    return;
-
-            SendEffectAnimation(target, 0, false, 1);
+			SendEffectAnimation(target, 0, false, 1);
 
             // Create attack data.
             AttackData ad = CalculateDamageToTarget(target);

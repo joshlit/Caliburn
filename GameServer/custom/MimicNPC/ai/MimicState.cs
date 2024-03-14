@@ -252,6 +252,14 @@ namespace DOL.AI.Brain
             _brain.Body.StopAttack();
             _brain.Body.TargetObject = null;
             _brain.ClearAggroList();
+            
+            if (_brain.MimicBody.CharacterClass.ID == (int)eCharacterClass.Reaver)
+            {
+                foreach (ECSPulseEffect pulseEffect in _brain.MimicBody.effectListComponent.GetAllPulseEffects())
+                {
+                    EffectService.RequestImmediateCancelEffect(pulseEffect);
+                }
+            }
 
             base.Exit();
         }
