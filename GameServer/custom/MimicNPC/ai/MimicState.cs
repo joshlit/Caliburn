@@ -266,22 +266,11 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (_brain.PvPMode && !_brain.HasAggro)
+            if (_brain.PvPMode && _checkAggroTime < GameLoop.GameLoopTime)
+            {
                 _brain.CheckProximityAggro(_brain.AggroRange);
-
-            //if (_checkAggroTime < GameLoop.GameLoopTime)
-            //{
-            //    _brain.CheckProximityAggro(_brain.AggroRange);
-            //    _checkAggroTime = GameLoop.GameLoopTime + 5000;
-            //}
-
-            //if (_brain.IsFleeing)
-            //{
-            //    if (!_brain.Body.IsWithinRadius(_brain.Body.TargetObject, 500))
-            //    {
-            //        _brain.IsFleeing = false;
-            //    }
-            //}
+                _checkAggroTime = GameLoop.GameLoopTime + 5000;
+            }
 
             if (!_brain.HasAggro || (!_brain.Body.InCombatInLast(LEAVE_WHEN_OUT_OF_COMBAT_FOR) && _aggroTime + LEAVE_WHEN_OUT_OF_COMBAT_FOR <= GameLoop.GameLoopTime))
             {
@@ -383,6 +372,8 @@ namespace DOL.AI.Brain
                     return;
                 }
             }
+            else
+                return;
 
             if (!_brain.Body.InCombat)
             {

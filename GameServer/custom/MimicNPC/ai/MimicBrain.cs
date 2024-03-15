@@ -154,12 +154,8 @@ namespace DOL.AI.Brain
         {
             FireAmbientSentence();
 
-            //Check aggro only if our aggro list is empty and we're not in combat.
-            if (AggroLevel > 0 && aggroRange > 0 && !HasAggro && !Body.AttackState && Body.CurrentSpellHandler == null)
-            {
-                CheckPlayerAggro();
-                CheckNPCAggro(aggroRange);
-            }
+            CheckPlayerAggro();
+            CheckNPCAggro(aggroRange);
 
             // Some calls rely on this method to return if there's something in the aggro list, not necessarily to perform a proximity aggro check.
             // But this doesn't necessarily return whether or not the check was positive, only the current state (LoS checks take time).
@@ -243,7 +239,7 @@ namespace DOL.AI.Brain
 
                 AddToAggroList(npc, 1);
 
-                return;
+                //return;
             }
         }
 
@@ -1440,7 +1436,7 @@ namespace DOL.AI.Brain
 
                 // TODO: This makes Thane and Valewalker use melee when in range rather than cast in all situations.
                 //        but still use instants. Need to include other exceptions like maybe low health or endurance.
-                if ((MimicBody.CanUsePositionalStyles || MimicBody.CanUseAnytimeStyles) && Body.IsWithinRadius(Body.TargetObject, 550))
+                if ((MimicBody.CanUsePositionalStyles || MimicBody.CanUseAnytimeStyles) && (Body.IsWithinRadius(Body.TargetObject, 550) || Body.ManaPercent <= 10))
                     return false;
 
                 if (MimicBody.CanCastCrowdControlSpells)
@@ -1776,12 +1772,21 @@ namespace DOL.AI.Brain
 
                 break;
 
+                case eSpellType.Bladeturn when spell.IsPulsing:
+                break;
+
+                case eSpellType.MesmerizeDurationBuff when spell.IsPulsing:
+                break;
+
                 #endregion Pulse
 
                 #region Buffs
 
                 case eSpellType.SpeedEnhancement when spell.Target == eSpellTarget.PET:
                 case eSpellType.CombatSpeedBuff when spell.Duration > 20:
+                case eSpellType.CombatSpeedBuff when spell.IsConcentration:
+                case eSpellType.MesmerizeDurationBuff when !spell.IsPulsing:
+                case eSpellType.Bladeturn when !spell.IsPulsing:
                 case eSpellType.BodySpiritEnergyBuff:
                 case eSpellType.HeatColdMatterBuff:
                 case eSpellType.SpiritResistBuff:
@@ -1813,8 +1818,7 @@ namespace DOL.AI.Brain
                 case eSpellType.HeroismBuff:
                 case eSpellType.KeepDamageBuff:
                 case eSpellType.MagicResistBuff:
-                case eSpellType.MeleeDamageBuff:
-                case eSpellType.MesmerizeDurationBuff:
+                case eSpellType.MeleeDamageBuff:               
                 case eSpellType.MLABSBuff:
                 case eSpellType.PaladinArmorFactorBuff:
                 case eSpellType.ParryBuff:
@@ -1828,12 +1832,14 @@ namespace DOL.AI.Brain
                 case eSpellType.OffensiveProc:
                 case eSpellType.DefensiveProc:
                 case eSpellType.DamageShield:
-                case eSpellType.Bladeturn:
                 {
-                    if (spell.Concentration > 0)
+                    if (spell.IsConcentration)
                     {
-                        if (spell.Concentration > Body.Concentration - Body.UsedConcentration)
-                            return false;
+                        if (spell.Concentration > Body.Concentration)
+                            break;
+
+                        if (Body.effectListComponent.ConcentrationEffects.Count >= 20)
+                            break;
                     }
 
                     if (spell.Target == eSpellTarget.PET)
@@ -2031,14 +2037,13 @@ namespace DOL.AI.Brain
 
             if (Body?.TargetObject != null)
             {
-                //log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString() + " on " + Body.TargetObject.Name);
+                log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString() + " on " + Body.TargetObject.Name);
                 //log.Info(Body.TargetObject.Name + " effect is " + LivingHasEffect((GameLiving)Body.TargetObject, spell));
-                    
-                Body.CastSpell(spell, m_mobSpellLine, false);
-                return true;
+
+                casted = Body.CastSpell(spell, m_mobSpellLine);
             }
 
-            return false;
+            return casted;
         }
 
         /// <summary>

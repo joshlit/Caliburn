@@ -1062,12 +1062,12 @@ namespace DOL.GS.Scripts
             if (!base.RemoveFromWorld())
                 return false;
 
+            Group?.RemoveMember(this);
             Duel?.Stop();
 
             return true;
         }
 
-        private readonly object m_LockObject = new object();
         public int Regen { get; set; }
         public int Endchant { get; set; }
         public long LastEnduTick { get; set; }

@@ -86,6 +86,13 @@ namespace DOL.GS.Scripts
                 else
                     level = client.Player.Level;
 
+                bool preventCombat = false;
+                if (args.Length >= 5)
+                {
+                    preventCombat = bool.Parse(args[4]);
+                    Console.WriteLine(preventCombat);
+                }
+
                 Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
 
                 if (client.Player.GroundTarget != null)
@@ -113,7 +120,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), level);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), level, preventCombat: preventCombat);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -133,7 +140,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), level);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), level, preventCombat: preventCombat);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -153,7 +160,7 @@ namespace DOL.GS.Scripts
                                 position.X += randomX;
                                 position.Y += randomY;
 
-                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), level);
+                                mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), level, preventCombat: preventCombat);
                                 MimicManager.AddMimicToWorld(mimic, position, client.Player.CurrentRegionID);
 
                                 if (mimic != null)
@@ -274,8 +281,22 @@ namespace DOL.GS.Scripts
 
                 if (mimic != null)
                 {
-                    mimic.MimicBrain.PreventCombat = toggle;
-                    message = "PreventCombat for " + mimic.Name + " is " + toggle;
+                    if (mimic.Group != null)
+                    {
+                        foreach (GameLiving living in mimic.Group.GetMembersInTheGroup())
+                        {
+                            if (living is MimicNPC mimicMember)
+                            {
+                                mimicMember.MimicBrain.PreventCombat = toggle;
+                                message = "PreventCombat for " + mimicMember.Name + " is " + toggle;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        mimic.MimicBrain.PreventCombat = toggle;
+                        message = "PreventCombat for " + mimic.Name + " is " + toggle;
+                    }
                 }
                 else if (client.Player.Group != null)
                 {
