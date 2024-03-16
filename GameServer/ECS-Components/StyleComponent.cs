@@ -181,16 +181,12 @@ namespace DOL.GS
 
             if (chance)
             {
-                if (mimic != null && mimic.MimicBrain.IsMainTank)
+                if (mimic != null && !mimic.MimicBrain.PvPMode && mimic.MimicBrain.IsMainTank)
                 {
-                    if (mimic.TauntStyles != null && mimic.TauntStyles.Count > 0)
-                    {
-                        foreach (Style s in mimic.TauntStyles)
-                        {
-                            if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
-                                return s;
-                        }
-                    }
+                    Style s = CheckTaunt(mimic, lastAttackData);
+
+                    if (s != null)
+                        return s;
                 }
 
                 if (p.StylesBack != null && p.StylesBack.Count > 0)
@@ -216,19 +212,32 @@ namespace DOL.GS
 
                 if (p.StylesAnytime != null && p.StylesAnytime.Count > 0)
                 {
-                    Random rng = new Random();
-
-                    var randomList = p.StylesAnytime.OrderBy(x => rng.Next()).ToList();
-
-                    foreach (Style s in randomList)
-                    {
-                        if (mimic != null && !mimic.MimicBrain.PvPMode && mimic.Group != null && !mimic.MimicBrain.IsMainTank)
-                            if (mimic.TauntStyles != null && mimic.TauntStyles.Contains(s))
-                                continue;
-
-                        if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                    Style s = p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                    if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
                             return s;
-                    }
+                }
+
+                if (mimic != null && (mimic.MimicBrain.PvPMode || mimic.Group == null))
+                {
+                    Style s = CheckTaunt(mimic, lastAttackData);
+
+                    if (s != null)
+                        return s;
+                }
+            }
+
+            return null;
+        }
+
+        private Style CheckTaunt(MimicNPC mimic, AttackData lastAttackData)
+        {
+            if (mimic.StylesTaunt != null && mimic.StylesTaunt.Count > 0)
+            {
+                foreach (Style s in mimic.StylesTaunt)
+                {
+                    if (s.WeaponTypeRequirement == mimic.ActiveWeapon.Object_Type)
+                        if (StyleProcessor.CanUseStyle(lastAttackData, mimic, s, mimic.ActiveWeapon))
+                            return s;
                 }
             }
 

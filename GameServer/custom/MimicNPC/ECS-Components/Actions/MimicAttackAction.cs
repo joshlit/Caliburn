@@ -30,7 +30,10 @@ namespace DOL.GS
                 return false;
             }
 
-            _combatStyle = StyleComponent.NPCGetStyleToUse();
+            if (StyleComponent.NextCombatStyle == null)
+                _combatStyle = StyleComponent.NPCGetStyleToUse();
+            else
+                _combatStyle = StyleComponent.NextCombatStyle;
 
             if (!base.PrepareMeleeAttack())
                 return false;

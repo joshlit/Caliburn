@@ -14,7 +14,6 @@ namespace DOL.GS.Scripts
             MimicEquipment.SetRangedWeapon(this, eObjectType.Fired);
             SwitchWeapon(eActiveWeaponSlot.Standard);
             RefreshSpecDependantSkills(false);
-            GetTauntStyles();
             RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
         }

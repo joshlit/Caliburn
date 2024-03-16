@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DOL.Database;
+using DOL.GS.API;
 using DOL.GS.Effects;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
@@ -39,9 +40,12 @@ namespace DOL.GS.Styles
 
                 MimicNPC mimic = living as MimicNPC;
 
-                if (mimic != null)
+                if (mimic != null && style != null)
                 {
-                    if (style != null && weapon != null)
+                    if (style.WeaponTypeRequirement == (int)eObjectType.Shield)
+                        weapon = living.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+
+                    if (weapon != null)
                     {
                         int fatigue = CalculateEnduranceCost(living, style, weapon.SPD_ABS);
 

@@ -54,15 +54,9 @@ namespace DOL.GS.Scripts
         public bool CanCastCrowdControlSpells { get { return CrowdControlSpells != null && CrowdControlSpells.Count > 0; } }
         public bool CanCastBolts { get { return BoltSpells != null && BoltSpells.Count > 0; } }
 
-        public Style TauntStyle
-        {
-            get { return m_tauntStyle; }
-            set { m_tauntStyle = value; }
-        }
-
-        private Style m_tauntStyle;
-
-        public List<Style> TauntStyles { get; set; } = null;
+        public List<Style> StylesTaunt { get; protected set; } = null;
+        public List<Style> StylesDetaunt { get; protected set; } = null;
+        public List<Style> StylesShield { get; protected set; } = null;
 
         public override int InteractDistance => WorldMgr.VISIBILITY_DISTANCE;
 
@@ -167,23 +161,6 @@ namespace DOL.GS.Scripts
             }
 
             MimicEquipment.SetArmor(this, armorType);
-        }
-
-        public void GetTauntStyles()
-        {
-            if (CanUseAnytimeStyles && m_styles != null && m_styles.Count > 0)
-            {
-                foreach (Style style in m_styles)
-                {
-                    if (style.Procs?.FirstOrDefault(x => x.Item1.SpellType == eSpellType.StyleTaunt) != null)
-                    {
-                        if (TauntStyles == null)
-                            TauntStyles = new List<Style>(1);
-
-                        TauntStyles.Add(style);
-                    }
-                }
-            }
         }
 
         public override bool Interact(GamePlayer player)
@@ -793,7 +770,7 @@ namespace DOL.GS.Scripts
                     else
                         continue;
                 }
-                
+
                 highestLevelSpells.Add(currentSpell);
             }
 
@@ -894,7 +871,7 @@ namespace DOL.GS.Scripts
 
                     BoltSpells.Add(spell);
                 }
-                else if (spell.SpellType == eSpellType.Mesmerize || 
+                else if (spell.SpellType == eSpellType.Mesmerize ||
                         (spell.SpellType == eSpellType.SpeedDecrease && spell.Value >= 99))
                 {
                     //if (spell.IsInstantCast)
@@ -967,9 +944,128 @@ namespace DOL.GS.Scripts
                         MiscSpells.Add(spell);
                     }
                 }
-            } // foreach
+            }
+        }
 
-            //SortedSpells = true;
+        public override void SortStyles()
+        {
+            StylesChain?.Clear();
+            StylesDefensive?.Clear();
+            StylesBack?.Clear();
+            StylesSide?.Clear();
+            StylesFront?.Clear();
+            StylesAnytime?.Clear();
+            StylesTaunt?.Clear();
+            StylesDetaunt?.Clear();
+            StylesShield?.Clear();
+
+            if (m_styles == null)
+                return;
+
+            foreach (Style s in m_styles)
+            {
+                if (s == null)
+                    continue;
+
+                if (s.WeaponTypeRequirement != (int)eObjectType.Shield || 
+                    s.WeaponTypeRequirement == (int)eObjectType.Shield && s.OpeningRequirementType == Style.eOpening.Defensive)
+                {
+                    switch (s.OpeningRequirementType)
+                    {
+                        case Style.eOpening.Defensive:
+                        if (StylesDefensive == null)
+                            StylesDefensive = new List<Style>(1);
+
+                        StylesDefensive.Add(s);
+                        break;
+
+                        case Style.eOpening.Positional:
+                        switch ((Style.eOpeningPosition)s.OpeningRequirementValue)
+                        {
+                            case Style.eOpeningPosition.Back:
+                            if (StylesBack == null)
+                                StylesBack = new List<Style>(1);
+
+                            StylesBack.Add(s);
+                            break;
+
+                            case Style.eOpeningPosition.Side:
+                            if (StylesSide == null)
+                                StylesSide = new List<Style>(1);
+
+                            StylesSide.Add(s);
+                            break;
+
+                            case Style.eOpeningPosition.Front:
+                            if (StylesFront == null)
+                                StylesFront = new List<Style>(1);
+
+                            StylesFront.Add(s);
+                            break;
+
+                            default:
+                            log.Warn($"MimicNPC.SortStyles(): Invalid OpeningRequirementValue for positional style {s.Name}, ID {s.ID}, ClassId {s.ClassID}");
+                            break;
+                        }
+                        break;
+
+                        default:
+                        if (s.OpeningRequirementValue > 0)
+                        {
+                            if (StylesChain == null)
+                                StylesChain = new List<Style>(1);
+
+                            StylesChain.Add(s);
+                        }
+                        else
+                        {
+                            bool added = false;
+
+                            if (s.Procs.Count > 0)
+                            {
+                                foreach ((Spell, int, int) proc in s.Procs)
+                                {
+                                    if (proc.Item1.SpellType == eSpellType.StyleTaunt)
+                                    {
+                                        if (proc.Item1.ID == 20000)
+                                        {
+                                            if (StylesTaunt == null)
+                                                StylesTaunt = new List<Style>(1);
+
+                                            StylesTaunt.Add(s);
+                                            added = true;
+                                        }
+                                        else if (proc.Item1.ID == 20001)
+                                        {
+                                            if (StylesDetaunt == null)
+                                                StylesDetaunt = new List<Style>(1);
+
+                                            StylesDetaunt.Add(s);
+                                            added = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!added)
+                            {
+                                if (StylesAnytime == null)
+                                    StylesAnytime = new List<Style>(1);
+
+                                StylesAnytime.Add(s);
+                            }
+                        }
+                        break;
+                    }
+                }
+                else
+                {
+                    if (StylesShield == null)
+                        StylesShield = new List<Style>(1);
+
+                    StylesShield.Add(s);
+                }
+            }
         }
 
         public override void DisableSkill(Skill skill, int duration)
@@ -5430,6 +5526,7 @@ namespace DOL.GS.Scripts
         }
 
         private int _mlLevel;
+
         /// <summary>
         /// Gets and sets the last ML the player has completed.
         /// MLLevel is advanced once all steps are completed.
@@ -5452,6 +5549,7 @@ namespace DOL.GS.Scripts
         }
 
         private byte _ml;
+
         /// <summary>
         /// What ML line has this character chosen
         /// </summary>

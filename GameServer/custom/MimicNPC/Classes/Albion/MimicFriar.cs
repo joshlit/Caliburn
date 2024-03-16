@@ -13,7 +13,6 @@ namespace DOL.GS.Scripts
 
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
-            GetTauntStyles();
             SetSpells();
             RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();

@@ -24,7 +24,6 @@ namespace DOL.GS.Scripts
             }
 
             RefreshSpecDependantSkills(false);
-            GetTauntStyles();
             SetSpells();
             RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();

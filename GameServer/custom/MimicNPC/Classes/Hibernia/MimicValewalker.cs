@@ -12,7 +12,6 @@ namespace DOL.GS.Scripts
             MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTypeOne, eHand.twoHand);
             SwitchWeapon(eActiveWeaponSlot.TwoHanded);
             RefreshSpecDependantSkills(false);
-            GetTauntStyles();
             SetCasterSpells();
             RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
