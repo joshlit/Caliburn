@@ -877,7 +877,7 @@ namespace DOL.GS
 
         private LinkDeathTimer _linkDeathTimer;
 
-        public bool HasLinkDeathTimerActive => _linkDeathTimer?.IsAlive == true;
+        public bool IsLinkDeathTimerRunning => _linkDeathTimer?.IsAlive == true;
 
         public bool OnUpdatePosition()
         {
@@ -1165,7 +1165,7 @@ namespace DOL.GS
                 if (!ServiceUtils.ShouldTick(_playerOwner.Client.LinkDeathTime + SECONDS_TO_QUIT_ON_LINKDEATH * 1000))
                     return Interval;
 
-                if (!IsAlive)
+                if (!_playerOwner.IsAlive)
                 {
                     _playerOwner.Release(_playerOwner.ReleaseType, true);
 
@@ -1180,9 +1180,7 @@ namespace DOL.GS
                 }
                 finally
                 {
-                    // We may still be playing if this was a soft LD, so we change the state here too.
-                    _playerOwner.Client.ClientState = GameClient.eClientState.Linkdead;
-                    GameServer.Instance.Disconnect(_playerOwner.Client);
+                    _playerOwner.Client.LinkDeathQuit();
                 }
 
                 return 0;

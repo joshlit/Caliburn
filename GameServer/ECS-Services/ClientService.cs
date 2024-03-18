@@ -52,11 +52,6 @@ namespace DOL.GS
             switch (client.ClientState)
             {
                 case GameClient.eClientState.Disconnected:
-                {
-                    OnClientDisconnect(client);
-                    client.PacketProcessor?.OnDisconnect();
-                    return;
-                }
                 case GameClient.eClientState.NotConnected:
                 case GameClient.eClientState.Linkdead:
                     return;
@@ -118,14 +113,36 @@ namespace DOL.GS
 
         public static void OnClientConnect(GameClient client)
         {
-            EntityManager.Add(client);
-            Interlocked.Increment(ref _clientCount);
+            if (EntityManager.Add(client))
+                Interlocked.Increment(ref _clientCount);
+            else if (log.IsWarnEnabled)
+            {
+                EntityManagerId entityManagerId = client.EntityManagerId;
+                log.Warn($"{nameof(OnClientConnect)} was called but the client couldn't be added to the entity manager." +
+                         $"(Client: {client})" +
+                         $"(IsIdSet: {client.EntityManagerId.IsSet})" +
+                         $"(IsIdSet: {entityManagerId.IsSet})" +
+                         $"(IsPendingAddition: {entityManagerId.IsPendingAddition})" +
+                         $"(IsPendingRemoval: {entityManagerId.IsPendingAddition})" +
+                         $"\n{Environment.StackTrace}");
+            }
         }
 
         public static void OnClientDisconnect(GameClient client)
         {
-            Interlocked.Decrement(ref _clientCount);
-            EntityManager.Remove(client);
+            if (EntityManager.Remove(client))
+                Interlocked.Decrement(ref _clientCount);
+            else if (log.IsWarnEnabled)
+            {
+                EntityManagerId entityManagerId = client.EntityManagerId;
+                log.Warn($"{nameof(OnClientDisconnect)} was called but the client couldn't be removed from the entity manager." +
+                         $"(Client: {client})" +
+                         $"(IsIdSet: {client.EntityManagerId.IsSet})" +
+                         $"(IsIdSet: {entityManagerId.IsSet})" +
+                         $"(IsPendingAddition: {entityManagerId.IsPendingAddition})" +
+                         $"(IsPendingRemoval: {entityManagerId.IsPendingAddition})" +
+                         $"\n{Environment.StackTrace}");
+            }
         }
 
         public static GamePlayer GetPlayer<T>(CheckPlayerAction<T> action)
@@ -554,7 +571,7 @@ namespace DOL.GS
 
         private static void CheckInGameTimeout(GameClient client)
         {
-            if (client.Player.HasLinkDeathTimerActive)
+            if (client.Player.IsLinkDeathTimerRunning)
                 return;
 
             if (ServiceUtils.ShouldTickNoEarly(client.Player.LastPositionUpdateTime + POSITION_UPDATE_TIMEOUT))
