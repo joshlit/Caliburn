@@ -16,11 +16,12 @@ using DOL.GS.Styles;
 using DOL.GS.Utils;
 using DOL.Language;
 using JNogueira.Discord.Webhook.Client;
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using static DOL.GS.AttackData;
 using static DOL.GS.GamePlayer;
 
@@ -88,7 +89,7 @@ namespace DOL.GS.Scripts
 
         private int m_leftOverSpecPoints = 0;
 
-        public MimicNPC(ICharacterClass cClass, byte level, eGender gender = eGender.Neutral)
+        public MimicNPC(eMimicClass cClass, byte level, eGender gender = eGender.Neutral)
         {
             _dummyClient = new DummyClient(GameServer.Instance);
             _dummyLib = new DummyPacketLib();
@@ -96,12 +97,26 @@ namespace DOL.GS.Scripts
             Inventory = new MimicNPCInventory();
             MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
 
-            SetCharacterClass(cClass.ID);
+            SetCharacterClass((int)cClass);
             SetRaceAndName();
             SetLevel(level);
+
+            MimicSpec = MimicSpec.GetSpec(cClass);
+            SpendSpecPoints();
+            RefreshSpecDependantSkills(false);
+
+            SetWeapons();
+            SetShield();
+            SetRanged();
             SetArmor();
             SetJewelry();
-            SetShield();
+            RefreshItemBonuses();
+            IsCloakHoodUp = Util.RandomBool();
+
+            if (CharacterClass.ClassType == eClassType.ListCaster || CharacterClass.ID == (int)eCharacterClass.Valewalker)
+                SetCasterSpells();
+            else
+                SetSpells();
 
             MimicBrain = new MimicBrain();
             MimicBrain.MimicBody = this;
@@ -109,6 +124,8 @@ namespace DOL.GS.Scripts
 
             Endurance = MaxEndurance;
             Mana = MaxMana;
+            Health = MaxHealth;
+
             RespawnInterval = -1;
 
             m_combatTimer = new ECSGameTimer(this, new ECSGameTimer.ECSTimerCallback(_ =>
@@ -117,6 +134,88 @@ namespace DOL.GS.Scripts
             }));
 
             Dev = ClientService.GetPlayers()[0];
+        }
+
+        private void SetWeapons()
+        {
+            switch (MimicSpec.SpecType)
+            {
+                case eSpecType.DualWield:
+                case eSpecType.DualWieldAndShield:
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.leftHand);
+                break;
+
+                case eSpecType.LeftAxe:
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.twoHand);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTwoType, eHand.leftHand);
+                break;
+
+                case eSpecType.OneHandAndShield:
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                break;
+
+                case eSpecType.OneHandHybrid:
+                case eSpecType.TwoHandHybrid:
+                case eSpecType.TwoHanded when CharacterClass.ID != (int)eCharacterClass.Valewalker:
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponTwoType, eHand.twoHand, MimicSpec.DamageType);
+                break;
+
+                case eSpecType.Mid:
+                case eSpecType.PacHealer:
+                case eSpecType.AugHealer:
+                case eSpecType.MendHealer:
+                case eSpecType.MendShaman:
+                case eSpecType.AugShaman:
+                case eSpecType.SubtShaman:
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.twoHand);
+                break;
+
+                case eSpecType.Instrument:
+                MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.TwoHandWeapon, eInstrumentType.Flute);
+                MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.DistanceWeapon, eInstrumentType.Drum);
+                //MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.FirstEmptyBackpack, eInstrumentType.Lute);
+                break;
+
+                default:
+                if (CharacterClass.ClassType == eClassType.ListCaster || 
+                    CharacterClass.ID == (int)eCharacterClass.Friar || 
+                    CharacterClass.ID == (int)eCharacterClass.Valewalker)
+                    MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.twoHand);
+                else if (CharacterClass.ID != (int)eCharacterClass.Hunter)
+                    MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                else
+                    MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.twoHand);
+
+                if (MimicSpec.WeaponOneType == eObjectType.Sword)
+                    MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
+                break;
+            }
+
+            if (MimicSpec.Is2H)
+                SwitchWeapon(eActiveWeaponSlot.TwoHanded);
+            else
+                SwitchWeapon(eActiveWeaponSlot.Standard);
+        }
+
+        private void SetRanged()
+        {
+            foreach (Ability ability in GetAllAbilities())
+            {
+                switch (ability.ID)
+                {
+                    case 85: MimicEquipment.SetRangedWeapon(this, eObjectType.Thrown); break;
+                    case 138: MimicEquipment.SetRangedWeapon(this, eObjectType.Fired); break;
+                    case 143: MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow); break;
+                    case 160: MimicEquipment.SetRangedWeapon(this, eObjectType.RecurvedBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
+                    case 161: MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
+                    case 170: MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
+                }
+            }
         }
 
         private void SetJewelry()
@@ -967,7 +1066,7 @@ namespace DOL.GS.Scripts
                 if (s == null)
                     continue;
 
-                if (s.WeaponTypeRequirement != (int)eObjectType.Shield || 
+                if (s.WeaponTypeRequirement != (int)eObjectType.Shield ||
                     s.WeaponTypeRequirement == (int)eObjectType.Shield && s.OpeningRequirementType == Style.eOpening.Defensive)
                 {
                     switch (s.OpeningRequirementType)
@@ -1101,6 +1200,9 @@ namespace DOL.GS.Scripts
             Race = (short)playerRace.ID;
             Model = (ushort)playerRace.GetModel(Gender);
             Size = (byte)Util.Random(45, 60);
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
             Dictionary<eStat, int> statDict;
             GlobalConstants.STARTING_STATS_DICT.TryGetValue((eRace)Race, out statDict);
@@ -2994,7 +3096,9 @@ namespace DOL.GS.Scripts
         public virtual int CalculateMaxHealth(int level, int constitution)
         {
             constitution -= 50;
-            if (constitution < 0) constitution *= 2;
+
+            if (constitution < 0)
+                constitution *= 2;
 
             // hp1 : from level
             // hp2 : from constitution
@@ -3274,6 +3378,7 @@ namespace DOL.GS.Scripts
             {
                 Group.UpdateMember(this, false, true);
             }
+
             return true;
         }
 

@@ -583,6 +583,7 @@ namespace DOL.AI.Brain
             _brain.ClearAggroList();
 
             _brain.MimicBody.DuelReady = false;
+            _brain.Body.IsSitting = false;
             _brain.AggroLevel = 100;
             _brain.PvPMode = true;
             _brain.AggroRange = 3600;
@@ -593,10 +594,7 @@ namespace DOL.AI.Brain
         public override void Think()
         {
             if (!_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive))
-            {
                 _brain.MimicBody.DuelReady = true;
-                _brain.MimicBody.IsSitting = false;
-            }
 
             if (_brain.HasAggro)
                 Console.WriteLine(_brain.Body.Name + " has aggro");

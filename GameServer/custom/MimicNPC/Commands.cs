@@ -4,6 +4,7 @@ using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace DOL.GS.Scripts

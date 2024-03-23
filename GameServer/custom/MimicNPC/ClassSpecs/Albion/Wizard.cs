@@ -1,0 +1,45 @@
+﻿using DOL.GS.PlayerClass;
+
+namespace DOL.GS.Scripts
+{
+    //public class MimicWizard : MimicNPC
+    //{
+    //    public MimicWizard(byte level) : base(new ClassWizard(), level)
+    //    {
+    //    }
+    //}
+
+    public class WizardSpec : MimicSpec
+    {
+        public WizardSpec()
+        {
+            SpecName = "WizardSpec";
+
+            WeaponOneType = eObjectType.Staff;
+            Is2H = true;
+
+            int randVariance = Util.Random(2);
+            
+            switch (randVariance)
+            {
+                case 0:
+                SpecType = eSpecType.EarthWiz;
+                Add(Specs.Earth_Magic, 50, 1.0f);
+                Add(Specs.Cold_Magic, 20, 0.1f);
+                break;
+
+                case 1:
+                SpecType = eSpecType.IceWiz;
+                Add(Specs.Earth_Magic, 24, 0.1f);
+                Add(Specs.Cold_Magic, 48, 1.0f);
+                break;
+
+                case 2:
+                SpecType = eSpecType.FireWiz;
+                Add(Specs.Cold_Magic, 20, 0.1f);
+                Add(Specs.Fire_Magic, 50, 1.0f);
+                break;
+            }
+        }
+    }
+}

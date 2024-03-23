@@ -469,7 +469,7 @@ namespace DOL.AI.Brain
                         MimicBody.CharacterClass.ID != (int)eCharacterClass.Scout) &&
                         MimicBody.CharacterClass.ClassType != eClassType.ListCaster)
                     {
-                        if (MimicBody.MimicSpec.is2H)
+                        if (MimicBody.MimicSpec.Is2H)
                             Body.SwitchWeapon(eActiveWeaponSlot.TwoHanded);
                         else
                             Body.SwitchWeapon(eActiveWeaponSlot.Standard);
@@ -2037,7 +2037,7 @@ namespace DOL.AI.Brain
 
             if (Body?.TargetObject != null)
             {
-                log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString() + " on " + Body.TargetObject.Name);
+                //log.Info(Body.Name + " tried to cast " + spell.Name + " " + spell.SpellType.ToString() + " on " + Body.TargetObject.Name);
                 //log.Info(Body.TargetObject.Name + " effect is " + LivingHasEffect((GameLiving)Body.TargetObject, spell));
 
                 casted = Body.CastSpell(spell, m_mobSpellLine);

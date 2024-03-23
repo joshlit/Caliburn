@@ -137,8 +137,6 @@ namespace DOL.GS.Scripts
             if (!(m_mimicOne.ObjectState == eObjectState.Active) || !(m_mimicTwo.ObjectState == eObjectState.Active))
             {
                 ProgressDuel();
-
-                // return 0;
             }
 
             return 5000;
@@ -152,8 +150,6 @@ namespace DOL.GS.Scripts
             m_mimicOne.Health = m_mimicOne.MaxHealth;
             m_mimicOne.Mana = m_mimicOne.MaxMana;
             m_mimicOne.Endurance = m_mimicOne.MaxEndurance;
-
-            //m_mimicOne.effectListComponent.CancelAll();
 
             foreach (Skill skill in m_mimicOne.GetAllDisabledSkills())
                 m_mimicOne.RemoveDisabledSkill(skill);

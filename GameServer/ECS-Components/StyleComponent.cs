@@ -231,13 +231,17 @@ namespace DOL.GS
 
         private Style CheckTaunt(MimicNPC mimic, AttackData lastAttackData)
         {
-            if (mimic.StylesTaunt != null && mimic.StylesTaunt.Count > 0)
+            if (mimic.ActiveWeapon != null)
             {
-                foreach (Style s in mimic.StylesTaunt)
+                if (mimic.StylesTaunt != null && mimic.StylesTaunt.Count > 0)
                 {
-                    if (s.WeaponTypeRequirement == mimic.ActiveWeapon.Object_Type)
-                        if (StyleProcessor.CanUseStyle(lastAttackData, mimic, s, mimic.ActiveWeapon))
-                            return s;
+                    foreach (Style s in mimic.StylesTaunt)
+                    {
+
+                        if (s.WeaponTypeRequirement == mimic.ActiveWeapon.Object_Type)
+                            if (StyleProcessor.CanUseStyle(lastAttackData, mimic, s, mimic.ActiveWeapon))
+                                return s;
+                    }
                 }
             }
 

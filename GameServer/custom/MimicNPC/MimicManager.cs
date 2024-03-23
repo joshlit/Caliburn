@@ -508,7 +508,6 @@ namespace DOL.GS.Scripts
 
         public static bool Initialize()
         {
-            // Battlegrounds
             MimicBattlegrounds.Initialize();
 
             return true;
@@ -531,55 +530,12 @@ namespace DOL.GS.Scripts
             return false;
         }
 
-        public static MimicNPC GetMimic(eMimicClass mimicClass, byte level, string name = "", eGender gender = eGender.Neutral, bool preventCombat = false)
+        public static MimicNPC GetMimic(eMimicClass charClass, byte level, string name = "", eGender gender = eGender.Neutral, bool preventCombat = false)
         {
-            if (mimicClass == eMimicClass.None)
+            if (charClass == eMimicClass.None)
                 return null;
 
-            MimicNPC mimic = null;
-
-            switch (mimicClass)
-            {
-                case eMimicClass.Armsman: mimic = new MimicArmsman(level); break;
-                case eMimicClass.Cabalist: mimic = new MimicCabalist(level); break;
-                case eMimicClass.Cleric: mimic = new MimicCleric(level); break;
-                case eMimicClass.Friar: mimic = new MimicFriar(level); break;
-                case eMimicClass.Infiltrator: mimic = new MimicInfiltrator(level); break;
-                case eMimicClass.Mercenary: mimic = new MimicMercenary(level); break;
-                case eMimicClass.Minstrel: mimic = new MimicMinstrel(level); break;
-                case eMimicClass.Paladin: mimic = new MimicPaladin(level); break;
-                case eMimicClass.Reaver: mimic = new MimicReaver(level); break;
-                case eMimicClass.Scout: mimic = new MimicScout(level); break;
-                case eMimicClass.Sorcerer: mimic = new MimicSorcerer(level); break;
-                case eMimicClass.Theurgist: mimic = new MimicTheurgist(level); break;
-                case eMimicClass.Wizard: mimic = new MimicWizard(level); break;
-
-                case eMimicClass.Bard: mimic = new MimicBard(level); break;
-                case eMimicClass.Blademaster: mimic = new MimicBlademaster(level); break;
-                case eMimicClass.Champion: mimic = new MimicChampion(level); break;
-                case eMimicClass.Druid: mimic = new MimicDruid(level); break;
-                case eMimicClass.Eldritch: mimic = new MimicEldritch(level); break;
-                case eMimicClass.Enchanter: mimic = new MimicEnchanter(level); break;
-                case eMimicClass.Hero: mimic = new MimicHero(level); break;
-                case eMimicClass.Mentalist: mimic = new MimicMentalist(level); break;
-                case eMimicClass.Nightshade: mimic = new MimicNightshade(level); break;
-                case eMimicClass.Ranger: mimic = new MimicRanger(level); break;
-                case eMimicClass.Valewalker: mimic = new MimicValewalker(level); break;
-                case eMimicClass.Warden: mimic = new MimicWarden(level); break;
-
-                case eMimicClass.Berserker: mimic = new MimicBerserker(level); break;
-                case eMimicClass.Bonedancer: mimic = new MimicBonedancer(level); break;
-                case eMimicClass.Healer: mimic = new MimicHealer(level); break;
-                case eMimicClass.Hunter: mimic = new MimicHunter(level); break;
-                case eMimicClass.Runemaster: mimic = new MimicRunemaster(level); break;
-                case eMimicClass.Savage: mimic = new MimicSavage(level); break;
-                case eMimicClass.Shadowblade: mimic = new MimicShadowblade(level); break;
-                case eMimicClass.Shaman: mimic = new MimicShaman(level); break;
-                case eMimicClass.Skald: mimic = new MimicSkald(level); break;
-                case eMimicClass.Spiritmaster: mimic = new MimicSpiritmaster(level); break;
-                case eMimicClass.Thane: mimic = new MimicThane(level); break;
-                case eMimicClass.Warrior: mimic = new MimicWarrior(level); break;
-            }
+            MimicNPC mimic = new MimicNPC(charClass, level);
 
             if (mimic != null)
             {
@@ -614,88 +570,93 @@ namespace DOL.GS.Scripts
             return null;
         }
 
-        public static eMimicClass GetRandomMimicClass(eRealm realm)
+        public static eMimicClass GetRandomMimicClass(eRealm realm = eRealm.None)
         {
-            int randomIndex;
+            Array mimicClasses = Enum.GetValues(typeof(eMimicClass));
 
-            if (realm == eRealm.Albion)
-                randomIndex = Util.Random(12);
-            else if (realm == eRealm.Hibernia)
-                randomIndex = Util.Random(13, 24);
-            else if (realm == eRealm.Midgard)
-                randomIndex = Util.Random(25, 36);
-            else
-                randomIndex = Util.Random(36);
+            if (realm == eRealm.None)
+            {
+                int randomIndex = Util.Random(mimicClasses.Length - 1);
+                return (eMimicClass)mimicClasses.GetValue(randomIndex);
+            }
 
-            return (eMimicClass)randomIndex;
+            List<eMimicClass> classes = new List<eMimicClass>();
+
+            foreach (eMimicClass mimicClass in mimicClasses)
+            {
+                if (GlobalConstants.STARTING_CLASSES_DICT[realm].Contains((eCharacterClass)mimicClass))
+                    classes.Add(mimicClass);
+            }
+
+            return classes[Util.Random(classes.Count - 1)];
         }
 
-        public static eMimicClass GetRandomMeleeClass()
+        public static eMimicClass GetRandomMeleeClass(eRealm realm = eRealm.None)
         {
-            int enumIndexes = Enum.GetValues(typeof(eMimicClass)).Length - 1;
+            List<eMimicClass> meleeClasses = new List<eMimicClass>();
 
-            Console.WriteLine("Indexes: " + enumIndexes);
-
-            List<int> meleeClasses = new List<int>();
-
-            for (int i = 0; i < enumIndexes; i++)
+            foreach (eMimicClass mimicClass in Enum.GetValues(typeof(eMimicClass)))
             {
-                if (i == 1
-                    || i == 10
-                    || i == 11
-                    || i == 12
-                    || i == 17
-                    || i == 18
-                    || i == 20
-                    || i == 26
-                    || i == 29
-                    || i == 34)
+                switch (mimicClass)
+                {
+                    case eMimicClass.Cabalist:
+                    case eMimicClass.Sorcerer:
+                    case eMimicClass.Theurgist:
+                    case eMimicClass.Wizard:
+                    case eMimicClass.Eldritch:
+                    case eMimicClass.Enchanter:
+                    case eMimicClass.Mentalist:
+                    case eMimicClass.Bonedancer:
+                    case eMimicClass.Runemaster:
+                    case eMimicClass.Spiritmaster:
                     continue;
-                else
-                    meleeClasses.Add(i);
+
+                    default:
+                    if (realm != eRealm.None)
+                            if (!GlobalConstants.STARTING_CLASSES_DICT[realm].Contains((eCharacterClass)mimicClass))
+                                continue;
+
+                    meleeClasses.Add(mimicClass);
+                    break;
+                }
             }
 
-            int randomIndex = Util.Random(meleeClasses.Count - 1);
-
-            return (eMimicClass)meleeClasses[randomIndex];
+            return meleeClasses[Util.Random(meleeClasses.Count - 1)];
         }
 
-        #region Spec
-
-        // TODO: Will likley need to be able to tell caster specs apart for AI purposes since they operate so differently. Will bring them into here, or use some sort of enum.
-
-        // Albion
-        private static Type[] cabalistSpecs = { typeof(MatterCabalist), typeof(BodyCabalist), typeof(SpiritCabalist) };
-
-        // Hibernia
-        private static Type[] eldritchSpecs = { typeof(SunEldritch), typeof(ManaEldritch), typeof(VoidEldritch) };
-
-        private static Type[] enchanterSpecs = { typeof(ManaEnchanter), typeof(LightEnchanter) };
-        private static Type[] mentalistSpecs = { typeof(LightMentalist), typeof(ManaMentalist), typeof(MentalismMentalist) };
-
-        // Midgard
-        private static Type[] healerSpecs = { typeof(PacHealer), typeof(AugHealer) };
-
-        public static MimicSpec Random(MimicNPC mimicNPC)
+        public static eMimicClass GetRandomCasterClass(eRealm realm = eRealm.None)
         {
-            switch (mimicNPC)
+            List<eMimicClass> casterClasses = new List<eMimicClass>();
+
+            foreach (eMimicClass mimicClass in Enum.GetValues(typeof(eMimicClass)))
             {
-                // Albion
-                case MimicCabalist: return Activator.CreateInstance(cabalistSpecs[Util.Random(cabalistSpecs.Length - 1)]) as MimicSpec;
+                switch (mimicClass)
+                {
+                    case eMimicClass.Cabalist:
+                    case eMimicClass.Sorcerer:
+                    case eMimicClass.Theurgist:
+                    case eMimicClass.Wizard:
+                    case eMimicClass.Eldritch:
+                    case eMimicClass.Enchanter:
+                    case eMimicClass.Mentalist:
+                    case eMimicClass.Bonedancer:
+                    case eMimicClass.Runemaster:
+                    case eMimicClass.Spiritmaster:
 
-                // Hibernia
-                case MimicEldritch: return Activator.CreateInstance(eldritchSpecs[Util.Random(eldritchSpecs.Length - 1)]) as MimicSpec;
-                case MimicEnchanter: return Activator.CreateInstance(enchanterSpecs[Util.Random(enchanterSpecs.Length - 1)]) as MimicSpec;
-                case MimicMentalist: return Activator.CreateInstance(mentalistSpecs[Util.Random(mentalistSpecs.Length - 1)]) as MimicSpec;
+                    if (realm != eRealm.None)
+                        if (!GlobalConstants.STARTING_CLASSES_DICT[realm].Contains((eCharacterClass)mimicClass))
+                            continue;
 
-                // Midgard
-                case MimicHealer: return Activator.CreateInstance(healerSpecs[Util.Random(healerSpecs.Length - 1)]) as MimicSpec;
+                    casterClasses.Add(mimicClass);
+                    break;
 
-                default: return null;
+                    default:
+                    continue;
+                }
             }
-        }
 
-        #endregion Spec
+            return casterClasses[Util.Random(casterClasses.Count - 1)];
+        }
     }
 
     #region Equipment
@@ -1068,11 +1029,12 @@ namespace DOL.GS.Scripts
     public class MimicSpec
     {
         public static string SpecName;
-        public eObjectType WeaponTypeOne;
-        public eObjectType WeaponTypeTwo;
+        public eObjectType WeaponOneType;
+        public eObjectType WeaponTwoType;
         public eWeaponDamageType DamageType = 0;
+        public eSpecType SpecType;
 
-        public bool is2H;
+        public bool Is2H;
 
         public List<SpecLine> SpecLines = new List<SpecLine>();
 
@@ -1089,6 +1051,54 @@ namespace DOL.GS.Scripts
             string spec = SkillBase.ObjectTypeToSpec(obj);
 
             return spec;
+        }
+
+        public static MimicSpec GetSpec(eMimicClass charClass)
+        {
+            switch (charClass)
+            {
+                case eMimicClass.Armsman: return new ArmsmanSpec();
+                case eMimicClass.Cabalist: return new CabalistSpec();
+                case eMimicClass.Cleric: return new ClericSpec();
+                case eMimicClass.Friar: return new FriarSpec();
+                case eMimicClass.Infiltrator: return new InfiltratorSpec();
+                case eMimicClass.Mercenary: return new MercenarySpec();
+                case eMimicClass.Minstrel: return new MinstrelSpec();
+                case eMimicClass.Paladin: return new PaladinSpec();
+                case eMimicClass.Reaver: return new ReaverSpec();
+                case eMimicClass.Scout: return new ScoutSpec();
+                case eMimicClass.Sorcerer: return new SorcererSpec();
+                case eMimicClass.Theurgist: return new TheurgistSpec();
+                case eMimicClass.Wizard: return new WizardSpec();
+
+                case eMimicClass.Bard: return new BardSpec();
+                case eMimicClass.Blademaster: return new BlademasterSpec();
+                case eMimicClass.Champion: return new ChampionSpec();
+                case eMimicClass.Druid: return new DruidSpec();
+                case eMimicClass.Eldritch: return new EldritchSpec();
+                case eMimicClass.Enchanter: return new EnchanterSpec();
+                case eMimicClass.Hero: return new HeroSpec();
+                case eMimicClass.Mentalist: return new MentalistSpec();
+                case eMimicClass.Nightshade: return new NightshadeSpec();
+                case eMimicClass.Ranger: return new RangerSpec();
+                case eMimicClass.Valewalker: return new ValewalkerSpec();
+                case eMimicClass.Warden: return new WardenSpec();
+
+                case eMimicClass.Berserker: return new BerserkerSpec();
+                case eMimicClass.Bonedancer: return new BonedancerSpec();
+                case eMimicClass.Healer: return new HealerSpec();
+                case eMimicClass.Hunter: return new HunterSpec();
+                case eMimicClass.Runemaster: return new RunemasterSpec();
+                case eMimicClass.Savage: return new SavageSpec();
+                case eMimicClass.Shadowblade: return new ShadowbladeSpec();
+                case eMimicClass.Shaman: return new ShamanSpec();
+                case eMimicClass.Skald: return new SkaldSpec();
+                case eMimicClass.Spiritmaster: return new SpiritmasterSpec();
+                case eMimicClass.Thane: return new ThaneSpec();
+                case eMimicClass.Warrior: return new WarriorSpec();
+            }
+
+            return null;
         }
     }
 

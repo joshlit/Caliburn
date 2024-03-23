@@ -2652,7 +2652,6 @@ namespace DOL.GS
 					if (distanceSlot == null)
 						rightHand = 0xFF;
 					else if (distanceSlot.Hand == 1 || (this is GameNPC && this is not MimicNPC)) // NPC equipment does not have hand so always assume 2 handed bow
-
                         rightHand = leftHand = 0x03; // bows use 2 hands, throwing axes 1h
 					else
 						rightHand = 0x03;
