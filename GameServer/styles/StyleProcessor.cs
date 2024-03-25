@@ -321,10 +321,10 @@ namespace DOL.GS.Styles
             }
         }
 
-        public static bool ExecuteStyle(GameLiving living, GameLiving target, Style style, DbInventoryItem weapon, double unstyledDamage, double unstyledDamageCap, eArmorSlot armorHitLocation, IList<ISpellHandler> styleEffects, out int styleDamage, out int animationId)
-        {
-            styleDamage = 0;
-            animationId = 0;
+		public static bool ExecuteStyle(GameLiving living, GameLiving target, Style style, DbInventoryItem weapon, double unstyledDamage, double unstyledDamageCap, eArmorSlot armorHitLocation, List<ISpellHandler> styleEffects, out int styleDamage, out int animationId)
+		{
+			styleDamage = 0;
+			animationId = 0;
 
             // First thing in processors, lock the objects you modify.
             // This way it makes sure the objects are not modified by several different threads at the same time.
@@ -640,124 +640,110 @@ namespace DOL.GS.Styles
             return spellHandler;
         }
 
-        /// <summary>
-        /// Delve a Style handled by this processor
-        /// </summary>
-        /// <param name="delveInfo"></param>
-        /// <param name="style"></param>
-        /// <param name="player"></param>
-        public static void DelveWeaponStyle(IList<string> delveInfo, Style style, GamePlayer player)
-        {
-            delveInfo.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.WeaponType", style.GetRequiredWeaponName()));
-            string temp = LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Opening") + " ";
-            if (Style.eOpening.Offensive == style.OpeningRequirementType)
-            {
-                //attacker action result is opening
-                switch (style.AttackResultRequirement)
-                {
-                    case Style.eAttackResultRequirement.Hit:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouHit");
-                    break;
 
-                    case Style.eAttackResultRequirement.Miss:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouMiss");
-                    break;
+		/// <summary>
+		/// Delve a Style handled by this processor
+		/// </summary>
+		/// <param name="delveInfo"></param>
+		/// <param name="style"></param>
+		/// <param name="player"></param>
+		public static void DelveWeaponStyle(List<string> delveInfo, Style style, GamePlayer player)
+		{
+			delveInfo.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.WeaponType", style.GetRequiredWeaponName()));
+			string temp = LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Opening") + " ";
+			if (Style.eOpening.Offensive == style.OpeningRequirementType)
+			{
+				//attacker action result is opening
+				switch (style.AttackResultRequirement)
+				{
+					case Style.eAttackResultRequirement.Hit:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouHit");
+						break;
+					case Style.eAttackResultRequirement.Miss:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouMiss");
+						break;
+					case Style.eAttackResultRequirement.Parry:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetParrys");
+						break;
+					case Style.eAttackResultRequirement.Block:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetBlocks");
+						break;
+					case Style.eAttackResultRequirement.Evade:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetEvades");
+						break;
+					case Style.eAttackResultRequirement.Fumble:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouFumble");
+						break;
+					case Style.eAttackResultRequirement.Style:
+						Style reqStyle = SkillBase.GetStyleByID(style.OpeningRequirementValue, player.CharacterClass.ID);
+						if (reqStyle == null)
+						{
+							reqStyle = SkillBase.GetStyleByID(style.OpeningRequirementValue, 0);
+						}
+						temp = LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.OpeningStyle") + " ";
+						if (reqStyle == null)
+						{
+							temp += "(style not found " + style.OpeningRequirementValue + ")";
+						}
+						else
+						{
+							temp += reqStyle.Name;
+						}
+						break;
+					default:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Any");
+						break;
+				}
+			}
+			else if (Style.eOpening.Defensive == style.OpeningRequirementType)
+			{
+				//defender action result is opening
+				switch (style.AttackResultRequirement)
+				{
+					case Style.eAttackResultRequirement.Miss:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetMisses");
+						break;
+					case Style.eAttackResultRequirement.Hit:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetHits");
+						break;
+					case Style.eAttackResultRequirement.Parry:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouParry");
+						break;
+					case Style.eAttackResultRequirement.Block:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouBlock");
+						break;
+					case Style.eAttackResultRequirement.Evade:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouEvade");
+						break;
+					case Style.eAttackResultRequirement.Fumble:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetFumbles");
+						break;
+					case Style.eAttackResultRequirement.Style:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetStyle");
+						break;
+					default:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Any");
+						break;
+				}
+			}
+			else if (Style.eOpening.Positional == style.OpeningRequirementType)
+			{
+				//attacker position to target is opening
+				temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Positional");
+				switch (style.OpeningRequirementValue)
+				{
+					case (int)Style.eOpeningPosition.Front:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Front");
+						break;
+					case (int)Style.eOpeningPosition.Back:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Back");
+						break;
+					case (int)Style.eOpeningPosition.Side:
+						temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Side");
+						break;
 
-                    case Style.eAttackResultRequirement.Parry:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetParrys");
-                    break;
-
-                    case Style.eAttackResultRequirement.Block:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetBlocks");
-                    break;
-
-                    case Style.eAttackResultRequirement.Evade:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetEvades");
-                    break;
-
-                    case Style.eAttackResultRequirement.Fumble:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouFumble");
-                    break;
-
-                    case Style.eAttackResultRequirement.Style:
-                    Style reqStyle = SkillBase.GetStyleByID(style.OpeningRequirementValue, player.CharacterClass.ID);
-                    if (reqStyle == null)
-                    {
-                        reqStyle = SkillBase.GetStyleByID(style.OpeningRequirementValue, 0);
-                    }
-                    temp = LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.OpeningStyle") + " ";
-                    if (reqStyle == null)
-                    {
-                        temp += "(style not found " + style.OpeningRequirementValue + ")";
-                    }
-                    else
-                    {
-                        temp += reqStyle.Name;
-                    }
-                    break;
-
-                    default:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Any");
-                    break;
-                }
-            }
-            else if (Style.eOpening.Defensive == style.OpeningRequirementType)
-            {
-                //defender action result is opening
-                switch (style.AttackResultRequirement)
-                {
-                    case Style.eAttackResultRequirement.Miss:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetMisses");
-                    break;
-
-                    case Style.eAttackResultRequirement.Hit:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetHits");
-                    break;
-
-                    case Style.eAttackResultRequirement.Parry:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouParry");
-                    break;
-
-                    case Style.eAttackResultRequirement.Block:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouBlock");
-                    break;
-
-                    case Style.eAttackResultRequirement.Evade:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.YouEvade");
-                    break;
-
-                    case Style.eAttackResultRequirement.Fumble:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetFumbles");
-                    break;
-
-                    case Style.eAttackResultRequirement.Style:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.TargetStyle");
-                    break;
-
-                    default:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Any");
-                    break;
-                }
-            }
-            else if (Style.eOpening.Positional == style.OpeningRequirementType)
-            {
-                //attacker position to target is opening
-                temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Positional");
-                switch (style.OpeningRequirementValue)
-                {
-                    case (int)Style.eOpeningPosition.Front:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Front");
-                    break;
-
-                    case (int)Style.eOpeningPosition.Back:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Back");
-                    break;
-
-                    case (int)Style.eOpeningPosition.Side:
-                    temp += LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Side");
-                    break;
-                }
-            }
+				}
+			}
 
             delveInfo.Add(temp);
 
@@ -895,26 +881,26 @@ namespace DOL.GS.Styles
                         if (hasClassSpecificProc && proc.Item2 != player.CharacterClass.ID) continue;
                         else if (!hasClassSpecificProc && proc.Item2 != 0) continue;
 
-                        Spell spell = proc.Item1;
-                        if (spell != null)
-                        {
-                            ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(player.Client.Player, spell, styleLine);
-                            if (spellHandler == null)
-                            {
-                                temp += spell.Name + " (Not implemented yet)";
-                                delveInfo.Add(temp);
-                            }
-                            else
-                            {
-                                temp += spell.Name;
-                                delveInfo.Add(temp);
-                                delveInfo.Add(" ");//empty line
-                                Util.AddRange(delveInfo, spellHandler.DelveInfo);
-                            }
-                        }
-                    }
-                }
-            }
+						Spell spell = proc.Item1;
+						if (spell != null)
+						{
+							ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(player.Client.Player, spell, styleLine);
+							if (spellHandler == null)
+							{
+								temp += spell.Name + " (Not implemented yet)";
+								delveInfo.Add(temp);
+							}
+							else
+							{
+								temp += spell.Name;
+								delveInfo.Add(temp);
+								delveInfo.Add(" ");//empty line
+								delveInfo.AddRange(spellHandler.DelveInfo);
+							}
+						}
+					}
+				}
+			}
 
             if (player.Client.Account.PrivLevel > 1)
             {

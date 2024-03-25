@@ -60,7 +60,7 @@ namespace DOL.GS
         public double CombatRegen { get; set; }
         public double SpecLock { get; set; }
         public long LastWorldUpdate { get; set; }
-        public ChainedActions ChainedActions { get; private set; }
+        public ChainedActions ChainedActions { get; }
 
         public ECSGameTimer EnduRegenTimer { get { return m_enduRegenerationTimer; } }
         public ECSGameTimer PredatorTimeoutTimer
@@ -358,13 +358,13 @@ namespace DOL.GS
             set { m_wasmovedbycorpsesummoner = value; }
         }
 
-        public ConcurrentDictionary<(ushort, ushort), CheckLosResponseHandler.TimeoutTimer> LosCheckTimers { get; private set; } = new();
+        public ConcurrentDictionary<(ushort, ushort), CheckLosResponseHandler.TimeoutTimer> LosCheckTimers { get; } = new();
 
         #region Object Caches
-        public ConcurrentDictionary<GameNPC, ClientService.CachedNpcValues> NpcUpdateCache { get; private set; } = new();
-        public ConcurrentDictionary<GameStaticItem, long> ItemUpdateCache { get; private set; } = new();
-        public ConcurrentDictionary<GameDoorBase, long> DoorUpdateCache { get; private set; } = new();
-        public ConcurrentDictionary<House, long> HouseUpdateCache { get; private set; } = new();
+        public ConcurrentDictionary<GameNPC, ClientService.CachedNpcValues> NpcUpdateCache { get; } = new();
+        public ConcurrentDictionary<GameStaticItem, long> ItemUpdateCache { get; } = new();
+        public ConcurrentDictionary<GameDoorBase, long> DoorUpdateCache { get; } = new();
+        public ConcurrentDictionary<House, long> HouseUpdateCache { get; } = new();
         #endregion
 
         #region Database Accessor
@@ -1147,7 +1147,7 @@ namespace DOL.GS
         public class LinkDeathTimer : ECSGameTimerWrapperBase
         {
             private GamePlayer _playerOwner;
-            public GameLocation LocationAtLinkDeath { get; private set; }
+            public GameLocation LocationAtLinkDeath { get; }
 
             public LinkDeathTimer(GameObject owner) : base(owner)
             {
@@ -12542,8 +12542,8 @@ namespace DOL.GS
         }
 
         private List<AbstractQuest> _questListFinished = new();
-        public virtual ConcurrentDictionary<AbstractQuest, byte> QuestList { get; private set; } = new(); // Value is the index to send to clients.
-        public ConcurrentQueue<byte> AvailableQuestIndexes { get; private set; } = new(); // If empty, 'QuestList.Count' will be used when adding a quest to 'QuestList'
+        public virtual ConcurrentDictionary<AbstractQuest, byte> QuestList { get; } = new(); // Value is the index to send to clients.
+        public ConcurrentQueue<byte> AvailableQuestIndexes { get; } = new(); // If empty, 'QuestList.Count' will be used when adding a quest to 'QuestList'
         public ECSGameTimer QuestActionTimer;
 
         public List<AbstractQuest> GetFinishedQuests()

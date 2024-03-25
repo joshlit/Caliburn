@@ -27,7 +27,7 @@ namespace DOL.GS
         public eRangedAttackType RangedAttackType => _rangedAttackType;
 
         public bool AttackFinished { get; set; }
-        public eActiveWeaponSlot ActiveWeaponSlot { get; private set; }
+        public eActiveWeaponSlot ActiveWeaponSlot { get; }
 
         public WeaponAction(GameLiving owner, GameObject target, DbInventoryItem attackWeapon, DbInventoryItem leftWeapon, double effectiveness, int interruptDuration, Style combatStyle)
         {
