@@ -7531,7 +7531,7 @@ namespace DOL.GS {
                                     model = 101;
                                     break;
                                 }
-                            case eInventorySlot.Jewellery:
+                            case eInventorySlot.Jewelry:
                                 {
                                     if (Util.Chance(50))
                                         name = "Gem";

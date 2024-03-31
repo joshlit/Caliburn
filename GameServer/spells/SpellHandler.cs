@@ -3423,12 +3423,12 @@ namespace DOL.GS.Spells
                     finalDamage = (int)(finalDamage * Properties.PVE_SPELL_DAMAGE);
             }
 
-            // Calculate resistances and conversion.
-            finalDamage = ModifyDamageWithTargetResist(ad, finalDamage);
-            double conversionMod = AttackComponent.CalculateTargetConversion(ad.Target, finalDamage);
-            int preConversionDamage = finalDamage;
-            finalDamage = (int)(finalDamage * conversionMod);
-            ad.Modifier += finalDamage - preConversionDamage;
+			// Calculate resistances and conversion.
+			finalDamage = ModifyDamageWithTargetResist(ad, finalDamage);
+			double conversionMod = AttackComponent.CalculateTargetConversion(ad.Target);
+			int preConversionDamage = finalDamage;
+			finalDamage = (int) (finalDamage * conversionMod);
+			ad.Modifier += finalDamage - preConversionDamage;
 
             // Apply damage cap.
             if (finalDamage > DamageCap(effectiveness))
