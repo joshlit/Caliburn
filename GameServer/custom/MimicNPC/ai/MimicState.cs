@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection;
+using DOL.Database;
+using System.Runtime.InteropServices;
 using DOL.GS;
 using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
@@ -198,6 +200,7 @@ namespace DOL.AI.Brain
 
             if ((leader.IsCasting || leader.IsAttacking) && leader.TargetObject is GameLiving livingTarget && _brain.CanAggroTarget(livingTarget))
             {
+                _brain.OnLeaderAggro();
                 _brain.AddToAggroList(livingTarget, 1);
                 _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
                 return;
@@ -218,6 +221,8 @@ namespace DOL.AI.Brain
         public override void Exit()
         {
             _brain.Body.StopFollowing();
+
+            _brain.OnExitAggro();
 
             base.Exit();
         }
@@ -244,6 +249,8 @@ namespace DOL.AI.Brain
 
             _aggroTime = GameLoop.GameLoopTime;
 
+            _brain.OnEnterAggro();
+
             base.Enter();
         }
 
@@ -252,7 +259,7 @@ namespace DOL.AI.Brain
             _brain.Body.StopAttack();
             _brain.Body.TargetObject = null;
             _brain.ClearAggroList();
-            
+
             if (_brain.MimicBody.CharacterClass.ID == (int)eCharacterClass.Reaver)
             {
                 foreach (ECSPulseEffect pulseEffect in _brain.MimicBody.effectListComponent.GetAllPulseEffects())
@@ -260,6 +267,8 @@ namespace DOL.AI.Brain
                     EffectService.RequestImmediateCancelEffect(pulseEffect);
                 }
             }
+
+            _brain.OnExitAggro();
 
             base.Exit();
         }
@@ -393,9 +402,7 @@ namespace DOL.AI.Brain
                     if (_lastRoamTick + ROAM_COOLDOWN <= GameLoop.GameLoopTime && Util.Chance(chance))
                     {
                         if (!_brain.Body.IsMoving)
-                        {
                             _brain.Body.Roam(_brain.Body.MaxSpeed);
-                        }
 
                         _lastRoamTick = GameLoop.GameLoopTime;
                     }

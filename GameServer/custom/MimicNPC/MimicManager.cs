@@ -116,7 +116,7 @@ namespace DOL.GS.Scripts
             {
                 Stop();
 
-                if (m_albMimics.Any())
+                if (m_albMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in m_albMimics)
                         mimic.Delete();
@@ -124,7 +124,7 @@ namespace DOL.GS.Scripts
                     m_albMimics.Clear();
                 }
 
-                if (m_hibMimics.Any())
+                if (m_hibMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in m_hibMimics)
                         mimic.Delete();
@@ -132,7 +132,7 @@ namespace DOL.GS.Scripts
                     m_hibMimics.Clear();
                 }
 
-                if (m_midMimics.Any())
+                if (m_midMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in m_midMimics)
                         mimic.Delete();
@@ -164,7 +164,7 @@ namespace DOL.GS.Scripts
             /// </summary>
             private void ValidateLists()
             {
-                if (m_albMimics.Any())
+                if (m_albMimics.Count != 0)
                 {
                     List<MimicNPC> validatedList = new List<MimicNPC>();
 
@@ -177,7 +177,7 @@ namespace DOL.GS.Scripts
                     m_albMimics = validatedList;
                 }
 
-                if (m_hibMimics.Any())
+                if (m_hibMimics.Count != 0)
                 {
                     List<MimicNPC> validatedList = new List<MimicNPC>();
 
@@ -190,7 +190,7 @@ namespace DOL.GS.Scripts
                     m_hibMimics = validatedList;
                 }
 
-                if (m_midMimics.Any())
+                if (m_midMimics.Count != 0)
                 {
                     List<MimicNPC> validatedList = new List<MimicNPC>();
 
@@ -246,7 +246,7 @@ namespace DOL.GS.Scripts
                 m_hibStagingList = new List<MimicNPC>();
                 m_midStagingList = new List<MimicNPC>();
 
-                if (m_albMimics.Any())
+                if (m_albMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in m_albMimics)
                     {
@@ -255,7 +255,7 @@ namespace DOL.GS.Scripts
                     }
                 }
 
-                if (m_hibMimics.Any())
+                if (m_hibMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in m_hibMimics)
                     {
@@ -264,7 +264,7 @@ namespace DOL.GS.Scripts
                     }
                 }
 
-                if (m_midMimics.Any())
+                if (m_midMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in m_midMimics)
                     {
@@ -286,7 +286,7 @@ namespace DOL.GS.Scripts
                 bool hibDone = false;
                 bool midDone = false;
 
-                if (m_albStagingList.Any())
+                if (m_albStagingList.Count != 0)
                 {
                     MimicManager.AddMimicToWorld(m_albStagingList[m_albStagingList.Count - 1], m_albSpawnPoint, m_region);
                     m_albStagingList.RemoveAt(m_albStagingList.Count - 1);
@@ -294,7 +294,7 @@ namespace DOL.GS.Scripts
                 else
                     albDone = true;
 
-                if (m_hibStagingList.Any())
+                if (m_hibStagingList.Count != 0)
                 {
                     MimicManager.AddMimicToWorld(m_hibStagingList[m_hibStagingList.Count - 1], m_hibSpawnPoint, m_region);
                     m_hibStagingList.RemoveAt(m_hibStagingList.Count - 1);
@@ -302,7 +302,7 @@ namespace DOL.GS.Scripts
                 else
                     hibDone = true;
 
-                if (m_midStagingList.Any())
+                if (m_midStagingList.Count != 0)
                 {
                     MimicManager.AddMimicToWorld(m_midStagingList[m_midStagingList.Count - 1], m_midSpawnPoint, m_region);
                     m_midStagingList.RemoveAt(m_midStagingList.Count - 1);
@@ -384,7 +384,7 @@ namespace DOL.GS.Scripts
                 List<MimicNPC> currentMimics = GetMasterList();
                 List<BattleStats> currentStats = new List<BattleStats>();
 
-                if (currentMimics.Any())
+                if (currentMimics.Count != 0)
                 {
                     foreach (MimicNPC mimic in currentMimics)
                         currentStats.Add(new BattleStats(mimic.Name, mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, false));
@@ -403,7 +403,7 @@ namespace DOL.GS.Scripts
                 string message = "----------------------------------------\n\n";
                 int index = Math.Min(25, sortedList.Count);
 
-                if (sortedList.Any())
+                if (sortedList.Count != 0)
                 {
                     for (int i = 0; i < index; i++)
                     {
@@ -426,17 +426,17 @@ namespace DOL.GS.Scripts
                 switch (player.Realm)
                 {
                     case eRealm.Albion:
-                    if (m_albMimics.Any())
+                    if (m_albMimics.Count != 0)
                         message += "Alb count: " + m_albMimics.Count;
                     break;
 
                     case eRealm.Hibernia:
-                    if (m_hibMimics.Any())
+                    if (m_hibMimics.Count != 0)
                         message += "Hib count: " + m_hibMimics.Count;
                     break;
 
                     case eRealm.Midgard:
-                    if (m_midMimics.Any())
+                    if (m_midMimics.Count != 0)
                         message += "Mid count: " + m_midMimics.Count;
                     break;
                 }
@@ -508,6 +508,8 @@ namespace DOL.GS.Scripts
 
         public static bool Initialize()
         {
+            log.Info("MimicManager Initializing...");
+
             MimicBattlegrounds.Initialize();
 
             return true;
@@ -715,10 +717,7 @@ namespace DOL.GS.Scripts
             DbItemTemplate itemToCreate = new GeneratedUniqueItem(false, realm, charClass, level, objectType, slot, instrumentType);
 
             GameInventoryItem item = GameInventoryItem.Create(itemToCreate);
-            //if (!living.Inventory.AddItem(slot, item))
-            //    log.Info("Could not add " + item.Name + " to slot " + slot);
-            //else
-            //    log.Info("Added " + item.Name + " to slot " + slot);
+            living.Inventory.AddItem(slot, item);
         }
 
         public static void SetMeleeWeapon(IGamePlayer player, eObjectType weapType, eHand hand, eWeaponDamageType damageType = 0)
@@ -733,7 +732,7 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Object_Type").IsEqualTo((int)weapType).And(
                                                                        DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
-            if (itemList.Any())
+            if (itemList.Count != 0)
             {
                 List<DbItemTemplate> itemsToKeep = new List<DbItemTemplate>();
 
@@ -763,7 +762,7 @@ namespace DOL.GS.Scripts
                         itemsToKeep.Add(item);
                 }
 
-                if (itemsToKeep.Any())
+                if (itemsToKeep.Count != 0)
                 {
                     DbItemTemplate itemTemplate = itemsToKeep[Util.Random(itemsToKeep.Count - 1)];
                     AddItem(player, itemTemplate, hand);
@@ -786,7 +785,7 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1))))));
 
-            if (itemList.Any())
+            if (itemList.Count != 0)
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
                 AddItem(player, itemTemplate);
@@ -814,7 +813,7 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Type_Damage").IsEqualTo(shieldSize).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1))))));
 
-            if (itemList.Any())
+            if (itemList.Count != 0)
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
                 AddItem(player, itemTemplate);
@@ -838,7 +837,7 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
 
-            if (itemList.Any())
+            if (itemList.Count != 0)
             {
                 Dictionary<int, List<DbItemTemplate>> armorSlots = new Dictionary<int, List<DbItemTemplate>>();
 
@@ -855,7 +854,7 @@ namespace DOL.GS.Scripts
 
                 foreach (var pair in armorSlots)
                 {
-                    if (pair.Value.Any())
+                    if (pair.Value.Count != 0)
                     {
                         DbItemTemplate itemTemplate = pair.Value[Util.Random(pair.Value.Count - 1)];
                         AddItem(player, itemTemplate);
@@ -879,7 +878,7 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1))))));
 
-            if (itemList.Any())
+            if (itemList.Count != 0)
             {
                 DbItemTemplate itemTemplate = itemList[Util.Random(itemList.Count - 1)];
                 DbInventoryItem item = GameInventoryItem.Create(itemTemplate);
@@ -909,7 +908,7 @@ namespace DOL.GS.Scripts
                                                                        DB.Column("Object_Type").IsEqualTo((int)eObjectType.Magical).And(
                                                                        DB.Column("Realm").IsEqualTo((int)player.Realm)).And(
                                                                        DB.Column("IsPickable").IsEqualTo(1)))));
-            if (itemList.Any())
+            if (itemList.Count != 0)
             {
                 foreach (DbItemTemplate template in itemList)
                 {
@@ -940,7 +939,7 @@ namespace DOL.GS.Scripts
 
                 foreach (List<DbItemTemplate> list in masterList)
                 {
-                    if (list.Any())
+                    if (list.Count != 0)
                     {
                         DbItemTemplate itemTemplate = list[Util.Random(list.Count - 1)];
                         AddItem(player, itemTemplate);
@@ -950,13 +949,13 @@ namespace DOL.GS.Scripts
                 // Add two rings and bracelets
                 for (int i = 0; i < 2; i++)
                 {
-                    if (ringList.Any())
+                    if (ringList.Count != 0)
                     {
                         DbItemTemplate itemTemplate = ringList[Util.Random(ringList.Count - 1)];
                         AddItem(player, itemTemplate);
                     }
 
-                    if (wristList.Any())
+                    if (wristList.Count != 0)
                     {
                         DbItemTemplate itemTemplate = wristList[Util.Random(wristList.Count - 1)];
                         AddItem(player, itemTemplate);
@@ -1218,7 +1217,7 @@ namespace DOL.GS.Scripts
             switch (realm)
             {
                 case eRealm.Albion:
-                if (LFGListAlb.Any())
+                if (LFGListAlb.Count != 0)
                 {
                     lock (LFGListAlb)
                     {
@@ -1235,7 +1234,7 @@ namespace DOL.GS.Scripts
                 break;
 
                 case eRealm.Hibernia:
-                if (LFGListHib.Any())
+                if (LFGListHib.Count != 0)
                 {
                     lock (LFGListHib)
                     {
@@ -1252,7 +1251,7 @@ namespace DOL.GS.Scripts
                 break;
 
                 case eRealm.Midgard:
-                if (LFGListMid.Any())
+                if (LFGListMid.Count != 0)
                 {
                     lock (LFGListMid)
                     {
@@ -1302,7 +1301,7 @@ namespace DOL.GS.Scripts
         {
             List<MimicLFGEntry> validList = new List<MimicLFGEntry>();
 
-            if (entries.Any())
+            if (entries.Count != 0)
             {
                 foreach (MimicLFGEntry entry in entries)
                 {

@@ -16,6 +16,7 @@ using DOL.GS.Styles;
 using DOL.GS.Utils;
 using DOL.Language;
 using JNogueira.Discord.Webhook.Client;
+using log4net.Core;
 using Microsoft.CodeAnalysis;
 using System;
 using System.Collections;
@@ -95,15 +96,13 @@ namespace DOL.GS.Scripts
             _dummyLib = new DummyPacketLib();
 
             Inventory = new MimicNPCInventory();
-            MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
-
-            SetCharacterClass((int)cClass);
-            SetRaceAndName();
-            SetLevel(level);
+            MaxSpeedBase = PLAYER_BASE_SPEED;
 
             MimicSpec = MimicSpec.GetSpec(cClass);
-            SpendSpecPoints();
-            RefreshSpecDependantSkills(false);
+            SetCharacterClass((int)cClass);
+            SetRaceAndName();
+            SetBrain(cClass);
+            SetLevel(level);
 
             SetWeapons();
             SetShield();
@@ -113,18 +112,9 @@ namespace DOL.GS.Scripts
             RefreshItemBonuses();
             IsCloakHoodUp = Util.RandomBool();
 
-            if (CharacterClass.ClassType == eClassType.ListCaster || CharacterClass.ID == (int)eCharacterClass.Valewalker)
-                SetCasterSpells();
-            else
-                SetSpells();
-
-            MimicBrain = new MimicBrain();
-            MimicBrain.MimicBody = this;
-            SetOwnBrain(MimicBrain);
-
+            Health = MaxHealth;
             Endurance = MaxEndurance;
             Mana = MaxMana;
-            Health = MaxHealth;
 
             RespawnInterval = -1;
 
@@ -134,6 +124,28 @@ namespace DOL.GS.Scripts
             }));
 
             Dev = ClientService.GetPlayers()[0];
+        }
+
+        private void SetBrain(eMimicClass mimicClass)
+        {
+            switch (mimicClass)
+            {
+                case eMimicClass.Infiltrator:
+                case eMimicClass.Nightshade:
+                case eMimicClass.Shadowblade:
+                case eMimicClass.Scout:
+                case eMimicClass.Ranger:
+                case eMimicClass.Hunter:
+                MimicBrain = new StealtherBrain();
+                break;
+
+                default:
+                MimicBrain = new MimicBrain();
+                break;
+            }
+            
+            MimicBrain.MimicBody = this;
+            SetOwnBrain(MimicBrain);
         }
 
         private void SetWeapons()
@@ -178,12 +190,12 @@ namespace DOL.GS.Scripts
                 MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.oneHand);
                 MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.TwoHandWeapon, eInstrumentType.Flute);
                 MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.DistanceWeapon, eInstrumentType.Drum);
-                //MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.FirstEmptyBackpack, eInstrumentType.Lute);
+                MimicEquipment.SetInstrumentROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, eObjectType.Instrument, eInventorySlot.FirstEmptyBackpack, eInstrumentType.Lute);
                 break;
 
                 default:
-                if (CharacterClass.ClassType == eClassType.ListCaster || 
-                    CharacterClass.ID == (int)eCharacterClass.Friar || 
+                if (CharacterClass.ClassType == eClassType.ListCaster ||
+                    CharacterClass.ID == (int)eCharacterClass.Friar ||
                     CharacterClass.ID == (int)eCharacterClass.Valewalker)
                     MimicEquipment.SetMeleeWeapon(this, MimicSpec.WeaponOneType, eHand.twoHand);
                 else if (CharacterClass.ID != (int)eCharacterClass.Hunter)
@@ -212,8 +224,8 @@ namespace DOL.GS.Scripts
                     case 138: MimicEquipment.SetRangedWeapon(this, eObjectType.Fired); break;
                     case 143: MimicEquipment.SetRangedWeapon(this, eObjectType.Crossbow); break;
                     case 160: MimicEquipment.SetRangedWeapon(this, eObjectType.RecurvedBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
-                    case 161: MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
                     case 170: MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
+                    case 183: MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
                 }
             }
         }
@@ -709,18 +721,24 @@ namespace DOL.GS.Scripts
             return base.SayReceive(source, str);
         }
 
-        // TODO: Will need a different method for when leveling up after being created or adjust
-        public void SpendSpecPoints(byte fromLevel = 2, bool mimicCreation = true)
+        public void SpendSpecPoints(byte level, byte previousLevel)
         {
             MimicSpec.SpecLines = MimicSpec.SpecLines.OrderByDescending(ratio => ratio.levelRatio).ToList();
 
             int leftOverSpecPoints = m_leftOverSpecPoints;
             bool spentPoints = true;
             bool spendLeftOverPoints = false;
+            bool mimicCreation = level - previousLevel > 1;
+
+            byte index = (byte)(previousLevel + 1);
+
+            // 40+ half-level
+            if (level == previousLevel)
+                index = level;
 
             // For each level, get the points available. In the while loop, spend points according to the ratio in SpecLines until spentPoints is false.
             // Then set spendLeftOverPoints true and spend any left over points until spentPoints is false again. Exit the while loop, increase level, and repeat.
-            for (byte i = fromLevel; i <= Level; i++)
+            for (byte i = index; i <= Level; i++)
             {
                 spentPoints = true;
                 spendLeftOverPoints = false;
@@ -781,10 +799,10 @@ namespace DOL.GS.Scripts
             //            usedpoints -= GetAutoTrainPoints(spec, 0);
             //}
 
-            int specpoints = 0;
-
             if (IsLevelSecondStage)
-                return 0;
+                return CharacterClass.SpecPointsMultiplier * level / 20;
+
+            int specpoints = 0;
 
             if (mimicCreation)
                 if (level > 40)
@@ -926,41 +944,20 @@ namespace DOL.GS.Scripts
                 return;
 
             // Clear the lists
-            if (InstantHarmfulSpells != null)
-                InstantHarmfulSpells.Clear();
-
-            if (HarmfulSpells != null)
-                HarmfulSpells.Clear();
-
-            if (InstantHealSpells != null)
-                InstantHealSpells.Clear();
-
-            if (HealSpells != null)
-                HealSpells.Clear();
-
-            if (InstantCrowdControlSpells != null)
-                InstantCrowdControlSpells.Clear();
-
-            if (CrowdControlSpells != null)
-                CrowdControlSpells.Clear();
-
-            if (BoltSpells != null)
-                BoltSpells.Clear();
-
-            if (InstantMiscSpells != null)
-                InstantMiscSpells.Clear();
-
-            if (MiscSpells != null)
-                MiscSpells.Clear();
+            InstantHarmfulSpells?.Clear();
+            HarmfulSpells?.Clear();
+            InstantHealSpells?.Clear();
+            HealSpells?.Clear();
+            InstantCrowdControlSpells?.Clear();
+            CrowdControlSpells?.Clear();
+            BoltSpells?.Clear();
+            InstantMiscSpells?.Clear();
+            MiscSpells?.Clear();
 
             // Sort spells into lists
             foreach (Spell spell in m_spells)
             {
                 if (spell == null)
-                    continue;
-
-                // Nightshades were casting weapon poisons as instant spells.
-                if (CharacterClass.ID == (int)eCharacterClass.Nightshade && (spell.SpellType != eSpellType.NightshadeNuke))
                     continue;
 
                 if (spell.SpellType == eSpellType.Bolt)
@@ -3717,7 +3714,7 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// Load this player Classes Specialization.
         /// </summary>
-        public virtual void LoadClassSpecializations(bool sendMessages)
+        public virtual void LoadClassSpecializations(bool sendMessage)
         {
             // Get this Attached Class Specialization from SkillBase.
             IDictionary<Specialization, int> careers = SkillBase.GetSpecializationCareer(CharacterClass.ID);
@@ -3741,7 +3738,7 @@ namespace DOL.GS.Scripts
                 if (Level >= constraint.Value)
                 {
                     if (!HasSpecialization(constraint.Key.KeyName))
-                        AddSpecialization(constraint.Key, sendMessages);
+                        AddSpecialization(constraint.Key, sendMessage);
                 }
                 else
                 {
@@ -4480,7 +4477,6 @@ namespace DOL.GS.Scripts
                             continue;
                         }
 
-                        //styleComponent.AddStyle(st, false);
                         AddStyle(st, false);
                     }
 
@@ -4491,6 +4487,8 @@ namespace DOL.GS.Scripts
                     }
                 }
             }
+
+            MimicBrain?.OnRefreshSpecDependantSkills();
         }
 
         public virtual void AddStyle(Style st, bool notify)
@@ -4513,7 +4511,7 @@ namespace DOL.GS.Scripts
         public void OnSkillTrained(Specialization skill)
         {
             //CharacterClass.OnSkillTrained(this, skill);
-            RefreshSpecDependantSkills(true);
+            RefreshSpecDependantSkills(false);
         }
 
         /// <summary>
@@ -5613,7 +5611,7 @@ namespace DOL.GS.Scripts
             get { return base.Level; }
             set
             {
-                int oldLevel = Level;
+                byte oldLevel = Level;
                 base.Level = value;
 
                 if (oldLevel > 0)
@@ -5672,7 +5670,7 @@ namespace DOL.GS.Scripts
             return Math.Min((byte)50, Level);
         }
 
-        private bool m_isLevelSecondStage;
+        private bool m_isLevelSecondStage = false;
 
         /// <summary>
         /// Is this player in second stage of current level
@@ -5688,14 +5686,12 @@ namespace DOL.GS.Scripts
         /// Called when this player levels
         /// </summary>
         /// <param name="previouslevel"></param>
-        public virtual void OnLevelUp(int previouslevel)
+        public virtual void OnLevelUp(byte previouslevel)
         {
             IsLevelSecondStage = false;
 
-            if (Level - previouslevel < 2)
-            {
-                SpendSpecPoints(Level, false);
-            }
+            LoadClassSpecializations(false);
+            SpendSpecPoints(Level, previouslevel);
 
             //level 20 changes realm title and gives 1 realm skill point
             if (Level == 20)
@@ -5705,7 +5701,7 @@ namespace DOL.GS.Scripts
             // stat increases start at level 6
             if (Level > 5)
             {
-                for (int i = Level; i > Math.Max(previouslevel, 5); i--)
+                for (int i = Level; i > Math.Max(previouslevel, (byte)5); i--)
                 {
                     if (CharacterClass.PrimaryStat != eStat.UNDEFINED)
                     {
@@ -5723,9 +5719,12 @@ namespace DOL.GS.Scripts
             }
 
             //CharacterClass.OnLevelUp(this, previouslevel);
-            //GameServer.ServerRules.OnPlayerLevelUp(this, previouslevel);
-
             RefreshSpecDependantSkills(false);
+
+            if (CharacterClass.ClassType == eClassType.ListCaster || CharacterClass.ID == (int)eCharacterClass.Valewalker)
+                SetCasterSpells();
+            else
+                SetSpells();
 
             // Echostorm - Code for display of new title on level up
             // Get old and current rank titles
@@ -5798,9 +5797,6 @@ namespace DOL.GS.Scripts
         {
             IsLevelSecondStage = true;
 
-            // spec points
-            m_leftOverSpecPoints += CharacterClass.SpecPointsMultiplier * Level / 20;
-
             //death penalty reset on mini-ding
             DeathCount = 0;
 
@@ -5820,7 +5816,7 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            SpendSpecPoints(Level, false);
+            SpendSpecPoints(Level, Level);
             RefreshSpecDependantSkills(false);
         }
 
@@ -5832,7 +5828,9 @@ namespace DOL.GS.Scripts
         public virtual int GetAutoTrainPoints(Specialization spec, int Mode)
         {
             int max_autotrain = Level / 4;
-            if (max_autotrain == 0) max_autotrain = 1;
+
+            if (max_autotrain == 0) 
+                max_autotrain = 1;
 
             foreach (string autotrainKey in CharacterClass.GetAutotrainableSkills())
             {
@@ -7528,6 +7526,7 @@ namespace DOL.GS.Scripts
             //start the uncover timer
             if (action == null)
                 action = new MimicUncoverStealthAction(this);
+
             action.Interval = 1000;
             action.Start(1000);
             TempProperties.SetProperty(UNCOVER_STEALTH_ACTION_PROP, action);
@@ -7656,16 +7655,20 @@ namespace DOL.GS.Scripts
         /// </summary>
         /// <param name="enemy"></param>
         /// <returns>true if enemy can be detected</returns>
-        public virtual bool CanDetect(GamePlayer enemy)
+        public virtual bool CanDetect(IGamePlayer enemy)
         {
             if (enemy.CurrentRegionID != CurrentRegionID)
                 return false;
+
             if (!IsAlive)
                 return false;
+
             if (enemy.EffectList.GetOfType<VanishEffect>() != null)
                 return false;
+
             if (Client.Account.PrivLevel > 1)
                 return true;
+
             if (enemy.Client.Account.PrivLevel > 1)
                 return false;
 
@@ -7677,8 +7680,8 @@ namespace DOL.GS.Scripts
                      || enemy.CharacterClass is ClassRanger
                      || enemy.CharacterClass is ClassHunter
                      || enemy.CharacterClass is ClassScout)
-                && IsWithinRadius(enemy, 650)
-                && !enemy.effectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
+                && IsWithinRadius((GameObject)enemy, 650)
+                && !enemy.EffectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
             {
                 return true;
             }
@@ -7693,14 +7696,18 @@ namespace DOL.GS.Scripts
              */
 
             int EnemyStealthLevel = enemy.GetModifiedSpecLevel(Specs.Stealth);
+
             if (EnemyStealthLevel > 50)
                 EnemyStealthLevel = 50;
+
             int levelDiff = Level - EnemyStealthLevel;
-            if (levelDiff < 0) levelDiff = 0;
+
+            if (levelDiff < 0)
+                levelDiff = 0;
 
             int range = 0;
-            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Camouflage) != null;
-            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Vanish) != null;
+            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Camouflage) != null;
+            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Vanish) != null;
             if (HasAbility("Detect Hidden") && !enemyHasVanish && !enemyHasCamouflage)
             {
                 // we have detect hidden and enemy don't = higher range
@@ -7770,6 +7777,7 @@ namespace DOL.GS.Scripts
             //Hard cap is 1900
             if (range > 1900)
                 range = 1900;
+
             //everyone can see your own group stealthed
             else if (enemy.Group != null && Group != null && enemy.Group == Group)
             {
@@ -7778,7 +7786,7 @@ namespace DOL.GS.Scripts
 
             // Fin
             // vampiir stealth range, uncomment when add eproperty stealthrange i suppose
-            return IsWithinRadius(enemy, range);
+            return IsWithinRadius((GameObject)enemy, range);
         }
 
         #endregion Stealth / Wireframe
@@ -8704,6 +8712,8 @@ namespace DOL.GS.Scripts
 
         protected long m_beginDrowningTick;
         protected eWaterBreath m_currentWaterBreathState;
+        protected ECSGameTimer m_drowningTimer;
+        protected ECSGameTimer m_holdBreathTimer;
 
         protected int DrowningTimerCallback(ECSGameTimer callingTimer)
         {
@@ -8723,6 +8733,113 @@ namespace DOL.GS.Scripts
                 TakeDamage(null, eDamageType.Natural, MaxHealth / 20, 0);
 
             return 1000;
+        }
+
+        /// <summary>
+        /// The diving state of this player
+        /// </summary>
+        protected bool m_diving;
+
+        public bool IsDiving
+        {
+            get => m_diving;
+            set
+            {
+                if (!CurrentZone.IsDivingEnabled && value && Client.Account.PrivLevel == 1)
+                {
+                    Z += 1;
+                    Out.SendPlayerJump(false);
+                    return;
+                }
+
+                if (m_diving == value)
+                    return;
+
+                m_diving = value;
+
+                if (m_diving)
+                {
+                    if (!CanBreathUnderWater)
+                        UpdateWaterBreathState(eWaterBreath.Holding);
+                }
+                else
+                    UpdateWaterBreathState(eWaterBreath.None);
+            }
+        }
+
+        protected bool m_canBreathUnderwater;
+        public bool CanBreathUnderWater
+        {
+            get => m_canBreathUnderwater;
+            set
+            {
+                if (m_canBreathUnderwater == value)
+                    return;
+
+                m_canBreathUnderwater = value;
+
+                if (IsDiving)
+                {
+                    if (m_canBreathUnderwater)
+                        UpdateWaterBreathState(eWaterBreath.None);
+                    else
+                        UpdateWaterBreathState(eWaterBreath.Holding);
+                }
+            }
+        }
+
+        public void UpdateWaterBreathState(eWaterBreath state)
+        {
+            if (Client.Account.PrivLevel != 1)
+                return;
+
+            switch (state)
+            {
+                case eWaterBreath.None:
+                {
+                    m_holdBreathTimer.Stop();
+                    m_drowningTimer.Stop();
+                    Out.SendCloseTimerWindow();
+                    break;
+                }
+                case eWaterBreath.Holding:
+                {
+
+                    m_drowningTimer.Stop();
+
+                    if (!m_holdBreathTimer.IsAlive)
+                    {
+                        Out.SendTimerWindow("Holding Breath", 30);
+                        m_holdBreathTimer.Start(30000);
+                    }
+
+                    break;
+                }
+                case eWaterBreath.Drowning:
+                {
+                    if (m_holdBreathTimer.IsAlive)
+                    {
+                        m_holdBreathTimer.Stop();
+
+                        if (!m_drowningTimer.IsAlive)
+                        {
+                            Out.SendTimerWindow("Drowning", 15);
+                            m_beginDrowningTick = CurrentRegion.Time;
+                            m_drowningTimer.Start(0);
+                        }
+                    }
+                    else
+                    {
+                        // In case the player gets out of water right before the timer is stopped (and ticks instead).
+                        UpdateWaterBreathState(eWaterBreath.None);
+                        return;
+                    }
+
+                    break;
+                }
+            }
+
+            m_currentWaterBreathState = state;
         }
 
         protected bool _sitting;

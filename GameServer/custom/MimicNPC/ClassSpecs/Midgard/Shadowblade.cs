@@ -49,6 +49,7 @@ namespace DOL.GS.Scripts
                 break;
 
                 case 4:
+                Is2H = true;
                 SpecType = eSpecType.Mid;
                 Add(ObjToSpec(WeaponOneType), 39, 0.8f);
                 Add(Specs.Critical_Strike, 44, 0.9f);

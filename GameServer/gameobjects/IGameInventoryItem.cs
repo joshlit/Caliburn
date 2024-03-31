@@ -35,7 +35,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="player"></param>
 		/// <returns></returns>
-		bool CheckValid(GamePlayer player);
+		bool CheckValid(IGamePlayer player);
 		/// <summary>
 		/// Can this player equip this item
 		/// </summary>

@@ -2141,7 +2141,7 @@ namespace DOL.GS
                     removeMez = true;
                 }
 
-                if (this is GameNPC && ad.SpellHandler is not MesmerizeSpellHandler)
+                if (this is GameNPC && this is not MimicNPC && ad.SpellHandler is not MesmerizeSpellHandler)
                     removeMez = true;
             }
 

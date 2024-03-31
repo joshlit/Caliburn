@@ -125,6 +125,26 @@ namespace DOL.AI.Brain
             FSM.Think();
         }
 
+        public virtual void OnLeaderAggro()
+        { }
+        public virtual void OnEnterAggro()
+        { }
+
+        public virtual void OnExitAggro()
+        { }
+
+        public virtual void OnEnterRoam()
+        { }
+
+        public virtual void OnExitRoam()
+        { }
+
+        public virtual void OnLevelUp()
+        { }
+
+        public virtual void OnRefreshSpecDependantSkills()
+        { }
+
         public void OnGroupMemberAttacked(AttackData ad)
         {
             if (FSM.GetState(eFSMStateType.CAMP) == FSM.GetCurrentState())
@@ -222,6 +242,9 @@ namespace DOL.AI.Brain
             foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)aggroRange))
             {
                 if (!CanAggroTarget(npc))
+                    continue;
+
+                if (npc is IGamePlayer player && player.IsStealthed && !MimicBody.CanDetect(player))
                     continue;
 
                 if (npc is GameTaxi or GameTrainingDummy)
@@ -621,7 +644,7 @@ namespace DOL.AI.Brain
         {
             List<GameLiving> validatedList = new List<GameLiving>();
 
-            if (ccList.Any())
+            if (ccList.Count != 0)
             {
                 foreach (GameLiving cc in ccList)
                 {
@@ -808,7 +831,7 @@ namespace DOL.AI.Brain
             // Potentially slow, so we cache the result.
             lock (((ICollection)OrderedAggroList).SyncRoot)
             {
-                if (!OrderedAggroList.Any())
+                if (OrderedAggroList.Count == 0)
                     OrderedAggroList = AggroList.OrderByDescending(x => x.Value.Effective).Select(x => (x.Key, x.Value.Effective)).ToList();
 
                 return OrderedAggroList.ToList();
@@ -1765,7 +1788,7 @@ namespace DOL.AI.Brain
 
                 #region Pulse
 
-                case eSpellType.SpeedEnhancement when spell.Target != eSpellTarget.PET:
+                case eSpellType.SpeedEnhancement when spell.IsPulsing:
 
                 if (!LivingHasEffect(Body, spell))
                     Body.TargetObject = Body;
@@ -1781,6 +1804,9 @@ namespace DOL.AI.Brain
                 #endregion Pulse
 
                 #region Buffs
+
+                case eSpellType.SpeedEnhancement when spell.IsInstantCast:
+                break;
 
                 case eSpellType.SpeedEnhancement when spell.Target == eSpellTarget.PET:
                 case eSpellType.CombatSpeedBuff when spell.Duration > 20:
@@ -2087,6 +2113,9 @@ namespace DOL.AI.Brain
 
             switch (spell.SpellType)
             {
+                // TODO: Stealth archer using speed to get away or attack
+                //case eSpellType.SpeedEnhancement:
+
                 case eSpellType.SavageCrushResistanceBuff:
                 case eSpellType.SavageSlashResistanceBuff:
                 case eSpellType.SavageThrustResistanceBuff:
@@ -2175,6 +2204,7 @@ namespace DOL.AI.Brain
                 break;
 
                 case eSpellType.DirectDamage:
+                case eSpellType.NightshadeNuke:
                 case eSpellType.Lifedrain:
                 case eSpellType.DexterityDebuff:
                 case eSpellType.DexterityQuicknessDebuff:

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using DOL.Database;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 using DOL.Language;
 using log4net;
@@ -15,7 +16,7 @@ namespace DOL.GS
     public class GameInventoryItem : DbInventoryItem, IGameInventoryItem, ITranslatableObject {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        protected GamePlayer m_owner = null;
+        protected IGamePlayer m_owner = null;
 
         public GameInventoryItem()
             : base()
@@ -63,7 +64,7 @@ namespace DOL.GS
         /// </summary>
         /// <param name="player"></param>
         /// <returns></returns>
-        public virtual bool CheckValid(GamePlayer player)
+        public virtual bool CheckValid(IGamePlayer player)
         {
             m_owner = player;
             return true;
@@ -229,7 +230,7 @@ namespace DOL.GS
         /// Player equips this item
         /// </summary>
         /// <param name="player"></param>
-        public virtual void OnEquipped(GamePlayer player)
+        public virtual void OnEquipped(IGamePlayer player)
         {
             CheckValid(player);
         }
@@ -238,7 +239,7 @@ namespace DOL.GS
         /// Player unequips this item
         /// </summary>
         /// <param name="player"></param>
-        public virtual void OnUnEquipped(GamePlayer player)
+        public virtual void OnUnEquipped(IGamePlayer player)
         {
             CheckValid(player);
         }

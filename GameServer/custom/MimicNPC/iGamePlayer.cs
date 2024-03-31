@@ -16,7 +16,7 @@ namespace DOL.GS.Scripts
         public IPacketLib Out { get; }
         public GameClient Client { get; }
         public void Notify(DOLEvent e, object sender);
-        public  string InternalID { get; set; }
+        public string InternalID { get; set; }
         public eObjectState ObjectState { get; set; }
 
         public int GetModified(eProperty property);
@@ -24,12 +24,12 @@ namespace DOL.GS.Scripts
         public int ChangeHealth(GameObject changeSource, eHealthChangeType healthChangeType, int changeAmount);
         public int CalculateMaxHealth(int level, int constitution);
         public int CalculateMaxMana(int level, int manaStat);
-      
-        public SpellLine GetSpellLine(string keyname);     
+
+        public SpellLine GetSpellLine(string keyname);
         public bool HasAbility(string keyName);
         public T GetAbility<T>() where T : Ability;
         public int GetAbilityLevel(string keyName);
-        public bool HasSpecialization(string keyName);        
+        public bool HasSpecialization(string keyName);
         public int GetBaseSpecLevel(string keyName);
         public int GetModifiedSpecLevel(string keyName);
         public void DisableSkill(Skill skill, int duration);
@@ -41,6 +41,9 @@ namespace DOL.GS.Scripts
         public double ApplyWeaponQualityAndConditionToDamage(DbInventoryItem weapon, double damage);
 
         public void Stealth(bool goStealth);
+        public void StartStealthUncoverAction();
+        public void StopStealthUncoverAction();
+        public bool Sprint(bool state);
 
         public void OnDuelStart(GameDuel duel);
         public void OnDuelStop();
@@ -51,6 +54,7 @@ namespace DOL.GS.Scripts
         public void GainRealmPoints(long amount, bool modify);
         public int GetDistanceTo(IPoint3D point);
         public bool IsWithinRadius(GameObject obj, int radius);
+        public List<GamePlayer> GetPlayersInRadius(ushort radiusToCheck);
 
         public bool IsControlledNPC(GameNPC npc);
         public void CommandNpcRelease();
@@ -77,7 +81,7 @@ namespace DOL.GS.Scripts
         public eActiveWeaponSlot ActiveWeaponSlot { get; }
 
         public IControlledBrain ControlledBrain { get; set; }
-       
+
         public PlayerDeck RandomNumberDeck { get; set; }
         public List<int> SelfBuffChargeIDs { get; }
         public int TotalConstitutionLostAtDeath { get; set; }
@@ -85,11 +89,11 @@ namespace DOL.GS.Scripts
         public string GetName(int article, bool firstLetterUppercase);
         public ICharacterClass CharacterClass { get; }
         public eGender Gender { get; set; }
-        public  short Race { get; set; }
+        public short Race { get; set; }
         public string Name { get; set; }
         public byte Level { get; set; }
         public byte MaxLevel { get; }
-        public  int RealmLevel { get; set; }
+        public int RealmLevel { get; set; }
         public int MLLevel { get; set; }
         public eRealm Realm { get; set; }
 
@@ -111,6 +115,7 @@ namespace DOL.GS.Scripts
         public bool IsSprinting { get; }
         public bool IsSitting { get; set; }
         public bool IsStrafing { get; set; }
+        public bool CanBreathUnderWater { get; set; }
 
         public ControlledHorse ActiveHorse { get; }
         public bool IsOnHorse { get; set; }
@@ -122,14 +127,14 @@ namespace DOL.GS.Scripts
         public ushort Model { get; set; }
         public ushort CreationModel { get; }
 
-        public  int Health { get; set; }
+        public int Health { get; set; }
         public int MaxHealth { get; }
         public byte HealthPercent { get; }
         public int Mana { get; set; }
         public int MaxMana { get; }
-        
+
         public int Endurance { get; set; }
-        public  short MaxSpeedBase { get; set; }
+        public short MaxSpeedBase { get; set; }
 
         public int Strength { get; }
         public int Dexterity { get; }
@@ -137,6 +142,7 @@ namespace DOL.GS.Scripts
         public int Intelligence { get; }
 
         public Region CurrentRegion { get; set; }
+        public ushort CurrentRegionID { get; set; }
         public int Z { get; }
     }
 }

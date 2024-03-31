@@ -1,4 +1,5 @@
 using DOL.Database;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 
 namespace DOL.GS

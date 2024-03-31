@@ -26,6 +26,7 @@ using DOL.GS.PacketHandler;
 using DOL.Database;
 using DOL.GS.Spells;
 using log4net;
+using DOL.GS.Scripts;
 
 namespace DOL.GS
 {
@@ -202,7 +203,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="player"></param>
 		/// <returns></returns>
-		public override bool CheckValid(GamePlayer player)
+		public override bool CheckValid(IGamePlayer player)
 		{
 			return false;
 		}

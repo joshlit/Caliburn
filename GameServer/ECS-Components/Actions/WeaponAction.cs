@@ -298,8 +298,6 @@ namespace DOL.GS
             // Unstealth before attack animation.
             if (_owner is IGamePlayer playerOwner)
                 playerOwner.Stealth(false);
-            else if (_owner is MimicNPC mimicOwner)
-                mimicOwner.Stealth(false);
 
             // Show the animation.
             if (mainHandAD.AttackResult != eAttackResult.HitUnstyled && mainHandAD.AttackResult != eAttackResult.HitStyle && leftHandAD != null)

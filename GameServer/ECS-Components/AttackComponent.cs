@@ -1349,8 +1349,8 @@ namespace DOL.GS
                         ApplyTargetConversionRegen(ad.Target, (int)conversionAmount);
                     }
 
-                    if (playerOwner != null && playerOwner.UseDetailedCombatLog)
-                        PrintDetailedCombatLog(playerOwner, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, baseDamageCap, styleDamageCap);
+                    if (playerOwner != null && playerOwner is GamePlayer gPlayerOwner && gPlayerOwner.UseDetailedCombatLog)
+                        PrintDetailedCombatLog(gPlayerOwner, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, baseDamageCap, styleDamageCap);
 
                     if (target is GamePlayer targetPlayer && targetPlayer.UseDetailedCombatLog)
                         PrintDetailedCombatLog(targetPlayer, armorFactor, absorb, armorMod, baseWeaponSkill, specModifier, weaponSkill, damageMod, baseDamageCap, styleDamageCap);

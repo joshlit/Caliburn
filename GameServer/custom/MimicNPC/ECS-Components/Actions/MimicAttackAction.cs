@@ -11,6 +11,7 @@ namespace DOL.GS
     {
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        private const int MIN_HEALTH_PERCENT_FOR_MELEE_SWITCH_ON_INTERRUPT = 70;
         private const int PET_LOS_CHECK_INTERVAL = 1000;
         private MimicNPC _mimicOwner;
         private int _petLosCheckInterval = PET_LOS_CHECK_INTERVAL;
@@ -95,6 +96,12 @@ namespace DOL.GS
             }
             else
                 return base.FinalizeRangedAttack();
+        }
+
+        public override void OnAimInterrupt(GameObject attacker)
+        {
+            if (_mimicOwner.HealthPercent < MIN_HEALTH_PERCENT_FOR_MELEE_SWITCH_ON_INTERRUPT)
+                _mimicOwner.SwitchToMelee(_target);
         }
 
         public override void CleanUp()

@@ -12312,7 +12312,7 @@ namespace DOL.GS
         /// </summary>
         /// <param name="enemy"></param>
         /// <returns>true if enemy can be detected</returns>
-        public virtual bool CanDetect(GamePlayer enemy)
+        public virtual bool CanDetect(IGamePlayer enemy)
         {
             if (enemy.CurrentRegionID != CurrentRegionID)
                 return false;
@@ -12333,8 +12333,8 @@ namespace DOL.GS
                      || enemy.CharacterClass is ClassRanger
                      || enemy.CharacterClass is ClassHunter
                      || enemy.CharacterClass is ClassScout)
-                && this.IsWithinRadius(enemy, 650)
-                && !enemy.effectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
+                && this.IsWithinRadius((GameObject)enemy, 650)
+                && !enemy.EffectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
             {
                 return true;
             }
@@ -12355,8 +12355,8 @@ namespace DOL.GS
             if (levelDiff < 0) levelDiff = 0;
 
             int range = 0;
-            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Camouflage) != null;
-            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Vanish) != null;
+            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Camouflage) != null;
+            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Vanish) != null;
             if (HasAbility(Abilities.DetectHidden) && !enemyHasVanish && !enemyHasCamouflage)
             {
                 // we have detect hidden and enemy don't = higher range
@@ -12434,7 +12434,7 @@ namespace DOL.GS
 
             // Fin
             // vampiir stealth range, uncomment when add eproperty stealthrange i suppose
-            return this.IsWithinRadius( enemy, range );
+            return this.IsWithinRadius((GameLiving)enemy, range );
         }
 
         #endregion
