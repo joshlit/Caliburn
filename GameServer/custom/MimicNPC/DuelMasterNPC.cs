@@ -109,8 +109,8 @@ namespace DOL.GS.Scripts
 
         private int StartDuelTimerCallback(ECSGameTimer timer)
         {
-            if (!m_isDuelRunning && m_mimicOne != null && m_mimicOne.DuelReady
-                                 && m_mimicTwo != null && m_mimicTwo.DuelReady)
+            if (!m_isDuelRunning && m_mimicOne != null && m_mimicOne.IsDuelReady
+                                 && m_mimicTwo != null && m_mimicTwo.IsDuelReady)
             {
                 m_isDuelRunning = true;
 
@@ -130,8 +130,8 @@ namespace DOL.GS.Scripts
                 GameDuel duel = new(m_mimicOne, m_mimicTwo);
                 duel.Start();
 
-                m_mimicOne.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
-                m_mimicTwo.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+                //m_mimicOne.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+                //m_mimicTwo.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
             }
 
             if (!(m_mimicOne.ObjectState == eObjectState.Active) || !(m_mimicTwo.ObjectState == eObjectState.Active))

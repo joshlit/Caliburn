@@ -17,7 +17,7 @@ namespace DOL.GS.Scripts
             WeaponOneType = eObjectType.Staff;
             Is2H = true;
 
-            int randVariance = Util.Random(4);
+            int randVariance = Util.Random(6);
                     
             switch (randVariance)
             {

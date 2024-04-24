@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace DOL.GS.Scripts
 {
@@ -84,11 +85,26 @@ namespace DOL.GS.Scripts
 
             public void Start()
             {
+                // For quick mass testing.
+                //Parallel.For(0, 2000, TickInternal);
+
                 if (m_masterTimer == null)
                 {
                     m_masterTimer = new ECSGameTimer(null, new ECSGameTimer.ECSTimerCallback(MasterTimerCallback));
                     m_masterTimer.Start();
                 }
+            }
+
+            public void TickInternal(int index)
+            {
+                MimicNPC albMimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), 24);
+                MimicManager.AddMimicToWorld(albMimic, m_albSpawnPoint, m_region);
+
+                MimicNPC hibMimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), 24);
+                MimicManager.AddMimicToWorld(hibMimic, m_hibSpawnPoint, m_region);
+
+                MimicNPC midMimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), 24);
+                MimicManager.AddMimicToWorld(midMimic, m_midSpawnPoint, m_region);
             }
 
             public void Stop()
@@ -143,7 +159,7 @@ namespace DOL.GS.Scripts
 
             private int MasterTimerCallback(ECSGameTimer timer)
             {
-                if (GameLoop.GetCurrentTime() > m_resetMaxTime)
+                if (GameLoop.GameLoopTime > m_resetMaxTime)
                     ResetMaxMimics();
 
                 ValidateLists();
@@ -371,7 +387,7 @@ namespace DOL.GS.Scripts
                         m_currentMaxMid++;
                 }
 
-                m_resetMaxTime = GameLoop.GetCurrentTime() + Util.Random(1800000, 3600000);
+                m_resetMaxTime = GameLoop.GameLoopTime + Util.Random(1800000, 3600000);
             }
 
             public void UpdateBattleStats(MimicNPC mimic)
@@ -601,6 +617,7 @@ namespace DOL.GS.Scripts
             {
                 switch (mimicClass)
                 {
+                    case eMimicClass.None:
                     case eMimicClass.Cabalist:
                     case eMimicClass.Sorcerer:
                     case eMimicClass.Theurgist:
@@ -619,6 +636,7 @@ namespace DOL.GS.Scripts
                                 continue;
 
                     meleeClasses.Add(mimicClass);
+
                     break;
                 }
             }

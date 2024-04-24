@@ -7177,7 +7177,7 @@ namespace DOL.GS
         public GameDuel Duel { get; private set; }
         public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
 
-        public bool DuelReady { get; set; }
+        public bool IsDuelReady { get; set; }
 
         public void OnDuelStart(GameDuel duel)
         {
@@ -7190,7 +7190,7 @@ namespace DOL.GS
             if (Duel == null)
                 return;
 
-            DuelReady = false;
+            IsDuelReady = false;
             Duel = null;
 
             Client.Out.SendMessage("You are no longer ready for your next duel.", eChatType.CT_System, eChatLoc.CL_SystemWindow);

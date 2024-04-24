@@ -6,12 +6,14 @@ using System.Linq;
 
 namespace DOL.GS.Scripts
 {
-    public class StealtherBrain : MimicBrain
+    public class AssassinBrain : MimicBrain
     {
-        private List<int> _envenomSpellIDs = new List<int>();
+        private List<int> _envenomSpellIDs;
 
-        public StealtherBrain()
-        { }
+        public AssassinBrain()
+        {
+            _envenomSpellIDs = new List<int>();
+        }
 
         public override void OnLeaderAggro()
         {
@@ -27,16 +29,10 @@ namespace DOL.GS.Scripts
         {
             if (type == eCheckSpellType.Defensive)
             {
-                if (base.CheckSpells(type))
-                    return true;
-
                 if (Body.Group == null || Body.Group.MimicGroup.CampPoint != null && !MimicBody.MimicBrain.IsMainPuller)
                     Body.Stealth(true);
                 else
                     Body.Stealth(false);
-
-                if (Body.ControlledBrain != null && PvPMode)
-                    MimicBody.CommandNpcRelease();
 
                 PoisonWeapons();
 
@@ -102,13 +98,14 @@ namespace DOL.GS.Scripts
             if (envenomSpecLevel > 0)
             {
                 SpellLine poisonLine = SkillBase.GetSpellLine(GlobalSpellsLines.Mundane_Poisons);
-                List<Spell> highestPoisons = new List<Spell>();
 
                 if (poisonLine != null)
                 {
                     _envenomSpellIDs.Clear();
 
+                    List<Spell> highestPoisons = new List<Spell>();
                     List<Spell> poisons = SkillBase.GetSpellList(poisonLine.KeyName);
+
                     poisons = poisons.OrderByDescending(spell => spell.Level).ToList();
 
                     foreach (Spell poison in poisons)

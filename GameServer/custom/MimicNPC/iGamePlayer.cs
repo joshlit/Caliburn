@@ -49,6 +49,7 @@ namespace DOL.GS.Scripts
         public void OnDuelStop();
         public GameLiving DuelPartner { get; }
         public bool IsDuelPartner(GameLiving living);
+        public bool IsDuelReady { get; set; }
 
         public void AddXPGainer(GameObject xpGainer, float damageAmount);
         public void GainRealmPoints(long amount, bool modify);

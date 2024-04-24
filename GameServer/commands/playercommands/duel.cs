@@ -253,11 +253,11 @@ namespace DOL.GS.Commands
 
                     case "ready":
                     {
-                        client.Player.DuelReady = !client.Player.DuelReady;
+                        client.Player.IsDuelReady = !client.Player.IsDuelReady;
 
                         string message;
 
-                        if (client.Player.DuelReady)
+                        if (client.Player.IsDuelReady)
                             message = "You are ready for your next duel.";
                         else
                             message = "You are no longer ready for your next duel.";

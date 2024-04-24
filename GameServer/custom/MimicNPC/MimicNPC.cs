@@ -133,10 +133,13 @@ namespace DOL.GS.Scripts
                 case eMimicClass.Infiltrator:
                 case eMimicClass.Nightshade:
                 case eMimicClass.Shadowblade:
+                MimicBrain = new AssassinBrain();
+                break;
+
                 case eMimicClass.Scout:
                 case eMimicClass.Ranger:
                 case eMimicClass.Hunter:
-                MimicBrain = new StealtherBrain();
+                MimicBrain = new ArcherBrain();
                 break;
 
                 default:
@@ -898,7 +901,7 @@ namespace DOL.GS.Scripts
         {
             return spellOne.DamageType == spellTwo.DamageType &&
                    spellOne.SpellType == spellTwo.SpellType &&
-                   spellOne.Frequency == spellTwo.Frequency &&
+                   (spellOne.Frequency == spellTwo.Frequency && spellOne.SpellType != eSpellType.OffensiveProc && spellTwo.SpellType != eSpellType.OffensiveProc) && // Valewalker proc
                    spellOne.CastTime == spellTwo.CastTime &&
                    spellOne.Target == spellTwo.Target &&
                    spellOne.Group == spellTwo.Group &&
@@ -7415,7 +7418,7 @@ namespace DOL.GS.Scripts
 
         public GameDuel Duel { get; private set; }
         public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
-        public bool DuelReady { get; set; }
+        public bool IsDuelReady { get; set; }
 
         public void OnDuelStart(GameDuel duel)
         {
@@ -7428,7 +7431,7 @@ namespace DOL.GS.Scripts
             if (Duel == null)
                 return;
 
-            DuelReady = false;
+            IsDuelReady = false;
             Duel = null;
         }
 
@@ -7503,7 +7506,7 @@ namespace DOL.GS.Scripts
             if (IsStealthed == goStealth)
                 return;
 
-            if (goStealth)
+            if (goStealth && !InCombat)
             {
                 if (effectListComponent.ContainsEffectForEffectType(eEffect.Pulse))
                     return;
