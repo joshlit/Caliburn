@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
-
 using DOL.AI;
 using DOL.AI.Brain;
-using DOL.Events;
-using DOL.Database;
 using DOL.GS.PacketHandler;
 
-using log4net;
 namespace DOL.GS.Scripts
 {
     public class SplitMob : GameNPC
@@ -71,7 +65,6 @@ namespace DOL.GS.Scripts
 			mob.MeleeDamageType = this.MeleeDamageType;
             mob.RespawnInterval = -1; // dont respawn
 			mob.RoamingRange = this.RoamingRange;
-            mob.MaxDistance = 4000;
 
 			// also copies the stats
 
@@ -85,8 +78,6 @@ namespace DOL.GS.Scripts
 			mob.Charisma = this.Charisma;
 
 			//Fill the living variables
-			mob.CurrentSpeed = 0;
-
 			mob.MaxSpeedBase = this.MaxSpeedBase;
 			mob.Size = this.Size;
 			mob.NPCTemplate = this.NPCTemplate;
@@ -160,6 +151,4 @@ namespace DOL.GS.Scripts
             player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
         }
     }
-
-
 }

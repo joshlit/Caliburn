@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using DOL.AI.Brain;
 using DOL.Database;
@@ -28,6 +29,7 @@ namespace DOL.GS
         private ResetHeadingAction _resetHeadingAction;
         private Point3D _positionForUpdatePackets;
         private bool _needsBroadcastUpdate;
+        private short _currentMovementDesiredSpeed;
 
         public new GameNPC Owner { get; }
         public Vector3 Velocity { get; private set; }
@@ -50,6 +52,7 @@ namespace DOL.GS
         public bool CanRoam => Properties.ALLOW_ROAM && RoamingRange != 0 && string.IsNullOrWhiteSpace(PathID);
         public double HorizontalVelocityForClient { get; private set; }
         public Point3D PositionForClient => _needsBroadcastUpdate ? _positionForUpdatePackets : Owner;
+        public bool HasActiveResetHeadingAction => _resetHeadingAction != null && _resetHeadingAction.IsAlive;
         public Point3D DestinationForClient { get; private set; }
 
         public NpcMovementComponent(GameNPC npcOwner) : base(npcOwner)
@@ -261,7 +264,7 @@ namespace DOL.GS
 
             if (Owner.CurrentZone.IsPathingEnabled)
             {
-                Vector3? target = PathingMgr.Instance.GetRandomPointAsync(Owner.CurrentZone, new Vector3(Owner.X, Owner.Y, Owner.Z), maxRoamingRadius);
+                Vector3? target = PathingMgr.Instance.GetRandomPointAsync(Owner.CurrentZone, new Vector3(Owner.SpawnPoint.X, Owner.SpawnPoint.Y, Owner.SpawnPoint.Z), maxRoamingRadius);
 
                 if (target.HasValue)
                     PathTo(new Point3D(target.Value.X, target.Value.Y, target.Value.Z), speed);
@@ -269,9 +272,17 @@ namespace DOL.GS
                 return;
             }
 
-            double targetX = Owner.SpawnPoint.X + Util.Random(-maxRoamingRadius, maxRoamingRadius);
-            double targetY = Owner.SpawnPoint.Y + Util.Random(-maxRoamingRadius, maxRoamingRadius);
+            maxRoamingRadius = Util.Random(maxRoamingRadius);
+            double angle = Util.RandomDouble() * Math.PI * 2;
+            double targetX = Owner.SpawnPoint.X + maxRoamingRadius * Math.Cos(angle);
+            double targetY = Owner.SpawnPoint.Y + maxRoamingRadius * Math.Sin(angle);
             WalkTo(new Point3D((int) targetX, (int) targetY, Owner.SpawnPoint.Z), speed);
+        }
+
+        public void RestartCurrentMovement()
+        {
+            if (IsDestinationValid && !IsAtDestination)
+                WalkToInternal(Destination, _currentMovementDesiredSpeed);
         }
 
         public void TurnTo(GameObject target, int duration = 0)
@@ -365,13 +376,12 @@ namespace DOL.GS
             if (IsTurningDisabled)
                 return;
 
+            _currentMovementDesiredSpeed = speed;
+
             if (speed > MaxSpeed)
                 speed = MaxSpeed;
 
-            if (speed <= 0)
-                return;
-
-            if (destination == null)
+            if (destination == null || speed <= 0)
             {
                 UpdateMovement(null, 0.0, speed);
                 return;
@@ -389,7 +399,7 @@ namespace DOL.GS
                 SetFlag(MovementState.WALK_TO);
                 _walkingToEstimatedArrivalTime = GameLoop.GameLoopTime + ticksToArrive;
             }
-            else if (IsMoving)
+            else
                 UpdateMovement(null, 0.0, 0);
         }
 
@@ -518,7 +528,7 @@ namespace DOL.GS
 
             if (IsReturningToSpawnPoint)
             {
-                UpdateMovement(null, 0.0, 0);
+                SetPositionToDestination();
                 CancelReturnToSpawnPoint();
                 TurnTo(Owner.SpawnHeading);
                 return;
@@ -542,7 +552,15 @@ namespace DOL.GS
             }
 
             if (IsMoving)
+                SetPositionToDestination();
+
+            void SetPositionToDestination()
+            {
+                Owner.X = Destination.X;
+                Owner.Y = Destination.Y;
+                Owner.Z = Destination.Z;
                 UpdateMovement(null, 0.0, 0);
+            }
         }
 
         private void MoveToNextWaypoint()
@@ -645,6 +663,9 @@ namespace DOL.GS
 
             if (destination == null || distanceToTarget < 1)
             {
+                // This appears to be unreliable if we don't forcefully snap the NPC's position to its destination in `OnArrival`.
+                // X, Y, Z are supposed to return the destination. It's possible early ticks prevent that.
+                // We could also simply broadcast, but this would be wasteful.
                 if (!IsAtDestination)
                     _needsBroadcastUpdate = true;
 
@@ -710,7 +731,7 @@ namespace DOL.GS
             }
         }
 
-        private class ResetHeadingAction : AuxECSGameTimerWrapperBase
+        private class ResetHeadingAction : ECSGameTimerWrapperBase
         {
             private NpcMovementComponent _movementComponent;
             private ushort _oldHeading;
@@ -725,7 +746,7 @@ namespace DOL.GS
                 _onCompletion = onCompletion;
             }
 
-            protected override int OnTick(AuxECSGameTimer timer)
+            protected override int OnTick(ECSGameTimer timer)
             {
                 GameNPC owner = _movementComponent.Owner;
 

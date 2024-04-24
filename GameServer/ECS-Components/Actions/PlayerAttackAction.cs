@@ -12,20 +12,6 @@ namespace DOL.GS
             _playerOwner = playerOwner;
         }
 
-        public override bool CheckInterruptTimer()
-        {
-            if (_playerOwner.attackComponent.Attackers.IsEmpty)
-                return false;
-
-            // Don't interrupt aiming if we haven't received an interrupt timer.
-            if (!_playerOwner.IsBeingInterrupted)
-                return false;
-
-            _playerOwner.attackComponent.StopAttack();
-            OnAimInterrupt(_playerOwner.LastInterrupter);
-            return true;
-        }
-
         public override void OnAimInterrupt(GameObject attacker)
         {
             string attackTypeMsg;

@@ -70,7 +70,6 @@ namespace DOL.GS.Scripts
 			mob.MeleeDamageType = this.MeleeDamageType;
 			mob.RespawnInterval = -1; // dont respawn
 			mob.RoamingRange = this.RoamingRange;
-			mob.MaxDistance = 4000;
 
 			// also copies the stats
 
@@ -84,8 +83,6 @@ namespace DOL.GS.Scripts
 			mob.Charisma = this.Charisma;
 
 			//Fill the living variables
-			mob.CurrentSpeed = 200;
-
 			mob.MaxSpeedBase = this.MaxSpeedBase;
 			mob.Size = this.Size;
 			mob.NPCTemplate = this.NPCTemplate;
@@ -158,5 +155,4 @@ namespace DOL.GS.Scripts
 		}
 		
 	}
-
 }

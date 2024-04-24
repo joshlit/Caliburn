@@ -1,7 +1,7 @@
 ﻿using System;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 
@@ -185,7 +185,6 @@ namespace DOL.GS
                 SB.X = 27397;
                 SB.Y = 54975;
                 SB.Z = 12949;
-                SB.MaxDistance = 2000;
                 SB.TetherRange = 2500;
                 SB.MaxSpeedBase = 300;
                 SB.Heading = 2013;
@@ -388,9 +387,9 @@ namespace DOL.AI.Brain
                 {
                     if (mob_c != null)
                     {
-                        if (mob_c?.Brain is XagaBrain brain1 && mob_c.IsAlive && mob_c.IsAvailable && !brain1.HasAggro)
+                        if (mob_c?.Brain is XagaBrain brain1 && mob_c.IsAlive && mob_c.CanJoinFight)
                             AddAggroListTo(brain1);
-                        if (mob_c?.Brain is TineBrain brain2 && mob_c.IsAlive && mob_c.IsAvailable && !brain2.HasAggro)
+                        if (mob_c?.Brain is TineBrain brain2 && mob_c.IsAlive && mob_c.CanJoinFight)
                             AddAggroListTo(brain2);
                     }
                 }
@@ -600,9 +599,9 @@ namespace DOL.AI.Brain
                 {
                     if (mob_c != null)
                     {
-                        if (mob_c?.Brain is XagaBrain brain1 && mob_c.IsAlive && mob_c.IsAvailable && !brain1.HasAggro)
+                        if (mob_c?.Brain is XagaBrain brain1 && mob_c.IsAlive && mob_c.CanJoinFight)
                             AddAggroListTo(brain1);
-                        if (mob_c?.Brain is BeathaBrain brain2 && mob_c.IsAlive && mob_c.IsAvailable && !brain2.HasAggro)
+                        if (mob_c?.Brain is BeathaBrain brain2 && mob_c.IsAlive && mob_c.CanJoinFight)
                             AddAggroListTo(brain2);
                     }
                 }

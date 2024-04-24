@@ -19,6 +19,7 @@ namespace DOL.GS
         private const int PING_TIMEOUT = 60000;
         private const int HARD_TIMEOUT = 600000;
         private const int POSITION_UPDATE_TIMEOUT = 5000;
+        private const int STATIC_OBJECT_UPDATE_MIN_DISTANCE = 4000;
 
         private static List<GameClient> _clients = new();
         private static SimpleDisposableLock _lock = new(LockRecursionPolicy.SupportsRecursion);
@@ -35,7 +36,7 @@ namespace DOL.GS
             using (_lock)
             {
                 _lock.EnterWriteLock();
-                 _clients = EntityManager.UpdateAndGetAll<GameClient>(EntityManager.EntityType.Client, out _lastValidIndex);
+                _clients = EntityManager.UpdateAndGetAll<GameClient>(EntityManager.EntityType.Client, out _lastValidIndex);
             }
 
             Parallel.For(0, _lastValidIndex + 1, TickInternal);
@@ -49,31 +50,34 @@ namespace DOL.GS
             if (client?.EntityManagerId.IsSet != true)
                 return;
 
-            switch (client.ClientState)
-            {
-                case GameClient.eClientState.Disconnected:
-                case GameClient.eClientState.NotConnected:
-                case GameClient.eClientState.Linkdead:
-                    return;
-                case GameClient.eClientState.CharScreen:
-                {
-                    CheckCharScreenTimeout(client);
-                    break;
-                }
-                case GameClient.eClientState.Playing:
-                {
-                    CheckInGameTimeout(client);
-                    GamePlayer player = client.Player;
+            long startTick;
+            long stopTick;
 
-                    if (player?.ObjectState == GameObject.eObjectState.Active)
+            try
+            {
+                switch (client.ClientState)
+                {
+                    case GameClient.eClientState.Disconnected:
+                    case GameClient.eClientState.NotConnected:
+                    case GameClient.eClientState.Linkdead:
+                        return;
+                    case GameClient.eClientState.CharScreen:
                     {
-                        try
+                        CheckCharScreenTimeout(client);
+                        break;
+                    }
+                    case GameClient.eClientState.Playing:
+                    {
+                        CheckInGameTimeout(client);
+                        GamePlayer player = client.Player;
+
+                        if (player?.ObjectState == GameObject.eObjectState.Active)
                         {
                             if (ServiceUtils.ShouldTick(player.LastWorldUpdate + Properties.WORLD_PLAYER_UPDATE_INTERVAL))
                             {
-                                long startTick = GameLoop.GetCurrentTime();
+                                startTick = GameLoop.GetCurrentTime();
                                 UpdateWorld(player);
-                                long stopTick = GameLoop.GetCurrentTime();
+                                stopTick = GameLoop.GetCurrentTime();
 
                                 if (stopTick - startTick > 25)
                                     log.Warn($"Long {SERVICE_NAME}.{nameof(UpdateWorld)} for {player.Name}({player.ObjectID}) Time: {stopTick - startTick}ms");
@@ -81,26 +85,19 @@ namespace DOL.GS
 
                             player.movementComponent.Tick();
                         }
-                        catch (Exception e)
-                        {
-                            ServiceUtils.HandleServiceException(e, SERVICE_NAME, client, player);
-                        }
+
+                        break;
                     }
-
-                    break;
+                    default:
+                    {
+                        CheckHardTimeout(client);
+                        break;
+                    }
                 }
-                default:
-                {
-                    CheckHardTimeout(client);
-                    break;
-                }
-            }
 
-            try
-            {
-                long startTick = GameLoop.GetCurrentTime();
+                startTick = GameLoop.GetCurrentTime();
                 client.PacketProcessor.ProcessTcpQueue();
-                long stopTick = GameLoop.GetCurrentTime();
+                stopTick = GameLoop.GetCurrentTime();
 
                 if (stopTick - startTick > 25)
                     log.Warn($"Long {SERVICE_NAME}.{nameof(client.PacketProcessor.ProcessTcpQueue)} for {client.Account.Name}({client.SessionID}) Time: {stopTick - startTick}ms");
@@ -120,7 +117,6 @@ namespace DOL.GS
                 EntityManagerId entityManagerId = client.EntityManagerId;
                 log.Warn($"{nameof(OnClientConnect)} was called but the client couldn't be added to the entity manager." +
                          $"(Client: {client})" +
-                         $"(IsIdSet: {client.EntityManagerId.IsSet})" +
                          $"(IsIdSet: {entityManagerId.IsSet})" +
                          $"(IsPendingAddition: {entityManagerId.IsPendingAddition})" +
                          $"(IsPendingRemoval: {entityManagerId.IsPendingAddition})" +
@@ -137,7 +133,6 @@ namespace DOL.GS
                 EntityManagerId entityManagerId = client.EntityManagerId;
                 log.Warn($"{nameof(OnClientDisconnect)} was called but the client couldn't be removed from the entity manager." +
                          $"(Client: {client})" +
-                         $"(IsIdSet: {client.EntityManagerId.IsSet})" +
                          $"(IsIdSet: {entityManagerId.IsSet})" +
                          $"(IsPendingAddition: {entityManagerId.IsPendingAddition})" +
                          $"(IsPendingRemoval: {entityManagerId.IsPendingAddition})" +
@@ -486,7 +481,7 @@ namespace DOL.GS
 
         private static void AddItemToPlayerCache(GamePlayer player, GameStaticItem item)
         {
-            player.ItemUpdateCache[item] = GameLoop.GameLoopTime;
+            player.ItemUpdateCache[item] = (GameLoop.GameLoopTime, false);
         }
 
         private static void AddDoorToPlayerCache(GamePlayer player, GameDoorBase door)
@@ -654,7 +649,19 @@ namespace DOL.GS
 
         private static void UpdateItems(GamePlayer player)
         {
-            ConcurrentDictionary<GameStaticItem, long> itemUpdateCache = player.ItemUpdateCache;
+            // The client is pretty stupid. It never forgets about static objects unless it moves too far away, but the distance seems to be anything between ~4500 and ~7500.
+            // Not only that, but it forgets about objects even though it allows them to reappear after receiving a new packet while being at the same distance.
+            // This means there's no way for us to know when the client actually needs a new packet.
+            // We can send one at regular intervals, but this is wasteful, and the interval shouldn't be too long.
+            // We can also assume the client doesn't need one if it's closer than ~4000 and has already received one.
+            // The boolean keeps track of that. It becomes true (allowing further updates) if the client moves further than `STATIC_OBJECT_UPDATE_MIN_DISTANCE`, and becomes false on every update.
+            // When true, updates are sent every `WORLD_OBJECT_UPDATE_INTERVAL`, as usual.
+            // In short:
+            // If the client forgets about the object at >`VISIBILITY_DISTANCE`, then it will reappear immediately when it gets back in range.
+            // If the client forgets about the object at <`VISIBILITY_DISTANCE` but >`STATIC_OBJECT_UPDATE_MIN_DISTANCE`, then it will take up to `WORLD_OBJECT_UPDATE_INTERVAL` for it to reappear.
+            // We assume the client cannot forget about the object when <`STATIC_OBJECT_UPDATE_MIN_DISTANCE`. If it does, the object won't reappear.
+
+            ConcurrentDictionary<GameStaticItem, (long, bool)> itemUpdateCache = player.ItemUpdateCache;
 
             foreach (var itemInCache in itemUpdateCache)
             {
@@ -662,6 +669,8 @@ namespace DOL.GS
 
                 if (!item.IsWithinRadius(player, WorldMgr.VISIBILITY_DISTANCE) || item.ObjectState is not GameObject.eObjectState.Active || !item.IsVisibleTo(player))
                     itemUpdateCache.Remove(item, out _);
+                else if (!item.IsWithinRadius(player, STATIC_OBJECT_UPDATE_MIN_DISTANCE))
+                    itemUpdateCache[item] = (itemUpdateCache[item].Item1, true);
             }
 
             List<GameStaticItem> itemsInRange = player.GetObjectsInRadius<GameStaticItem>(eGameObjectType.ITEM, WorldMgr.VISIBILITY_DISTANCE);
@@ -671,8 +680,11 @@ namespace DOL.GS
                 if (itemInRange.ObjectState is not GameObject.eObjectState.Active || !itemInRange.IsVisibleTo(player))
                     continue;
 
-                if (!itemUpdateCache.TryGetValue(itemInRange, out _))
+                if (!itemUpdateCache.TryGetValue(itemInRange, out (long lastUpdate, bool allowFurtherUpdates) value) ||
+                    (value.allowFurtherUpdates && ServiceUtils.ShouldTick(value.lastUpdate + Properties.WORLD_OBJECT_UPDATE_INTERVAL)))
+                {
                     CreateObjectForPlayer(player, itemInRange);
+                }
             }
         }
 

@@ -859,24 +859,19 @@ namespace DOL.GS
 
 		public async void GetPatchNotes()
 		{
-			var news = new List<string>();
-
 			try
 			{
 				using var newsClient = new HttpClient();
 				var url = Properties.PATCH_NOTES_URL;
 				var newsResult = await newsClient.GetStringAsync(url);
-				news.Add(newsResult);
+				PatchNotes = [newsResult];
 				log.Debug("Patch notes updated.");
 				newsClient.Dispose();
 			}
 			catch (Exception)
 			{
-				news.Add("No patch notes available.");
 				log.Debug("Cannot retrieve patch notes.");
-
 			}
-			PatchNotes = news;
 		}
 
 		/// <summary>
@@ -1558,15 +1553,12 @@ namespace DOL.GS
 					Save(CraftingProgressMgr.Save, ref crafting);
 				}
 
-				if (log.IsInfoEnabled)
-					log.Info("Saving database complete!");
-
 				startTick = GameLoop.GetCurrentTime() - startTick;
 
 				if (log.IsInfoEnabled)
 				{
 					StringBuilder stringBuilder = new();
-					stringBuilder.Append($"Saving completed in {startTick}m\n");
+					stringBuilder.Append($"Saving completed in {startTick}ms\n");
 					stringBuilder.Append($"   {nameof(players)}: {players.count} in {players.elapsed}ms\n");
 					stringBuilder.Append($" {nameof(keepDoors)}: {keepDoors.count} in {keepDoors.elapsed}ms\n");
 					stringBuilder.Append($"    {nameof(guilds)}: {guilds.count} in {guilds.elapsed}ms\n");

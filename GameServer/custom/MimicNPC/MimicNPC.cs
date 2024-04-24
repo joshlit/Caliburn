@@ -2994,7 +2994,6 @@ namespace DOL.GS.Scripts
                     if (charge is null)
                     {
                         #region Calculation : AtlasOF_LongWind
-
                         // --- [START] --- AtlasOF_EtherealBond --------------------------------------------------------
                         AtlasOF_LongWindAbility raLongWind = GetAbility<AtlasOF_LongWindAbility>();
                         if (raLongWind != null)
@@ -3002,8 +3001,7 @@ namespace DOL.GS.Scripts
                             longwind -= (raLongWind.GetAmountForLevel(CalculateSkillLevel(raLongWind)) * 5 / 100);
                         }
                         // --- [START] --- AtlasOF_EtherealBond --------------------------------------------------------
-
-                        #endregion Calculation : AtlasOF_LongWind
+                        #endregion
 
                         regen -= longwind;
 
@@ -3024,20 +3022,15 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            if (!sprinting)
+            if (sprinting)
             {
-                if (Endurance >= MaxEndurance)
-                    selfRegenerationTimer.Stop();
-            }
-            else
-            {
-                long lastmove = TempProperties.GetProperty<long>(PlayerPositionUpdateHandler.LASTMOVEMENTTICK);
-                if ((lastmove > 0 && lastmove + 5000 < CurrentRegion.Time) //cancel sprint after 5sec without moving?
-                    || Endurance - 5 <= 0)
+                if (Endurance - 5 <= 0)
                     Sprint(false);
             }
+            else if (Endurance >= MaxEndurance)
+                selfRegenerationTimer.Stop();
 
-            var rate = EnduranceRegenerationPeriod;
+            ushort rate = EnduranceRegenerationPeriod;
 
             if (IsSitting)
                 rate /= 2;
@@ -7289,8 +7282,8 @@ namespace DOL.GS.Scripts
                 {
                     if (m_respawnTimer == null)
                     {
-                        m_respawnTimer = new AuxECSGameTimer(this);
-                        m_respawnTimer.Callback = new AuxECSGameTimer.AuxECSTimerCallback(RespawnTimerCallback);
+                        m_respawnTimer = new ECSGameTimer(this);
+                        m_respawnTimer.Callback = new ECSGameTimer.ECSTimerCallback(RespawnTimerCallback);
                     }
                     else if (m_respawnTimer.IsAlive)
                     {
@@ -7309,7 +7302,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         /// <param name="respawnTimer">the timer calling this callback</param>
         /// <returns>the new interval</returns>
-        protected override int RespawnTimerCallback(AuxECSGameTimer respawnTimer)
+        protected override int RespawnTimerCallback(ECSGameTimer respawnTimer)
         {
             CurrentRegion.MobsRespawning.TryRemove(this, out _);
 
@@ -8852,14 +8845,15 @@ namespace DOL.GS.Scripts
             get => _sitting;
             set
             {
-                _sitting = value;
-                if (value)
+                if (!_sitting && value)
                 {
                     CurrentSpellHandler?.CasterMoves();
 
                     if (attackComponent.AttackState && ActiveWeaponSlot == eActiveWeaponSlot.Distance)
                         attackComponent.StopAttack();
                 }
+
+                _sitting = value;
             }
         }
 

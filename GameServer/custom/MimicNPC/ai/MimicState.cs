@@ -339,11 +339,11 @@ namespace DOL.AI.Brain
 
     public class MimicState_Roaming : MimicState
     {
-        private const int ROAM_COOLDOWN = 25 * 1000;
-        private long _lastRoamTick = 0;
-
-        private const int ROAM_CHANCE_DEFEND = 20;
-        private const int ROAM_CHANCE_ROAM = 99;
+        private long _nextRoamingTick;
+        private bool _nextRoamingTickSet;
+        protected virtual short Speed => _brain.Body.MaxSpeed;
+        protected virtual int MinCooldown => 1;
+        protected virtual int MaxCooldown => 5;
 
         private bool delayRoam;
 
@@ -367,22 +367,14 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (_brain.Defend && _brain.IsBeyondTetherRange())
-            {
-                _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
+            if (_brain.PreventCombat)
                 return;
-            }
 
-            if (!_brain.PreventCombat)
+            if (_brain.CheckProximityAggro(_brain.AggroRange))
             {
-                if (_brain.CheckProximityAggro(_brain.AggroRange))
-                {
-                    _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
-                    return;
-                }
-            }
-            else
+                _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
                 return;
+            }
 
             if (!_brain.Body.InCombat)
             {
@@ -392,19 +384,19 @@ namespace DOL.AI.Brain
                 {
                     _brain.Body.StopMoving();
                 }
-                else if (!delayRoam && !_brain.Body.IsCasting && !_brain.Body.IsSitting)
+                else if (!delayRoam && !_brain.Body.IsCasting && !_brain.Body.IsSitting && !_brain.Body.IsMoving && !_brain.Body.movementComponent.HasActiveResetHeadingAction)
                 {
-                    int chance = Properties.GAMENPC_RANDOMWALK_CHANCE;
-
-                    if (_brain.PvPMode)
-                        chance = ROAM_CHANCE_ROAM;
-
-                    if (_lastRoamTick + ROAM_COOLDOWN <= GameLoop.GameLoopTime && Util.Chance(chance))
+                    if (!_nextRoamingTickSet)
                     {
-                        if (!_brain.Body.IsMoving)
-                            _brain.Body.Roam(_brain.Body.MaxSpeed);
+                        _nextRoamingTickSet = true;
+                        _nextRoamingTick += Util.Random(MinCooldown, MaxCooldown) * 1000;
+                    }
 
-                        _lastRoamTick = GameLoop.GameLoopTime;
+                    if (ServiceUtils.ShouldTickAdjust(ref _nextRoamingTick))
+                    {
+                        // We're not updating `_nextRoamingTick` here because we want it to be set after the NPC stopped moving.
+                        _nextRoamingTickSet = false;
+                        _brain.Body.Roam(Speed);
                     }
                 }
             }
@@ -557,11 +549,6 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (_brain.IsBeyondTetherRange())
-            {
-                _brain.FSM.SetCurrentState(eFSMStateType.RETURN_TO_SPAWN);
-            }
-
             if (!_brain.PreventCombat)
             {
                 if (_brain.CheckProximityAggro(_brain.AggroRange))

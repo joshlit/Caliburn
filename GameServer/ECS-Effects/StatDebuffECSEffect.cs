@@ -4,7 +4,6 @@ using DOL.GS.API;
 using DOL.GS.PlayerClass;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Scripts;
-using DOL.GS.Spells;
 
 namespace DOL.GS
 {
@@ -17,7 +16,7 @@ namespace DOL.GS
 
         public override void OnStartEffect()
         {
-            if (Owner is GamePlayer || Owner is MimicNPC)
+            if (Owner is IGamePlayer)
                 TryDebuffInterrupt(SpellHandler.Spell, Owner, SpellHandler.Caster);
 
             //if our debuff is already on the target, do not reapply effect
@@ -33,10 +32,7 @@ namespace DOL.GS
                 }
             }
 
-            eBuffBonusCategory debuffCategory = (Caster as GamePlayer)?.CharacterClass is ClassChampion ? eBuffBonusCategory.SpecDebuff : eBuffBonusCategory.Debuff;
-
-            if (Caster is MimicNPC mimic && mimic.CharacterClass is ClassChampion)
-                debuffCategory = eBuffBonusCategory.SpecDebuff;
+            eBuffBonusCategory debuffCategory = (Caster as IGamePlayer)?.CharacterClass is ClassChampion ? eBuffBonusCategory.SpecDebuff : eBuffBonusCategory.Debuff;
 
             if (EffectType == eEffect.StrConDebuff || EffectType == eEffect.DexQuiDebuff)
             {
@@ -75,10 +71,8 @@ namespace DOL.GS
 
                     var effectiveValue = SpellHandler.Spell.Value * Effectiveness;
 
-                    Owner.BuffBonusMultCategory1.Set((int) eProperty.MaxSpeed, EffectType,
-                        1.0 - effectiveValue * 0.01);
-                    UnbreakableSpeedDecreaseSpellHandler.SendUpdates(Owner);
-
+                    Owner.BuffBonusMultCategory1.Set((int) eProperty.MaxSpeed, EffectType, 1.0 - effectiveValue * 0.01);
+                    Owner.OnMaxSpeedChange();
                 }
                 else
                 {
@@ -106,10 +100,7 @@ namespace DOL.GS
 
         public override void OnStopEffect()
         {
-            eBuffBonusCategory debuffCategory = (Caster as GamePlayer)?.CharacterClass is ClassChampion ? eBuffBonusCategory.SpecDebuff : eBuffBonusCategory.Debuff;
-
-            if (Caster is MimicNPC mimic && mimic.CharacterClass is ClassChampion)
-                debuffCategory = eBuffBonusCategory.SpecDebuff;
+            eBuffBonusCategory debuffCategory = (Caster as IGamePlayer)?.CharacterClass is ClassChampion ? eBuffBonusCategory.SpecDebuff : eBuffBonusCategory.Debuff;
 
             if (EffectType == eEffect.StrConDebuff || EffectType == eEffect.DexQuiDebuff)
             {
@@ -138,7 +129,7 @@ namespace DOL.GS
                     }
 
                     Owner.BuffBonusMultCategory1.Remove((int) eProperty.MaxSpeed, EffectType);
-                    UnbreakableSpeedDecreaseSpellHandler.SendUpdates(Owner);
+                    Owner.OnMaxSpeedChange();
                 }
                 else
                 {
@@ -244,15 +235,10 @@ namespace DOL.GS
                 spell.ID != 9606)
                 return;
             
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 player.StopCurrentSpellcast();
                 player.StartInterruptTimer(player.SpellInterruptDuration, AttackData.eAttackType.Spell, caster);
-            }
-            else if (living is MimicNPC mimic)
-            {
-                mimic.StopCurrentSpellcast();
-                mimic.StartInterruptTimer(mimic.SpellInterruptDuration, AttackData.eAttackType.Spell, caster);
             }
         }
     }

@@ -55,7 +55,6 @@ namespace DOL.GS.Scripts
             Level = 79;
             Gender = eGender.Neutral;
             BodyType = 11; // undead
-            MaxDistance = 1500;
             TetherRange = 2000;
             RoamingRange = 400;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
@@ -137,7 +136,7 @@ namespace DOL.AI.Brain
                 Spawn(); // spawn images
                 foreach (GameNPC mob_c in Body.GetNPCsInRadius(2000))
                 {
-                    if (mob_c?.Brain is IlronImagesBrain && mob_c.IsAlive && mob_c.IsAvailable)
+                    if (mob_c?.Brain is IlronImagesBrain && mob_c.IsAlive && mob_c.CanJoinFight)
                     {
                         AddAggroListTo(mob_c.Brain as IlronImagesBrain);
                     }
@@ -210,7 +209,6 @@ namespace DOL.GS
             Level = 70;
             RoamingRange = 350;
             RespawnInterval = -1;
-            MaxDistance = 1500;
             TetherRange = 2000;
             Faction = FactionMgr.GetFactionByID(64);
             Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));

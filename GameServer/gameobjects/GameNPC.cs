@@ -9,7 +9,6 @@ using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
-using DOL.GS.Effects;
 using DOL.GS.Housing;
 using DOL.GS.Movement;
 using DOL.GS.PacketHandler;
@@ -789,13 +788,13 @@ namespace DOL.GS
 
                 double movementAmount = MovementElapsedTicks * movementComponent.Velocity.X * 0.001;
 
-                if (!IsDestinationValid)
-                    return (int)(m_x + movementAmount);
+				if (!IsDestinationValid)
+					return (int) Math.Round(m_x + movementAmount);
 
-                double absMovementAmount = Math.Abs(movementAmount);
-                return Math.Abs(Destination.X - m_x) < absMovementAmount ? Destination.X : (int)(m_x + movementAmount);
-            }
-        }
+				double absMovementAmount = Math.Abs(movementAmount);
+				return Math.Abs(Destination.X - m_x) < absMovementAmount ? Destination.X : (int) Math.Round(m_x + movementAmount);
+			}
+		}
 
         public int RealX => m_x;
 
@@ -813,13 +812,13 @@ namespace DOL.GS
 
                 double movementAmount = MovementElapsedTicks * movementComponent.Velocity.Y * 0.001;
 
-                if (!IsDestinationValid)
-                    return (int)(m_y + movementAmount);
+				if (!IsDestinationValid)
+					return (int) Math.Round(m_y + movementAmount);
 
-                double absMovementAmount = Math.Abs(movementAmount);
-                return Math.Abs(Destination.Y - m_y) < absMovementAmount ? Destination.Y : (int)(m_y + movementAmount);
-            }
-        }
+				double absMovementAmount = Math.Abs(movementAmount);
+				return Math.Abs(Destination.Y - m_y) < absMovementAmount ? Destination.Y : (int) Math.Round(m_y + movementAmount);
+			}
+		}
 
         public int RealY => m_y;
 
@@ -837,13 +836,13 @@ namespace DOL.GS
 
                 double movementAmount = MovementElapsedTicks * movementComponent.Velocity.Z * 0.001;
 
-                if (!IsDestinationValid)
-                    return (int)(m_z + movementAmount);
+				if (!IsDestinationValid)
+					return (int) Math.Round(m_z + movementAmount);
 
-                double absMovementAmount = Math.Abs(movementAmount);
-                return Math.Abs(Destination.Z - m_z) < absMovementAmount ? Destination.Z : (int)(m_z + movementAmount);
-            }
-        }
+				double absMovementAmount = Math.Abs(movementAmount);
+				return Math.Abs(Destination.Z - m_z) < absMovementAmount ? Destination.Z : (int) Math.Round(m_z + movementAmount);
+			}
+		}
 
         public int RealZ => m_z;
 
@@ -854,19 +853,11 @@ namespace DOL.GS
 
         public bool WasStealthed { get; private set; } = false;
 
-        protected int m_maxdistance;
-
-        /// <summary>
-        /// The Mob's max distance from its spawn before return automatically
-        /// if MaxDistance > 0 ... the amount is the normal value
-        /// if MaxDistance = 0 ... no maxdistance check
-        /// if MaxDistance less than 0 ... the amount is calculated in percent of the value and the aggrorange (in StandardMobBrain)
-        /// </summary>
-        public int MaxDistance
-        {
-            get { return m_maxdistance; }
-            set { m_maxdistance = value; }
-        }
+		public override void OnMaxSpeedChange()
+		{
+			base.OnMaxSpeedChange();
+			movementComponent.RestartCurrentMovement();
+		}
 
         protected int m_tetherRange;
 
@@ -1195,15 +1186,14 @@ namespace DOL.GS
                 }
             }
 
-            m_race = (short)dbMob.Race;
-            m_bodyType = (ushort)dbMob.BodyType;
-            m_houseNumber = (ushort)dbMob.HouseNumber;
-            m_maxdistance = dbMob.MaxDistance;
-            RoamingRange = dbMob.RoamingRange;
-            m_isCloakHoodUp = dbMob.IsCloakHoodUp;
-            m_visibleActiveWeaponSlots = dbMob.VisibleWeaponSlots;
-            Gender = (eGender)dbMob.Gender;
-            OwnerID = dbMob.OwnerID;
+			m_race = (short)dbMob.Race;
+			m_bodyType = (ushort)dbMob.BodyType;
+			m_houseNumber = (ushort)dbMob.HouseNumber;
+			RoamingRange = dbMob.RoamingRange;
+			m_isCloakHoodUp = dbMob.IsCloakHoodUp;
+			m_visibleActiveWeaponSlots = dbMob.VisibleWeaponSlots;
+			Gender = (eGender)dbMob.Gender;
+			OwnerID = dbMob.OwnerID;
 
             LoadTemplate(NPCTemplate);
         }
@@ -1310,15 +1300,14 @@ namespace DOL.GS
             else
                 mob.NPCTemplateID = -1;
 
-            mob.Race = Race;
-            mob.BodyType = BodyType;
-            mob.PathID = PathID;
-            mob.MaxDistance = m_maxdistance;
-            mob.IsCloakHoodUp = m_isCloakHoodUp;
-            mob.Gender = (byte)Gender;
-            mob.VisibleWeaponSlots = m_visibleActiveWeaponSlots;
-            mob.PackageID = PackageID;
-            mob.OwnerID = OwnerID;
+			mob.Race = Race;
+			mob.BodyType = BodyType;
+			mob.PathID = PathID;
+			mob.IsCloakHoodUp = m_isCloakHoodUp;
+			mob.Gender = (byte)Gender;
+			mob.VisibleWeaponSlots = m_visibleActiveWeaponSlots;
+			mob.PackageID = PackageID;
+			mob.OwnerID = OwnerID;
 
             if (InternalID == null)
             {
@@ -1413,16 +1402,13 @@ namespace DOL.GS
             }
             this.Size = choosenSize;
 
-            #endregion Models, Sizes, Levels, Gender
-
-            #region Misc Stats
-
-            MaxDistance = template.MaxDistance;
-            Race = (short)template.Race;
-            BodyType = template.BodyType;
-            MaxSpeedBase = template.MaxSpeed;
-            Flags = (eFlags)template.Flags;
-            MeleeDamageType = template.MeleeDamageType;
+			#region Misc Stats
+			Race = (short) template.Race;
+			BodyType = template.BodyType;
+			MaxSpeedBase = template.MaxSpeed;
+			Flags = (eFlags)template.Flags;
+			MeleeDamageType = template.MeleeDamageType;
+			#endregion
 
             #endregion Misc Stats
 
@@ -2040,7 +2026,13 @@ namespace DOL.GS
             m_spawnPoint.Z = Z;
             m_spawnHeading = Heading;
 
-            Brain?.Start();
+			if (Brain != null)
+			{
+				// Delay the first think tick a bit to prevent clients from sending positive LoS checks.
+				// when they shouldn't, which can happen right after 'SendNPCCreate' and makes mobs aggro through walls.
+				Brain.NextThinkTick = GameLoop.GameLoopTime + 750;
+				Brain.Start();
+			}
 
             if (Mana <= 0 && MaxMana > 0)
                 Mana = MaxMana;
@@ -2494,33 +2486,47 @@ namespace DOL.GS
             }
         }
 
-        /// <summary>
-        /// Adds messages to ArrayList which are sent when object is targeted
-        /// </summary>
-        /// <param name="player">GamePlayer that is examining this object</param>
-        /// <returns>list with string messages</returns>
-        public override IList GetExamineMessages(GamePlayer player)
-        {
-            switch (player.Client.Account.Language)
-            {
-                case "EN":
-                {
-                    IList list = base.GetExamineMessages(player);
-                    // Message: You examine {0}. {1} is {2}.
-                    list.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetExamineMessages.YouExamine", GetName(0, false), GetPronoun(0, true), GetAggroLevelString(player, false)));
-                    return list;
-                }
-                default:
-                {
-                    IList list = new ArrayList(4);
-                    // Message: You examine {0}. {1} is {2}.
-                    list.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetExamineMessages.YouExamine",
-                                                        GetName(0, false, player.Client.Account.Language, this),
-                                                        GetPronoun(0, true, player.Client.Account.Language), GetAggroLevelString(player, false)));
-                    return list;
-                }
-            }
-        }
+		/// <summary>
+		/// Adds messages to ArrayList which are sent when object is targeted
+		/// </summary>
+		/// <param name="player">GamePlayer that is examining this object</param>
+		/// <returns>list with string messages</returns>
+		public override IList GetExamineMessages(GamePlayer player)
+		{
+			IList list;
+			string message;
+			string extra = Brain is ScoutMobBrain ? " and is a scout" : null;
+
+			// Message: You examine {0}. {1} is {2}.
+			switch (player.Client.Account.Language)
+			{
+				case "EN":
+				{
+					list = base.GetExamineMessages(player);
+					message = LanguageMgr.GetTranslation(player.Client.Account.Language,
+						"GameNPC.GetExamineMessages.YouExamine",
+						GetName(0, false),
+						GetPronoun(0, true),
+						GetAggroLevelString(player, false),
+						extra);
+					break;
+				}
+				default:
+				{
+					list = new ArrayList(4);
+					message = LanguageMgr.GetTranslation(player.Client.Account.Language,
+						"GameNPC.GetExamineMessages.YouExamine",
+						GetName(0, false, player.Client.Account.Language, this),
+						GetPronoun(0, true, player.Client.Account.Language),
+						GetAggroLevelString(player, false),
+						extra);
+					break;
+				}
+			}
+
+			list.Add(message);
+			return list;
+		}
 
         /*		/// <summary>
 				/// Pronoun of this NPC in case you need to refer it in 3rd person
@@ -2820,11 +2826,14 @@ namespace DOL.GS
             {
                 base.Health = value;
 
-                // Slow NPCs down when they are hurt.
-                if (CurrentSpeed > MaxSpeed)
-                    CurrentSpeed = MaxSpeed;
-            }
-        }
+                if (this is not MimicNPC)
+                {
+                    // Slow NPCs down when they are hurt.
+                    if (CurrentSpeed > MaxSpeed)
+                        OnMaxSpeedChange();
+                }
+			}
+		}
 
         /// <summary>
         /// npcs can always have mana to cast
@@ -3163,20 +3172,18 @@ namespace DOL.GS
             return false;
         }
 
-        /// <summary>
-        /// The time to wait before each mob respawn
-        /// </summary>
-        protected int m_respawnInterval = -1;
-
-        /// <summary>
-        /// A timer that will respawn this mob
-        /// </summary>
-        protected AuxECSGameTimer m_respawnTimer;
-
-        /// <summary>
-        /// The sync object for respawn timer modifications
-        /// </summary>
-        protected readonly object m_respawnTimerLock = new object();
+		/// <summary>
+		/// The time to wait before each mob respawn
+		/// </summary>
+		protected int m_respawnInterval = -1;
+		/// <summary>
+		/// A timer that will respawn this mob
+		/// </summary>
+		protected ECSGameTimer m_respawnTimer;
+		/// <summary>
+		/// The sync object for respawn timer modifications
+		/// </summary>
+		protected readonly object m_respawnTimerLock = new object();
 
         /// <summary>
         /// The Respawn Interval of this mob in milliseconds
@@ -3257,39 +3264,39 @@ namespace DOL.GS
                 m_healthRegenerationTimer = null;
             }
 
-            int respawnInt = RespawnInterval;
-            int minBound = (int)Math.Floor(respawnInt * .95);
-            int maxBound = (int)Math.Floor(respawnInt * 1.05);
-            respawnInt = Util.Random(minBound, maxBound);
-            if (respawnInt > 0)
-            {
-                lock (m_respawnTimerLock)
-                {
-                    if (m_respawnTimer == null)
-                    {
-                        m_respawnTimer = new AuxECSGameTimer(this);
-                        m_respawnTimer.Callback = new AuxECSGameTimer.AuxECSTimerCallback(RespawnTimerCallback);
-                    }
-                    else if (m_respawnTimer.IsAlive)
-                    {
-                        m_respawnTimer.Stop();
-                    }
-                    // register Mob as "respawning"
-                    CurrentRegion.MobsRespawning.TryAdd(this, respawnInt);
+			int respawnInt = RespawnInterval;
+			int minBound = (int) Math.Floor(respawnInt * .95);
+			int maxBound = (int) Math.Floor(respawnInt * 1.05);
+			respawnInt = Util.Random(minBound, maxBound);
+			if (respawnInt > 0)
+			{
+				lock (m_respawnTimerLock)
+				{
+					if (m_respawnTimer == null)
+					{
+						m_respawnTimer = new ECSGameTimer(this);
+						m_respawnTimer.Callback = new ECSGameTimer.ECSTimerCallback(RespawnTimerCallback);
+					}
+					else if (m_respawnTimer.IsAlive)
+					{
+						m_respawnTimer.Stop();
+					}
+					// register Mob as "respawning"
+					CurrentRegion.MobsRespawning.TryAdd(this, respawnInt);
 
                     m_respawnTimer.Start(respawnInt);
                 }
             }
         }
 
-        /// <summary>
-        /// The callback that will respawn this mob
-        /// </summary>
-        /// <param name="respawnTimer">the timer calling this callback</param>
-        /// <returns>the new interval</returns>
-        protected virtual int RespawnTimerCallback(AuxECSGameTimer respawnTimer)
-        {
-            CurrentRegion.MobsRespawning.TryRemove(this, out _);
+		/// <summary>
+		/// The callback that will respawn this mob
+		/// </summary>
+		/// <param name="respawnTimer">the timer calling this callback</param>
+		/// <returns>the new interval</returns>
+		protected virtual int RespawnTimerCallback(ECSGameTimer respawnTimer)
+		{
+			CurrentRegion.MobsRespawning.TryRemove(this, out _);
 
             lock (m_respawnTimerLock)
             {
@@ -3318,21 +3325,17 @@ namespace DOL.GS
             Mana = MaxMana;
             Endurance = MaxEndurance;
 
-            int origSpawnX = m_spawnPoint.X;
-            int origSpawnY = m_spawnPoint.Y;
-            X = m_spawnPoint.X;
-            Y = m_spawnPoint.Y;
-            Z = m_spawnPoint.Z;
-            Heading = m_spawnHeading;
-            AddToWorld();
-            m_spawnPoint.X = origSpawnX;
-            m_spawnPoint.Y = origSpawnY;
-
-            // Delay the first think tick a bit to prevent clients from sending positive LoS check
-            // when they shouldn't, which can happen right after 'SendNPCCreate' and makes mobs aggro through walls.
-            Brain.NextThinkTick = GameLoop.GameLoopTime + 1250;
-            return 0;
-        }
+			int origSpawnX = m_spawnPoint.X;
+			int origSpawnY = m_spawnPoint.Y;
+			X = m_spawnPoint.X;
+			Y = m_spawnPoint.Y;
+			Z = m_spawnPoint.Z;
+			Heading = m_spawnHeading;
+			AddToWorld();
+			m_spawnPoint.X = origSpawnX;
+			m_spawnPoint.Y = origSpawnY;
+			return 0;
+		}
 
         /// <summary>
         /// The chance for a critical hit
@@ -3665,36 +3668,49 @@ namespace DOL.GS
 
         #region Spell
 
-        private List<Spell> m_spells = new(0);
-        protected ConcurrentDictionary<GameObject, (Spell, SpellLine, long)> m_castSpellLosChecks = new();
-        protected bool m_spellCastedFromLosCheck;
+		private List<Spell> m_spells = new(0);
+		private ConcurrentDictionary<GameObject, List<SpellWaitingForLosCheck>> _spellsWaitingForLosCheck = new();
 
-        /// <summary>
-        /// property of spell array of NPC
-        /// </summary>
-        public virtual IList Spells
-        {
-            get { return m_spells; }
-            set
-            {
-                if (value == null || value.Count < 1)
-                {
-                    m_spells.Clear();
-                    InstantHarmfulSpells = null;
-                    HarmfulSpells = null;
-                    InstantHealSpells = null;
-                    HealSpells = null;
-                    InstantMiscSpells = null;
-                    MiscSpells = null;
-                }
-                else
-                {
-                    m_spells = value.Cast<Spell>().ToList();
-                    //if(!SortedSpells)
-                    SortSpells();
-                }
-            }
-        }
+		public class SpellWaitingForLosCheck
+		{
+			public Spell Spell { get; set; }
+			public SpellLine SpellLine { get; set; }
+			public long RequestTime { get; set; }
+
+			public SpellWaitingForLosCheck(Spell spell, SpellLine spellLine, long requestTime)
+			{
+				Spell = spell;
+				SpellLine = spellLine;
+				RequestTime = requestTime;
+			}
+		}
+
+		/// <summary>
+		/// property of spell array of NPC
+		/// </summary>
+		public virtual IList Spells
+		{
+			get { return m_spells; }
+			set
+			{
+				if (value == null || value.Count < 1)
+				{
+					m_spells.Clear();
+					InstantHarmfulSpells = null;
+					HarmfulSpells = null;
+					InstantHealSpells = null;
+					HealSpells = null;
+					InstantMiscSpells = null;
+					MiscSpells = null;
+				}
+				else
+				{
+					m_spells = value.Cast<Spell>().ToList();
+					//if(!SortedSpells)
+						SortSpells();
+				}
+			}
+		}
 
         /// <summary>
         /// Harmful spell list and accessor
@@ -3804,53 +3820,52 @@ namespace DOL.GS
                 if (spell == null)
                     continue;
 
-                if (spell.IsHarmful)
-                {
-                    if (spell.IsInstantCast)
-                    {
-                        if (InstantHarmfulSpells == null)
-                            InstantHarmfulSpells = new List<Spell>(1);
-                        InstantHarmfulSpells.Add(spell);
-                    }
-                    else
-                    {
-                        if (HarmfulSpells == null)
-                            HarmfulSpells = new List<Spell>(1);
-                        HarmfulSpells.Add(spell);
-                    }
-                }
-                else if (spell.IsHealing)
-                {
-                    if (spell.IsInstantCast)
-                    {
-                        if (InstantHealSpells == null)
-                            InstantHealSpells = new List<Spell>(1);
-                        InstantHealSpells.Add(spell);
-                        log.Info("HealType for instant: " + spell.SpellType);
-                    }
-                    else
-                    {
-                        if (HealSpells == null)
-                            HealSpells = new List<Spell>(1);
-                        HealSpells.Add(spell);
-                    }
-                }
-                else
-                {
-                    if (spell.IsInstantCast)
-                    {
-                        if (InstantMiscSpells == null)
-                            InstantMiscSpells = new List<Spell>(1);
-                        InstantMiscSpells.Add(spell);
-                    }
-                    else
-                    {
-                        if (MiscSpells == null)
-                            MiscSpells = new List<Spell>(1);
-                        MiscSpells.Add(spell);
-                    }
-                }
-            } // foreach
+				if (spell.IsHarmful)
+				{
+					if (spell.IsInstantCast)
+					{
+						if (InstantHarmfulSpells == null)
+							InstantHarmfulSpells = new List<Spell>(1);
+						InstantHarmfulSpells.Add(spell);
+					}
+					else
+					{
+						if (HarmfulSpells == null)
+							HarmfulSpells = new List<Spell>(1);
+						HarmfulSpells.Add(spell);
+					}
+				}
+				else if (spell.IsHealing)
+				{
+					if (spell.IsInstantCast)
+					{
+						if (InstantHealSpells == null)
+							InstantHealSpells = new List<Spell>(1);
+						InstantHealSpells.Add(spell);
+					}
+					else
+					{
+						if (HealSpells == null)
+							HealSpells = new List<Spell>(1);
+						HealSpells.Add(spell);
+					}
+				}
+				else
+				{
+					if (spell.IsInstantCast)
+					{
+						if (InstantMiscSpells == null)
+							InstantMiscSpells = new List<Spell>(1);
+						InstantMiscSpells.Add(spell);
+					}
+					else
+					{
+						if (MiscSpells == null)
+							MiscSpells = new List<Spell>(1);
+						MiscSpells.Add(spell);
+					}
+				}
+			} // foreach
 
             //SortedSpells = true;
         }
@@ -3862,14 +3877,11 @@ namespace DOL.GS
         {
             bool casted;
 
-            if (IsIncapacitated)
-                return false;
-
-            if (checkLos)
-                casted = CastSpell(spell, line);
-            else
-            {
-                Spell spellToCast;
+			if (checkLos)
+				casted = CastSpell(spell, line);
+			else
+			{
+				Spell spellToCast;
 
                 if (line.KeyName == GlobalSpellsLines.Mob_Spells && this is not MimicNPC)
                 {
@@ -3887,23 +3899,29 @@ namespace DOL.GS
         }
 
 		/// <summary>
-		/// Cast a spell with LOS check to a player
+		/// Cast a spell with LoS check if possible.
 		/// </summary>
-		/// <returns>Whether the spellcast started successfully</returns>
+		/// <returns>True if the spellcast started successfully. False otherwise or if a LoS check was initiated.</returns>
 		public override bool CastSpell(Spell spell, SpellLine line, ISpellCastingAbilityHandler spellCastingAbilityHandler = null)
 		{
-			// Good opportunity to clean up our 'm_spellTargetLosChecks'.
-			// Entries older than 3 seconds are removed, so that another check can be performed in case the previous one never was.
-			for (int i = m_castSpellLosChecks.Count - 1; i >= 0; i--)
+			// Clean up our '_spellsWaitingForLosCheck'. Entries older than 2 seconds are removed.
+			foreach (var pair in _spellsWaitingForLosCheck)
 			{
-				var element = m_castSpellLosChecks.ElementAt(i);
+				List<SpellWaitingForLosCheck> list = pair.Value;
 
-                if (GameLoop.GameLoopTime - element.Value.Item3 >= 3000)
-                    m_castSpellLosChecks.TryRemove(element.Key, out _);
-            }
+				lock (((ICollection) list).SyncRoot)
+				{
+					for (int i = list.Count - 1; i >= 0; i--)
+					{
+						if (ServiceUtils.ShouldTick(list[i].RequestTime + 2000))
+							list.RemoveAt(i);
+					}
 
-            if (IsIncapacitated)
-                return false;
+					// We can keep the list if we're about to add anything to it.
+					if (list.Count == 0 && TargetObject != pair.Key)
+						_spellsWaitingForLosCheck.TryRemove(pair.Key, out _);
+				}
+			}
 
             Spell spellToCast = null;
 
@@ -3919,10 +3937,7 @@ namespace DOL.GS
             if (TargetObject == this || TargetObject == null)
                 return base.CastSpell(spellToCast, line);
 
-            if (spellToCast.Range > 0 && !IsWithinRadius(TargetObject, spellToCast.Range))
-                return false;
-
-            GamePlayer LosChecker = TargetObject as GamePlayer;
+			GamePlayer LosChecker = TargetObject as GamePlayer;
 
             if (LosChecker == null && Brain is IControlledBrain controlledBrain)
                 LosChecker = controlledBrain.GetPlayerOwner();
@@ -3942,43 +3957,73 @@ namespace DOL.GS
 			if (LosChecker == null)
 				return base.CastSpell(spellToCast, line, spellCastingAbilityHandler);
 
-            bool spellCastedFromLosCheck = m_spellCastedFromLosCheck;
+			_spellsWaitingForLosCheck.AddOrUpdate(TargetObject, Add, Update, new SpellWaitingForLosCheck(spellToCast, line, GameLoop.GameLoopTime));
+			return false;
 
-            if (spellCastedFromLosCheck)
-                m_spellCastedFromLosCheck = false;
+			List<SpellWaitingForLosCheck> Add(GameObject key, SpellWaitingForLosCheck arg)
+			{
+				LosChecker.Out.SendCheckLos(this, TargetObject, new CheckLosResponse(CastSpellLosCheckReply));
+				List<SpellWaitingForLosCheck> list = [arg];
+				return list;
+			}
 
-            if (m_castSpellLosChecks.TryAdd(TargetObject, new(spellToCast, line, GameLoop.GameLoopTime)))
-                LosChecker.Out.SendCheckLos(this, TargetObject, new CheckLosResponse(CastSpellLosCheckReply));
+			List<SpellWaitingForLosCheck> Update(GameObject key, List<SpellWaitingForLosCheck> oldValue, SpellWaitingForLosCheck arg)
+			{
+				// This LoS check will not necessarily result in an actual packet being sent to the client, but it will trigger a second call to the callback.
+				LosChecker.Out.SendCheckLos(this, TargetObject, new CheckLosResponse(CastSpellLosCheckReply));
 
-            return spellCastedFromLosCheck;
-        }
+				lock (((ICollection) oldValue).SyncRoot)
+				{
+					oldValue.Add(arg);
+				}
 
-        public void CastSpellLosCheckReply(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
-        {
-            GameObject target = CurrentRegion.GetObject(targetOID);
+				return oldValue;
+			}
+		}
 
-            if (target == null)
-                return;
+		public virtual void CastSpellLosCheckReply(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
+		{
+			GameObject target = CurrentRegion.GetObject(targetOID);
 
-            if (m_castSpellLosChecks.TryRemove(target, out (Spell, SpellLine, long) value))
-            {
-                Spell spell = value.Item1;
-                SpellLine line = value.Item2;
+			if (target == null)
+				return;
 
-                if (response is eLosCheckResponse.TRUE && line != null && spell != null)
-                {
-                    if (target is GameLiving livingTarget && livingTarget.EffectList.GetOfType<NecromancerShadeEffect>() != null)
-                        target = livingTarget.ControlledBrain?.Body;
+			if (!_spellsWaitingForLosCheck.TryRemove(target, out List<SpellWaitingForLosCheck> list))
+				return;
 
-                    m_spellCastedFromLosCheck = CastSpell(spell, line, target as GameLiving);
-                }
-                else
-                {
-                    m_spellCastedFromLosCheck = false;
-                    Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.TargetNotInView));
-                }
-            }
-        }
+			bool success = response is eLosCheckResponse.TRUE;
+			List<SpellWaitingForLosCheck> spellsWaitingForLosCheck;
+
+			lock (((ICollection) list).SyncRoot)
+			{
+				spellsWaitingForLosCheck = list.ToList();
+				// Don't bother removing the list here. It'll be done by `CastSpell`.
+				list.Clear();
+			}
+
+			foreach (SpellWaitingForLosCheck spellWaitingForLosCheck in spellsWaitingForLosCheck)
+			{
+				Spell spell = spellWaitingForLosCheck.Spell;
+				SpellLine spellLine = spellWaitingForLosCheck.SpellLine;
+
+				if (success && spellLine != null && spell != null)
+					OnCastSpellLosCheckSuccess(target, spell, spellLine);
+				else
+					OnCastSpellLosCheckFail(target);
+			}
+		}
+
+		public virtual void OnCastSpellLosCheckSuccess(GameObject target, Spell spell, SpellLine spellLine)
+		{
+			CastSpell(spell, spellLine, target as GameLiving);
+		}
+
+		public virtual void OnCastSpellLosCheckFail(GameObject target)
+		{
+			// In case the NPC changes target while casting on the current one and the first LoS check was positive.
+			if (castingComponent.QueuedSpellHandler?.Target == target)
+				castingComponent.ClearUpQueuedSpellHandler();
+		}
 
         #endregion Spell
 
@@ -4410,25 +4455,15 @@ namespace DOL.GS
 
         #endregion ControlledNPCs
 
-        /// <summary>
-        /// Whether this NPC is available to add on a fight.
-        /// </summary>
-        public virtual bool IsAvailable
-        {
-            get { return !(Brain is IControlledBrain) && !InCombat; }
-        }
+		/// <summary>
+		/// Whether this NPC is available to add on a fight.
+		/// </summary>
+		public virtual bool CanJoinFight => !InCombat && Brain is not IControlledBrain && Brain is StandardMobBrain brain && !brain.HasAggro;
 
-        /// <summary>
-        /// Whether this NPC is aggressive.
-        /// </summary>
-        public virtual bool IsAggressive
-        {
-            get
-            {
-                ABrain brain = Brain;
-                return (brain == null) ? false : (brain is IOldAggressiveBrain);
-            }
-        }
+		/// <summary>
+		/// Whether this NPC is aggressive.
+		/// </summary>
+		public virtual bool IsAggressive => Brain is IOldAggressiveBrain;
 
         /// <summary>
         /// Whether this NPC is a friend or not.
@@ -4487,55 +4522,54 @@ namespace DOL.GS
             if (copyTarget == null)
                 copyTarget = new GameNPC();
 
-            copyTarget.TranslationId = TranslationId;
-            copyTarget.BlockChance = BlockChance;
-            copyTarget.BodyType = BodyType;
-            copyTarget.CanUseLefthandedWeapon = CanUseLefthandedWeapon;
-            copyTarget.Charisma = Charisma;
-            copyTarget.Constitution = Constitution;
-            copyTarget.CurrentRegion = CurrentRegion;
-            copyTarget.Dexterity = Dexterity;
-            copyTarget.Empathy = Empathy;
-            copyTarget.Endurance = Endurance;
-            copyTarget.EquipmentTemplateID = EquipmentTemplateID;
-            copyTarget.EvadeChance = EvadeChance;
-            copyTarget.Faction = Faction;
-            copyTarget.Flags = Flags;
-            copyTarget.GuildName = GuildName;
-            copyTarget.ExamineArticle = ExamineArticle;
-            copyTarget.MessageArticle = MessageArticle;
-            copyTarget.Heading = Heading;
-            copyTarget.Intelligence = Intelligence;
-            copyTarget.IsCloakHoodUp = IsCloakHoodUp;
-            copyTarget.IsCloakInvisible = IsCloakInvisible;
-            copyTarget.IsHelmInvisible = IsHelmInvisible;
-            copyTarget.LeftHandSwingChance = LeftHandSwingChance;
-            copyTarget.Level = Level;
-            copyTarget.LoadedFromScript = LoadedFromScript;
-            copyTarget.MaxSpeedBase = MaxSpeedBase;
-            copyTarget.MeleeDamageType = MeleeDamageType;
-            copyTarget.Model = Model;
-            copyTarget.Name = Name;
-            copyTarget.Suffix = Suffix;
-            copyTarget.NPCTemplate = NPCTemplate;
-            copyTarget.ParryChance = ParryChance;
-            copyTarget.PathID = PathID;
-            copyTarget.Quickness = Quickness;
-            copyTarget.Piety = Piety;
-            copyTarget.Race = Race;
-            copyTarget.Realm = Realm;
-            copyTarget.RespawnInterval = RespawnInterval;
-            copyTarget.RoamingRange = RoamingRange;
-            copyTarget.Size = Size;
-            copyTarget.SaveInDB = SaveInDB;
-            copyTarget.Strength = Strength;
-            copyTarget.TetherRange = TetherRange;
-            copyTarget.MaxDistance = MaxDistance;
-            copyTarget.X = X;
-            copyTarget.Y = Y;
-            copyTarget.Z = Z;
-            copyTarget.OwnerID = OwnerID;
-            copyTarget.PackageID = PackageID;
+			copyTarget.TranslationId = TranslationId;
+			copyTarget.BlockChance = BlockChance;
+			copyTarget.BodyType = BodyType;
+			copyTarget.CanUseLefthandedWeapon = CanUseLefthandedWeapon;
+			copyTarget.Charisma = Charisma;
+			copyTarget.Constitution = Constitution;
+			copyTarget.CurrentRegion = CurrentRegion;
+			copyTarget.Dexterity = Dexterity;
+			copyTarget.Empathy = Empathy;
+			copyTarget.Endurance = Endurance;
+			copyTarget.EquipmentTemplateID = EquipmentTemplateID;
+			copyTarget.EvadeChance = EvadeChance;
+			copyTarget.Faction = Faction;
+			copyTarget.Flags = Flags;
+			copyTarget.GuildName = GuildName;
+			copyTarget.ExamineArticle = ExamineArticle;
+			copyTarget.MessageArticle = MessageArticle;
+			copyTarget.Heading = Heading;
+			copyTarget.Intelligence = Intelligence;
+			copyTarget.IsCloakHoodUp = IsCloakHoodUp;
+			copyTarget.IsCloakInvisible = IsCloakInvisible;
+			copyTarget.IsHelmInvisible = IsHelmInvisible;
+			copyTarget.LeftHandSwingChance = LeftHandSwingChance;
+			copyTarget.Level = Level;
+			copyTarget.LoadedFromScript = LoadedFromScript;
+			copyTarget.MaxSpeedBase = MaxSpeedBase;
+			copyTarget.MeleeDamageType = MeleeDamageType;
+			copyTarget.Model = Model;
+			copyTarget.Name = Name;
+			copyTarget.Suffix = Suffix;
+			copyTarget.NPCTemplate = NPCTemplate;
+			copyTarget.ParryChance = ParryChance;
+			copyTarget.PathID = PathID;
+			copyTarget.Quickness = Quickness;
+			copyTarget.Piety = Piety;
+			copyTarget.Race = Race;
+			copyTarget.Realm = Realm;
+			copyTarget.RespawnInterval = RespawnInterval;
+			copyTarget.RoamingRange = RoamingRange;
+			copyTarget.Size = Size;
+			copyTarget.SaveInDB = SaveInDB;
+			copyTarget.Strength = Strength;
+			copyTarget.TetherRange = TetherRange;
+			copyTarget.X = X;
+			copyTarget.Y = Y;
+			copyTarget.Z = Z;
+			copyTarget.OwnerID = OwnerID;
+			copyTarget.PackageID = PackageID;
 
             if (Abilities != null && Abilities.Count > 0)
             {
@@ -4596,20 +4630,19 @@ namespace DOL.GS
             if (movementComponent == null)
                 movementComponent = (NpcMovementComponent)base.movementComponent;
 
-            Level = 1;
-            m_health = MaxHealth;
-            Realm = 0;
-            m_name = "new mob";
-            m_model = 408;
-            MaxSpeedBase = 200;
-            GuildName = "";
-            m_size = 50;
-            m_flags = 0;
-            m_maxdistance = 0;
-            RoamingRange = 0;
-            OwnerID = "";
-            m_spawnPoint = new Point3D();
-            LinkedFactions = new ArrayList(1);
+			Level = 1;
+			m_health = MaxHealth;
+			Realm = 0;
+			m_name = "new mob";
+			m_model = 408;
+			MaxSpeedBase = 200;
+			GuildName = "";
+			m_size = 50;
+			m_flags = 0;
+			RoamingRange = 0;
+			OwnerID = "";
+			m_spawnPoint = new Point3D();
+			LinkedFactions = new ArrayList(1);
 
             if (m_ownBrain == null)
             {

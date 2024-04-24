@@ -294,7 +294,7 @@ namespace DOL.GS
             if (house == null || !house.HasOwnerPermissions(player))
                 return false;
 
-            if (player.TempProperties.RemoveAndGetProperty(ITEM_BEING_ADDED, out object result))
+            if (player.TempProperties.TryRemoveProperty(ITEM_BEING_ADDED, out object result))
             {
                 if (result is not DbInventoryItem item)
                     return false;
@@ -545,21 +545,30 @@ namespace DOL.GS
         public override bool AddToWorld()
         {
             House house = HouseMgr.GetHouse(HouseNumber);
+            DbHouseConsignmentMerchant houseCM = DOLDB<DbHouseConsignmentMerchant>.SelectObject(DB.Column("HouseNumber").IsEqualTo(HouseNumber));
 
             if (house == null)
             {
-                log.Error($"CM: Can't find house #{HouseNumber}.");
+                log.Error($"CM: Can't find house {HouseNumber}. Deleting CM.");
+                DeleteFromDatabase();
+
+                if (houseCM != null)
+                {
+                    houseCM.HouseNumber = 0;
+                    GameServer.Database.SaveObject(houseCM);
+                }
+
                 return false;
             }
 
             SetInventoryTemplate();
-            DbHouseConsignmentMerchant houseCM = DOLDB<DbHouseConsignmentMerchant>.SelectObject(DB.Column("HouseNumber").IsEqualTo(HouseNumber));
 
             if (houseCM != null)
                 TotalMoney = houseCM.Money;
             else
             {
-                log.Error($"CM: Can't find {nameof(DbHouseConsignmentMerchant)} for lot {HouseNumber}.");
+                log.Error($"CM: Can't find {nameof(DbHouseConsignmentMerchant)} for house {HouseNumber}. Deleting CM.");
+                DeleteFromDatabase();
                 return false;
             }
 

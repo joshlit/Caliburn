@@ -54,23 +54,13 @@ namespace DOL.GS
             set { m_lastInterruptMessage = value; }
         }
 
-        /// <summary>
-        /// Holds the AttackData object of the last left-hand attack
-        /// </summary>
-        public const string LAST_ATTACK_DATA_LH = "LastAttackDataLH";
-
-        /// <summary>
-        /// Holds the property for the result the last enemy
-        /// </summary>
-        public const string LAST_ENEMY_ATTACK_RESULT = "LastEnemyAttackResult";
-
-        /// <summary>
-        /// Can this living accept any item regardless of tradable or droppable?
-        /// </summary>
-        public virtual bool CanTradeAnyItem
-        {
-            get { return false; }
-        }
+		/// <summary>
+		/// Can this living accept any item regardless of tradable or droppable?
+		/// </summary>
+		public virtual bool CanTradeAnyItem
+		{
+			get { return false; }
+		}
 
         /// <summary>
         /// Chance to fumble an attack.
@@ -589,7 +579,7 @@ namespace DOL.GS
             return 0;
         }
 
-        private (DbInventoryItem item, long time) m_cachedActiveWeapon;
+		private (DbInventoryItem item, eActiveWeaponSlot slot, long time) _cachedActiveWeapon;
 
         /// <summary>
         /// Returns the currently active weapon, null=natural
@@ -598,32 +588,41 @@ namespace DOL.GS
         {
             get
             {
+                if (Inventory == null)
+                    return null;
+
                 // We cache the weapon since 'ActiveWeapon' can be called multiple times per tick and 'GameInventory.GetItem' is potentially expensive.
-                if (m_cachedActiveWeapon.time >= GameLoop.GameLoopTime)
-                    return m_cachedActiveWeapon.item;
+                if (_cachedActiveWeapon.item != null && _cachedActiveWeapon.slot == ActiveWeaponSlot && _cachedActiveWeapon.time >= GameLoop.GameLoopTime)
+                    return _cachedActiveWeapon.item;
 
-                m_cachedActiveWeapon.item = null;
-                m_cachedActiveWeapon.time = GameLoop.GameLoopTime;
+                _cachedActiveWeapon.time = GameLoop.GameLoopTime;
+                _cachedActiveWeapon.slot = ActiveWeaponSlot;
 
-                if (Inventory != null)
+                switch (ActiveWeaponSlot)
                 {
-                    switch (ActiveWeaponSlot)
+                    case eActiveWeaponSlot.Standard:
                     {
-                        case eActiveWeaponSlot.Standard:
-                        m_cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.RightHandWeapon);
+                        _cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.RightHandWeapon);
                         break;
-
-                        case eActiveWeaponSlot.TwoHanded:
-                        m_cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
+                    }
+                    case eActiveWeaponSlot.TwoHanded:
+                    {
+                        _cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
                         break;
-
-                        case eActiveWeaponSlot.Distance:
-                        m_cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.DistanceWeapon);
+                    }
+                    case eActiveWeaponSlot.Distance:
+                    {
+                        _cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.DistanceWeapon);
+                        break;
+                    }
+                    default:
+                    {
+                        _cachedActiveWeapon.item = null;
                         break;
                     }
                 }
 
-                return m_cachedActiveWeapon.item;
+                return _cachedActiveWeapon.item;
             }
         }
 
@@ -1076,78 +1075,69 @@ namespace DOL.GS
             set { }
         }
 
-        /// <summary>
-        /// Starts the interrupt timer on this living.
-        /// </summary>
-        /// <param name="duration"></param>
-        /// <param name="attackType"></param>
-        /// <param name="attacker"></param>
-        public virtual void StartInterruptTimer(int duration, eAttackType attackType, GameLiving attacker)
-        {
-            if (!IsAlive || ObjectState != eObjectState.Active)
-            {
-                InterruptTime = 0;
-                InterruptAction = 0;
-                return;
-            }
+		/// <summary>
+		/// Starts the interrupt timer on this living.
+		/// </summary>
+		public virtual void StartInterruptTimer(int duration, eAttackType attackType, GameLiving attacker)
+		{
+			// Is this really necessary?
+			if (!IsAlive || ObjectState != eObjectState.Active)
+			{
+				InterruptTime = 0;
+				SelfInterruptTime = 0;
+				LastInterrupter = null;
+				return;
+			}
 
-            bool interrupt = InterruptChance(attacker);
+			if (attacker == this)
+			{
+				SelfInterruptTime = GameLoop.GameLoopTime + duration;
+				return;
+			}
 
-            if (!interrupt)
-                return;
+			double chance;
 
-            // Dont't replace the current interrut with a shorter one.
-            // Otherwise a slow melee hit's interrupt duration will be made shorter by a proc for example.
-            InterruptTime = Math.Max(InterruptTime, GameLoop.GameLoopTime + duration);
-            LastInterrupter = attacker;
+			if (attacker is GamePlayer)
+				chance = 99;
+			else
+			{
+				chance = BaseInterruptChance + GetConLevel(attacker) * 10;
+				chance = Math.Clamp(chance, 1, 99);
+			}
 
-            if (castingComponent?.SpellHandler != null)
-                castingComponent.SpellHandler.CasterIsAttacked(attacker);
-            else if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-            {
-                if (attackComponent.AttackState)
-                    CheckRangedAttackInterrupt(attacker, attackType);
-                else if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
-                {
-                    AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect)EffectListService.GetEffectOnTarget(this, eEffect.Volley);
+			if (!Util.Chance((int) chance))
+				return;
 
-                    if (volley != null)
-                        volley.OnAttacked();
-                }
-            }
-        }
+			// Don't replace the current interrupt with a shorter one.
+			// Otherwise a slow melee hit's interrupt duration will be made shorter by a proc for example.
+			InterruptTime = Math.Max(InterruptTime, GameLoop.GameLoopTime + duration);
+			LastInterrupter = attacker;
+
+			if (castingComponent?.SpellHandler != null)
+				castingComponent.SpellHandler.CasterIsAttacked(attacker);
+			else if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
+			{
+				if (attackComponent.AttackState)
+					CheckRangedAttackInterrupt(attacker, attackType);
+				else if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
+				{
+					AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect) EffectListService.GetEffectOnTarget(this, eEffect.Volley);
+					volley?.OnAttacked();
+				}
+			}
+		}
 
         public virtual bool StartInterruptTimerOnItselfOnMeleeAttack()
         {
             return true;
         }
 
-        public GameObject LastInterrupter { get; private set; }
-
-        protected long m_interruptTime = 0;
-
-        public long InterruptTime
-        {
-            get => m_interruptTime;
-            private set
-            {
-                InterruptAction = GameLoop.GameLoopTime;
-                m_interruptTime = value;
-            }
-        }
-
-        protected long m_interruptAction = 0;
-
-        public long InterruptAction
-        {
-            get => m_interruptAction;
-            private set => m_interruptAction = value;
-        }
-
-        /// <summary>
-        /// Yields true if interrupt action is running on this living.
-        /// </summary>
-        public virtual bool IsBeingInterrupted => m_interruptTime > GameLoop.GameLoopTime;
+		public GameObject LastInterrupter { get; private set; }
+		public long InterruptTime { get; private set; }
+		public long SelfInterruptTime { get; private set; }
+		public long InterruptRemainingDuration => !IsBeingInterrupted ? 0 : Math.Max(InterruptTime, SelfInterruptTime) - GameLoop.GameLoopTime;
+		public virtual bool IsBeingInterrupted => IsBeingInterruptedIgnoreSelfInterrupt || SelfInterruptTime > GameLoop.GameLoopTime;
+		public virtual bool IsBeingInterruptedIgnoreSelfInterrupt => InterruptTime > GameLoop.GameLoopTime;
 
         /// <summary>
         /// Base chance this living can be interrupted
@@ -1164,33 +1154,15 @@ namespace DOL.GS
         /// </summary>
         public virtual int SpellInterruptRecastAgain => Properties.SPELL_INTERRUPT_AGAIN;
 
-        public virtual bool InterruptChance(GameLiving attacker)
-        {
-            double chance;
-
-            if (attacker is GamePlayer || attacker is MimicNPC)
-                chance = 99;
-            else
-            {
-                double mod = GetConLevel(attacker);
-                chance = BaseInterruptChance;
-                chance += mod * 10;
-                chance = Math.Max(1, chance);
-                chance = Math.Min(99, chance);
-            }
-
-            return Util.Chance((int)chance);
-        }
-
-        protected virtual bool CheckRangedAttackInterrupt(GameLiving attacker, eAttackType attackType)
-        {
-            if (rangeAttackComponent.RangedAttackType == eRangedAttackType.SureShot)
-            {
-                if (attackType is not eAttackType.MeleeOneHand
-                    and not eAttackType.MeleeTwoHand
-                    and not eAttackType.MeleeDualWield)
-                    return false;
-            }
+		protected virtual bool CheckRangedAttackInterrupt(GameLiving attacker, eAttackType attackType)
+		{
+			if (rangeAttackComponent.RangedAttackType == eRangedAttackType.SureShot)
+			{
+				if (attackType is not eAttackType.MeleeOneHand
+					and not eAttackType.MeleeTwoHand
+					and not eAttackType.MeleeDualWield)
+					return false;
+			}
 
             long rangeAttackHoldStart = rangeAttackComponent.AttackStartTime;
 
@@ -1387,15 +1359,15 @@ namespace DOL.GS
             }
         }
 
-        public virtual double TryEvade(AttackData ad, AttackData lastAD, double attackerConLevel, int attackerCount)
-        {
-            // 1. A: It isn't possible to give a simple answer. The formula includes such elements
-            // as your level, your target's level, your level of evade, your QUI, your DEX, your
-            // buffs to QUI and DEX, the number of people attacking you, your target's weapon
-            // level, your target's spec in the weapon he is wielding, the kind of attack (DW,
-            // ranged, etc), attack radius, angle of attack, the style you used most recently,
-            // target's offensive RA, debuffs, and a few others. (The type of weapon - large, 1H,
-            // etc - doesn't matter.) ...."
+		public virtual double TryEvade(AttackData ad, AttackData lastAD, int attackerConLevel, int attackerCount)
+		{
+			// 1. A: It isn't possible to give a simple answer. The formula includes such elements
+			// as your level, your target's level, your level of evade, your QUI, your DEX, your
+			// buffs to QUI and DEX, the number of people attacking you, your target's weapon
+			// level, your target's spec in the weapon he is wielding, the kind of attack (DW,
+			// ranged, etc), attack radius, angle of attack, the style you used most recently,
+			// target's offensive RA, debuffs, and a few others. (The type of weapon - large, 1H,
+			// etc - doesn't matter.) ...."
 
             double evadeChance = 0;
             IGamePlayer player = this as IGamePlayer;
@@ -1466,13 +1438,13 @@ namespace DOL.GS
             return evadeChance;
         }
 
-        public virtual double TryParry(AttackData ad, AttackData lastAD, double attackerConLevel, int attackerCount)
-        {
-            //1.  Dual wielding does not grant more chances to parry than a single weapon.  Grab Bag 9/12/03
-            //2.  There is no hard cap on ability to Parry.  Grab Bag 8/13/02
-            //3.  Your chances of doing so are best when you are solo, trying to block or parry a style from someone who is also solo. The chances of doing so decrease with grouped, simultaneous attackers.  Grab Bag 7/19/02
-            //4.  The parry chance is divided up amongst the attackers, such that if you had a 50% chance to parry normally, and were under attack by two targets, you would get a 25% chance to parry one, and a 25% chance to parry the other. So, the more people or monsters attacking you, the lower your chances to parry any one attacker. -   Grab Bag 11/05/04
-            //Your chance to parry is affected by the number of attackers, the size of the weapon youre using, and your spec in parry.
+		public virtual double TryParry(AttackData ad, AttackData lastAD, int attackerConLevel, int attackerCount)
+		{
+			//1.  Dual wielding does not grant more chances to parry than a single weapon.  Grab Bag 9/12/03
+			//2.  There is no hard cap on ability to Parry.  Grab Bag 8/13/02
+			//3.  Your chances of doing so are best when you are solo, trying to block or parry a style from someone who is also solo. The chances of doing so decrease with grouped, simultaneous attackers.  Grab Bag 7/19/02
+			//4.  The parry chance is divided up amongst the attackers, such that if you had a 50% chance to parry normally, and were under attack by two targets, you would get a 25% chance to parry one, and a 25% chance to parry the other. So, the more people or monsters attacking you, the lower your chances to parry any one attacker. -   Grab Bag 11/05/04
+			//Your chance to parry is affected by the number of attackers, the size of the weapon youre using, and your spec in parry.
 
             //Parry % = (5% + 0.5% * Parry) / # of Attackers
             //Parry: (((Dex*2)-100)/40)+(Parry/2)+(Mastery of P*3)+5. < Possible relation to buffs
@@ -1558,22 +1530,22 @@ namespace DOL.GS
             return parryChance;
         }
 
-        public virtual double TryBlock(AttackData ad, double attackerConLevel, int attackerCount)
-        {
-            //1.Quality does not affect the chance to block at this time.  Grab Bag 3/7/03
-            //2.Condition and enchantment increases the chance to block  Grab Bag 2/27/03
-            //3.There is currently no hard cap on chance to block  Grab Bag 2/27/03 and 8/16/02
-            //4.Dual Wielders (enemy) decrease the chance to block  Grab Bag 10/18/02
-            //5.Block formula: Shield = base 5% + .5% per spec point. Then modified by dex (.1% per point of dex above 60 and below 300?). Further modified by condition, bonus and shield level
-            //8.The shields size only makes a difference when multiple things are attacking you  a small shield can block one attacker, a medium shield can block two at once, and a large shield can block three.  Grab Bag 4/4/03
-            //Your chance to block is affected by the number of attackers, the size of the shield youre using, and your spec in block.
-            //Shield% = (5% + 0.5% * Shield)
-            //Small Shield = 1 attacker
-            //Medium Shield = 2 attacker
-            //Large Shield = 3 attacker
-            //Each attacker above these numbers will reduce your chance to block.
-            //From Grab Bag: "Dual wielders throw an extra wrinkle in. You have half the chance of shield blocking a dual wielder as you do a player using only one weapon. Your chance to parry is halved if you are facing a two handed weapon, as opposed to a one handed weapon."
-            //Block: (((Dex*2)-100)/40)+(Shield/2)+(Mastery of B*3)+5. < Possible relation to buffs
+		public virtual double TryBlock(AttackData ad, int attackerConLevel, int attackerCount)
+		{
+			//1.Quality does not affect the chance to block at this time.  Grab Bag 3/7/03
+			//2.Condition and enchantment increases the chance to block  Grab Bag 2/27/03
+			//3.There is currently no hard cap on chance to block  Grab Bag 2/27/03 and 8/16/02
+			//4.Dual Wielders (enemy) decrease the chance to block  Grab Bag 10/18/02
+			//5.Block formula: Shield = base 5% + .5% per spec point. Then modified by dex (.1% per point of dex above 60 and below 300?). Further modified by condition, bonus and shield level
+			//8.The shields size only makes a difference when multiple things are attacking you  a small shield can block one attacker, a medium shield can block two at once, and a large shield can block three.  Grab Bag 4/4/03
+			//Your chance to block is affected by the number of attackers, the size of the shield youre using, and your spec in block.
+			//Shield% = (5% + 0.5% * Shield)
+			//Small Shield = 1 attacker
+			//Medium Shield = 2 attacker
+			//Large Shield = 3 attacker
+			//Each attacker above these numbers will reduce your chance to block.
+			//From Grab Bag: "Dual wielders throw an extra wrinkle in. You have half the chance of shield blocking a dual wielder as you do a player using only one weapon. Your chance to parry is halved if you are facing a two handed weapon, as opposed to a one handed weapon."
+			//Block: (((Dex*2)-100)/40)+(Shield/2)+(Mastery of B*3)+5. < Possible relation to buffs
 
             //http://www.camelotherald.com/more/453.php
 
@@ -3697,9 +3669,10 @@ namespace DOL.GS
 			// Not implemented.
 		}
 
-        #endregion Movement
+		public virtual void OnMaxSpeedChange() { }
 
-        #region Say/Yell/Whisper/Emote/Messages
+		#endregion
+		#region Say/Yell/Whisper/Emote/Messages
 
         private bool m_isSilent = false;
 

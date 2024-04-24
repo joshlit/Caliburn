@@ -74,9 +74,9 @@ namespace DOL.GS
             double baseDamage = attackData.Weapon.DPS_AF / 10.0 *
                                 attackData.WeaponSpeed;
 
-            modifier += (int)(25 * attackData.Target.GetConLevel(attackData.Attacker));
-            modifier = Math.Min(300, modifier);
-            modifier = Math.Max(75, modifier);
+			modifier += 25 * attackData.Target.GetConLevel(attackData.Attacker);
+			modifier = Math.Min(300, modifier);
+			modifier = Math.Max(75, modifier);
 
             double damage = baseDamage * modifier * 0.001; // attack speed is 10 times higher (2.5spd=25)
             double damageResisted = damage * target.GetResist(eDamageType.Body) * -0.01;

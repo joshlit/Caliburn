@@ -218,9 +218,6 @@ namespace DOL.GS
 
             mainHandAD.Target.HandleDamageShields(mainHandAD);
 
-            // Remove the left-hand AttackData from the previous attack.
-            _owner.TempProperties.RemoveProperty(LAST_ATTACK_DATA_LH);
-
             // Now left hand damage.
             if (leftHandSwingCount > 0 && mainWeapon.SlotPosition != Slot.RANGED)
             {
@@ -258,7 +255,6 @@ namespace DOL.GS
                                 }
                             }
 
-                            _owner.TempProperties.SetProperty(LAST_ATTACK_DATA_LH, leftHandAD);
                             leftHandAD.Target.HandleDamageShields(leftHandAD);
 
                             // Reflex Attack - Offhand.

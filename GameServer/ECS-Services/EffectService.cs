@@ -496,7 +496,8 @@ namespace DOL.GS
                     return eEffect.HereticPiercingMagic;
 
                 #endregion
-                #region NEGATIVE_EFFECTS
+
+                #region Negative Effects
 
                 case eSpellType.StyleBleeding:
                     return eEffect.Bleed;

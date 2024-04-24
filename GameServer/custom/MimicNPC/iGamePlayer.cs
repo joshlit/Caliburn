@@ -5,6 +5,7 @@ using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Utils;
+using System;
 using System.Collections.Generic;
 using static DOL.GS.GameObject;
 using static DOL.GS.GamePlayer;
@@ -25,6 +26,8 @@ namespace DOL.GS.Scripts
         public int CalculateMaxHealth(int level, int constitution);
         public int CalculateMaxMana(int level, int manaStat);
 
+        public List<Tuple<Skill, Skill>> GetAllUsableSkills(bool update = false);
+        public List<Tuple<SpellLine, List<Skill>>> GetAllUsableListSpells(bool update = false);
         public SpellLine GetSpellLine(string keyname);
         public bool HasAbility(string keyName);
         public T GetAbility<T>() where T : Ability;
@@ -44,6 +47,8 @@ namespace DOL.GS.Scripts
         public void StartStealthUncoverAction();
         public void StopStealthUncoverAction();
         public bool Sprint(bool state);
+        public void StopCurrentSpellcast();
+        public void StartInterruptTimer(int duration, AttackData.eAttackType attackType, GameLiving attacker);
 
         public void OnDuelStart(GameDuel duel);
         public void OnDuelStop();
@@ -55,6 +60,7 @@ namespace DOL.GS.Scripts
         public void GainRealmPoints(long amount, bool modify);
         public int GetDistanceTo(IPoint3D point);
         public bool IsWithinRadius(GameObject obj, int radius);
+        public bool IsWithinRadius(IPoint3D point, int radius, bool ignoreZ);
         public List<GamePlayer> GetPlayersInRadius(ushort radiusToCheck);
 
         public bool IsControlledNPC(GameNPC npc);
@@ -86,6 +92,8 @@ namespace DOL.GS.Scripts
         public PlayerDeck RandomNumberDeck { get; set; }
         public List<int> SelfBuffChargeIDs { get; }
         public int TotalConstitutionLostAtDeath { get; set; }
+
+        public int SpellInterruptDuration { get; }
 
         public string GetName(int article, bool firstLetterUppercase);
         public ICharacterClass CharacterClass { get; }

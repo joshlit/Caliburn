@@ -4,6 +4,8 @@ using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using System;
+using static DOL.GS.GameObject;
+using static DOL.GS.NpcAttackAction;
 
 namespace DOL.GS
 {
@@ -12,25 +14,23 @@ namespace DOL.GS
         public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private const int MIN_HEALTH_PERCENT_FOR_MELEE_SWITCH_ON_INTERRUPT = 70;
-        private const int PET_LOS_CHECK_INTERVAL = 1000;
         private MimicNPC _mimicOwner;
-        private int _petLosCheckInterval = PET_LOS_CHECK_INTERVAL;
         private bool _hasLos;
+
+        private CheckLosTimer _checkLosTimer;
+        private GameObject _losCheckTarget;
+
+        private static int LosCheckInterval => Properties.CHECK_LOS_DURING_RANGED_ATTACK_MINIMUM_INTERVAL;
+        private bool HasLosOnCurrentTarget => _losCheckTarget == _target && _hasLos;
+
 
         public MimicAttackAction(MimicNPC mimicOwner) : base(mimicOwner)
         {
             _mimicOwner = mimicOwner;
-            _hasLos = true;
         }
 
         protected override bool PrepareMeleeAttack()
         {
-            if (!_hasLos)
-            {
-                _interval = TICK_INTERVAL_FOR_NON_ATTACK;
-                return false;
-            }
-
             if (StyleComponent.NextCombatStyle == null)
                 _combatStyle = StyleComponent.NPCGetStyleToUse();
             else
@@ -59,11 +59,22 @@ namespace DOL.GS
 
         protected override bool PrepareRangedAttack()
         {
-            if (!_hasLos)
-            {
-                _interval = TICK_INTERVAL_FOR_NON_ATTACK;
-                return false;
-            }
+            // TODO: Get LOS working for archers.
+            //if (Properties.CHECK_LOS_BEFORE_NPC_RANGED_ATTACK)
+            //{
+            //    if (_checkLosTimer == null)
+            //        _checkLosTimer = new CheckLosTimer(_mimicOwner, _target, LosCheckCallback);
+            //    else
+            //        _checkLosTimer.ChangeTarget(_target);
+
+            //    if (!HasLosOnCurrentTarget)
+            //    {
+            //        _interval = TICK_INTERVAL_FOR_NON_ATTACK;
+            //        return false;
+            //    }
+            //}
+            //else
+                _hasLos = true;
 
             if (base.PrepareRangedAttack())
             {
@@ -85,17 +96,17 @@ namespace DOL.GS
 
         protected override bool FinalizeRangedAttack()
         {
-            // Switch to melee if range to target is less than 350.
+            // Switch to melee if range to target is less than 200.
             if (_mimicOwner != null &&
                 _mimicOwner.TargetObject != null &&
-                _mimicOwner.IsWithinRadius(_target, 350))
+                _mimicOwner.IsWithinRadius(_target, 200))
             {
                 _mimicOwner.SwitchToMelee(_target);
-                _interval = 1;
+                _interval = 0;
                 return false;
             }
-            else
-                return base.FinalizeRangedAttack();
+
+            return base.FinalizeRangedAttack();
         }
 
         public override void OnAimInterrupt(GameObject attacker)
@@ -106,37 +117,96 @@ namespace DOL.GS
 
         public override void CleanUp()
         {
-            _petLosCheckInterval = 0;
-
             if (_mimicOwner.Brain is NecromancerPetBrain necromancerPetBrain)
                 necromancerPetBrain.ClearAttackSpellQueue();
+
+            if (_checkLosTimer != null)
+            {
+                _checkLosTimer.Stop();
+                _checkLosTimer = null;
+            }
 
             base.CleanUp();
         }
 
-        private int CheckLos(ECSGameTimer timer)
-        {
-            if (_target == null)
-                _hasLos = false;
-            else if (_mimicOwner.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
-                _hasLos = true;
-            else if (_target is GamePlayer || (_target is GameNPC _targetNpc &&
-                                              _targetNpc.Brain is IControlledBrain _targetNpcBrain &&
-                                              _targetNpcBrain.GetPlayerOwner() != null))
-                // Target is either a player or a pet owned by a player.
-                _mimicOwner.Out.SendCheckLos(_mimicOwner, _target, new CheckLosResponse(LosCheckCallback));
-            else
-                _hasLos = true;
-
-            return _petLosCheckInterval;
-        }
-
         private void LosCheckCallback(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
         {
-            if (targetOID == 0)
+            _hasLos = response is eLosCheckResponse.TRUE;
+            _losCheckTarget = _mimicOwner.CurrentRegion.GetObject(targetOID);
+
+            if (_losCheckTarget == null)
                 return;
 
-            _hasLos = response is eLosCheckResponse.TRUE;
+            if (_hasLos)
+            {
+                _mimicOwner.TurnTo(_losCheckTarget);
+                return;
+            }
+
+            if (_mimicOwner.attackComponent.AttackState)
+            {
+                _mimicOwner.SwitchToMelee(_target);
+                _interval = 0;
+            }
+        }
+
+        public class CheckLosTimer : ECSGameTimerWrapperBase
+        {
+            private GameNPC _npcOwner;
+            private GameObject _target;
+            private CheckLosResponse _callback;
+            private GamePlayer _losChecker;
+
+            public CheckLosTimer(GameObject owner, GameObject target, CheckLosResponse callback) : base(owner)
+            {
+                _npcOwner = owner as GameNPC;
+                _callback = callback;
+                ChangeTarget(target);
+            }
+
+            public void ChangeTarget(GameObject newTarget)
+            {
+                if (newTarget == null)
+                {
+                    Stop();
+                    return;
+                }
+
+                if (_target != newTarget)
+                {
+                    _target = newTarget;
+
+                    if (_npcOwner.Brain is IControlledBrain brain)
+                        _losChecker = brain.GetPlayerOwner();
+                    if (_target is GamePlayer targetPlayer)
+                        _losChecker = targetPlayer;
+                    else if (_target is GameNPC npcTarget && npcTarget.Brain is IControlledBrain targetBrain)
+                        _losChecker = targetBrain.GetPlayerOwner();
+                }
+
+                // Don't bother starting the timer if there's no one to perform the LoS check.
+                if (_losChecker == null)
+                {
+                    _callback(null, eLosCheckResponse.TRUE, 0, 0);
+                    return;
+                }
+
+                if (!IsAlive && _losChecker != null)
+                {
+                    Start(1);
+                    Interval = LosCheckInterval;
+                }
+            }
+
+            protected override int OnTick(ECSGameTimer timer)
+            {
+                // We normally rely on `AttackActon.CleanUp()` to stop this timer.
+                if (!_npcOwner.attackComponent.AttackState || _npcOwner.ObjectState is not eObjectState.Active)
+                    return 0;
+
+                _losChecker.Out.SendCheckLos(_npcOwner, _target, new CheckLosResponse(_callback));
+                return LosCheckInterval;
+            }
         }
     }
 }

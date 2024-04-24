@@ -362,7 +362,7 @@ namespace DOL.GS
 
         #region Object Caches
         public ConcurrentDictionary<GameNPC, ClientService.CachedNpcValues> NpcUpdateCache { get; } = new();
-        public ConcurrentDictionary<GameStaticItem, long> ItemUpdateCache { get; } = new();
+        public ConcurrentDictionary<GameStaticItem, (long, bool)> ItemUpdateCache { get; } = new();
         public ConcurrentDictionary<GameDoorBase, long> DoorUpdateCache { get; } = new();
         public ConcurrentDictionary<House, long> HouseUpdateCache { get; } = new();
         #endregion
@@ -786,14 +786,14 @@ namespace DOL.GS
         /// <summary>
         /// quit timer
         /// </summary>
-        protected AuxECSGameTimer m_quitTimer;
+        protected ECSGameTimer m_quitTimer;
 
         /// <summary>
         /// Timer callback for quit
         /// </summary>
         /// <param name="callingTimer">the calling timer</param>
         /// <returns>the new intervall</returns>
-        protected virtual int QuitTimerCallback(AuxECSGameTimer callingTimer)
+        protected virtual int QuitTimerCallback(ECSGameTimer callingTimer)
         {
             if (!IsAlive || ObjectState != eObjectState.Active)
             {
@@ -929,14 +929,10 @@ namespace DOL.GS
 
         private void CheckIfNearEnemyKeepAndAddToRvRLinkDeathListIfNecessary()
         {
-            AbstractGameKeep keep = GameServer.KeepManager.GetKeepCloseToSpot(this.CurrentRegionID, this, WorldMgr.VISIBILITY_DISTANCE);
-            if(keep != null && this.Client.Account.PrivLevel == 1 && (GameServer.KeepManager.IsEnemy(keep, this) || keep.IsRelic))
+            AbstractGameKeep keep = GameServer.KeepManager.GetKeepCloseToSpot(CurrentRegionID, this, WorldMgr.VISIBILITY_DISTANCE);
+            if(keep != null && Client.Account.PrivLevel == 1 && (GameServer.KeepManager.IsEnemy(keep, this) || keep.IsRelic))
             {
-                if(WorldMgr.RvRLinkDeadPlayers.ContainsKey(this.m_InternalID))
-                {
-                    WorldMgr.RvRLinkDeadPlayers.Remove(this.m_InternalID);
-                }
-                WorldMgr.RvRLinkDeadPlayers.Add(this.m_InternalID, DateTime.Now);
+                WorldMgr.RvrLinkDeadPlayers[m_InternalID] = DateTime.Now;
             }
         }
 
@@ -1125,8 +1121,8 @@ namespace DOL.GS
 
                 if (m_quitTimer == null)
                 {
-                    m_quitTimer = new AuxECSGameTimer(this);
-                    m_quitTimer.Callback = new AuxECSGameTimer.AuxECSTimerCallback(QuitTimerCallback);
+                    m_quitTimer = new ECSGameTimer(this);
+                    m_quitTimer.Callback = new ECSGameTimer.ECSTimerCallback(QuitTimerCallback);
                     m_quitTimer.Start();
                 }
 
@@ -2703,20 +2699,20 @@ namespace DOL.GS
                     ChangeEndurance(this, eEnduranceChangeType.Regenerate, regen);
                 }
             }
-            if (!sprinting)
+
+            if (sprinting)
             {
-                if (Endurance >= MaxEndurance) selfRegenerationTimer.Stop();
-            }
-            else
-            {
-                long lastmove = TempProperties.GetProperty<long>(PlayerPositionUpdateHandler.LASTMOVEMENTTICK);
-                if ((lastmove > 0 && lastmove + 5000 < CurrentRegion.Time) //cancel sprint after 5sec without moving?
-                    || Endurance - 5 <= 0)
+                if (Endurance - 5 <= 0)
                     Sprint(false);
             }
-            var rate = EnduranceRegenerationPeriod;
+            else if (Endurance >= MaxEndurance)
+                selfRegenerationTimer.Stop();
+
+            ushort rate = EnduranceRegenerationPeriod;
+
             if (IsSitting)
                 rate /= 2;
+
             return rate;
         }
 
@@ -9125,9 +9121,6 @@ namespace DOL.GS
             Z = z;
             Heading = heading;
 
-            // Remove the last update tick property to prevent speedhack messages during zoning and teleporting.
-            TempProperties.RemoveProperty(PlayerPositionUpdateHandler.LASTMOVEMENTTICK);
-
             if (regionID != CurrentRegionID)
             {
                 CurrentRegionID = regionID;
@@ -9797,19 +9790,19 @@ namespace DOL.GS
             get => m_sitting;
             set
             {
-                m_sitting = value;
-                if (value)
+                if (!m_sitting && value)
                 {
                     CurrentSpellHandler?.CasterMoves();
+
                     if (attackComponent.AttackState && ActiveWeaponSlot == eActiveWeaponSlot.Distance)
                     {
-                        string attackTypeMsg = "shot";
-                        if (ActiveWeapon.Object_Type == (int) eObjectType.Thrown)
-                            attackTypeMsg = "throw";
-                        Out.SendMessage("You move and interrupt your " + attackTypeMsg + "!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+                        string attackTypeMsg = (eObjectType) ActiveWeapon.Object_Type == eObjectType.Thrown ? "throw" : "shot";
+                        Out.SendMessage($"You move and interrupt your {attackTypeMsg}!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
                         attackComponent.StopAttack();
                     }
                 }
+
+                m_sitting = value;
             }
         }
 
@@ -11786,6 +11779,10 @@ namespace DOL.GS
             //     }
             // }
 
+            // Starter guilds are added to the `DBCharacter` when created, but the guild isn't actually reloaded and won't see it until the next server reboot.
+            // This does nothing if the character is already loaded by the guild.
+            GuildMgr.AddPlayerToAllGuildPlayersList(this);
+
             // check the account for the Muted flag
             if (Client.Account.IsMuted)
                 IsMuted = true;
@@ -11913,24 +11910,12 @@ namespace DOL.GS
                     if (quest is Quests.MonthlyQuest mq)
                         mq.SaveQuestParameters();
 
-                    if (quest is LaunchQuestAlb lqa)
-                        lqa.SaveQuestParameters();
-
-                    if (quest is LaunchQuestHib lqh)
-                        lqh.SaveQuestParameters();
-
-                    if (quest is LaunchQuestMid lqm)
-                        lqm.SaveQuestParameters();
-
                     if (quest is Quests.AtlasQuest aq)
                         aq.SaveQuestParameters();
                 }
 
                 if (m_mlSteps != null)
                     GameServer.Database.SaveObject(m_mlSteps.OfType<DbCharacterXMasterLevel>());
-
-                if (log.IsInfoEnabled)
-                    log.InfoFormat("{0} saved!", DBCharacter.Name);
 
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SaveIntoDatabase.CharacterSaved"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
             }
@@ -12171,6 +12156,12 @@ namespace DOL.GS
 
             if (effectListComponent.ContainsEffectForEffectType(eEffect.Vanish))
                 EffectService.RequestImmediateCancelEffect(EffectListService.GetEffectOnTarget(this, eEffect.Vanish));
+        }
+
+        public override void OnMaxSpeedChange()
+        {
+            base.OnMaxSpeedChange();
+            Out.SendUpdateMaxSpeed();
         }
 
         // UncoverStealthAction is what unstealths player if they are too close to mobs.
@@ -12520,15 +12511,6 @@ namespace DOL.GS
 
                 if (quest is Quests.MonthlyQuest mq)
                     mq.LoadQuestParameters();
-
-                if (quest is LaunchQuestAlb lqa)
-                    lqa.LoadQuestParameters();
-
-                if (quest is LaunchQuestHib lqh)
-                    lqh.LoadQuestParameters();
-
-                if (quest is LaunchQuestMid lqm)
-                    lqm.LoadQuestParameters();
 
                 if (quest is Quests.AtlasQuest aq)
                     aq.LoadQuestParameters();

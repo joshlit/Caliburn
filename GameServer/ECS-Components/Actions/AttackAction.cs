@@ -122,7 +122,12 @@ namespace DOL.GS
 
         public virtual bool CheckInterruptTimer()
         {
-            return false;
+            if (!_owner.IsBeingInterruptedIgnoreSelfInterrupt)
+                return false;
+
+            _owner.attackComponent.StopAttack();
+            OnAimInterrupt(_owner.LastInterrupter);
+            return true;
         }
 
         public virtual void OnAimInterrupt(GameObject attacker) { }
@@ -219,7 +224,7 @@ namespace DOL.GS
             {
                 _owner.rangeAttackComponent.RangedAttackState = eRangedAttackState.Aim;
 
-                if ((_owner is not GamePlayer && _owner is not MimicNPC) || !_owner.effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
+                if (_owner is not IGamePlayer || !_owner.effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
                 {
                     // The 'stance' parameter appears to be used to tell whether or not the animation should be held, and doesn't seem to be related to the weapon speed.
                     foreach (GamePlayer player in _owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
@@ -420,6 +425,7 @@ namespace DOL.GS
         public virtual void CleanUp()
         {
             _owner.TempProperties.RemoveProperty(LAST_ATTACK_DATA);
+            _target = null;
         }
     }
 }

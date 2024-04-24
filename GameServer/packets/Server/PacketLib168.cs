@@ -998,14 +998,15 @@ namespace DOL.GS.PacketHandler
 
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.NPCCreate)))
 			{
-				// Vertical movement may not be shown properly. See `PacketLib1124.SendNPCCreate`.
 				short speed = 0;
 				ushort speedZ = 0;
+
 				if (npc.IsMoving && !npc.IsAtDestination)
 				{
 					speed = npc.CurrentSpeed;
 					speedZ = (ushort) npc.movementComponent.Velocity.Z;
 				}
+
 				pak.WriteShort((ushort) npc.ObjectID);
 				pak.WriteShort((ushort) speed);
 				pak.WriteShort(npc.Heading);
@@ -3062,7 +3063,7 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(0x00);
 				pak.WriteByte((byte) eDialogCode.HousePayRent);
 				pak.Fill(0x00, 8); // empty
-				pak.WriteByte(0x02); // type
+				pak.WriteByte(0x01); // type. Changed from 0x02 to `YesNo`. 0x02 seems invalid on 1.127.
 				pak.WriteByte(0x01); // wrap
 				if (title.Length > 0)
 					pak.WriteString(title); // title ??

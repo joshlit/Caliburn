@@ -182,18 +182,6 @@ namespace DOL.AI.Brain
             return HasAggro;
         }
 
-        public virtual bool IsBeyondTetherRange()
-        {
-            if (Body.MaxDistance != 0)
-            {
-                int distance = Body.GetDistanceTo(Body.SpawnPoint);
-                int maxDistance = Body.MaxDistance > 0 ? Body.MaxDistance : -Body.MaxDistance * AggroRange / 100;
-                return maxDistance > 0 && distance > maxDistance;
-            }
-            else
-                return false;
-        }
-
         public virtual bool HasPatrolPath()
         {
             return Body.MaxSpeedBase > 0 &&
@@ -223,7 +211,7 @@ namespace DOL.AI.Brain
                 if (player.effectListComponent.ContainsEffectForEffectType(eEffect.Shade))
                     continue;
 
-                if (Properties.ALWAYS_CHECK_LOS)
+                if (Properties.CHECK_LOS_BEFORE_AGGRO)
                     // We don't know if the LoS check will be positive, so we have to ask other players
                     player.Out.SendCheckLos(Body, player, new CheckLosResponse(LosCheckForAggroCallback));
                 else
@@ -250,7 +238,7 @@ namespace DOL.AI.Brain
                 if (npc is GameTaxi or GameTrainingDummy)
                     continue;
 
-                if (Properties.ALWAYS_CHECK_LOS)
+                if (Properties.CHECK_LOS_BEFORE_AGGRO)
                 {
                     // Check LoS if either the target or the current mob is a pet
                     if (npc.Brain is ControlledNpcBrain theirControlledNpcBrain && theirControlledNpcBrain.GetPlayerOwner() is GamePlayer theirOwner)
@@ -2309,6 +2297,12 @@ namespace DOL.AI.Brain
             if (target == null)
                 return true;
 
+            eEffect spellEffect = EffectService.GetEffectFromSpell(spell, m_mobSpellLine.IsBaseLine);
+
+            // Ignore effects that aren't actually effects (may be incomplete).
+            if (spellEffect is eEffect.DirectDamage or eEffect.Pet or eEffect.Unknown)
+                return false;
+
             ISpellHandler spellHandler = Body.castingComponent.SpellHandler;
 
             // If we're currently casting 'spell' on 'target', assume it already has the effect.
@@ -2333,7 +2327,6 @@ namespace DOL.AI.Brain
             if (pulseEffect != null)
                 return true;
 
-            eEffect spellEffect = EffectService.GetEffectFromSpell(spell, m_mobSpellLine.IsBaseLine);
             ECSGameEffect effect = EffectListService.GetEffectOnTarget(target, spellEffect);
 
             if (effect != null)
