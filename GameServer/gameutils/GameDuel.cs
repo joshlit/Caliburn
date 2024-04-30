@@ -10,8 +10,8 @@ namespace DOL.GS
     {
         private const string DUEL_PREVIOUS_LASTATTACKTICKPVP = "DUEL_PREVIOUS_LASTATTACKTICKPVP";
         private const string DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP= "DUEL_PREVIOUS_LASTATTACKEDBYENEMYTICKPVP";
-        public GamePlayer Starter { get; private set; }
-        public GamePlayer Target { get; private set; }
+        public GamePlayer Starter { get; }
+        public GamePlayer Target { get; }
 
         public GameDuel(GamePlayer starter, GamePlayer target)
         {
@@ -21,7 +21,7 @@ namespace DOL.GS
 
         public GamePlayer GetPartnerOf(GameLiving living)
         {
-            if (living is GameNPC npc && npc.Brain is ControlledNpcBrain brain)
+            if (living is GameNPC npc && npc.Brain is ControlledMobBrain brain)
                 living = brain.GetPlayerOwner();
 
             return living == Starter ? Target : Starter;

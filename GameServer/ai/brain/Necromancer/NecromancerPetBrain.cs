@@ -13,18 +13,16 @@ namespace DOL.AI.Brain
     /// A brain for the necromancer pets.
     /// </summary>
     /// <author>Aredhel</author>
-    public class NecromancerPetBrain : ControlledNpcBrain
+    public class NecromancerPetBrain : ControlledMobBrain
     {
         public NecromancerPetBrain(GameLiving owner) : base(owner)
         {
             FSM.ClearStates();
-
-            FSM.Add(new NecromancerPetState_WAKING_UP(this));
+            FSM.Add(new ControlledMobState_WAKING_UP(this));
             FSM.Add(new NecromancerPetState_DEFENSIVE(this));
             FSM.Add(new NecromancerPetState_AGGRO(this));
             FSM.Add(new NecromancerPetState_PASSIVE(this));
             FSM.Add(new StandardMobState_DEAD(this));
-
             FSM.SetCurrentState(eFSMStateType.WAKING_UP);
         }
 
@@ -261,9 +259,9 @@ namespace DOL.AI.Brain
         /// </summary>
         private class SpellQueueEntry
         {
-            public Spell Spell { get; private set; }
-            public SpellLine SpellLine { get; private set; }
-            public GameLiving Target { get; private set; }
+            public Spell Spell { get; }
+            public SpellLine SpellLine { get; }
+            public GameLiving Target { get; }
 
             public SpellQueueEntry(Spell spell, SpellLine spellLine, GameLiving target)
             {
@@ -515,7 +513,7 @@ namespace DOL.AI.Brain
         {
             if (GS.ServerProperties.Properties.ENABLE_DEBUG)
             {
-                long tick = GameLoop.GetCurrentTime();
+                long tick = GameLoop.GameLoopTime;
                 long seconds = tick / 1000;
                 long minutes = seconds / 60;
 

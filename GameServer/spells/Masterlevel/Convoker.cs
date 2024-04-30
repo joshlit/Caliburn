@@ -384,7 +384,6 @@ namespace DOL.GS.Spells
 			warder.Realm = caster.Realm;
 			warder.Name = "Battle Warder";
 			warder.Model = 993;
-			warder.CurrentSpeed = 0;
 			warder.MaxSpeedBase = 0;
 			warder.GuildName = "";
 			warder.Size = 50;
@@ -496,7 +495,6 @@ namespace DOL.GS.Spells
 				summoned.CurrentRegion = target.CurrentRegion;
 				summoned.Heading = (ushort)((target.Heading + 2048) % 4096);
 				summoned.Realm = target.Realm;
-				summoned.CurrentSpeed = 0;
 				summoned.Level = 1;
 				summoned.Size = 10;
 				summoned.AddToWorld();
@@ -658,7 +656,6 @@ namespace DOL.GS.Spells
 			summoned.CurrentRegion = player.CurrentRegion;
 			summoned.Heading = (ushort)((player.Heading + 2048) % 4096);
 			summoned.Realm = player.Realm;
-			summoned.CurrentSpeed = 0;
 			summoned.Size = 10;
 			summoned.Level = 100;
 			summoned.Flags |= GameNPC.eFlags.PEACE;
@@ -739,7 +736,7 @@ namespace DOL.GS.Spells
 #region BrittleBrain
 namespace DOL.AI.Brain
 {
-    public class BrittleBrain : ControlledNpcBrain
+    public class BrittleBrain : ControlledMobBrain
 	{
 		public BrittleBrain(GameLiving owner)
 			: base(owner)
@@ -750,7 +747,9 @@ namespace DOL.AI.Brain
 
 		public override void FollowOwner()
 		{
-			Body.StopAttack();
+			if (Body.IsAttacking)
+				Disengage();
+
 			Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
 		}
 	}
@@ -761,7 +760,7 @@ namespace DOL.AI.Brain
 
 namespace DOL.AI.Brain
 {
-    public class TitanBrain : ControlledNpcBrain
+    public class TitanBrain : ControlledMobBrain
 	{
 		private GameLiving m_target;
 
@@ -794,7 +793,7 @@ namespace DOL.AI.Brain
 		{
 			ArrayList list = new ArrayList();
 
-			foreach (GamePlayer o in Body.GetPlayersInRadius((ushort)Body.AttackRange))
+			foreach (GamePlayer o in Body.GetPlayersInRadius((ushort)Body.attackComponent.AttackRange))
 			{
 				GamePlayer p = o as GamePlayer;
 
@@ -815,7 +814,7 @@ namespace DOL.AI.Brain
 			IList enemies = new ArrayList();
 			if (Target == null)
 				enemies = FindTarget();
-			else if (!Body.IsWithinRadius(Target, Body.AttackRange))
+			else if (!Body.IsWithinRadius(Target, Body.attackComponent.AttackRange))
 				enemies = FindTarget();
 			else if (!Target.IsAlive)
 				enemies = FindTarget();
@@ -839,7 +838,7 @@ namespace DOL.AI.Brain
 				{
 					Target = null;
 				}
-				else if (Body.IsWithinRadius(Target, Body.AttackRange))
+				else if (Body.IsWithinRadius(Target, Body.attackComponent.AttackRange))
 				{
 					Body.TargetObject = Target;
 					Goto(Target);
@@ -873,7 +872,7 @@ public class MLBrain : GuardBrain
 
 		foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)AggroRange))
 		{
-			if (AggroTable.ContainsKey(npc))
+			if (AggroList.ContainsKey(npc))
 				continue; // add only new npcs
 			if ((npc.Flags & GameNPC.eFlags.FLYING) != 0)
 				continue; // let's not try to attack flying mobs

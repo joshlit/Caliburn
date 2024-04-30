@@ -1,12 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
-using DOL.GS;
 using DOL.Events;
-using DOL.GS.ServerProperties;
+using DOL.GS;
 using DOL.GS.PacketHandler;
-using System;
-using System.Collections.Generic;
+using DOL.GS.ServerProperties;
 
 namespace DOL.GS
 {
@@ -177,11 +177,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override double GetArmorAF(eArmorSlot slot)
 		{
 			return 350;
@@ -249,7 +245,6 @@ namespace DOL.GS
 			#endregion
 			MeleeDamageType = eDamageType.Slash;
 			Faction = FactionMgr.GetFactionByID(83);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(83));
 			HibCuuldurachBrain sbrain = new HibCuuldurachBrain();
 			SetOwnBrain(sbrain);
 			sbrain.Start();
@@ -671,8 +666,8 @@ namespace DOL.AI.Brain
 					{
 						if (!GlareRoam_Enemys.Contains(player))
 							GlareRoam_Enemys.Add(player);
-						if (!AggroTable.ContainsKey(player))
-							AggroTable.Add(player, 100);
+
+						AggroList.TryAdd(player, new(100));
 					}
 				}
 				if (GlareRoam_Enemys.Count > 0)
@@ -1052,7 +1047,6 @@ namespace DOL.GS
 			Realm = eRealm.None;
 			MaxSpeedBase = 225;
 			Faction = FactionMgr.GetFactionByID(83);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(83));
 			CuuldurachMessengerBrain adds = new CuuldurachMessengerBrain();
 
 			if (!HibCuuldurachBrain.DragonAdds.Contains(this))
@@ -1392,7 +1386,6 @@ namespace DOL.GS
 			}
 			Level = (byte)Util.Random(60, 64);
 			Faction = FactionMgr.GetFactionByID(83);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(83));
 			RespawnInterval = -1;
 
 			MaxSpeedBase = 225;

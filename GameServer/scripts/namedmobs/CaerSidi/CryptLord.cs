@@ -38,11 +38,7 @@ namespace DOL.GS
             get { return 100000; }
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override bool HasAbility(string keyName)
         {
@@ -81,7 +77,6 @@ namespace DOL.GS
             Empathy = npcTemplate.Empathy;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(64);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));
 
             CryptLordBrain adds = new CryptLordBrain();
             SetOwnBrain(adds);
@@ -220,8 +215,7 @@ namespace DOL.AI.Brain
                         {
                             if (npc.TargetObject == Body.TargetObject && npc.NPCTemplate != null)//check if npc got NpcTemplate!
                             {
-                                npc.MaxDistance = 10000; //set mob distance to make it reach target
-                                npc.TetherRange = 10000; //set tether to not return to home
+                                npc.TetherRange = 0; //set tether to not return to home
                                 if (!npc.IsWithinRadius(Body.TargetObject, 100))
                                     npc.MaxSpeedBase = 300; //speed is is not near to reach target faster
                                 else
@@ -241,7 +235,6 @@ namespace DOL.AI.Brain
                         {
                             if (!HasAggro)
                             {
-                                npc.MaxDistance = npc.NPCTemplate.MaxDistance; //return distance to normal
                                 npc.TetherRange = npc.NPCTemplate.TetherRange; //return tether to normal
                                 npc.MaxSpeedBase = npc.NPCTemplate.MaxSpeed; //return speed to normal
                             }
@@ -284,7 +277,7 @@ namespace DOL.AI.Brain
                 {
                     if (npc != null)
                     {
-                        if (npc.IsAlive && npc.PackageID == "CryptLordBaf" && AggroTable.Count > 0 && npc.Brain is StandardMobBrain brain)
+                        if (npc.IsAlive && npc.PackageID == "CryptLordBaf" && AggroList.Count > 0 && npc.Brain is StandardMobBrain brain)
                         {
                             if (brain != null && !brain.HasAggro && target != null && target.IsAlive)
                                 brain.AddToAggroList(target, 10);

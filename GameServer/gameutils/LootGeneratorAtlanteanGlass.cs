@@ -51,14 +51,14 @@ namespace DOL.GS
 			{
 				GamePlayer player = killer as GamePlayer;
 				if (killer is GameNPC && ((GameNPC)killer).Brain is IControlledBrain)
-					player = ((ControlledNpcBrain)((GameNPC)killer).Brain).GetPlayerOwner();
+					player = ((ControlledMobBrain)((GameNPC)killer).Brain).GetPlayerOwner();
 				if (player == null)
 					return loot;			
 			
 				DbItemTemplate atlanteanGlass = GameServer.Database.FindObjectByKey<DbItemTemplate>(m_atlanteanglass.Id_nb);
 				// ItemTemplate atlanteanGlass = new ItemTemplate(m_atlanteanglass);  Creating a new ItemTemplate throws an exception later
 
-				int killedcon = (int)player.GetConLevel(mob)+3;
+				int killedcon = player.GetConLevel(mob)+3;
 				
 				if(killedcon <= 0)
 					return loot;

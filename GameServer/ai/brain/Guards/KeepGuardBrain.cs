@@ -51,7 +51,7 @@ namespace DOL.AI.Brain
 						losChecker = target as GamePlayer;
 
 					if (losChecker != null)
-						losChecker.Out.SendCheckLOS(Body, target, new CheckLOSResponse(LosCheckInCombatCallback));
+						losChecker.Out.SendCheckLos(Body, target, new CheckLosResponse(LosCheckInCombatCallback));
 				}
 
 				// Drop aggro and disengage if the target is out of range
@@ -70,28 +70,21 @@ namespace DOL.AI.Brain
 			return base.CheckProximityAggro();
 		}
 
-		public override bool IsBeyondTetherRange()
-		{
-			// Eden - Portal Keeps Guards max distance
-			if (Body.Level > 200 && !Body.IsWithinRadius(Body.SpawnPoint, 2000))
-				return true;
-			else if (!Body.InCombat && !Body.IsWithinRadius(Body.SpawnPoint, 6000))
-				return true;
-
-			return false;
-		}
-
 		protected override void CheckPlayerAggro()
 		{
 			foreach (GamePlayer player in Body.GetPlayersInRadius((ushort)AggroRange))
 			{
 				if (!CanAggroTarget(player))
 					continue;
+
 				if (Body is not GuardStealther && player.IsStealthed)
 					continue;
 
+				if (player.effectListComponent.ContainsEffectForEffectType(eEffect.Shade))
+					continue;
+
 				WarMapMgr.AddGroup((byte) player.CurrentZone.ID, player.X, player.Y, player.Name, (byte) player.Realm);
-				player.Out.SendCheckLOS(Body, player, new CheckLOSResponse(LosCheckForAggroCallback));
+				player.Out.SendCheckLos(Body, player, new CheckLosResponse(LosCheckForAggroCallback));
 				// We don't know if the LoS check will be positive, so we have to ask other players
 			}
 		}
@@ -115,7 +108,7 @@ namespace DOL.AI.Brain
 					continue;
 
 				WarMapMgr.AddGroup((byte)player.CurrentZone.ID, player.X, player.Y, player.Name, (byte)player.Realm);
-				player.Out.SendCheckLOS(Body, npc, new CheckLOSResponse(LosCheckForAggroCallback));
+				player.Out.SendCheckLos(Body, npc, new CheckLosResponse(LosCheckForAggroCallback));
 				// We don't know if the LoS check will be positive, so we have to ask other players
 			}
 		}
@@ -138,12 +131,9 @@ namespace DOL.AI.Brain
 			return true;
 		}
 
-		private void LosCheckInCombatCallback(GamePlayer player, ushort response, ushort targetOID)
+		private void LosCheckInCombatCallback(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
 		{
-			if (targetOID == 0)
-				return;
-
-			if ((response & 0x100) != 0x100)
+			if (response is not eLosCheckResponse.TRUE)
 			{
 				GameObject gameObject = Body.CurrentRegion.GetObject(targetOID);
 

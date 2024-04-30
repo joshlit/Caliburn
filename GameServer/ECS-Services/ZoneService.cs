@@ -12,110 +12,102 @@ namespace DOL.GS
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private const string SERVICE_NAME = nameof(ZoneService);
+        private static List<ObjectChangingSubZone> _list;
 
         public static void Tick()
         {
             GameLoop.CurrentServiceTick = SERVICE_NAME;
             Diagnostics.StartPerfCounter(SERVICE_NAME);
+            _list = EntityManager.UpdateAndGetAll<ObjectChangingSubZone>(EntityManager.EntityType.ObjectChangingSubZone, out int lastValidIndex);
+            Parallel.For(0, lastValidIndex + 1, TickInternal);
+            Diagnostics.StopPerfCounter(SERVICE_NAME);
+        }
 
-            List<ObjectChangingSubZone> list = EntityManager.UpdateAndGetAll<ObjectChangingSubZone>(EntityManager.EntityType.ObjectChangingSubZone, out int lastValidIndex);
+        private static void TickInternal(int index)
+        {
+            ObjectChangingSubZone objectChangingSubZone = _list[index];
 
-            // Remove objects from one sub zone, and add them to another.
-            Parallel.For(0, lastValidIndex + 1, i =>
+            if (objectChangingSubZone?.EntityManagerId.IsSet != true)
+                return;
+
+            EntityManager.Remove(objectChangingSubZone);
+            SubZoneObject subZoneObject = null;
+
+            try
             {
-                ObjectChangingSubZone objectChangingSubZone = list[i];
+                subZoneObject = objectChangingSubZone.SubZoneObject;
+                LinkedListNode<GameObject> node = subZoneObject.Node;
+                SubZone currentSubZone = subZoneObject.CurrentSubZone;
+                Zone currentZone = currentSubZone?.ParentZone;
+                SubZone destinationSubZone = objectChangingSubZone.DestinationSubZone;
+                Zone destinationZone = objectChangingSubZone.DestinationZone;
+                bool changingZone = currentZone != destinationZone;
 
-                if (objectChangingSubZone?.EntityManagerId.IsSet != true)
-                    return;
-
-                EntityManager.Remove(objectChangingSubZone);
-                SubZoneObject subZoneObject = null;
-
-                try
+                if (currentSubZone == destinationSubZone)
                 {
-                    subZoneObject = objectChangingSubZone.SubZoneObject;
-                    LinkedListNode<GameObject> node = subZoneObject.Node;
-                    SubZone currentSubZone = subZoneObject.CurrentSubZone;
-                    Zone currentZone = currentSubZone?.ParentZone;
-                    SubZone destinationSubZone = objectChangingSubZone.DestinationSubZone;
-                    Zone destinationZone = objectChangingSubZone.DestinationZone;
-                    bool changingZone = currentZone != destinationZone;
+                    if (log.IsWarnEnabled)
+                        log.Warn($"Cancelled a subzone change because both subzones are the same ({nameof(currentZone)}: {currentZone?.ID}) ({nameof(destinationZone)}: {destinationZone?.ID}) (Object: {node.Value})");
 
-                    if (currentSubZone == destinationSubZone)
+                    return;
+                }
+
+                eGameObjectType objectType = node.Value.GameObjectType;
+
+                // Acquire locks on both subzones. We want the removal and addition to happen at the same time from a reader's point of view.
+                using SimpleDisposableLock currentSubZoneLock = currentSubZone?[objectType].GetLock();
+                using SimpleDisposableLock destinationSubZoneLock = destinationSubZone?[objectType].GetLock();
+
+                if (currentSubZoneLock != null)
+                {
+                    if (destinationSubZoneLock != null)
                     {
-                        if (log.IsWarnEnabled)
-                            log.Warn($"Cancelled a subzone change because both subzones are the same ({nameof(currentZone)}: {currentZone?.ID}) ({nameof(destinationZone)}: {destinationZone?.ID}) (Object: {node.Value})");
+                        currentSubZoneLock.EnterWriteLock();
 
-                        return;
-                    }
-
-                    // Acquire locks on both subzones. We want the removal and addition to happen at the same time from a reader's point of view.
-                    ConcurrentLinkedList<GameObject>.Writer currentSubZoneWriter = currentSubZone?.GetObjectWriter(node);
-                    ConcurrentLinkedList<GameObject>.Writer destinationSubZoneWriter = destinationSubZone?.GetObjectWriter(node);
-
-                    if (currentSubZoneWriter != null)
-                    {
-                        currentSubZoneWriter.Lock();
-
-                        if (destinationSubZoneWriter != null)
+                        // Spin until we can acquire a lock on the other subzone.
+                        while (!destinationSubZoneLock.TryEnterWriteLock())
                         {
-                            // Spin until we can acquire a lock on the other subzone.
-                            while (!destinationSubZoneWriter.TryLock())
-                            {
-                                // Relinquish then reacquire our current lock to prevent dead-locks.
-                                currentSubZoneWriter.Dispose();
-                                Thread.Sleep(0);
-                                currentSubZoneWriter.Lock();
-                            }
+                            // Relinquish then reacquire our current lock to prevent dead-locks.
+                            currentSubZoneLock.Dispose();
+                            Thread.Sleep(0);
+                            currentSubZoneLock.EnterWriteLock();
+                        }
 
-                            RemoveObjectFromCurrentSubZone();
-                            AddObjectToDestinationSubZone();
-                            currentSubZoneWriter.Dispose();
-                            destinationSubZoneWriter.Dispose();
-                        }
-                        else
-                        {
-                            RemoveObjectFromCurrentSubZone();
-                            currentSubZoneWriter.Dispose();
-                        }
+                        RemoveObjectFromCurrentSubZone();
+                        AddObjectToDestinationSubZone();
                     }
                     else
-                    {
-                        destinationSubZoneWriter.Lock();
-                        AddObjectToDestinationSubZone();
-                        destinationSubZoneWriter.Dispose();
-                    }
-
-                    void AddObjectToDestinationSubZone()
-                    {
-                        destinationSubZone.AddObjectNode(node);
-                        subZoneObject.CurrentSubZone = destinationSubZone;
-
-                        if (changingZone)
-                            destinationZone.OnObjectAddedToZone();
-                    }
-
-                    void RemoveObjectFromCurrentSubZone()
-                    {
-                        currentSubZone.RemoveObjectNode(node);
-
-                        if (changingZone)
-                            currentZone.OnObjectRemovedFromZone();
-
-                        subZoneObject.CurrentSubZone = null;
-                    }
+                        RemoveObjectFromCurrentSubZone();
                 }
-                catch (Exception e)
+                else
+                    AddObjectToDestinationSubZone();
+
+                void AddObjectToDestinationSubZone()
                 {
-                    ServiceUtils.HandleServiceException(e, SERVICE_NAME, objectChangingSubZone, objectChangingSubZone.SubZoneObject?.Node?.Value);
-                }
-                finally
-                {
-                    subZoneObject?.ResetSubZoneChange();
-                }
-            });
+                    destinationSubZone[objectType].AddLast(node);
+                    subZoneObject.CurrentSubZone = destinationSubZone;
 
-            Diagnostics.StopPerfCounter(SERVICE_NAME);
+                    if (changingZone)
+                        destinationZone.OnObjectAddedToZone();
+                }
+
+                void RemoveObjectFromCurrentSubZone()
+                {
+                    currentSubZone[objectType].Remove(node);
+
+                    if (changingZone)
+                        currentZone.OnObjectRemovedFromZone();
+
+                    subZoneObject.CurrentSubZone = null;
+                }
+            }
+            catch (Exception e)
+            {
+                ServiceUtils.HandleServiceException(e, SERVICE_NAME, objectChangingSubZone, objectChangingSubZone.SubZoneObject?.Node?.Value);
+            }
+            finally
+            {
+                subZoneObject?.ResetSubZoneChange();
+            }
         }
     }
 
@@ -134,8 +126,11 @@ namespace DOL.GS
 
         public static void Create(SubZoneObject subZoneObject, Zone destinationZone, SubZone destinationSubZone)
         {
-            if (EntityManager.TryReuse(EntityManager.EntityType.ObjectChangingSubZone, out ObjectChangingSubZone objectChangingSubZone))
+            if (EntityManager.TryReuse(EntityManager.EntityType.ObjectChangingSubZone, out ObjectChangingSubZone objectChangingSubZone, out int index))
+            {
                 objectChangingSubZone.Initialize(subZoneObject, destinationZone, destinationSubZone);
+                objectChangingSubZone.EntityManagerId.Value = index;
+            }
             else
             {
                 objectChangingSubZone = new(subZoneObject, destinationZone, destinationSubZone);

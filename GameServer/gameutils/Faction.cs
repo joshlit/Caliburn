@@ -18,37 +18,17 @@ namespace DOL.GS
 
         public string Name { get; private set; }
         public int Id { get; private set; }
-        public HashSet<Faction> FriendFactions { get; private set; }
-        public HashSet<Faction> EnemyFactions { get; private set; }
-        public ConcurrentDictionary<string, int> AggroToPlayers { get; private set; }
+        public HashSet<Faction> FriendFactions { get; }
+        public HashSet<Faction> EnemyFactions { get; }
+        public ConcurrentDictionary<string, int> AggroToPlayers { get; }
 
         public Faction()
         {
             Name = string.Empty;
-            FriendFactions = new HashSet<Faction>();
-            EnemyFactions = new HashSet<Faction>();
+            FriendFactions = [this];
+            EnemyFactions = [];
             AggroToPlayers = new ConcurrentDictionary<string, int>();
-            _characterIdsToSave = new List<GamePlayer>();
-        }
-
-        public void AddFriendFaction(Faction faction)
-        {
-            FriendFactions.Add(faction);
-        }
-
-        public void RemoveFriendFaction(Faction faction)
-        {
-            FriendFactions.Remove(faction);
-        }
-
-        public void AddEnemyFaction(Faction faction)
-        {
-            EnemyFactions.Add(faction);
-        }
-
-        public void RemoveEnemyFaction(Faction faction)
-        {
-            EnemyFactions.Remove(faction);
+            _characterIdsToSave = [];
         }
 
         public void LoadFromDatabase(DbFaction dbFaction)
@@ -58,15 +38,22 @@ namespace DOL.GS
             _baseAggroLevel = dbFaction.BaseAggroLevel;
         }
 
-        public void SaveFactionAggroToPlayers()
+        public int SaveFactionAggroToPlayers()
         {
+            int count = 0;
+
             lock (((ICollection) _characterIdsToSave).SyncRoot)
             {
                 foreach (GamePlayer player in _characterIdsToSave)
+                {
                     SaveFactionAggroToPlayer(player);
+                    count++;
+                }
 
                 _characterIdsToSave.Clear();
             }
+
+            return count;
         }
 
         private void SaveFactionAggroToPlayer(GamePlayer player)

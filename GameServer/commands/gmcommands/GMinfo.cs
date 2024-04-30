@@ -119,21 +119,18 @@ namespace DOL.GS.Commands
 					{
 						info.Add(" + Aggro level: " + aggroBrain.AggroLevel);
 						info.Add(" + Aggro range: " + aggroBrain.AggroRange);
+
 						if(aggroBrain is StandardMobBrain mobBrain)
 							info.Add(" + ThinkInterval: " + mobBrain.ThinkInterval +"ms");
-
-						if (target.MaxDistance < 0)
-							info.Add(" + MaxDistance: " + -target.MaxDistance * aggroBrain.AggroRange / 100);
-						else
-							info.Add(" + MaxDistance: " + target.MaxDistance);
 					}
 					else
 						info.Add(" + Not aggressive brain");
-						
+
 					if (target.NPCTemplate != null)
 						info.Add(" + NPCTemplate: " + "[" + target.NPCTemplate.TemplateId + "] " + target.NPCTemplate.Name);
 
 					info.Add(" + Roaming Range: " + target.RoamingRange);
+					info.Add(" + Tether Range: " + target.TetherRange);
 
 					TimeSpan respawn = TimeSpan.FromMilliseconds(target.RespawnInterval);
 					if (target.RespawnInterval <= 0)
@@ -274,11 +271,8 @@ namespace DOL.GS.Commands
 					if (target.InCombat || target.attackComponent.AttackState)
 					{
 						info.Add("RegionTick: " + GameLoop.GameLoopTime);
-						if(target.attackComponent.attackAction != null)
-						{
-							info.Add("AttackAction StartTime " + target.attackComponent.attackAction.StartTime);
-							info.Add("AttackAction TimeUntilStart " + (target.attackComponent.attackAction.StartTime - GameLoop.GameLoopTime));
-						}
+						info.Add("AttackAction NextTick " + target.attackComponent.attackAction.NextTick);
+						info.Add("AttackAction TimeUntilStart " + (target.attackComponent.attackAction.NextTick - GameLoop.GameLoopTime));
 					}
 
 					info.Add("");
@@ -289,17 +283,17 @@ namespace DOL.GS.Commands
 						info.Add("InView: " + target.TargetInView);
 					}
 
-					if (target.Brain != null && target.Brain is StandardMobBrain)
+					if (target.Brain is StandardMobBrain brain)
 					{
-						Dictionary<GameLiving, long> aggroList = (target.Brain as StandardMobBrain).AggroTable;
+						List<(GameLiving, long)> aggroList = brain.GetOrderedAggroList();
 
 						if (aggroList.Count > 0)
 						{
 							info.Add("");
 							info.Add("Aggro List:");
 
-							foreach (GameLiving living in aggroList.Keys)
-								info.Add(living.Name + ": " + aggroList[living]);
+							foreach ((GameLiving, long) pair in aggroList)
+								info.Add($"{pair.Item1.Name}: {pair.Item2}");
 						}
 					}
 
@@ -668,7 +662,7 @@ namespace DOL.GS.Commands
 					info.Add( " ");
 					info.Add( " + RealmPointsValue : " + target.RealmPointsValue);
 					info.Add( " + ExperienceValue : " + target.ExperienceValue);
-					info.Add( " + AttackRange : " + target.AttackRange);
+					info.Add( " + AttackRange : " + target.attackComponent.AttackRange);
 					info.Add(" ");
 					if (GameServer.KeepManager.GetFrontierKeeps().Contains(target.Keep))
 					{

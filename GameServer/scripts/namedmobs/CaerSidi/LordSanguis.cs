@@ -39,11 +39,7 @@ namespace DOL.GS
                 player.Out.SendMessage(message, eChatType.CT_Broadcast, eChatLoc.CL_SystemWindow);
             }
         }
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -152,13 +148,11 @@ namespace DOL.GS
 
                 CO.MeleeDamageType = eDamageType.Crush;
                 CO.Faction = FactionMgr.GetFactionByID(64);
-                CO.Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));
                 CO.RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
 
                 CO.X = 34080;
                 CO.Y = 32919;
                 CO.Z = 14518;
-                CO.MaxDistance = 2000;
                 CO.TetherRange = 2000;
                 CO.MaxSpeedBase = 250;
                 CO.Heading = 4079;
@@ -249,11 +243,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -311,14 +301,12 @@ namespace DOL.GS
             RespawnInterval = -1;
             LichLordSanguisBrain.set_flag = false;
 
-            MaxDistance = 2000;
             TetherRange = 2000;
             Size = 100;
             Level = 81;
             MaxSpeedBase = 250;
 
             Faction = FactionMgr.GetFactionByID(64);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));
             BodyType = 8;
             Realm = eRealm.None;
             LichLordSanguisBrain.set_flag = false;
@@ -394,11 +382,7 @@ namespace DOL.GS
             return base.AttackDamage(weapon) * Strength / 100;
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -445,7 +429,6 @@ namespace DOL.GS
             Name = "blood mage";
             RespawnInterval = -1;
 
-            MaxDistance = 2500;
             TetherRange = 3000;
             RoamingRange = 120;
             Size = 50;
@@ -453,7 +436,6 @@ namespace DOL.GS
             MaxSpeedBase = 200;
 
             Faction = FactionMgr.GetFactionByID(64);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));
             BodyType = 6;
             Realm = eRealm.None;
             ++MageCount;

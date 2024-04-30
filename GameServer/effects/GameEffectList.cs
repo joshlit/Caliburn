@@ -98,7 +98,7 @@ namespace DOL.GS.Effects
 
 			List<IGameEffect> changedEffects = new List<IGameEffect>();
 
-			lock (m_lockObject) // Mannen 10:56 PM 10/30/2006 - Fixing every lock ('this')
+			lock (m_lockObject)
 			{
 				int index = m_effects.IndexOf(effect);
 				
@@ -134,7 +134,10 @@ namespace DOL.GS.Effects
 			}
 			
 			BeginChanges();
-			Util.ForEach(fx, effect => effect.Cancel(false));
+
+			foreach (IGameEffect effect in fx)
+				effect.Cancel(false);
+
 			CommitChanges();
 		}
 
@@ -317,7 +320,7 @@ namespace DOL.GS.Effects
 			if (m_effects == null)
 				return new T[0];
 
-			lock (m_lockObject) // Mannen 10:56 PM 10/30/2006 - Fixing every lock ('this')
+			lock (m_lockObject)
 			{
 				return m_effects.Where(effect => effect.GetType().Equals(typeof(T))).Cast<T>().ToArray();
 			}
@@ -333,7 +336,7 @@ namespace DOL.GS.Effects
 			if (m_effects == null)
 				return 0;
 
-			lock (m_lockObject) // Mannen 10:56 PM 10/30/2006 - Fixing every lock ('this')
+			lock (m_lockObject)
 			{
 				return m_effects.Count(effect => effect.GetType().Equals(typeof(T)));
 			}
@@ -349,7 +352,7 @@ namespace DOL.GS.Effects
 			if (m_effects == null)
 				return 0;
 
-			lock (m_lockObject) // Mannen 10:56 PM 10/30/2006 - Fixing every lock ('this')
+			lock (m_lockObject)
 			{
 				return m_effects.Join(types, e => e.GetType(), t => t, (e, t) => e).Count();
 			}
@@ -381,7 +384,7 @@ namespace DOL.GS.Effects
 			if (m_effects == null)
 				return new IGameEffect[0];
 
-			lock (m_lockObject) // Mannen 10:56 PM 10/30/2006 - Fixing every lock ('this')
+			lock (m_lockObject)
 			{
 				return m_effects.Where(effect => effect.GetType().Equals(effectType)).ToArray();
 			}

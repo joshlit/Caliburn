@@ -3,53 +3,57 @@ using System.Threading;
 
 namespace DOL
 {
-    // A wrapper for a `ReaderWriterLockSlim`.
-    // Call `GetRead` or `GetWrite` with the using keyword.
-    // Recursion, upgrades, tries are not supported.
-    public class SimpleDisposableLock
+    // A wrapper for a `ReaderWriterLockSlim` implementing `IDisposable`.
+    // `Dispose` only takes care of the unlocking; it doesn't invalidate the underlying lock.
+    // Upgrades are not allowed.
+    // This class' instances aren't meant to be shared by multiple threads.
+    public class SimpleDisposableLock : IDisposable
     {
-        private ReaderWriterLockSlim _lock = new();
+        private ReaderWriterLockSlim _lock;
 
-        public Read GetRead()
+        public SimpleDisposableLock(LockRecursionPolicy recursionPolicy)
         {
-            return new Read(_lock);
+            _lock = new(recursionPolicy);
         }
 
-        public Write GetWrite()
+        public SimpleDisposableLock(ReaderWriterLockSlim @lock)
         {
-            return new Write(_lock);
+            _lock = @lock;
         }
 
-        public sealed class Read : IDisposable
+        public void EnterReadLock()
         {
-            private ReaderWriterLockSlim _lock;
+            _lock.EnterReadLock();
+        }
 
-            public Read(ReaderWriterLockSlim @lock)
-            {
-                _lock = @lock;
-                _lock.EnterReadLock();
-            }
+        public void ExitReadLock()
+        {
+            _lock.ExitReadLock();
+        }
 
-            public void Dispose()
-            {
+        public void EnterWriteLock()
+        {
+            _lock.EnterWriteLock();
+        }
+
+        public bool TryEnterWriteLock()
+        {
+            return _lock.TryEnterWriteLock(0);
+        }
+
+        public void ExitWriteLock()
+        {
+            _lock.ExitWriteLock();
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+
+            if (_lock.IsReadLockHeld)
                 _lock.ExitReadLock();
-            }
-        }
-
-        public sealed class Write : IDisposable
-        {
-            private ReaderWriterLockSlim _lock;
-
-            public Write(ReaderWriterLockSlim @lock)
-            {
-                _lock = @lock;
-                _lock.EnterWriteLock();
-            }
-
-            public void Dispose()
-            {
+            else if (_lock.IsWriteLockHeld)
                 _lock.ExitWriteLock();
-            }
         }
     }
 }

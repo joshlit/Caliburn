@@ -146,19 +146,19 @@ namespace DOL.GS.PacketHandler
 			{
 				short speed = 0;
 				ushort speedZ = 0;
-				if (npc == null)
-					return;
-				if (!npc.IsAtTargetPosition)
+
+				if (npc.IsMoving && !npc.IsAtDestination)
 				{
 					speed = npc.CurrentSpeed;
-					speedZ = (ushort) npc.movementComponent.TickSpeedZ;
+					speedZ = (ushort) npc.movementComponent.Velocity.Z;
 				}
-				pak.WriteShort((ushort)npc.ObjectID);
-				pak.WriteShort((ushort)speed);
+
+				pak.WriteShort((ushort) npc.ObjectID);
+				pak.WriteShort((ushort) speed);
 				pak.WriteShort(npc.Heading);
-				pak.WriteShort((ushort)npc.Z);
-				pak.WriteInt((uint)npc.X);
-				pak.WriteInt((uint)npc.Y);
+				pak.WriteShort((ushort) npc.Z);
+				pak.WriteInt((uint) npc.X);
+				pak.WriteInt((uint) npc.Y);
 				pak.WriteShort(speedZ);
 				pak.WriteShort(npc.Model);
 				pak.WriteByte(npc.Size);

@@ -1,7 +1,7 @@
 ﻿using System;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
@@ -70,21 +70,15 @@ namespace DOL.GS.Scripts
 		public override short MaxSpeedBase => (short) (191 + Level * 2);
 		public override int MaxHealth => 100000;
 
-		public override int AttackRange
-		{
-			get => 180;
-			set { }
-		}
+		public override int MeleeAttackRange => 180;
 		public override bool AddToWorld()
 		{
 			Level = 77;
 			Gender = eGender.Neutral;
 			BodyType = 11; // undead
-			MaxDistance = 0;
 			TetherRange = 0;
 			RoamingRange = 0;
 			MaxSpeedBase = 300;
-			CurrentSpeed = 300;
 
 			RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60166427);
@@ -125,7 +119,7 @@ namespace DOL.GS.Scripts
 
 namespace DOL.AI.Brain
 {
-	public class SpectralProvisionerBrain : StandardMobBrain
+    public class SpectralProvisionerBrain : StandardMobBrain
 	{
 		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 		public SpectralProvisionerBrain()
@@ -185,7 +179,6 @@ namespace DOL.AI.Brain
 			{
 				//Point3D spawn = new Point3D(30049, 40799, 17004);
 				Body.MaxSpeedBase = 300;
-				Body.CurrentSpeed = 300;
 
 				// if (HasAggro && Body.TargetObject != null)
 				// {
@@ -330,7 +323,7 @@ namespace DOL.AI.Brain
 #region Spectral Provisioner Spawner
 namespace DOL.GS
 {
-	public class SpectralProvisionerSpawner : GameNPC
+    public class SpectralProvisionerSpawner : GameNPC
 	{
 		public SpectralProvisionerSpawner() : base()
 		{
@@ -353,7 +346,7 @@ namespace DOL.GS
 }
 namespace DOL.AI.Brain
 {
-	public class SpectralProvisionerSpawnerBrain : StandardMobBrain
+    public class SpectralProvisionerSpawnerBrain : StandardMobBrain
 	{
 		private static readonly log4net.ILog log =
 			log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);

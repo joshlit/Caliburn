@@ -123,7 +123,6 @@ namespace DOLGameServerConsole
 		public void SendCloseTradeWindow() { }
 		public void SendPlayerDied(GamePlayer killedPlayer, GameObject killer) { }
 		public void SendPlayerRevive(GamePlayer revivedPlayer) { }
-		public void SendPlayerForgedPosition(GamePlayer player) { }
 		public void SendUpdatePlayer() { }
 		public void SendUpdatePlayerSkills() { }
 		public void SendUpdateWeaponAndArmorStats() { }
@@ -200,8 +199,7 @@ namespace DOLGameServerConsole
 		public void SendWarmapUpdate(ICollection<IGameKeep> list) { }
 		public void SendWarmapDetailUpdate(List<List<byte>> fights, List<List<byte>> groups) { }
 		public void SendWarmapBonuses() { }
-		public void SendCheckLOS(GameObject Checker, GameObject Target, DOL.GS.PacketHandler.CheckLOSResponse callback) { }
-		public void SendCheckLOS(GameObject source, GameObject target, DOL.GS.PacketHandler.CheckLOSMgrResponse callback) { }
+		public void SendCheckLos(GameObject source, GameObject target, CheckLosResponse callback) { }
 		public void SendLivingDataUpdate(GameLiving living, bool updateStrings) { }
 		public void SendPlayerTitles() { }
 		public void SendPlayerTitleUpdate(GamePlayer player) { }

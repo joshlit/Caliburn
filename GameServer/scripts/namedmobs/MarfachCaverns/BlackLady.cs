@@ -52,11 +52,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -101,7 +97,6 @@ namespace DOL.GS
             Intelligence = npcTemplate.Intelligence;
             Gender = eGender.Female;
             Faction = FactionMgr.GetFactionByID(187);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
             RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
 
             GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
@@ -324,11 +319,9 @@ namespace DOL.GS
             Name = "Ogress";
             Size = (byte)Util.Random(40, 50);
             Faction = FactionMgr.GetFactionByID(187);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
             RespawnInterval = -1;
             MaxSpeedBase = 200;
             Realm = eRealm.None;
-            MaxDistance = 0;
             TetherRange = 0;
 
             ++OgressCount;
@@ -363,19 +356,13 @@ namespace DOL.AI.Brain
                     if(player.IsAlive && player.IsVisibleTo(Body) && player.Client.Account.PrivLevel == 1 && (player.CharacterClass.ID == 6 || player.CharacterClass.ID == 10 || player.CharacterClass.ID == 48
                     || player.CharacterClass.ID == 46 || player.CharacterClass.ID == 47 || player.CharacterClass.ID == 42 || player.CharacterClass.ID == 28 || player.CharacterClass.ID == 26))
                     {
-                        if(!AggroTable.ContainsKey(player))
-                        {
-                            AggroTable.Add(player, 150);
+                        if (AggroList.TryAdd(player, new(150)))
                             Body.StartAttack(player);
-                        }
                     }
                     else
                     {
-                        if (!AggroTable.ContainsKey(player))
-                        {
-                            AggroTable.Add(player, 10);
+                        if (AggroList.TryAdd(player, new(10)))
                             Body.StartAttack(player);
-                        }
                     }
                 }
             }

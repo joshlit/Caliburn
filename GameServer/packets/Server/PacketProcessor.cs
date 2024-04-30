@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 #define LOGACTIVESTACKS
 
 using System;
@@ -302,7 +283,7 @@ namespace DOL.GS.PacketHandler
         /// <summary>
         /// The client TCP packet send queue
         /// </summary>
-        protected ConcurrentQueue<byte[]> TcpQueue { get; private set; } = new();
+        protected ConcurrentQueue<byte[]> TcpQueue { get; } = new();
 
         /// <summary>
         /// Sends a packet via TCP
@@ -328,18 +309,11 @@ namespace DOL.GS.PacketHandler
             {
                 if (log.IsErrorEnabled)
                 {
-                    string desc = $"Sending packets longer than 2048 cause client to crash, check Log for stacktrace. Packet code: 0x{buf[2]:X2}, account: {(m_client.Account != null ? m_client.Account.Name : m_client.TcpEndpoint)}, packet size: {buf.Length}.";
-                    log.Error(Marshal.ToHexDump(desc, buf) + "\n" + Environment.StackTrace);
-
-                    if (Properties.IGNORE_TOO_LONG_OUTCOMING_PACKET)
-                    {
-                        log.Error("ALERT: Oversize packet detected and discarded.");
-                        m_client.Out.SendMessage("ALERT: Error sending an update to your client. Oversize packet detected and discarded. Please /report this issue!", eChatType.CT_Staff, eChatLoc.CL_SystemWindow);
-                    }
-                    else
-                        GameServer.Instance.Disconnect(m_client);
+                    string desc = $"Discarding oversized packet. Packet code: 0x{buf[2]:X2}, account: {(m_client.Account != null ? m_client.Account.Name : m_client.TcpEndpoint)}, packet size: {buf.Length}.";
+                    log.Error($"{Marshal.ToHexDump(desc, buf)}\n{Environment.StackTrace}");
                 }
 
+                m_client.Out.SendMessage($"Oversized packet detected and discarded (code: 0x{buf[2]:X2}) (size: {buf.Length}). Please report this issue!", eChatType.CT_Staff, eChatLoc.CL_SystemWindow);
                 return;
             }
 
@@ -348,6 +322,9 @@ namespace DOL.GS.PacketHandler
 
         public void ProcessTcpQueue()
         {
+            if (!m_client.Socket.Connected)
+                return;
+
             try
             {
                 int count;
@@ -378,6 +355,12 @@ namespace DOL.GS.PacketHandler
 
                 GameServer.Instance.Disconnect(m_client);
             }
+        }
+
+        public void ClearPacketQueues()
+        {
+            TcpQueue.Clear();
+            m_udpQueue.Clear(); // Probably doesn't do anything. 'TcpQueue' and 'm_udpQueue' currently serve a different purpose.
         }
 
         /// <summary>
@@ -518,7 +501,7 @@ namespace DOL.GS.PacketHandler
             {
                 // Would previously timeout after 50 seconds, but clients (1.127) send 'UDPInitRequestHandler' every 65 seconds.
                 // May vary depending on the client version.
-                if (GameLoop.GetCurrentTime() - m_client.UdpPingTime > 70000)
+                if (GameLoop.GameLoopTime - m_client.UdpPingTime > 70000)
                     m_client.UdpConfirm = false;
             }
 
@@ -806,8 +789,6 @@ namespace DOL.GS.PacketHandler
                         {
                             builder.Append("null");
                         }
-                        builder.Append("\n");
-                        builder.Append(Util.GetFormattedStackTraceFrom(Thread.CurrentThread));
                         builder.Append("\n\n");
                     }
                     catch (Exception e)

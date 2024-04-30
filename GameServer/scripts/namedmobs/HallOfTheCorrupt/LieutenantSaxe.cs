@@ -1,10 +1,11 @@
 ﻿using System;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 using DOL.GS.Styles;
+
 namespace DOL.GS
 {
     public class LieutenantSaxe : GameNPC
@@ -90,11 +91,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 150;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool HasAbility(string keyName)
         {
             if (this.IsAlive && keyName == DOL.GS.Abilities.CCImmunity)
@@ -118,7 +115,6 @@ namespace DOL.GS
         public override bool AddToWorld()
         {
             Faction = FactionMgr.GetFactionByID(187);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
             BodyType = (ushort)NpcTemplateMgr.eBodyType.Humanoid;
 
             GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
@@ -148,7 +144,6 @@ namespace DOL.GS
             Dexterity = 200;
             Quickness = 80;
             EvadeChance = 50;
-            MaxDistance = 2000;
             TetherRange = 1500;
             MaxSpeedBase = 225;
             Gender = eGender.Male;
@@ -180,7 +175,6 @@ namespace DOL.GS
                 HOC.Size = 50;
                 HOC.CurrentRegionID = 277; //hall of the corrupt
                 HOC.Faction = FactionMgr.GetFactionByID(187);
-                HOC.Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
 
                 HOC.Strength = 70;
                 HOC.Constitution = 100;
@@ -236,9 +230,3 @@ namespace DOL.AI.Brain
         }
     }
 }
-
-
-
-
-
-

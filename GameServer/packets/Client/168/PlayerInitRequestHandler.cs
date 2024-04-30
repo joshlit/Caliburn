@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +27,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 		/// <summary>
 		/// Handles player init requests
 		/// </summary>
-		protected class PlayerInitRequestAction : AuxECSGameTimerWrapperBase
+		protected class PlayerInitRequestAction : ECSGameTimerWrapperBase
 		{
 			/// <summary>
 			/// Constructs a new PlayerInitRequestHandler
@@ -59,7 +40,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 			/// <summary>
 			/// Called on every timer tick
 			/// </summary>
-			protected override int OnTick(AuxECSGameTimer timer)
+			protected override int OnTick(ECSGameTimer timer)
 			{
 				GamePlayer player = (GamePlayer) timer.Owner;
 
@@ -209,12 +190,14 @@ namespace DOL.GS.PacketHandler.Client.v168
 
 				return 0;
 			}
-			
-			private void ShowPatchNotes(GamePlayer player)
-			{
-				var today = DateTime.Today;
 
-				player.Out.SendCustomTextWindow("Server News " + today.ToString("d"), GameServer.Instance.PatchNotes);
+			private static void ShowPatchNotes(GamePlayer player)
+			{
+				if (player.Client.HasSeenPatchNotes)
+					return;
+
+				player.Out.SendCustomTextWindow($"Server News {DateTime.Today:d}", GameServer.Instance.PatchNotes);
+				player.Client.HasSeenPatchNotes = true;
 			}
 
 			private static void CheckBGLevelCapForPlayerAndMoveIfNecessary(GamePlayer player)
@@ -246,10 +229,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 			{
 				if (player.CurrentRegion.IsInstance)
 				{
-					if (WorldMgr.RvRLinkDeadPlayers.ContainsKey(player.InternalID))
-					{
-						WorldMgr.RvRLinkDeadPlayers.Remove(player.InternalID);
-					}
+					WorldMgr.RvrLinkDeadPlayers.TryRemove(player.InternalID, out _);
 					return;
 				}
 
@@ -258,9 +238,9 @@ namespace DOL.GS.PacketHandler.Client.v168
 				AbstractGameKeep keep = GameServer.KeepManager.GetKeepCloseToSpot(player.CurrentRegionID, player, WorldMgr.VISIBILITY_DISTANCE);
 				if (keep != null && player.Client.Account.PrivLevel == 1 && GameServer.KeepManager.IsEnemy(keep, player))
 				{
-					if (WorldMgr.RvRLinkDeadPlayers.ContainsKey(player.InternalID))
+					if (WorldMgr.RvrLinkDeadPlayers.TryGetValue(player.InternalID, out DateTime value))
 					{
-						if (DateTime.Now.Subtract(new TimeSpan(0, gracePeriodInMinutes, 0)) > WorldMgr.RvRLinkDeadPlayers[player.InternalID])
+						if (DateTime.Now.Subtract(new TimeSpan(0, gracePeriodInMinutes, 0)) > value)
 						{
 							SendMessageAndMoveToSafeLocation(player);
 						}
@@ -270,14 +250,13 @@ namespace DOL.GS.PacketHandler.Client.v168
 						SendMessageAndMoveToSafeLocation(player);
 					}
 				}			
-				var linkDeadPlayerIds = new string[WorldMgr.RvRLinkDeadPlayers.Count];
-				WorldMgr.RvRLinkDeadPlayers.Keys.CopyTo(linkDeadPlayerIds, 0);
+				var linkDeadPlayerIds = new string[WorldMgr.RvrLinkDeadPlayers.Count];
+				WorldMgr.RvrLinkDeadPlayers.Keys.CopyTo(linkDeadPlayerIds, 0);
 				foreach (string playerId in linkDeadPlayerIds)
 				{
-					if (playerId != null &&
-					    DateTime.Now.Subtract(new TimeSpan(0, gracePeriodInMinutes, 0)) > WorldMgr.RvRLinkDeadPlayers[playerId])
+					if (playerId != null && DateTime.Now.Subtract(new TimeSpan(0, gracePeriodInMinutes, 0)) > WorldMgr.RvrLinkDeadPlayers[playerId])
 					{
-						WorldMgr.RvRLinkDeadPlayers.Remove(playerId);
+						WorldMgr.RvrLinkDeadPlayers.TryRemove(playerId, out _);
 					}
 				}
 			}
@@ -290,9 +269,9 @@ namespace DOL.GS.PacketHandler.Client.v168
 				AbstractGameKeep keep = GameServer.KeepManager.GetKeepCloseToSpot(player.CurrentRegionID, player, WorldMgr.VISIBILITY_DISTANCE);
 				if (keep != null && keep.InCombat && player.Client.Account.PrivLevel == 1 && !GameServer.KeepManager.IsEnemy(keep, player))
 				{
-					if (WorldMgr.RvRLinkDeadPlayers.ContainsKey(player.InternalID))
+					if (WorldMgr.RvrLinkDeadPlayers.TryGetValue(player.InternalID, out DateTime value))
 					{
-						if (DateTime.Now.Subtract(new TimeSpan(0, gracePeriodInMinutes, 0)) > WorldMgr.RvRLinkDeadPlayers[player.InternalID])
+						if (DateTime.Now.Subtract(new TimeSpan(0, gracePeriodInMinutes, 0)) > value)
 						{
 							SendMessageAndMoveToSafeLocation(player);
 						}

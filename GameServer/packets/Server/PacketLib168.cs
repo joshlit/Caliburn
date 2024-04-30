@@ -9,11 +9,11 @@ using DOL.Database;
 using DOL.GS.Effects;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
+using DOL.GS.PacketHandler.Client.v168;
 using DOL.GS.PlayerTitles;
 using DOL.GS.Quests;
 using DOL.GS.RealmAbilities;
 using DOL.GS.ServerProperties;
-using DOL.GS.Spells;
 using DOL.GS.Styles;
 using DOL.Language;
 using log4net;
@@ -713,78 +713,91 @@ namespace DOL.GS.PacketHandler
 
 		public virtual void SendObjectUpdate(GameObject obj)
 		{
-			Zone z = obj.CurrentZone;
-
-			if (z == null ||
-				m_gameClient.Player == null ||
-				m_gameClient.Player.IsVisibleTo(obj) == false)
-			{
+			if (m_gameClient.Player == null || !m_gameClient.Player.IsVisibleTo(obj))
 				return;
-			}
 
-			var xOffsetInZone = (ushort)(obj.X - z.XOffset);
-			var yOffsetInZone = (ushort)(obj.Y - z.YOffset);
+			Zone zone = obj.CurrentZone;
+
+			if (zone == null)
+				return;
+
+			ushort xOffsetInZone;
+			ushort yOffsetInZone;
+			ushort z;
 			ushort xOffsetInTargetZone = 0;
 			ushort yOffsetInTargetZone = 0;
 			ushort zOffsetInTargetZone = 0;
 
-			int speed = 0;
-			ushort targetZone = 0;
+			ushort speed = 0;
+			ushort heading;
+			ushort targetZoneSkinId = 0;
 			byte flags = 0;
 			int targetOID = 0;
-			if (obj is GameNPC)
+
+			if (obj is not GameNPC npc)
 			{
-				var npc = obj as GameNPC;
-				flags = (byte)(GameServer.ServerRules.GetLivingRealm(m_gameClient.Player, npc) << 6);
+				xOffsetInZone = (ushort) (obj.X - zone.XOffset);
+				yOffsetInZone = (ushort) (obj.Y - zone.YOffset);
+				z = (ushort) obj.Z;
+				heading = obj.Heading;
+			}
+			else
+			{
+				xOffsetInZone = (ushort) (npc.movementComponent.PositionForClient.X - zone.XOffset);
+				yOffsetInZone = (ushort) (npc.movementComponent.PositionForClient.Y - zone.YOffset);
+				z = (ushort) npc.movementComponent.PositionForClient.Z;
+				flags = (byte) (GameServer.ServerRules.GetLivingRealm(m_gameClient.Player, npc) << 6);
 
 				if (m_gameClient.Account.PrivLevel < 2)
 				{
-					// no name only if normal player
 					if ((npc.Flags & GameNPC.eFlags.CANTTARGET) != 0)
 						flags |= 0x01;
+
 					if ((npc.Flags & GameNPC.eFlags.DONTSHOWNAME) != 0)
 						flags |= 0x02;
 				}
-				if ((npc.Flags & GameNPC.eFlags.STATUE) != 0)
-				{
-					flags |= 0x01;
-				}
-				if (npc.IsUnderwater)
-				{
-					flags |= 0x10;
-				}
-				if ((npc.Flags & GameNPC.eFlags.FLYING) != 0)
-				{
-					flags |= 0x20;
-				}
 
-				if (npc.IsMoving && !npc.IsAtTargetPosition)
+				if ((npc.Flags & GameNPC.eFlags.STATUE) != 0)
+					flags |= 0x01;
+
+				if (npc.IsUnderwater)
+					flags |= 0x10;
+
+				if ((npc.Flags & GameNPC.eFlags.FLYING) != 0)
+					flags |= 0x20;
+
+				if (!npc.IsMoving || npc.IsAtDestination)
+					heading = npc.Heading;
+				else
 				{
-					speed = npc.CurrentSpeed;
-					if (npc.IsTargetPositionValid)
+					speed = (ushort) npc.movementComponent.HorizontalVelocityForClient;
+					int zSpeed = (int) (npc.movementComponent.Velocity.Z / 4);
+
+					if (zSpeed < 0)
 					{
-						Zone tz = npc.CurrentRegion.GetZone(npc.TargetPosition.X, npc.TargetPosition.Y);
-						if (tz != null)
+						zSpeed = -zSpeed;
+						speed |= 0x8000;
+					}
+
+					speed |= (ushort) ((zSpeed & 0x70) << 8);
+					heading = (ushort) (((zSpeed & 0xF) << 12) | (npc.Heading & 0xFFF));
+
+					if (npc.IsDestinationValid)
+					{
+						Zone targetZone = npc.CurrentRegion.GetZone(npc.movementComponent.DestinationForClient.X, npc.movementComponent.DestinationForClient.Y);
+
+						if (targetZone != null)
 						{
-							xOffsetInTargetZone = (ushort)(npc.TargetPosition.X - tz.XOffset);
-							yOffsetInTargetZone = (ushort)(npc.TargetPosition.Y - tz.YOffset);
-							zOffsetInTargetZone = (ushort)(npc.TargetPosition.Z);
+							xOffsetInTargetZone = (ushort) (npc.movementComponent.DestinationForClient.X - targetZone.XOffset);
+							yOffsetInTargetZone = (ushort) (npc.movementComponent.DestinationForClient.Y - targetZone.YOffset);
+							zOffsetInTargetZone = (ushort) npc.movementComponent.DestinationForClient.Z;
 							//Dinberg:Instances - zoneSkinID for object positioning clientside.
-							targetZone = tz.ZoneSkinID;
+							targetZoneSkinId = targetZone.ZoneSkinID;
 						}
 					}
-
-					if (speed > 0x07FF)
-					{
-						speed = 0x07FF;
-					}
-					else if (speed < 0)
-					{
-						speed = 0;
-					}
 				}
 
-				if (npc.attackComponent.IsAttacking && !npc.IsTurningDisabled)
+				if (npc.IsAttacking && !npc.IsTurningDisabled)
 				{
 					GameObject target = npc.TargetObject;
 
@@ -795,45 +808,37 @@ namespace DOL.GS.PacketHandler
 
 			using (GSUDPPacketOut pak = new GSUDPPacketOut(GetPacketCode(eServerPackets.ObjectUpdate)))
 			{
-				pak.WriteShort((ushort) speed);
-
-				if (obj is GameNPC)
-				{
-					pak.WriteShort((ushort)(obj.Heading & 0xFFF));
-				}
-				else
-				{
-					pak.WriteShort(obj.Heading);
-				}
+				pak.WriteShort(speed);
+				pak.WriteShort(heading);
 				pak.WriteShort(xOffsetInZone);
 				pak.WriteShort(xOffsetInTargetZone);
 				pak.WriteShort(yOffsetInZone);
 				pak.WriteShort(yOffsetInTargetZone);
-				pak.WriteShort((ushort) obj.Z);
+				pak.WriteShort(z);
 				pak.WriteShort(zOffsetInTargetZone);
 				pak.WriteShort((ushort) obj.ObjectID);
 				pak.WriteShort((ushort) targetOID);
-				//health
+
 				if (obj is GameLiving)
-				{
 					pak.WriteByte((obj as GameLiving).HealthPercent);
-				}
 				else
-				{
 					pak.WriteByte(0);
-				}
+
 				//Dinberg:Instances - zoneskinID for positioning of objects clientside.
-				flags |= (byte) (((z.ZoneSkinID & 0x100) >> 6) | ((targetZone & 0x100) >> 5));
+				flags |= (byte) (((zone.ZoneSkinID & 0x100) >> 6) | ((targetZoneSkinId & 0x100) >> 5));
 				pak.WriteByte(flags);
-				pak.WriteByte((byte) z.ZoneSkinID);
+				pak.WriteByte((byte) zone.ZoneSkinID);
 				//Dinberg:Instances - targetZone already accomodates for this feat.
-				pak.WriteByte((byte) targetZone);
+				pak.WriteByte((byte) targetZoneSkinId);
 				SendUDP(pak);
 			}
 		}
 
 		public virtual void SendPlayerQuit(bool totalOut)
 		{
+			// Prevents the client from entering the game when this is called when the player is changing region.
+			m_gameClient.PacketProcessor.ClearPacketQueues();
+
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.Quit)))
 			{
 				pak.WriteByte((byte)(totalOut ? 0x01 : 0x00));
@@ -994,11 +999,13 @@ namespace DOL.GS.PacketHandler
 			{
 				short speed = 0;
 				ushort speedZ = 0;
-				if (npc.IsMoving && !npc.IsAtTargetPosition)
+
+				if (npc.IsMoving && !npc.IsAtDestination)
 				{
 					speed = npc.CurrentSpeed;
-					speedZ = (ushort) npc.movementComponent.TickSpeedZ;
+					speedZ = (ushort) npc.movementComponent.Velocity.Z;
 				}
+
 				pak.WriteShort((ushort) npc.ObjectID);
 				pak.WriteShort((ushort) speed);
 				pak.WriteShort(npc.Heading);
@@ -1482,59 +1489,49 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		[Obsolete("Shouldn't be used in favor of new LoS Check Manager")]
-		public virtual void SendCheckLOS(GameObject Checker, GameObject Target, CheckLOSResponse callback)
+		public virtual void SendCheckLos(GameObject source, GameObject target, CheckLosResponse callback)
 		{
-			if (m_gameClient.Player == null)
+			if (m_gameClient.Player == null || source == null || target == null)
 				return;
 
-			int TargetOID = Target != null ? Target.ObjectID : 0;
-			string key = string.Format("LOS C:0x{0} T:0x{1}", Checker.ObjectID, TargetOID);
-			CheckLOSResponse old_callback = null;
+			ushort sourceObjectId = (ushort) source.ObjectID;
+			ushort targetObjectId = (ushort) target.ObjectID;
 
-			lock (m_gameClient.Player.TempProperties)
-			{
-				old_callback = m_gameClient.Player.TempProperties.GetProperty<CheckLOSResponse>(key, null);
-				m_gameClient.Player.TempProperties.SetProperty(key, callback);
-			}
-			if (old_callback != null)
-				old_callback(m_gameClient.Player, 0, 0);
+			if (!HandleCallback(m_gameClient, sourceObjectId, targetObjectId, callback))
+				return;
 
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.CheckLOSRequest)))
 			{
-				pak.WriteShort((ushort)Checker.ObjectID);
-				pak.WriteShort((ushort)TargetOID);
+				pak.WriteShort(sourceObjectId);
+				pak.WriteShort(targetObjectId);
 				pak.WriteShort(0x00); // ?
 				pak.WriteShort(0x00); // ?
 				SendTCP(pak);
 			}
-		}
 
-		public virtual void SendCheckLOS(GameObject source, GameObject target, CheckLOSMgrResponse callback)
-		{
-			if (m_gameClient.Player == null)
-				return;
-
-			int TargetOID = target != null ? target.ObjectID : 0;
-			int SourceOID = source != null ? source.ObjectID : 0;
-			string key = string.Format("LOSMGR C:0x{0} T:0x{1}", SourceOID, TargetOID);
-			CheckLOSMgrResponse old_callback = null;
-
-			lock (m_gameClient.Player.TempProperties)
+			static bool HandleCallback(GameClient client, ushort sourceObjectId, ushort targetObjectId, CheckLosResponse callback)
 			{
-				old_callback = m_gameClient.Player.TempProperties.GetProperty<CheckLOSMgrResponse>(key, null);
-				m_gameClient.Player.TempProperties.SetProperty(key, callback);
-			}
-			if (old_callback != null)
-				old_callback(m_gameClient.Player, 0, 0, 0);
+				CheckLosResponseHandler.TimeoutTimer timer;
 
-			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.CheckLOSRequest)))
-			{
-				pak.WriteShort((ushort) SourceOID);
-				pak.WriteShort((ushort) TargetOID);
-				pak.WriteShort(0x00); // ?
-				pak.WriteShort(0x00); // ?
-				SendTCP(pak);
+				// If there's already a timer running, don't send a new packet. Instead, try to add the callback to its list.
+				// Loop until we can do something with this callback. `TryAddCallback` may return false if the timer was being processed.
+				do
+				{
+					timer = client.Player.LosCheckTimers.GetOrAdd((sourceObjectId, targetObjectId), CreateTimer, (client.Player, callback));
+
+					if (!timer.IsAlive)
+					{
+						timer.Start();
+						return true;
+					}
+				} while (!timer.TryAddCallback(callback));
+
+				return false;
+
+				static CheckLosResponseHandler.TimeoutTimer CreateTimer((ushort sourceObjectId, ushort targetObjectId) key, (GamePlayer player, CheckLosResponse callback) args)
+				{
+					return new(args.player, args.callback, key.sourceObjectId, key.targetObjectId);
+				}
 			}
 		}
 
@@ -1607,7 +1604,7 @@ namespace DOL.GS.PacketHandler
 								playerStatus |= 0x02;
 							if (updateLiving.IsDiseased)
 								playerStatus |= 0x04;
-							if (SpellHelper.FindEffectOnTarget(updateLiving, "DamageOverTime") != null)
+							if (updateLiving.IsPoisoned)
 								playerStatus |= 0x08;
 							if (updateLiving is GamePlayer &&
 							    (updateLiving as GamePlayer).Client.ClientState == GameClient.eClientState.Linkdead)
@@ -1982,127 +1979,6 @@ namespace DOL.GS.PacketHandler
 				pak.WriteShort((ushort) revivedPlayer.ObjectID);
 				pak.WriteShort(0x00);
 				SendTCP(pak);
-			}
-		}
-
-		/// <summary>
-		/// This is used to build a server side "Position Object"
-		/// Usually Position Packet Should only be relayed
-		/// The only purpose of this method is refreshing postion when there is Lag
-		/// </summary>
-		/// <param name="player"></param>
-		public virtual void SendPlayerForgedPosition(GamePlayer player)
-		{
-			using (GSUDPPacketOut pak = new GSUDPPacketOut(GetPacketCode(eServerPackets.PlayerPosition)))
-			{
-				// PID
-				pak.WriteShort((ushort)player.Client.SessionID);
-
-				// Write Speed
-				if (player.Steed != null && player.Steed.ObjectState == GameObject.eObjectState.Active)
-				{
-					player.Heading = player.Steed.Heading;
-					pak.WriteShort(0x1800);
-				}
-				else
-				{
-					short rSpeed = player.CurrentSpeed;
-					if (player.IsIncapacitated)
-						rSpeed = 0;
-
-					ushort content;
-					if (rSpeed < 0)
-					{
-						content = (ushort)((Math.Abs(rSpeed) > 511 ? 511 : Math.Abs(rSpeed)) + 0x200);
-					}
-					else
-					{
-						content = (ushort)(rSpeed > 511 ? 511 : rSpeed);
-					}
-
-					if (!player.IsAlive)
-					{
-						content += 5 << 10;
-					}
-					else
-					{
-						ushort state = 0;
-
-						if (player.IsSwimming)
-							state = 1;
-
-						if (player.IsClimbing)
-							state = 7;
-
-						if (player.IsSitting)
-							state = 4;
-
-						content += (ushort)(state << 10);
-					}
-
-					content += (ushort)(player.IsStrafing ? 1 << 13 : 0 << 13);
-
-					pak.WriteShort(content);
-				}
-
-				// Get Off Corrd
-				int offX = player.X - player.CurrentZone.XOffset;
-				int offY = player.Y - player.CurrentZone.YOffset;
-
-				pak.WriteShort((ushort)player.Z);
-				pak.WriteShort((ushort)offX);
-				pak.WriteShort((ushort)offY);
-
-				// Write Zone
-				pak.WriteByte((byte)player.CurrentZone.ZoneSkinID);
-				pak.WriteByte(0);
-
-				// Copy Heading && Falling or Write Steed
-				if (player.Steed != null && player.Steed.ObjectState == GameObject.eObjectState.Active)
-				{
-					pak.WriteShort((ushort)player.Steed.ObjectID);
-					pak.WriteShort((ushort)player.Steed.RiderSlot(player));
-				}
-				else
-				{
-					// Set Player always on ground, this is an "anti lag" packet
-					ushort contenthead = (ushort)(player.Heading + (true ? 0x1000 : 0));
-					pak.WriteShort(contenthead);
-					// No Fall Speed.
-					pak.WriteShort(0);
-				}
-
-				// Write Flags
-				byte flagcontent = 0;
-
-				if (player.IsDiving)
-				{
-					flagcontent += 0x04;
-				}
-
-				if (player.IsWireframe)
-				{
-					flagcontent += 0x01;
-				}
-
-				if (player.IsStealthed)
-				{
-					flagcontent += 0x02;
-				}
-
-				if (player.IsTorchLighted)
-				{
-					flagcontent += 0x80;
-				}
-
-				pak.WriteByte(flagcontent);
-
-				// Write health + Attack
-				byte healthcontent = (byte)(player.HealthPercent + (player.attackComponent.AttackState ? 0x80 : 0));
-
-				pak.WriteByte(healthcontent);
-
-				SendUDP(pak);
 			}
 		}
 
@@ -3186,7 +3062,7 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(0x00);
 				pak.WriteByte((byte) eDialogCode.HousePayRent);
 				pak.Fill(0x00, 8); // empty
-				pak.WriteByte(0x02); // type
+				pak.WriteByte(0x01); // type. Changed from 0x02 to `YesNo`. 0x02 seems invalid on 1.127.
 				pak.WriteByte(0x01); // wrap
 				if (title.Length > 0)
 					pak.WriteString(title); // title ??
@@ -3988,9 +3864,9 @@ namespace DOL.GS.PacketHandler
 					playerStatus |= 0x02;
 				if (living.IsDiseased)
 					playerStatus |= 0x04;
-				if (SpellHelper.FindEffectOnTarget(living, "DamageOverTime") != null)
+				if (living.IsPoisoned)
 					playerStatus |= 0x08;
-				if (living is GamePlayer && ((GamePlayer) living).Client.ClientState == GameClient.eClientState.Linkdead)
+				if (player?.Client.ClientState == GameClient.eClientState.Linkdead)
 					playerStatus |= 0x10;
 
 				pak.WriteByte(playerStatus);

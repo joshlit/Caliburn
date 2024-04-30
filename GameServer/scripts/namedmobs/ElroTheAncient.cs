@@ -2,8 +2,8 @@
 using System.Reflection;
 using DOL.AI;
 using DOL.AI.Brain;
-using DOL.GS.PacketHandler;
 using DOL.Database;
+using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Scripts
 {
@@ -28,11 +28,7 @@ namespace DOL.GS.Scripts
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -104,7 +100,6 @@ namespace DOL.GS.Scripts
 			mob.MeleeDamageType = this.MeleeDamageType;
 			mob.RespawnInterval = -1; // dont respawn
 			mob.RoamingRange = this.RoamingRange;
-			mob.MaxDistance = 4000;
 
 			// also copies the stats
 
@@ -118,8 +113,6 @@ namespace DOL.GS.Scripts
 			mob.Charisma = this.Charisma;
 
 			//Fill the living variables
-			mob.CurrentSpeed = 200;
-
 			mob.MaxSpeedBase = this.MaxSpeedBase;
 			mob.Size = this.Size;
 			mob.NPCTemplate = this.NPCTemplate;
@@ -205,5 +198,4 @@ namespace DOL.GS.Scripts
 		}
 		
 	}
-
 }

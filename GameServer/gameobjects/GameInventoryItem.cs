@@ -267,14 +267,11 @@ namespace DOL.GS
                 if (ConditionPercent > 70 && Util.Chance(ServerProperties.Properties.ITEM_CONDITION_LOSS_CHANCE))
                 {
                     int oldPercent = ConditionPercent;
-                    double con = GamePlayer.GetConLevel(player.Level, Level);
-                    if (con < -3.0)
-                        con = -3.0;
-                    int sub = (int)(con + 4);
+                    int con = GameObject.GetConLevel(player.Level, Level);
+                    int sub = con + 4;
+
                     if (oldPercent < 91)
-                    {
                         sub *= 2;
-                    }
 
                     // Subtract condition
                     Condition -= sub;
@@ -311,14 +308,11 @@ namespace DOL.GS
                 if (ConditionPercent > 70 && Util.Chance(ServerProperties.Properties.ITEM_CONDITION_LOSS_CHANCE))
                 {
                     int oldPercent = ConditionPercent;
-                    double con = GamePlayer.GetConLevel(player.Level, Level);
-                    if (con < -3.0)
-                        con = -3.0;
-                    int sub = (int)(con + 4);
+                    int con = GameObject.GetConLevel(player.Level, Level);
+                    int sub = con + 4;
+
                     if (oldPercent < 91)
-                    {
                         sub *= 2;
-                    }
 
                     // Subtract condition
                     Condition -= sub;
@@ -521,7 +515,7 @@ namespace DOL.GS
             }
         }
 
-        protected virtual void WriteUsableClasses(IList<string> output, GameClient client)
+        protected virtual void WriteUsableClasses(List<string> output, GameClient client)
         {
             if (string.IsNullOrEmpty(AllowedClasses))
                 return;
@@ -543,7 +537,7 @@ namespace DOL.GS
         }
 
 
-        protected virtual void WriteMagicalBonuses(IList<string> output, GameClient client, bool shortInfo)
+        protected virtual void WriteMagicalBonuses(List<string> output, GameClient client, bool shortInfo)
         {
             int oldCount = output.Count;
 
@@ -630,7 +624,7 @@ namespace DOL.GS
                             ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(client.Player, procSpell, line);
                             if (spellHandler != null)
                             {
-                                Util.AddRange(output, spellHandler.DelveInfo);
+                                output.AddRange(spellHandler.DelveInfo);
                                 output.Add(" ");
                             }
                             else
@@ -677,7 +671,7 @@ namespace DOL.GS
                             ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(client.Player, procSpell, line);
                             if (spellHandler != null)
                             {
-                                Util.AddRange(output, spellHandler.DelveInfo);
+                                output.AddRange(spellHandler.DelveInfo);
                                 output.Add(" ");
                             }
                             else
@@ -721,7 +715,7 @@ namespace DOL.GS
                                     output.Add(" ");
                                 }
 
-                                Util.AddRange(output, spellHandler.DelveInfo);
+                                output.AddRange(spellHandler.DelveInfo);
                                 output.Add(" ");
                                 output.Add("- This spell is cast when the item is used.");
                             }
@@ -760,7 +754,7 @@ namespace DOL.GS
                                     output.Add(" ");
                                 }
 
-                                Util.AddRange(output, spellHandler.DelveInfo);
+                                output.AddRange(spellHandler.DelveInfo);
                                 output.Add(" ");
                                 output.Add("- This spell is cast when the item is used.");
                             }
@@ -803,7 +797,7 @@ namespace DOL.GS
                                     ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(client.Player, spl, poisonLine);
                                     if (spellHandler != null)
                                     {
-                                        Util.AddRange(output, spellHandler.DelveInfo);
+                                        output.AddRange(spellHandler.DelveInfo);
                                         output.Add(" ");
                                     }
                                     else
@@ -844,7 +838,7 @@ namespace DOL.GS
                                 ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(client.Player, spl, chargeEffectsLine);
                                 if (spellHandler != null)
                                 {
-                                    Util.AddRange(output, spellHandler.DelveInfo);
+                                    output.AddRange(spellHandler.DelveInfo);
                                     output.Add(" ");
                                 }
                                 else
@@ -995,7 +989,7 @@ namespace DOL.GS
             return totalUti;
         }
 
-        protected virtual void WriteBonusLine(IList<string> list, GameClient client, int bonusCat, int bonusValue)
+        protected virtual void WriteBonusLine(List<string> list, GameClient client, int bonusCat, int bonusValue)
         {
             if (bonusCat != 0 && bonusValue != 0 && !SkillBase.CheckPropertyType((eProperty)bonusCat, ePropertyType.Focus))
             {
@@ -1049,7 +1043,7 @@ namespace DOL.GS
             }
         }
 
-        protected virtual void WriteFocusLine(IList<string> list, int focusCat, int focusLevel)
+        protected virtual void WriteFocusLine(List<string> list, int focusCat, int focusLevel)
         {
             if (SkillBase.CheckPropertyType((eProperty)focusCat, ePropertyType.Focus))
             {
@@ -1079,7 +1073,7 @@ namespace DOL.GS
         }
 
 
-        protected virtual void WritePoisonInfo(IList<string> list, GameClient client)
+        protected virtual void WritePoisonInfo(List<string> list, GameClient client)
         {
             if (PoisonSpellID != 0)
             {
@@ -1104,7 +1098,7 @@ namespace DOL.GS
                             ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(client.Player, spl, poisonLine);
                             if (spellHandler != null)
                             {
-                                Util.AddRange(list, spellHandler.DelveInfo);
+                                list.AddRange(spellHandler.DelveInfo);
                             }
                             else
                             {
@@ -1118,7 +1112,7 @@ namespace DOL.GS
         }
 
 
-        protected virtual void WritePotionInfo(IList<string> list, GameClient client)
+        protected virtual void WritePotionInfo(List<string> list, GameClient client)
         {
             if (SpellID != 0)
             {
@@ -1171,7 +1165,7 @@ namespace DOL.GS
             }
         }
 
-        protected virtual void WritePotionInfo(IList<string> list, IList<int> idList, GameClient client)
+        protected virtual void WritePotionInfo(List<string> list, List<int> idList, GameClient client)
         {
             Spell mSpell = SkillBase.GetSpellByID(SpellID);
             list.Add(LanguageMgr.GetTranslation(client.Account.Language, "DetailDisplayHandler.WritePotionInfo.ChargedMagic"));
@@ -1238,7 +1232,7 @@ namespace DOL.GS
         }
 
 
-        protected static void WritePotionSpellsInfos(IList<string> list, GameClient client, Spell spl, NamedSkill line)
+        protected static void WritePotionSpellsInfos(List<string> list, GameClient client, Spell spl, NamedSkill line)
         {
             if (spl != null)
             {
@@ -1273,7 +1267,7 @@ namespace DOL.GS
         }
 
 
-        protected virtual void DelveShieldStats(IList<string> output, GameClient client)
+        protected virtual void DelveShieldStats(List<string> output, GameClient client)
         {
             double itemDPS = DPS_AF / 10.0;
             double clampedDPS = Math.Min(itemDPS, 1.2 + 0.3 * client.Player.Level);

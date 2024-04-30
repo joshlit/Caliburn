@@ -218,6 +218,7 @@ namespace DOL.GS
 				player.Out.SendMessage("You are already carrying a relic.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return;
 			}
+
 			if (player.IsStealthed)
 			{
 				player.Out.SendMessage("You cannot carry a relic while stealthed.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -301,7 +302,7 @@ namespace DOL.GS
 			}
 			if (removeFromInventory)
 			{
-				lock (player.Inventory)
+				lock (player.Inventory.LockObject)
 				{
 					bool success = player.Inventory.RemoveItem(m_item);
 					InventoryLogging.LogInventoryAction(player, this, eInventoryActionType.Other, m_item.Template, m_item.Count);

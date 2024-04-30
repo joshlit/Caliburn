@@ -137,8 +137,13 @@ namespace DOL.GS
 
                 if (Caster is GamePlayer)
                     toExclude = Caster;
-                else if (Caster is GameNPC pet && pet.Brain is ControlledNpcBrain petBrain)
-                    toExclude = petBrain.GetPlayerOwner();
+                else if (Caster is GameNPC pet && pet.Brain is ControlledMobBrain petBrain)
+                {
+                    GamePlayer playerOwner = petBrain.GetPlayerOwner();
+
+                    if (playerOwner != null)
+                        toExclude = playerOwner;
+                }
             }
 
             // Sends a third-person message to all players surrounding the target.

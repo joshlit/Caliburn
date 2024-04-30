@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -29,11 +29,7 @@ namespace DOL.GS
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override bool HasAbility(string keyName)
         {
@@ -87,7 +83,6 @@ namespace DOL.GS
             Intelligence = npcTemplate.Intelligence;
             Empathy = npcTemplate.Empathy;
             Faction = FactionMgr.GetFactionByID(140);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             BodyType = (ushort)NpcTemplateMgr.eBodyType.Giant;
             SteinvorBrain.PlayerX = 0;
@@ -126,7 +121,6 @@ namespace DOL.GS
                     ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL *
                     60000; //1min is 60000 miliseconds
                 TG.Faction = FactionMgr.GetFactionByID(140);
-                TG.Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
                 TG.BodyType = (ushort)NpcTemplateMgr.eBodyType.Giant;
 
                 TG.X = 25405;
@@ -243,16 +237,13 @@ namespace DOL.AI.Brain
         {
             if (Body.IsAlive)
             {
-                IList enemies = new ArrayList(AggroTable.Keys);
+                List<GameLiving> enemies = AggroList.Keys.ToList();
                 foreach (GamePlayer player in Body.GetPlayersInRadius(1100))
                 {
                     if (player != null)
                     {
                         if (player.IsAlive && player.Client.Account.PrivLevel == 1)
-                        {
-                            if (!AggroTable.ContainsKey(player))
-                                AggroTable.Add(player, 1);
-                        }
+                            AggroList.TryAdd(player, new());
                     }
                 }
                 if (enemies.Count == 0)
@@ -365,11 +356,7 @@ namespace DOL.GS
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override bool HasAbility(string keyName)
         {
@@ -408,7 +395,6 @@ namespace DOL.GS
             Intelligence = npcTemplate.Intelligence;
             Empathy = npcTemplate.Empathy;
             Faction = FactionMgr.GetFactionByID(140);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
             RespawnInterval =ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             BodyType = (ushort)NpcTemplateMgr.eBodyType.Giant;
 
@@ -442,7 +428,6 @@ namespace DOL.GS
                     ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL *
                     60000; //1min is 60000 miliseconds
                 TG.Faction = FactionMgr.GetFactionByID(140);
-                TG.Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
                 TG.BodyType = (ushort)NpcTemplateMgr.eBodyType.Giant;
 
                 TG.X = 25405;
@@ -547,11 +532,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override double GetArmorAF(eArmorSlot slot)
         {
             return 200;
@@ -576,14 +557,12 @@ namespace DOL.GS
             Model = 918;
             MeleeDamageType = eDamageType.Crush;
             Name = "hrimthursa seer";
-            MaxDistance = 3500;
             TetherRange = 3800;
             Size = 60;
             Level = (byte)Util.Random(73, 75);
             MaxSpeedBase = 270;
 
             Faction = FactionMgr.GetFactionByID(140);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
             BodyType = (ushort)NpcTemplateMgr.eBodyType.Giant;
             Realm = eRealm.None;
             RespawnInterval = -1;
@@ -689,7 +668,6 @@ namespace DOL.GS
             Flags = GameNPC.eFlags.STATUE;
 
             Faction = FactionMgr.GetFactionByID(140);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
             Realm = eRealm.None;
             RespawnInterval = -1;
 
@@ -759,10 +737,7 @@ namespace DOL.AI.Brain
                     if (player != null)
                     {
                         if (player.IsAlive && player.Client.Account.PrivLevel == 1)
-                        {
-                            if (!AggroTable.ContainsKey(player))
-                                AggroTable.Add(player, 100);
-                        }
+                            AggroList.TryAdd(player, new(100));
                     }
                 }
             }

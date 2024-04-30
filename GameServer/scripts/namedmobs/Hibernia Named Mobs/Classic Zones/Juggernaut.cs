@@ -34,11 +34,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -75,7 +71,6 @@ namespace DOL.GS
 			Level = 75;
 			Size = 200;
 			ParryChance = 50;
-			MaxDistance = 3500;
 			TetherRange = 3600;
 			if (!Styles.Contains(taunt))
 				Styles.Add(taunt);
@@ -129,4 +124,3 @@ namespace DOL.AI.Brain
 		}
 	}
 }
-

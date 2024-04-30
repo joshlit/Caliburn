@@ -24,7 +24,7 @@ namespace DOL.GS
 
         public virtual LanguageDataObject.eTranslationIdentifier TranslationIdentifier => LanguageDataObject.eTranslationIdentifier.eZone;
         public string TranslationId { get => ID.ToString(); set { } }
-        public eRealm Realm { get; private set; }
+        public eRealm Realm { get; }
         public Region ZoneRegion { get; set; }
         public ushort ID { get; }
         public ushort ZoneSkinID { get; } // The ID we send to the client, for client-side positioning of gameobjects and npcs.
@@ -323,7 +323,7 @@ namespace DOL.GS
             // It's possible for the object to already have a `subZoneObject` at this point (a NPC respawning for example).
             if (subZoneObject != null)
             {
-                if (subZoneObject.StartSubZoneChange)
+                if (subZoneObject.CurrentSubZone != subZone && subZoneObject.StartSubZoneChange)
                     ObjectChangingSubZone.Create(subZoneObject, this, subZone);
             }
             else
@@ -386,7 +386,7 @@ namespace DOL.GS
                 maxLine = SUBZONE_NBR_ON_ZONE_SIDE - 1;
 
             int subZoneIndex;
-            ConcurrentLinkedList<GameObject> objects;
+            SubZone subZone;
             bool ignoreDistance;
 
             for (int line = minLine; line <= maxLine; ++line)
@@ -394,9 +394,9 @@ namespace DOL.GS
                 for (int column = minColumn; column <= maxColumn; ++column)
                 {
                     subZoneIndex = GetSubZoneOffset(line, column);
-                    objects = _subZones[subZoneIndex].GetObjects(objectType);
+                    subZone = _subZones[subZoneIndex];
 
-                    if (objects.Count == 0)
+                    if (!subZone[objectType].Any)
                         continue;
 
                     if (subZoneIndex != referenceSubZoneIndex)
@@ -416,9 +416,7 @@ namespace DOL.GS
                     else
                         ignoreDistance = false;
 
-                    using ConcurrentLinkedList<GameObject>.Reader reader = objects.GetReader();
-
-                    for (LinkedListNode<GameObject> node = reader.Current(); node != null; node = reader.Next())
+                    foreach (LinkedListNode<GameObject> node in subZone[objectType])
                     {
                         GameObject gameObject = node.Value;
 
@@ -688,9 +686,7 @@ namespace DOL.GS
             {
                 foreach (SubZone subZone in _subZones)
                 {
-                    using ConcurrentLinkedList<GameObject>.Reader reader = subZone.GetObjects(eGameObjectType.NPC).GetReader();
-
-                    for (LinkedListNode<GameObject> node = reader.Current(); node != null; node = reader.Next())
+                    foreach (LinkedListNode<GameObject> node in subZone[eGameObjectType.NPC])
                     {
                         currentNPC = (GameNPC) node.Value;
 
@@ -701,7 +697,7 @@ namespace DOL.GS
                                 addToList = true;
 
                                 if (compareLevel > 0 && conLevel > 0)
-                                    addToList = (int)GameObject.GetConLevel(compareLevel, currentNPC.Level) == conLevel;
+                                    addToList = GameObject.GetConLevel(compareLevel, currentNPC.Level) == conLevel;
                                 else
                                 {
                                     if (minLevel > 0 && currentNPC.Level < minLevel)

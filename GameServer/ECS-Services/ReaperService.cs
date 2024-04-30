@@ -11,34 +11,33 @@ namespace DOL.GS
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private const string SERVICE_NAME = nameof(ReaperService);
+        private static List<LivingBeingKilled> _list;
 
         public static void Tick()
         {
             GameLoop.CurrentServiceTick = SERVICE_NAME;
             Diagnostics.StartPerfCounter(SERVICE_NAME);
-
-            List<LivingBeingKilled> list = EntityManager.UpdateAndGetAll<LivingBeingKilled>(EntityManager.EntityType.LivingBeingKilled, out int lastValidIndex);
-
-            // Remove objects from one sub zone, and add them to another.
-            Parallel.For(0, lastValidIndex + 1, i =>
-            {
-                LivingBeingKilled livingBeingKilled = list[i];
-
-                if (livingBeingKilled?.EntityManagerId.IsSet != true)
-                    return;
-
-                try
-                {
-                    livingBeingKilled.Killed.ProcessDeath(livingBeingKilled.Killer);
-                    EntityManager.Remove(livingBeingKilled);
-                }
-                catch (Exception e)
-                {
-                    ServiceUtils.HandleServiceException(e, SERVICE_NAME, livingBeingKilled, livingBeingKilled.Killed);
-                }
-            });
-
+            _list = EntityManager.UpdateAndGetAll<LivingBeingKilled>(EntityManager.EntityType.LivingBeingKilled, out int lastValidIndex);
+            Parallel.For(0, lastValidIndex + 1, TickInternal);
             Diagnostics.StopPerfCounter(SERVICE_NAME);
+        }
+
+        private static void TickInternal(int index)
+        {
+            LivingBeingKilled livingBeingKilled = _list[index];
+
+            if (livingBeingKilled?.EntityManagerId.IsSet != true)
+                return;
+
+            try
+            {
+                livingBeingKilled.Killed.ProcessDeath(livingBeingKilled.Killer);
+                EntityManager.Remove(livingBeingKilled);
+            }
+            catch (Exception e)
+            {
+                ServiceUtils.HandleServiceException(e, SERVICE_NAME, livingBeingKilled, livingBeingKilled.Killed);
+            }
         }
 
         public static void KillLiving(GameLiving killed, GameObject killer)
@@ -61,8 +60,11 @@ namespace DOL.GS
 
         public static void Create(GameLiving killed, GameObject killer)
         {
-            if (EntityManager.TryReuse(EntityManager.EntityType.LivingBeingKilled, out LivingBeingKilled livingBeingKilled))
+            if (EntityManager.TryReuse(EntityManager.EntityType.LivingBeingKilled, out LivingBeingKilled livingBeingKilled, out int index))
+            {
                 livingBeingKilled.Initialize(killed, killer);
+                livingBeingKilled.EntityManagerId.Value = index;
+            }
             else
             {
                 livingBeingKilled = new(killed, killer);

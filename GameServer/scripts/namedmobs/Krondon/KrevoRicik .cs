@@ -30,11 +30,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -72,12 +68,10 @@ namespace DOL.GS
 			Empathy = 400;
 
 			MaxSpeedBase = 250;
-			MaxDistance = 3500;
 			TetherRange = 3800;
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			KrevoRicikBrain sbrain = new KrevoRicikBrain();
 			SetOwnBrain(sbrain);
@@ -98,6 +92,7 @@ namespace DOL.GS
         }
     }
 }
+
 namespace DOL.AI.Brain
 {
 	public class KrevoRicikBrain : StandardMobBrain
@@ -163,6 +158,7 @@ namespace DOL.AI.Brain
 		}
 	}
 }
+
 namespace DOL.GS
 {
 	public class KrevolAdd : GameEpicNPC
@@ -183,11 +179,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 120;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override double GetArmorAF(eArmorSlot slot)
 		{
 			return 400;
@@ -217,7 +209,6 @@ namespace DOL.GS
 			RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			KrevoAddBrain sbrain = new KrevoAddBrain();
 			SetOwnBrain(sbrain);
@@ -275,6 +266,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class KrevoAddBrain : StandardMobBrain

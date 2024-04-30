@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -41,7 +41,6 @@ namespace DOL.GS
             CurrentRegionID = 191;//galladoria
             Flags = (GameNPC.eFlags)60;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             X = 41116;
             Y = 64419;
             Z = 12746;
@@ -340,11 +339,7 @@ namespace DOL.GS
         {
             get { return 250000; }
         }
-        public override int AttackRange
-        {
-            get { return 1500; }
-            set { }
-        }
+        public override int MeleeAttackRange => 1500;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -494,7 +489,6 @@ namespace DOL.GS
                 }
             }
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             OlcasgeanBrain sBrain = new OlcasgeanBrain();
             SetOwnBrain(sBrain);
             base.AddToWorld();
@@ -885,11 +879,7 @@ namespace DOL.GS
         {
             get { return 250000; }
         }
-        public override int AttackRange
-        {
-            get { return 1500; }
-            set { }
-        }
+        public override int MeleeAttackRange => 1500;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -1019,7 +1009,6 @@ namespace DOL.GS
             RespawnInterval = -1;
 
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             OlcasgeanBrain2 sBrain = new OlcasgeanBrain2();
             SetOwnBrain(sBrain);
             base.AddToWorld();
@@ -1179,11 +1168,7 @@ namespace DOL.GS
                 return 900;//low health, as source says 1 volcanic pillar 5 could one shot it
             }
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override void ReturnToSpawnPoint(short speed)
         {
             if (IsAlive)
@@ -1214,7 +1199,6 @@ namespace DOL.GS
             Empathy = npcTemplate.Empathy;
             RespawnInterval = -1;//will not respawn
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             Flags = eFlags.FLYING;
 
             AirPrimalBrain sBrain = new AirPrimalBrain();
@@ -1250,7 +1234,7 @@ namespace DOL.AI.Brain
         List<GamePlayer> inRangeLiving;
         public void PickRandomTarget()
         {
-            IList enemies = new ArrayList(AggroTable.Keys);
+            List<GameLiving> enemies = AggroList.Keys.ToList();
 
             foreach (GamePlayer player in Body.GetPlayersInRadius(1100))
             {
@@ -1259,15 +1243,9 @@ namespace DOL.AI.Brain
                     if (player.IsAlive && player.Client.Account.PrivLevel == 1)
                     {
                         if (player.GetDistanceTo(Body) < 1100 && player.IsVisibleTo(Body))
-                        {
-                            if (!AggroTable.ContainsKey(player))
-                                AggroTable.Add(player, 1);
-                        }
+                            AggroList.TryAdd(player, new());
                         else
-                        {
-                            if (AggroTable.ContainsKey(player))
-                                AggroTable.Remove(player);
-                        }
+                            AggroList.TryRemove(RandomTarget, out _);
                     }
                 }
             }
@@ -1305,16 +1283,12 @@ namespace DOL.AI.Brain
                             if (!RandomTarget.effectListComponent.ContainsEffectForEffectType(eEffect.Mez))
                             {
                                 Body.CastSpell(Mezz, SkillBase.GetSpellLine(GlobalSpellsLines.Mob_Spells));
-                                AggroTable.Remove(RandomTarget);
-                                AggroTable.Remove(RandomTarget);
+                                AggroList.TryRemove(RandomTarget, out _);
                             }
                         }
                     }
                     else
-                    {
-                        AggroTable.Remove(RandomTarget);
-                        AggroTable.Remove(RandomTarget);
-                    }
+                        AggroList.TryRemove(RandomTarget, out _);
                 }
             }
         }
@@ -1327,8 +1301,7 @@ namespace DOL.AI.Brain
             if (Body.TargetObject != null)
             {
                 Body.CastSpell(AirDD, SkillBase.GetSpellLine(GlobalSpellsLines.Mob_Spells));
-                AggroTable.Remove(RandomTarget);
-                AggroTable.Remove(RandomTarget);
+                AggroList.TryRemove(RandomTarget, out _);
             }
             RandomTarget = null;
             if (oldTarget != null) Body.TargetObject = oldTarget;
@@ -1358,10 +1331,7 @@ namespace DOL.AI.Brain
                 if (player != null)
                 {
                     if (player.IsAlive && player.Client.Account.PrivLevel == 1)
-                    {
-                        if (!AggroTable.ContainsKey(player))
-                            AggroTable.Add(player, 100);
-                    }
+                        AggroList.TryAdd(player, new(100));
                 }
             }
             Point3D point1 = new Point3D();
@@ -1625,16 +1595,7 @@ namespace DOL.GS
             }
         }
 
-        public override int AttackRange
-        {
-            get
-            {
-                return 350;
-            }
-            set
-            {
-            }
-        }
+        public override int MeleeAttackRange => 350;
         public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
         {
             if (source is GamePlayer || source is GameSummonedPet)
@@ -1686,7 +1647,6 @@ namespace DOL.GS
 
             RespawnInterval = -1;//will not respawn
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             WaterPrimalBrain sBrain = new WaterPrimalBrain();
             SetOwnBrain(sBrain);
             Brain.Start();
@@ -1730,11 +1690,6 @@ namespace DOL.AI.Brain
                 return;
             else
             {
-                if (ECS.Debug.Diagnostics.AggroDebugEnabled)
-                {
-                    PrintAggroTable();
-                }
-
                 Body.TargetObject = CalculateNextAttackTarget();
 
                 if (Body.TargetObject != null)
@@ -1965,11 +1920,7 @@ namespace DOL.GS
                 return 125000;
             }
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override bool AddToWorld()
         {
@@ -1987,7 +1938,6 @@ namespace DOL.GS
             Flags ^= eFlags.FLYING;//flying
             RespawnInterval = -1;//will not respawn
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
             FirePrimalBrain sBrain = new FirePrimalBrain();
             SetOwnBrain(sBrain);
@@ -2041,10 +1991,7 @@ namespace DOL.AI.Brain
                     if (player != null)
                     {
                         if (player.IsAlive && player.Client.Account.PrivLevel == 1)
-                        {
-                            if (!AggroTable.ContainsKey(player))
-                                AggroTable.Add(player, 100);
-                        }
+                            AggroList.TryAdd(player, new(100));
                     }
                 }
                 if (CanSpawnFire == false)
@@ -2233,7 +2180,6 @@ namespace DOL.GS
 
             RespawnInterval = -1;//will not respawn
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
             TrailOfFireBrain sBrain = new TrailOfFireBrain();
             SetOwnBrain(sBrain);
@@ -2364,11 +2310,7 @@ namespace DOL.GS
         {
             get { return 125000; }
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool AddToWorld()
         {
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60159436);
@@ -2384,7 +2326,6 @@ namespace DOL.GS
 
             RespawnInterval = -1;//will not respawn
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
             EarthPrimalBrain sBrain = new EarthPrimalBrain();
             SetOwnBrain(sBrain);
@@ -2417,11 +2358,13 @@ namespace DOL.AI.Brain
                 {
                     Point3D spawn = new Point3D(Body.SpawnPoint.X, Body.SpawnPoint.Y, Body.SpawnPoint.Z);
                     GameLiving target = Body.TargetObject as GameLiving;
-                    if (!target.IsWithinRadius(spawn, 900) && AggroTable.ContainsKey(target) && target != null && target.IsAlive)
+                    if (!target.IsWithinRadius(spawn, 900) && target != null && target.IsAlive)
                     {
-                        AggroTable.Remove(target);
-                        CalculateNextAttackTarget();
-                        CanSwitchTarget = false;
+                        if (AggroList.TryRemove(target, out _))
+                        {
+                            CalculateNextAttackTarget();
+                            CanSwitchTarget = false;
+                        }
                     }
                 }
             }
@@ -2593,7 +2536,6 @@ namespace DOL.GS
             RespawnInterval = -1;//will not respawn
             Gender = eGender.Neutral;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             MeleeDamageType = eDamageType.Slash;
             BodyType = 5;
 
@@ -2803,7 +2745,6 @@ namespace DOL.GS
             RespawnInterval = -1;//will not respawn
             Gender = eGender.Neutral;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             MeleeDamageType = eDamageType.Slash;
             BodyType = 5;
 
@@ -3012,7 +2953,6 @@ namespace DOL.GS
             RespawnInterval = -1;//will not respawn
             Gender = eGender.Neutral;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             MeleeDamageType = eDamageType.Slash;
             BodyType = 5;
 
@@ -3220,7 +3160,6 @@ namespace DOL.GS
             RespawnInterval = -1;//will not respawn
             Gender = eGender.Neutral;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             MeleeDamageType = eDamageType.Slash;
             BodyType = 5;
 
@@ -3377,11 +3316,7 @@ namespace DOL.GS
         {
             get { return 5000; }
         }
-        public override int AttackRange
-        {
-            get { return 200; }
-            set { }
-        }
+        public override int MeleeAttackRange => 200;
         public override void DropLoot(GameObject killer)//no loot
         {
         }
@@ -3407,7 +3342,6 @@ namespace DOL.GS
             Flags ^= eFlags.FLYING;
 
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             VortexBrain adds = new VortexBrain();
@@ -3493,7 +3427,6 @@ namespace DOL.GS
             Flags ^= eFlags.CANTTARGET;
 
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             WaterfallAntipassBrain adds = new WaterfallAntipassBrain();
@@ -3553,7 +3486,6 @@ namespace DOL.GS
             Flags ^= eFlags.CANTTARGET;
 
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             OlcasgeanEffectBrain adds = new OlcasgeanEffectBrain();

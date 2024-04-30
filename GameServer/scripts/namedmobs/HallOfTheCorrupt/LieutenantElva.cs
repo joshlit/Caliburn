@@ -111,11 +111,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 150;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool HasAbility(string keyName)
         {
             if (this.IsAlive && keyName == DOL.GS.Abilities.CCImmunity)
@@ -139,7 +135,6 @@ namespace DOL.GS
         public override bool AddToWorld()
         {
             Faction = FactionMgr.GetFactionByID(187);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
             BodyType = (ushort)NpcTemplateMgr.eBodyType.Humanoid;
 
             GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
@@ -175,7 +170,6 @@ namespace DOL.GS
             Quickness = 145;
             IsCloakHoodUp = true;
             EvadeChance = 50;
-            MaxDistance = 2000;
             TetherRange = 1500;
             MaxSpeedBase = 225;
             Gender = eGender.Female;
@@ -207,7 +201,6 @@ namespace DOL.GS
                 HOC.Size = 50;
                 HOC.CurrentRegionID = 277; //hall of the corrupt
                 HOC.Faction = FactionMgr.GetFactionByID(187);
-                HOC.Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
 
                 HOC.Strength = 50;
                 HOC.Constitution = 100;

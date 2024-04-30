@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -49,11 +49,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -75,7 +71,6 @@ namespace DOL.GS
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
 			Faction = FactionMgr.GetFactionByID(159);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(159));
 
 			IarnvidiurBrain sbrain = new IarnvidiurBrain();
 			SetOwnBrain(sbrain);
@@ -181,16 +176,13 @@ namespace DOL.AI.Brain
 		{
 			if (Body.IsAlive && HasAggro)
 			{
-				IList enemies = new ArrayList(AggroTable.Keys);
+				List<GameLiving> enemies = AggroList.Keys.ToList();
 				foreach (GamePlayer player in Body.GetPlayersInRadius(2500))
 				{
 					if (player != null)
 					{
 						if (player.IsAlive && player.Client.Account.PrivLevel == 1)
-						{
-							if (!AggroTable.ContainsKey(player))
-								AggroTable.Add(player, 1);
-						}
+							AggroList.TryAdd(player, new());
 					}
 				}
 

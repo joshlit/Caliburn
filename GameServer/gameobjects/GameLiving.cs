@@ -33,7 +33,7 @@ namespace DOL.GS
 
 		public int UsedConcentration;
 
-		public ConcurrentDictionary<eSpellType, Spell> ActivePulseSpells { get; private set; } = new();
+		public ConcurrentDictionary<eSpellType, Spell> ActivePulseSpells { get; } = new();
 
 		#region Combat
 		/// <summary>
@@ -49,16 +49,6 @@ namespace DOL.GS
 			get { return m_lastInterruptMessage; }
 			set { m_lastInterruptMessage = value; }
 		}
-
-		/// <summary>
-		/// Holds the AttackData object of the last left-hand attack
-		/// </summary>
-		public const string LAST_ATTACK_DATA_LH = "LastAttackDataLH";
-
-		/// <summary>
-		/// Holds the property for the result the last enemy
-		/// </summary>
-		public const string LAST_ENEMY_ATTACK_RESULT = "LastEnemyAttackResult";
 
 		/// <summary>
 		/// Can this living accept any item regardless of tradable or droppable?
@@ -206,10 +196,8 @@ namespace DOL.GS
 		/// <summary>
 		/// Gets diseased state
 		/// </summary>
-		public virtual bool IsDiseased
-		{
-			get { return m_diseasedCount > 0; }
-		}
+		public virtual bool IsDiseased => m_diseasedCount > 0;
+		public virtual bool IsPoisoned => effectListComponent.ContainsEffectForEffectType(eEffect.DamageOverTime);
 
 		protected bool m_isEngaging = false;
 		public virtual bool IsEngaging
@@ -478,27 +466,7 @@ namespace DOL.GS
 			}
 		}
 
-
-        /// <summary>
-        /// Returns the AttackRange of this living
-        /// </summary>
-        public virtual int AttackRange
-        {
-            get
-            {
-                //Mobs have a good distance range with distance weapons
-                //automatically
-                if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                {
-                    return Math.Max(32, (int)(2000.0 * GetModified(eProperty.ArcheryRange) * 0.01));
-                }
-                //Normal mob attacks have 200 ...
-                //TODO dragon, big mobs etc...
-                return 200;
-            }
-
-            set { }
-        }
+        public virtual int MeleeAttackRange => 200;
 
         /// <summary>
         /// calculates weapon stat
@@ -566,7 +534,7 @@ namespace DOL.GS
 			return 0;
 		}
 
-		private (DbInventoryItem item, long time) m_cachedActiveWeapon;
+		private (DbInventoryItem item, eActiveWeaponSlot slot, long time) _cachedActiveWeapon;
 
         /// <summary>
         /// Returns the currently active weapon, null=natural
@@ -575,30 +543,41 @@ namespace DOL.GS
         {
             get
             {
-				// We cache the weapon since 'ActiveWeapon' can be called multiple times per tick and 'GameInventory.GetItem' is potentially expensive.
-				if (m_cachedActiveWeapon.time >= GameLoop.GameLoopTime)
-					return m_cachedActiveWeapon.item;
+                if (Inventory == null)
+                    return null;
 
-				m_cachedActiveWeapon.item = null;
-				m_cachedActiveWeapon.time = GameLoop.GameLoopTime;
+                // We cache the weapon since 'ActiveWeapon' can be called multiple times per tick and 'GameInventory.GetItem' is potentially expensive.
+                if (_cachedActiveWeapon.item != null && _cachedActiveWeapon.slot == ActiveWeaponSlot && _cachedActiveWeapon.time >= GameLoop.GameLoopTime)
+                    return _cachedActiveWeapon.item;
 
-                if (Inventory != null)
+                _cachedActiveWeapon.time = GameLoop.GameLoopTime;
+                _cachedActiveWeapon.slot = ActiveWeaponSlot;
+
+                switch (ActiveWeaponSlot)
                 {
-                    switch (ActiveWeaponSlot)
+                    case eActiveWeaponSlot.Standard:
                     {
-                        case eActiveWeaponSlot.Standard:
-							m_cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.RightHandWeapon);
-							break;
-                        case eActiveWeaponSlot.TwoHanded:
-							m_cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
-							break;
-                        case eActiveWeaponSlot.Distance:
-							m_cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.DistanceWeapon);
-							break;
+                        _cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.RightHandWeapon);
+                        break;
+                    }
+                    case eActiveWeaponSlot.TwoHanded:
+                    {
+                        _cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
+                        break;
+                    }
+                    case eActiveWeaponSlot.Distance:
+                    {
+                        _cachedActiveWeapon.item = Inventory.GetItem(eInventorySlot.DistanceWeapon);
+                        break;
+                    }
+                    default:
+                    {
+                        _cachedActiveWeapon.item = null;
+                        break;
                     }
                 }
 
-                return m_cachedActiveWeapon.item;
+                return _cachedActiveWeapon.item;
             }
         }
 
@@ -644,8 +623,7 @@ namespace DOL.GS
         /// </summary>
         public virtual bool IsAttacking
         {
-            //get { return (AttackState && (m_attackAction != null) && m_attackAction.IsAlive); }
-            get { return (attackComponent.AttackState && (attackComponent.attackAction != null)); }
+            get { return attackComponent.AttackState; }
         }
 
         /// <summary>
@@ -1054,24 +1032,18 @@ namespace DOL.GS
 		/// <summary>
 		/// Starts the interrupt timer on this living.
 		/// </summary>
-		/// <param name="duration"></param>
-		/// <param name="attackType"></param>
-		/// <param name="attacker"></param>
 		public virtual void StartInterruptTimer(int duration, eAttackType attackType, GameLiving attacker)
 		{
-			if (!IsAlive || ObjectState != eObjectState.Active)
+			if (attacker == this)
 			{
-				InterruptTime = 0;
-				InterruptAction = 0;
+				SelfInterruptTime = GameLoop.GameLoopTime + duration;
 				return;
 			}
 
-			bool interrupt = InterruptChance(attacker);
-
-			if (!interrupt)
+			if (!Util.Chance(100 + GetConLevel(attacker) * 15))
 				return;
 
-			// Dont't replace the current interrut with a shorter one.
+			// Don't replace the current interrupt with a shorter one.
 			// Otherwise a slow melee hit's interrupt duration will be made shorter by a proc for example.
 			InterruptTime = Math.Max(InterruptTime, GameLoop.GameLoopTime + duration);
 			LastInterrupter = attacker;
@@ -1084,10 +1056,8 @@ namespace DOL.GS
 					CheckRangedAttackInterrupt(attacker, attackType);
 				else if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
 				{
-					AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect)EffectListService.GetEffectOnTarget(this, eEffect.Volley);
-
-					if (volley != null)
-						volley.OnAttacked();
+					AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect) EffectListService.GetEffectOnTarget(this, eEffect.Volley);
+					volley?.OnAttacked();
 				}
 			}
 		}
@@ -1098,34 +1068,11 @@ namespace DOL.GS
 		}
 
 		public GameObject LastInterrupter { get; private set; }
-
-		protected long m_interruptTime = 0;
-		public long InterruptTime
-		{
-			get => m_interruptTime;
-			private set
-			{
-				InterruptAction = GameLoop.GameLoopTime;
-				m_interruptTime = value;
-			}
-		}
-
-		protected long m_interruptAction = 0;
-		public long InterruptAction
-		{
-			get => m_interruptAction;
-			private set => m_interruptAction = value;
-		}
-
-		/// <summary>
-		/// Yields true if interrupt action is running on this living.
-		/// </summary>
-		public virtual bool IsBeingInterrupted => m_interruptTime > GameLoop.GameLoopTime;
-
-		/// <summary>
-		/// Base chance this living can be interrupted
-		/// </summary>
-		public virtual int BaseInterruptChance => 95;
+		public long InterruptTime { get; private set; }
+		public long SelfInterruptTime { get; private set; }
+		public long InterruptRemainingDuration => !IsBeingInterrupted ? 0 : Math.Max(InterruptTime, SelfInterruptTime) - GameLoop.GameLoopTime;
+		public virtual bool IsBeingInterrupted => IsBeingInterruptedIgnoreSelfInterrupt || SelfInterruptTime > GameLoop.GameLoopTime;
+		public virtual bool IsBeingInterruptedIgnoreSelfInterrupt => InterruptTime > GameLoop.GameLoopTime;
 
 		/// <summary>
 		/// How long does an interrupt last?
@@ -1137,24 +1084,6 @@ namespace DOL.GS
 		/// </summary>
 		public virtual int SpellInterruptRecastAgain => Properties.SPELL_INTERRUPT_AGAIN;
 
-		public virtual bool InterruptChance(GameLiving attacker)
-		{
-			double chance;
-
-			if (attacker is GamePlayer)
-				chance = 99;
-			else
-			{
-				double mod = GetConLevel(attacker);
-				chance = BaseInterruptChance;
-				chance += mod * 10;
-				chance = Math.Max(1, chance);
-				chance = Math.Min(99, chance);
-			}
-
-			return Util.Chance((int)chance);
-		}
-
 		protected virtual bool CheckRangedAttackInterrupt(GameLiving attacker, eAttackType attackType)
 		{
 			if (rangeAttackComponent.RangedAttackType == eRangedAttackType.SureShot)
@@ -1165,7 +1094,7 @@ namespace DOL.GS
 					return false;
 			}
 
-			long rangeAttackHoldStart = TempProperties.GetProperty<long>(RangeAttackComponent.RANGED_ATTACK_START);
+			long rangeAttackHoldStart = rangeAttackComponent.AttackStartTime;
 
 			if (rangeAttackHoldStart > 0)
 			{
@@ -1178,15 +1107,6 @@ namespace DOL.GS
 
 			attackComponent.StopAttack();
 			return true;
-		}
-
-		/// <summary>
-		/// Creates an attack action for this living
-		/// </summary>
-		/// <returns></returns>
-		public virtual AttackAction CreateAttackAction()
-		{
-			return attackComponent.attackAction ?? AttackAction.Create(this);
 		}
 
 		/// <summary>
@@ -1364,7 +1284,7 @@ namespace DOL.GS
 			}
 		}
 
-		public virtual double TryEvade(AttackData ad, AttackData lastAD, double attackerConLevel, int attackerCount)
+		public virtual double TryEvade(AttackData ad, AttackData lastAD, int attackerConLevel, int attackerCount)
 		{
 			// 1. A: It isn't possible to give a simple answer. The formula includes such elements
 			// as your level, your target's level, your level of evade, your QUI, your DEX, your
@@ -1442,7 +1362,7 @@ namespace DOL.GS
 			return evadeChance;
 		}
 
-		public virtual double TryParry(AttackData ad, AttackData lastAD, double attackerConLevel, int attackerCount)
+		public virtual double TryParry(AttackData ad, AttackData lastAD, int attackerConLevel, int attackerCount)
 		{
 			//1.  Dual wielding does not grant more chances to parry than a single weapon.  Grab Bag 9/12/03
 			//2.  There is no hard cap on ability to Parry.  Grab Bag 8/13/02
@@ -1534,7 +1454,7 @@ namespace DOL.GS
 			return parryChance;
 		}
 
-		public virtual double TryBlock(AttackData ad, double attackerConLevel, int attackerCount)
+		public virtual double TryBlock(AttackData ad, int attackerConLevel, int attackerCount)
 		{
 			//1.Quality does not affect the chance to block at this time.  Grab Bag 3/7/03
 			//2.Condition and enchantment increases the chance to block  Grab Bag 2/27/03
@@ -1884,7 +1804,7 @@ namespace DOL.GS
 
 			if (this is GameNPC npc)
 			{
-				var brain = npc.Brain as ControlledNpcBrain;
+				var brain = npc.Brain as ControlledMobBrain;
 
                 if (ad.Target is GamePlayer)
 				{
@@ -2188,10 +2108,10 @@ namespace DOL.GS
 				}
             }
 
-			if (this is GameNPC npc && npc.Brain is ControlledNpcBrain || this is GameSummonedPet)
+			if (this is GameNPC npc && npc.Brain is ControlledMobBrain || this is GameSummonedPet)
             {
 				List<ECSGameSpellEffect> ownerEffects;
-				ControlledNpcBrain pBrain = (this as GameNPC).Brain as ControlledNpcBrain;
+				ControlledMobBrain pBrain = (this as GameNPC).Brain as ControlledMobBrain;
 				GameSummonedPet pet = this as GameSummonedPet;
 
 				if (pBrain != null)
@@ -2544,10 +2464,8 @@ namespace DOL.GS
 			if (Inventory == null)
 				return;
 
-            //Clean up range attack variables, no matter to what
-            //weapon we switch
-            rangeAttackComponent.RangedAttackState = eRangedAttackState.None;
-            rangeAttackComponent.RangedAttackType = eRangedAttackType.Normal;
+			rangeAttackComponent.RangedAttackState = eRangedAttackState.None;
+			rangeAttackComponent.RangedAttackType = eRangedAttackType.Normal;
 
 			DbInventoryItem rightHandSlot = Inventory.GetItem(eInventorySlot.RightHandWeapon);
 			DbInventoryItem leftHandSlot = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
@@ -2556,60 +2474,62 @@ namespace DOL.GS
 
 			// simple active slot logic:
 			// 0=right hand, 1=left hand, 2=two-hand, 3=range, F=none
-			int rightHand = (VisibleActiveWeaponSlots & 0x0F);
+			int rightHand = VisibleActiveWeaponSlots & 0x0F;
 			int leftHand = (VisibleActiveWeaponSlots & 0xF0) >> 4;
-
 
 			// set new active weapon slot
 			switch (slot)
 			{
 				case eActiveWeaponSlot.Standard:
-					{
-						if (rightHandSlot == null)
-							rightHand = 0xFF;
-						else
-							rightHand = 0x00;
+				{
+					if (rightHandSlot == null)
+						rightHand = 0xFF;
+					else
+						rightHand = 0x00;
 
-						if (leftHandSlot == null)
-							leftHand = 0xFF;
-						else
-							leftHand = 0x01;
-					}
+					if (leftHandSlot == null)
+						leftHand = 0xFF;
+					else
+						leftHand = 0x01;
+
 					break;
+				}
 
 				case eActiveWeaponSlot.TwoHanded:
+				{
+					if (twoHandSlot != null && (twoHandSlot.Hand == 1 || this is GameNPC)) // 2h
 					{
-						if (twoHandSlot != null && (twoHandSlot.Hand == 1 || this is GameNPC)) // 2h
-						{
-							rightHand = leftHand = 0x02;
-							break;
-						}
-
-						// 1h weapon in 2h slot
-						if (twoHandSlot == null)
-							rightHand = 0xFF;
-						else
-							rightHand = 0x02;
-
-						if (leftHandSlot == null)
-							leftHand = 0xFF;
-						else
-							leftHand = 0x01;
+						rightHand = leftHand = 0x02;
+						break;
 					}
+
+					// 1h weapon in 2h slot
+					if (twoHandSlot == null)
+						rightHand = 0xFF;
+					else
+						rightHand = 0x02;
+
+					if (leftHandSlot == null)
+						leftHand = 0xFF;
+					else
+						leftHand = 0x01;
+
 					break;
+				}
 
 				case eActiveWeaponSlot.Distance:
-					{
-						leftHand = 0xFF; // cannot use left-handed weapons if ranged slot active
+				{
+					leftHand = 0xFF; // cannot use left-handed weapons if ranged slot active
 
-						if (distanceSlot == null)
-							rightHand = 0xFF;
-						else if (distanceSlot.Hand == 1 || this is GameNPC) // NPC equipment does not have hand so always assume 2 handed bow
-							rightHand = leftHand = 0x03; // bows use 2 hands, throwing axes 1h
-						else
-							rightHand = 0x03;
-					}
+					if (distanceSlot == null)
+						rightHand = 0xFF;
+					else if (distanceSlot.Hand == 1 || this is GameNPC) // NPC equipment does not have hand so always assume 2 handed bow
+						rightHand = leftHand = 0x03; // bows use 2 hands, throwing axes 1h
+					else
+						rightHand = 0x03;
+
 					break;
+				}
 			}
 
 			m_activeWeaponSlot = slot;
@@ -2617,7 +2537,9 @@ namespace DOL.GS
 			// pack active weapon slots value back
 			m_visibleActiveWeaponSlots = (byte)(((leftHand & 0x0F) << 4) | (rightHand & 0x0F));
 		}
+
 		#endregion
+
 		#region Property/Bonus/Buff/PropertyCalculator fields
 		/// <summary>
 		/// Array for property boni for abilities
@@ -2909,7 +2831,7 @@ namespace DOL.GS
 		/// Stores temporary properties on this living.
 		/// Beware to use unique keys so they do not interfere
 		/// </summary>
-		public PropertyCollection TempProperties { get; private set; } = new();
+		public PropertyCollection TempProperties { get; } = new();
 
 		/// <summary>
 		/// Gets or Sets the effective level of the Object
@@ -3589,13 +3511,13 @@ namespace DOL.GS
 			}
 		}
 
-		public virtual bool IsTurningDisabled => movementComponent.IsTurningDisabled;
-
 		public virtual short CurrentSpeed
 		{
 			get => movementComponent.CurrentSpeed;
 			set => movementComponent.CurrentSpeed = value;
 		}
+
+		public virtual bool IsTurningDisabled => movementComponent.IsTurningDisabled;
 
 		public virtual short MaxSpeed => movementComponent.MaxSpeed;
 
@@ -3605,92 +3527,21 @@ namespace DOL.GS
 			set => movementComponent.MaxSpeedBase = value;
 		}
 
-		public virtual bool FixedSpeed
-		{
-			set => movementComponent.FixedSpeed = value;
-		}
-
 		public virtual bool IsMoving => movementComponent.IsMoving;
-
-		public long MovementElapsedTicks => movementComponent.MovementElapsedTicks;
-
-		public long MovementStartTick
-		{
-			set => movementComponent.MovementStartTick = value;
-		}
 
 		public virtual void DisableTurning(bool add)
 		{
 			movementComponent.DisableTurning(add);
 		}
 
-		public virtual void TurnTo(ushort heading, int duration = 0)
+		public virtual bool IsStealthed => false;
+
+		public virtual void Stealth(bool goStealth)
 		{
-			movementComponent.TurnTo(heading, duration);
+			// Not implemented.
 		}
 
-		public virtual void TurnTo(int x, int y, int duration = 0)
-		{
-			movementComponent.TurnTo(x, y, duration);
-		}
-
-		public virtual void TurnTo(GameObject target, int duration = 0)
-		{
-			movementComponent.TurnTo(target, duration);
-		}
-
-		/// <summary>
-		/// The current X position of this living.
-		/// </summary>
-		public override int X
-		{
-			get => IsMoving ? (int) (base.X + MovementElapsedTicks * movementComponent.TickSpeedX) : base.X;
-			set => base.X = value;
-		}
-
-		/// <summary>
-		/// The current Y position of this living.
-		/// </summary>
-		public override int Y
-		{
-			get => IsMoving ? (int) (base.Y + MovementElapsedTicks * movementComponent.TickSpeedY) : base.Y;
-			set => base.Y = value;
-		}
-
-		/// <summary>
-		/// The current Z position of this living.
-		/// </summary>
-		public override int Z
-		{
-			get => IsMoving ? (int) (base.Z + MovementElapsedTicks * movementComponent.TickSpeedZ) : base.Z;
-			set => base.Z = value;
-		}
-
-		/// <summary>
-		/// Moves the item from one spot to another spot, possible even
-		/// over region boundaries
-		/// </summary>
-		/// <param name="regionID">new regionid</param>
-		/// <param name="x">new x</param>
-		/// <param name="y">new y</param>
-		/// <param name="z">new z</param>
-		/// <param name="heading">new heading</param>
-		/// <returns>true if moved</returns>
-		public override bool MoveTo(ushort regionID, int x, int y, int z, ushort heading)
-		{
-			// if (regionID != CurrentRegionID)
-			// 	CancelAllConcentrationEffects();
-
-			return base.MoveTo(regionID, x, y, z, heading);
-		}
-
-		/// <summary>
-		/// The stealth state of this living
-		/// </summary>
-		public virtual bool IsStealthed
-		{
-			get { return false; }
-		}
+		public virtual void OnMaxSpeedChange() { }
 
 		#endregion
 		#region Say/Yell/Whisper/Emote/Messages
@@ -4373,7 +4224,7 @@ namespace DOL.GS
 			StopHealthRegeneration();
 			StopPowerRegeneration();
 			StopEnduranceRegeneration();
-			attackComponent.attackAction?.CleanUp();
+			attackComponent.attackAction.CleanUp();
 			m_healthRegenerationTimer?.Stop();
 			m_powerRegenerationTimer?.Stop();
 			m_enduRegenerationTimer?.Stop();
@@ -4453,16 +4304,16 @@ namespace DOL.GS
 			castingComponent.InterruptCasting();
 		}
 
-		public virtual bool CastSpell(Spell spell, SpellLine line)
+		public virtual bool CastSpell(Spell spell, SpellLine line, ISpellCastingAbilityHandler spellCastingAbilityHandler = null)
 		{
-			return castingComponent.RequestStartCastSpell(spell, line, null, TargetObject as GameLiving);
+			return castingComponent.RequestStartCastSpell(spell, line, spellCastingAbilityHandler, TargetObject as GameLiving);
 		}
 
-		// Should only be used when the target of the spell is different than the currenctly selected one.
+		// Should only be used when the target of the spell is different than the currently selected one.
 		// Which can happen during LoS checks, since we're not waiting for the check to complete to perform other actions.
-		protected bool CastSpell(Spell spell, SpellLine line, GameLiving target)
+		protected bool CastSpell(Spell spell, SpellLine line, GameLiving target, ISpellCastingAbilityHandler spellCastingAbilityHandle = null)
 		{
-			return castingComponent.RequestStartCastSpell(spell, line, null, target);
+			return castingComponent.RequestStartCastSpell(spell, line, spellCastingAbilityHandle, target);
 		}
 
 		public virtual bool CastSpell(ISpellCastingAbilityHandler ab)

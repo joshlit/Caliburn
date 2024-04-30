@@ -45,11 +45,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -82,9 +78,7 @@ namespace DOL.GS
 			Intelligence = npcTemplate.Intelligence;
 			Empathy = npcTemplate.Empathy;
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
-
 			Faction = FactionMgr.GetFactionByID(11);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(11));
 			CreateMonsters = false;
 			if(CreateMonsters==false)
             {
@@ -392,11 +386,8 @@ namespace DOL.GS
 			Quickness = 130;
 			MaxSpeedBase = 0;
 			++PitMonsterCount;
-
 			Faction = FactionMgr.GetFactionByID(11);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(11));
 			RespawnInterval = -1;
-
 			PitMonsterBrain sbrain = new PitMonsterBrain();
 			SetOwnBrain(sbrain);
 			LoadedFromScript = true;
@@ -449,14 +440,12 @@ namespace DOL.AI.Brain
 		}
 		public override void Think()
 		{
-			foreach(GamePlayer player in Body.GetPlayersInRadius((ushort)Body.AttackRange))
+			foreach(GamePlayer player in Body.GetPlayersInRadius((ushort)Body.attackComponent.AttackRange))
             {
 				if(player != null)
                 {
-					if(player.IsAlive && player.Client.Account.PrivLevel == 1 && !AggroTable.ContainsKey(player))
-                    {
+					if(player.IsAlive && player.Client.Account.PrivLevel == 1 && !AggroList.ContainsKey(player))
 						AddToAggroList(player, 200);
-                    }
                 }
 				if(player == null || !player.IsAlive)
                 {

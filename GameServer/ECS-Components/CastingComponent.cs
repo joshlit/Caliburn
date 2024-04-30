@@ -14,7 +14,7 @@ namespace DOL.GS
     {
         private ConcurrentQueue<StartCastSpellRequest> _startCastSpellRequests = new(); // This isn't the actual spell queue.
 
-        public GameLiving Owner { get; private set; }
+        public GameLiving Owner { get; }
         public SpellHandler SpellHandler { get; protected set; }
         public SpellHandler QueuedSpellHandler { get; private set; }
         public EntityManagerId EntityManagerId { get; set; } = new(EntityManager.EntityType.CastingComponent, false);
@@ -55,7 +55,7 @@ namespace DOL.GS
 
         protected bool RequestStartCastSpellInternal(StartCastSpellRequest startCastSpellRequest)
         {
-            if (Owner.IsStunned || Owner.IsMezzed)
+            if (Owner.IsIncapacitated)
                 Owner.Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.CrowdControlled));
 
             if (!CanCastSpell())
@@ -85,7 +85,7 @@ namespace DOL.GS
             return spellHandler;
         }
 
-        protected virtual void StartCastSpell(StartCastSpellRequest startCastSpellRequest)
+        protected void StartCastSpell(StartCastSpellRequest startCastSpellRequest)
         {
             SpellHandler newSpellHandler = CreateSpellHandler(startCastSpellRequest);
 
@@ -114,7 +114,7 @@ namespace DOL.GS
                                 if (newSpellHandler.Spell.InstrumentRequirement != 0)
                                     player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.CastSpell.AlreadyPlaySong"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                                 else
-                                    player.Out.SendMessage("You must wait " + ((SpellHandler.CastStartTick + SpellHandler.Spell.CastTime - GameLoop.GameLoopTime) / 1000 + 1).ToString() + " seconds to cast a spell!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+                                    player.Out.SendMessage($"You must wait {(SpellHandler.CastStartTick + SpellHandler.Spell.CastTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 
                                 return;
                             }
@@ -128,7 +128,7 @@ namespace DOL.GS
                         else
                             player.Out.SendMessage("You are already casting a spell!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                     }
-                    else if (Owner is GameNPC npcOwner && npcOwner.Brain is IControlledBrain)
+                    else
                         QueuedSpellHandler = newSpellHandler;
                 }
             }
@@ -158,6 +158,11 @@ namespace DOL.GS
         public void ClearUpSpellHandlers()
         {
             SpellHandler = null;
+            QueuedSpellHandler = null;
+        }
+
+        public void ClearUpQueuedSpellHandler()
+        {
             QueuedSpellHandler = null;
         }
 
@@ -217,10 +222,10 @@ namespace DOL.GS
 
         public class StartCastSpellRequest
         {
-            public Spell Spell { get; private set; }
+            public Spell Spell { get; }
             public SpellLine SpellLine { get; private set ; }
-            public ISpellCastingAbilityHandler SpellCastingAbilityHandler { get; private set; }
-            public GameLiving Target { get; private set; }
+            public ISpellCastingAbilityHandler SpellCastingAbilityHandler { get; }
+            public GameLiving Target { get; }
 
             public StartCastSpellRequest(Spell spell, SpellLine spellLine, ISpellCastingAbilityHandler spellCastingAbilityHandler, GameLiving target)
             {

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using DOL.AI;
 using log4net;
@@ -21,8 +20,7 @@ namespace DOL.GS
             CraftComponent,
             ObjectChangingSubZone,
             LivingBeingKilled,
-            Timer,
-            AuxTimer
+            Timer
         }
 
         private static Dictionary<EntityType, object> _entityArrays = new()
@@ -36,8 +34,7 @@ namespace DOL.GS
             { EntityType.CraftComponent, new EntityArray<CraftComponent>(100) },
             { EntityType.ObjectChangingSubZone, new EntityArray<ObjectChangingSubZone>(ServerProperties.Properties.MAX_ENTITIES) },
             { EntityType.LivingBeingKilled, new EntityArray<LivingBeingKilled>(200) },
-            { EntityType.Timer, new EntityArray<ECSGameTimer>(500) },
-            { EntityType.AuxTimer, new EntityArray<AuxECSGameTimer>(500) }
+            { EntityType.Timer, new EntityArray<ECSGameTimer>(500) }
         };
 
         public static bool Add<T>(T entity) where T : class, IManagedEntity
@@ -52,9 +49,10 @@ namespace DOL.GS
             return true;
         }
 
-        public static bool TryReuse<T>(EntityType type, out T entity) where T : class, IManagedEntity
+        public static bool TryReuse<T>(EntityType type, out T entity, out int index) where T : class, IManagedEntity
         {
-            return (_entityArrays[type] as EntityArray<T>).TryReuse(out entity);
+            // The returned index must be set by the caller, so that the entity can be initialized before being handled by the services.
+            return (_entityArrays[type] as EntityArray<T>).TryReuse(out entity, out index);
         }
 
         public static bool Remove<T>(T entity) where T : class, IManagedEntity
@@ -71,6 +69,7 @@ namespace DOL.GS
 
         // Applies pending additions and removals then returns the list alongside the last valid index.
         // Thread unsafe. The returned list should not be modified.
+        // Elements should be null checked alongside the value returned by `ManagedEntityId.IsSet`.
         public static List<T> UpdateAndGetAll<T>(EntityType type, out int lastValidIndex) where T : IManagedEntity
         {
             dynamic array = _entityArrays[type];
@@ -88,7 +87,7 @@ namespace DOL.GS
             private object _entitiesToRemoveLock = new();
             private int _lastValidIndex = -1;
 
-            public List<T> Entities { get; private set; }
+            public List<T> Entities { get; }
 
             public EntityArray(int capacity)
             {
@@ -105,9 +104,9 @@ namespace DOL.GS
                 }
             }
 
-            public bool TryReuse(out T entity)
+            public bool TryReuse(out T entity, out int index)
             {
-                int index;
+                index = EntityManagerId.UNSET_ID;
                 entity = null;
 
                 lock (_updateLock)
@@ -118,7 +117,6 @@ namespace DOL.GS
                     index = _invalidIndexes.Min;
                     _invalidIndexes.Remove(index);
                     entity = Entities[index];
-                    entity.EntityManagerId.Value = index;
 
                     if (_lastValidIndex < index)
                         _lastValidIndex = index;
@@ -200,7 +198,7 @@ namespace DOL.GS
                     if (log.IsWarnEnabled)
                         log.Warn($"{typeof(T)} {nameof(Entities)} is too short. Resizing it to {newCapacity}.");
 
-                    ListExtras.Resize(Entities, newCapacity);
+                    Entities.Resize(newCapacity);
                 }
 
                 Entities.Add(entity);
@@ -226,7 +224,7 @@ namespace DOL.GS
 
     public class EntityManagerId
     {
-        private const int UNSET_ID = -1;
+        public const int UNSET_ID = -1;
         private int _value = UNSET_ID;
         private PendingState _pendingState = PendingState.NONE;
 
@@ -239,8 +237,8 @@ namespace DOL.GS
                 _pendingState = PendingState.NONE;
             }
         }
-        public EntityManager.EntityType Type { get; private set; }
-        public bool AllowReuseByEntityManager { get; private set; }
+        public EntityManager.EntityType Type { get; }
+        public bool AllowReuseByEntityManager { get; }
         public bool IsSet => _value > UNSET_ID;
         public bool IsPendingAddition => _pendingState == PendingState.ADDITION;
         public bool IsPendingRemoval => _pendingState == PendingState.REMOVAL;
@@ -278,28 +276,5 @@ namespace DOL.GS
     public interface IManagedEntity
     {
         public EntityManagerId EntityManagerId { get; set; }
-    }
-
-    // Extension methods for 'List<T>' that could be moved elsewhere.
-    public static class ListExtras
-    {
-        public static void Resize<T>(this List<T> list, int size, bool fill = false, T element = default)
-        {
-            int count = list.Count;
-
-            if (size < count)
-            {
-                list.RemoveRange(size, count - size);
-                list.TrimExcess();
-            }
-            else if (size > count)
-            {
-                if (size > list.Capacity)
-                    list.Capacity = size; // Creates a new internal array.
-
-                if (fill)
-                    list.AddRange(Enumerable.Repeat(element, size - count));
-            }
-        }
     }
 }

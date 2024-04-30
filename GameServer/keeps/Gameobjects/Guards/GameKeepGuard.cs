@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -159,15 +140,15 @@ namespace DOL.GS.Keeps
 		/// <returns>Whether or not we are responding</returns>
 		public virtual bool AssistLord(GuardLord lord)
 		{
-			Follow(lord, STICK_MINIMUM_RANGE, int.MaxValue);
+			Follow(lord, StickMinimumRange, int.MaxValue);
 			return true;
 		}
 
 		#region Combat
 
-		public void GuardStartSpellHealCheckLOS(GamePlayer player, ushort response, ushort targetOID)
+		public void GuardStartSpellHealCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
 		{
-			if ((response & 0x100) == 0x100 && HealTarget != null)
+			if (response is eLosCheckResponse.TRUE && HealTarget != null)
 			{
 				Spell healSpell = GetGuardHealSmallSpell(Realm);
 
@@ -246,7 +227,7 @@ namespace DOL.GS.Keeps
 				if (!target.IsAlive) return;
 
 				HealTarget = target;
-				LOSChecker.Out.SendCheckLOS(this, target, new CheckLOSResponse(GuardStartSpellHealCheckLOS));
+				LOSChecker.Out.SendCheckLos(this, target, new CheckLosResponse(GuardStartSpellHealCheckLos));
 			}
 		}
 
@@ -268,12 +249,12 @@ namespace DOL.GS.Keeps
 				}
 			}
 			if (LOSChecker == null) return;
-			LOSChecker.Out.SendCheckLOS(this, target, new CheckLOSResponse(GuardStartSpellNukeCheckLOS));
+			LOSChecker.Out.SendCheckLos(this, target, new CheckLosResponse(GuardStartSpellNukeCheckLos));
 		}
 
-		public void GuardStartSpellNukeCheckLOS(GamePlayer player, ushort response, ushort targetOID)
+		public void GuardStartSpellNukeCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
 		{
-			if ((response & 0x100) == 0x100)
+			if (response is eLosCheckResponse.TRUE)
 			{
 				switch (Realm)
 				{
@@ -361,12 +342,12 @@ namespace DOL.GS.Keeps
 				if (ActiveWeaponSlot == eActiveWeaponSlot.Standard || ActiveWeaponSlot == eActiveWeaponSlot.TwoHanded)
 				{
 					//if we are targeting something, and the distance to the target object is greater than the attack range
-					if (TargetObject != null && !IsWithinRadius(TargetObject, AttackRange))
+					if (TargetObject != null && !IsWithinRadius(TargetObject, attackComponent.AttackRange))
 					{
 						//stop the attack
 						attackComponent.StopAttack();
 						//if the distance to the attacker is less than the attack range
-						if (IsWithinRadius(ad.Attacker, AttackRange))
+						if (IsWithinRadius(ad.Attacker, attackComponent.AttackRange))
 						{
 							//attack it
 							StartAttack(ad.Attacker);
@@ -504,7 +485,7 @@ namespace DOL.GS.Keeps
 		/// </summary>
 		/// <param name="respawnTimer"></param>
 		/// <returns></returns>
-		protected override int RespawnTimerCallback(AuxECSGameTimer respawnTimer)
+		protected override int RespawnTimerCallback(ECSGameTimer respawnTimer)
 		{
 			int temp = base.RespawnTimerCallback(respawnTimer);
 			RefreshTemplate();
@@ -758,7 +739,7 @@ namespace DOL.GS.Keeps
 		/// <summary>
 		/// Adding special handling for walking to a point for patrol guards to be in a formation
 		/// </summary>
-		public override void WalkTo(IPoint3D target, short speed)
+		public override void WalkTo(Point3D target, short speed)
 		{
 			int offX = 0;
 			int offY = 0;

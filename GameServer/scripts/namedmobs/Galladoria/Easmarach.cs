@@ -1,6 +1,5 @@
 ﻿using System;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
 using DOL.GS;
 using DOL.GS.PacketHandler;
@@ -64,11 +63,7 @@ namespace DOL.GS
             get { return 100000; }
         }
 
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
 
         public override bool HasAbility(string keyName)
         {
@@ -118,7 +113,6 @@ namespace DOL.GS
 
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             EasmarachBrain.restphase = false;
             EasmarachBrain.dontattack = false;
 
@@ -160,10 +154,6 @@ namespace DOL.AI.Brain
                 return;
             else
             {
-                if (ECS.Debug.Diagnostics.AggroDebugEnabled)
-                {
-                    PrintAggroTable();
-                }
                 Body.TargetObject = CalculateNextAttackTarget();
                 if (Body.TargetObject != null)
                 {

@@ -39,11 +39,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 100;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -99,7 +95,6 @@ namespace DOL.GS
             MaxSpeedBase = 300;
 
             Faction = FactionMgr.GetFactionByID(81);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(81));
             EvernBrain sbrain = new EvernBrain();
             SetOwnBrain(sbrain);
             LoadedFromScript = false; //load from database
@@ -139,7 +134,6 @@ namespace DOL.GS
                 CO.X = 429840;
                 CO.Y = 380396;
                 CO.Z = 2328;
-                CO.MaxDistance = 3500;
                 CO.TetherRange = 3800;
                 CO.MaxSpeedBase = 250;
                 CO.Heading = 4059;
@@ -170,6 +164,7 @@ namespace DOL.GS
         }
     }
 }
+
 namespace DOL.AI.Brain
 {
     public class EvernBrain : EpicBossBrain
@@ -307,7 +302,6 @@ namespace DOL.GS
             Size = 50;
             Flags = eFlags.FLYING;
             Faction = FactionMgr.GetFactionByID(81);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(81));
             Level = (byte) Util.Random(50, 55);
             Gender = eGender.Female;
             EvernFairyBrain adds = new EvernFairyBrain();
@@ -317,6 +311,7 @@ namespace DOL.GS
         }
     }
 }
+
 namespace DOL.AI.Brain
 {
     public class EvernFairyBrain : StandardMobBrain

@@ -30,11 +30,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -70,8 +66,7 @@ namespace DOL.GS
 			Model = 1883;
 			Level = 70;
 			Size = 50;
-			MaxDistance = 2500;
-			TetherRange = 2600;			
+			TetherRange = 2600;
 
 			GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 			template.AddNPCEquipment(eInventorySlot.TwoHandWeapon, 468, 0, 0);

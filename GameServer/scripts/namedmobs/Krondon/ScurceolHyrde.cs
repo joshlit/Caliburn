@@ -1,10 +1,9 @@
 ﻿using System;
 using DOL.AI.Brain;
 using DOL.Database;
-using DOL.GS.PacketHandler;
 using DOL.Events;
 using DOL.GS;
-using System.Collections.Generic;
+using DOL.GS.PacketHandler;
 
 namespace DOL.GS
 {
@@ -59,11 +58,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -102,13 +97,11 @@ namespace DOL.GS
 			Empathy = 300;
 
 			MaxSpeedBase = 250;
-			MaxDistance = 3500;
 			TetherRange = 3800;
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
 			SpawnOrbs();
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			ScurceolHyrdeBrain sbrain = new ScurceolHyrdeBrain();
 			SetOwnBrain(sbrain);
@@ -164,6 +157,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class ScurceolHyrdeBrain : StandardMobBrain
@@ -257,7 +251,6 @@ namespace DOL.GS
 			++Orb1Count;
 
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			LyftMihtBrain1 sbrain = new LyftMihtBrain1();
 			SetOwnBrain(sbrain);
@@ -267,6 +260,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class LyftMihtBrain1 : StandardMobBrain
@@ -325,6 +319,7 @@ namespace DOL.AI.Brain
 	}
 }
 #endregion
+
 #region 2nd orb
 namespace DOL.GS
 {
@@ -387,7 +382,6 @@ namespace DOL.GS
 			++Orb2Count;
 
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			LyftMihtBrain2 sbrain = new LyftMihtBrain2();
 			SetOwnBrain(sbrain);
@@ -397,6 +391,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class LyftMihtBrain2 : StandardMobBrain
@@ -455,6 +450,7 @@ namespace DOL.AI.Brain
 	}
 }
 #endregion
+
 #region 3th orb
 namespace DOL.GS
 {
@@ -517,7 +513,6 @@ namespace DOL.GS
 			++Orb3Count;
 
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			LyftMihtBrain3 sbrain = new LyftMihtBrain3();
 			SetOwnBrain(sbrain);
@@ -527,6 +522,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class LyftMihtBrain3 : StandardMobBrain
@@ -585,6 +581,7 @@ namespace DOL.AI.Brain
 	}
 }
 #endregion
+
 #region 4th orb
 namespace DOL.GS
 {
@@ -647,7 +644,6 @@ namespace DOL.GS
 			++Orb4Count;
 
 			Faction = FactionMgr.GetFactionByID(8);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(8));
 
 			LyftMihtBrain4 sbrain = new LyftMihtBrain4();
 			SetOwnBrain(sbrain);
@@ -657,6 +653,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class LyftMihtBrain4 : StandardMobBrain

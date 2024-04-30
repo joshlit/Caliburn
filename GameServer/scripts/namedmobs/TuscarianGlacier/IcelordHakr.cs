@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 
@@ -28,11 +28,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool HasAbility(string keyName)
         {
             if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -72,7 +68,6 @@ namespace DOL.GS
             Intelligence = npcTemplate.Intelligence;
             Empathy = npcTemplate.Empathy;
             Faction = FactionMgr.GetFactionByID(140);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Spawn_Snakes = false;
             HakrBrain.spam_message1 = false;
@@ -108,7 +103,6 @@ namespace DOL.GS
                 TG.MeleeDamageType = eDamageType.Crush;
                 TG.RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
                 TG.Faction = FactionMgr.GetFactionByID(140);
-                TG.Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
 
                 TG.X = 25405;
                 TG.Y = 57241;
@@ -151,6 +145,7 @@ namespace DOL.GS
         }
     }
 }
+
 namespace DOL.AI.Brain
 {
     public class HakrBrain : StandardMobBrain
@@ -188,16 +183,13 @@ namespace DOL.AI.Brain
         {
             if (HakrAdd.IceweaverCount > 0)
             {
-                IList enemies = new ArrayList(AggroTable.Keys);
+                List<GameLiving> enemies = AggroList.Keys.ToList();
                 foreach (GamePlayer player in Body.GetPlayersInRadius(1100))
                 {
                     if (player != null)
                     {
                         if (player.IsAlive && player.Client.Account.PrivLevel == 1)
-                        {
-                            if (!AggroTable.ContainsKey(player))
-                                AggroTable.Add(player, 1);
-                        }
+                            AggroList.TryAdd(player, new());
                     }
                 }
                 if (enemies.Count == 0)
@@ -305,11 +297,7 @@ namespace DOL.GS
         {
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override double GetArmorAF(eArmorSlot slot)
         {
             return 300;
@@ -338,14 +326,12 @@ namespace DOL.GS
             Name = "Royal Iceweaver";
             RespawnInterval = -1;
 
-            MaxDistance = 3500;
             TetherRange = 3800;
             Size = 60;
             Level = 78;
             MaxSpeedBase = 270;
 
             Faction = FactionMgr.GetFactionByID(140);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(140));
             BodyType = 1;
             Realm = eRealm.None;
 
@@ -402,7 +388,7 @@ namespace DOL.AI.Brain
             {
                 if (Body.TargetObject != null)
                 {
-                    if (Body.TargetObject.IsWithinRadius(Body, Body.AttackRange))
+                    if (Body.TargetObject.IsWithinRadius(Body, Body.attackComponent.AttackRange))
                     {
                         GameLiving target = Body.TargetObject as GameLiving;
                         if (!target.effectListComponent.ContainsEffectForEffectType(eEffect.DamageOverTime))

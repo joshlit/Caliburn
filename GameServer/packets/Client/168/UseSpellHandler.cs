@@ -56,7 +56,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 						client.Player.X = newZone.XOffset + xOffsetInZone;
 						client.Player.Y = newZone.YOffset + yOffsetInZone;
 						client.Player.Z = realZ;
-						client.Player.MovementStartTick = GameLoop.GetCurrentTime();
 					}
 				}
 
@@ -103,7 +102,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 			}
 			
 			if (sk is Spell spell && sl != null)
-				player.castingComponent.RequestStartCastSpell(spell, sl);
+				player.CastSpell(spell, sl);
 			else if (sk is Styles.Style style)
 				player.styleComponent.ExecuteWeaponStyle(style);
 			else if (sk is Ability ability)

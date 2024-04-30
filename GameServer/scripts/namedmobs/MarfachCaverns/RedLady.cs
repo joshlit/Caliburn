@@ -91,7 +91,6 @@ namespace DOL.GS
             Piety = npcTemplate.Piety;
             Intelligence = npcTemplate.Intelligence;
             Faction = FactionMgr.GetFactionByID(187);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
             RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             SpecialInnocent.InnocentCount = 0;
 
@@ -269,10 +268,8 @@ namespace DOL.GS
             Level = (byte)Util.Random(34, 38);
             Name = "summoned innocent";
             Realm = eRealm.None;
-            MaxDistance = 0;
             TetherRange = 0;
             Faction = FactionMgr.GetFactionByID(187);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(187));
 
             ++InnocentCount;
             Strength = 50;
@@ -345,6 +342,7 @@ namespace DOL.GS
         }
     }
 }
+
 namespace DOL.AI.Brain
 {
     public class SpecialInnocentBrain : StandardMobBrain

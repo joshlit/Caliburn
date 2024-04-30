@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
+
 namespace DOL.GS
 {
     public class SpindlerBroodmother : GameEpicBoss
@@ -36,11 +37,7 @@ namespace DOL.GS
             get { return 100000; }
         }
 
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
 
         public override bool HasAbility(string keyName)
         {
@@ -90,7 +87,6 @@ namespace DOL.GS
 
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             SpindlerBroodmotherBrain sBrain = new SpindlerBroodmotherBrain();
             SetOwnBrain(sBrain);
             SaveIntoDatabase();
@@ -141,12 +137,10 @@ namespace DOL.GS
                 SB.BodyType = 5;
                 SB.MeleeDamageType = eDamageType.Slash;
                 SB.Faction = FactionMgr.GetFactionByID(96);
-                SB.Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
                 SB.X = 21283;
                 SB.Y = 51707;
                 SB.Z = 10876;
-                SB.MaxDistance = 2000;
                 SB.TetherRange = 2500;
                 SB.MaxSpeedBase = 300;
                 SB.Heading = 0;
@@ -469,7 +463,6 @@ namespace DOL.GS
             Size = (byte) Util.Random(50, 60);
             Level = (byte) Util.Random(56, 59);
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             Realm = 0;
             SBAddsBrain adds = new SBAddsBrain();
             LoadedFromScript = true;
@@ -513,13 +506,13 @@ namespace DOL.AI.Brain
                     {
                         if (Body.TargetObject != player)
                         {
-                            if (!AggroTable.ContainsKey(player))
+                            if (!AggroList.ContainsKey(player))
                                 AddToAggroList(player, 400);
                         }
                     }
                     else
                     {
-                        if (!AggroTable.ContainsKey(player))
+                        if (!AggroList.ContainsKey(player))
                             AddToAggroList(player, 10);
                     }
                 }
@@ -577,7 +570,6 @@ namespace DOL.GS
             Size = (byte) Util.Random(30, 40);
             Level = 50;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             Realm = 0;
             SBDeadAddsBrain adds = new SBDeadAddsBrain();
             LoadedFromScript = true;

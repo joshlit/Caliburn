@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 
@@ -46,11 +45,7 @@ namespace DOL.GS
             get { return 100000; }
         }
 
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
         public override double GetArmorAF(eArmorSlot slot)
         {
             return 350;
@@ -101,7 +96,6 @@ namespace DOL.GS
 
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             OlcasarGeomancerBrain sBrain = new OlcasarGeomancerBrain();
             SetOwnBrain(sBrain);
             SaveIntoDatabase();
@@ -138,12 +132,10 @@ namespace DOL.GS
                 OG.BodyType = 8; //magician
                 OG.MeleeDamageType = eDamageType.Slash;
                 OG.Faction = FactionMgr.GetFactionByID(96);
-                OG.Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
                 OG.X = 39152;
                 OG.Y = 36878;
                 OG.Z = 14975;
-                OG.MaxDistance = 2000;
                 OG.MaxSpeedBase = 300;
                 OG.Heading = 2033;
 
@@ -575,12 +567,10 @@ namespace DOL.GS
             Model = 925;
             Name = "geomancer minion";
             RespawnInterval = -1;
-            MaxDistance = 0;
             TetherRange = 0;
             Size = (byte) Util.Random(45, 55);
             Level = (byte) Util.Random(62, 66);
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             OGAddsBrain adds = new OGAddsBrain();

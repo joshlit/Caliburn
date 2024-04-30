@@ -64,11 +64,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -91,7 +87,6 @@ namespace DOL.GS
 
 			BalorBrain.spawn_eye = false;
 			Faction = FactionMgr.GetFactionByID(93);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(93));
 			IsCloakHoodUp = true;
 
 			GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
@@ -244,7 +239,7 @@ namespace DOL.AI.Brain
 				{
 					if (player.IsAlive && player.Client.Account.PrivLevel == 1)
 					{
-						if (!Enemys_To_DD.Contains(player) && !AggroTable.ContainsKey(player))
+						if (!Enemys_To_DD.Contains(player) && !AggroList.ContainsKey(player))
 						{
 							Enemys_To_DD.Add(player);
 							AddToAggroList(player, 10);//make sure it will cast spell
@@ -334,7 +329,6 @@ namespace DOL.GS
 			Size = 20;
 			Level = (byte)Util.Random(65, 70);
 			Faction = FactionMgr.GetFactionByID(93);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(93));//minions of balor
 			BalorEyeBrain eye = new BalorEyeBrain();
 			SetOwnBrain(eye);
 			eye.Start();

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
-
 
 namespace DOL.GS
 {
@@ -287,11 +286,7 @@ namespace DOL.GS
             get { return 300000; }
         }
 
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
        /* public override int GetResist(eDamageType damageType)
         {
             switch (damageType)
@@ -335,7 +330,6 @@ namespace DOL.GS
             Empathy = npcTemplate.Empathy;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
             Aroon_slash = false;
             Aroon_thrust = false;
@@ -392,12 +386,10 @@ namespace DOL.GS
                 CO.BodyType = 5;
                 CO.MeleeDamageType = eDamageType.Slash;
                 CO.Faction = FactionMgr.GetFactionByID(96);
-                CO.Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
                 CO.X = 51478;
                 CO.Y = 43359;
                 CO.Z = 10369;
-                CO.MaxDistance = 2000;
                 CO.TetherRange = 2500;
                 CO.MaxSpeedBase = 250;
                 CO.Heading = 11;
@@ -638,11 +630,7 @@ namespace DOL.GS
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -680,13 +668,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             CorpScaithBrain adds = new CorpScaithBrain();
@@ -739,8 +725,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -816,11 +802,7 @@ namespace DOL.GS
             return base.AttackDamage(weapon) * Strength / 100 * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -882,13 +864,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             SpioradScaithBrain adds = new SpioradScaithBrain();
@@ -938,8 +918,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
             return 0;
@@ -1011,11 +991,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -1077,13 +1053,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             RopadhScaithBrain adds = new RopadhScaithBrain();
@@ -1136,8 +1110,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -1212,11 +1186,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -1278,13 +1248,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             DamhnaScaithBrain adds = new DamhnaScaithBrain();
@@ -1337,8 +1305,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -1413,11 +1381,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -1480,13 +1444,11 @@ namespace DOL.GS
             Dexterity = 200;
             Quickness = 125;
             RespawnInterval = -1;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             FuinneamgScaithBrain adds = new FuinneamgScaithBrain();
@@ -1539,8 +1501,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -1616,11 +1578,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -1683,13 +1641,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             BruScaithBrain adds = new BruScaithBrain();
@@ -1742,8 +1698,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -1819,11 +1775,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -1886,13 +1838,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             FuarScaithBrain adds = new FuarScaithBrain();
@@ -1945,8 +1895,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -2022,11 +1972,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -2090,13 +2036,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             TaesScaithBrain adds = new TaesScaithBrain();
@@ -2149,8 +2093,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 
@@ -2226,11 +2170,7 @@ namespace DOL.GS
         }
         public override short Strength { get => base.Strength; set => base.Strength = 200; }
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -2294,13 +2234,11 @@ namespace DOL.GS
             Strength = 350;
             Dexterity = 200;
             Quickness = 125;
-            MaxDistance = 2500;
             TetherRange = 3000;
             Size = 155;
             Level = 77;
             MaxSpeedBase = 220;
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
             BodyType = 8;
             Realm = eRealm.None;
             ScorScaithBrain adds = new ScorScaithBrain();
@@ -2353,8 +2291,8 @@ namespace DOL.AI.Brain
             else
             {
                 RandomTarget = PlayersToAttack[Util.Random(0, PlayersToAttack.Count - 1)];
-                AggroTable.Clear();
-                AggroTable.Add(RandomTarget, 500);
+                AggroList.Clear();
+                AggroList.TryAdd(RandomTarget, new(500));
                 switch_target = false;
             }
 

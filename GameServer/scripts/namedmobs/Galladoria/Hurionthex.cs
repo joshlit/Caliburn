@@ -1,13 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
-using DOL.GS.Styles;
-using DOL.GS.Effects;
 
 // Boss Mechanics
 // Changes form every ~20 seconds
@@ -18,7 +14,6 @@ using DOL.GS.Effects;
 // Each state change is random, so he may change to the same form repeatedly.
 // Form change accompanied by message, "A ring of magical energy emanates from Hurionthex."
 // Spell animation same as ice wizard PBAOE.
-
 
 namespace DOL.GS
 {
@@ -52,11 +47,7 @@ namespace DOL.GS
             get { return 100000; }
         }
 
-        public override int AttackRange
-        {
-            get { return 450; }
-            set { }
-        }
+        public override int MeleeAttackRange => 450;
 
         public override double GetArmorAF(eArmorSlot slot)
         {
@@ -108,7 +99,6 @@ namespace DOL.GS
             Empathy = npcTemplate.Empathy;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(96);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
             HurionthexBrain sbrain = new HurionthexBrain();
             SetOwnBrain(sbrain);
@@ -153,7 +143,6 @@ namespace DOL.GS
                 Hurion.X = 55672;
                 Hurion.Y = 43536;
                 Hurion.Z = 12417;
-                Hurion.MaxDistance = 2000;
                 Hurion.MaxSpeedBase = 300;
                 Hurion.Heading = 1035;
 
@@ -249,7 +238,6 @@ namespace DOL.AI.Brain
         {
             Body.Model = 946;
             Body.Size = 120;
-            Body.AttackRange = 450;
             Body.MeleeDamageType = eDamageType.Spirit;
             Body.BodyType = 10; // Plant
 
@@ -277,7 +265,6 @@ namespace DOL.AI.Brain
         {
             Body.Model = 844;
             Body.Size = 160;
-            Body.AttackRange = 450;
             Body.MeleeDamageType = eDamageType.Spirit;
             Body.BodyType = 1; // Animal
 
@@ -305,7 +292,6 @@ namespace DOL.AI.Brain
         {
             Body.Model = 925;
             Body.Size = 150;
-            Body.AttackRange = 450;
             Body.MeleeDamageType = eDamageType.Spirit;
 
             Body.Strength = 300;

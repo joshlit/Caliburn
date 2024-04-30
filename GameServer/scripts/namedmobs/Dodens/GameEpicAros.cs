@@ -58,7 +58,6 @@ namespace DOL.GS.Scripts
                 "{0} trips and falls on the hard stone floor.",
                 "'You will remember my name! {0}!'"
             };
-            MaxDistance = 2500;
             TetherRange = 3500;
             SetOwnBrain(new ArosBrain());
         }
@@ -75,11 +74,7 @@ namespace DOL.GS.Scripts
         {
             get { return 40000; }
         }
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
         public override bool HasAbility(string keyName)
         {
             if (IsReturningToSpawnPoint && keyName == GS.Abilities.CCImmunity)
@@ -243,17 +238,13 @@ namespace DOL.GS.Scripts
             summonedGuardian.GuildName = "Summoned Ghost";
             summonedGuardian.Model = 140;
             summonedGuardian.Size = 65;
-            summonedGuardian.AttackRange = 200;
             summonedGuardian.Flags |= eFlags.GHOST;
             summonedGuardian.MeleeDamageType = eDamageType.Spirit;
             summonedGuardian.RespawnInterval = -1; // dont respawn
             summonedGuardian.RoamingRange = this.RoamingRange;
-            summonedGuardian.MaxDistance = 2000;
             summonedGuardian.MaxSpeedBase = this.MaxSpeedBase;
 
             // also copies the stats
-            summonedGuardian.CurrentSpeed = 200;
-
             summonedGuardian.Strength = this.Strength;
             summonedGuardian.Constitution = this.Constitution;
             summonedGuardian.Dexterity = this.Dexterity;

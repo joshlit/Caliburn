@@ -61,12 +61,6 @@ namespace DOL.GS.ServerProperties
 		public static bool ENABLE_DEBUG;
 
 		/// <summary>
-		/// Ignore too long outcoming packet or not
-		/// </summary>
-		[ServerProperty("system", "ignore_too_long_outcoming_packet", "Shall we ignore too long outcoming packet ?", false)]
-		public static bool IGNORE_TOO_LONG_OUTCOMING_PACKET;
-		
-		/// <summary>
 		/// Use raw RNG instead of Deck of Cards
 		/// </summary>
 		[ServerProperty("system", "override_deck_rng", "Should we use raw RNG instead of Deck-Of-Cards normalization?", false)]
@@ -314,6 +308,9 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("system", "save_packets", "Save packets and print the last sent/received ones when a client crashes. For debugging purpose.", false)]
 		public static bool SAVE_PACKETS;
 
+		[ServerProperty("system", "game_loop_tick_rate", "Minimum amount of milliseconds that must pass since the current tick started before starting the next onek. Higher values reduce CPU usage but make the game less responsive.", 30)]
+		public static int GAME_LOOP_TICK_RATE;
+
 		#endregion
 
 		#region LOGGING
@@ -470,7 +467,6 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("atlas", "trade_slowmode_length", "The slowmode duration for /trade in seconds", 60)]
 		public static int TRADE_SLOWMODE_LENGTH;
 		
-				
 		/// <summary>
 		/// The slowmode duration for /lfg in seconds
 		/// </summary>
@@ -560,12 +556,6 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		[ServerProperty("server", "anon_modifier", "Various modifying options for anon, 0 = default, 1 = /who shows player but as ANON, -1 = disabled", 0)]
 		public static int ANON_MODIFIER;
-
-		/// <summary>
-		/// Should the server load the example scripts
-		/// </summary>
-		[ServerProperty("server", "load_examples", "Should the server load the example scripts", true)]
-		public static bool LOAD_EXAMPLES;
 
 		/// <summary>
 		/// Death Messages All Realms
@@ -695,7 +685,7 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("world", "world_pickup_distance", "How far before you can no longer pick up an object (loot for example).", 256)]
 		public static int WORLD_PICKUP_DISTANCE;
 
-		[ServerProperty("world", "world_day_increment", "Day Increment (0 to 512, default is 24).  Larger increments make shorter days.", (uint)24)]
+		[ServerProperty("world", "world_day_increment", "Larger increments make shorter days. Because night time is 25% faster, it should ideally be a multiple of 4.", (uint) 24)]
 		public static uint WORLD_DAY_INCREMENT;
 
 		[ServerProperty("world", "world_npc_update_interval", "How often (milliseconds) will npc's broadcast updates to the clients.", (uint)5000)]
@@ -716,39 +706,31 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("world", "weather_log_events", "Should weather events be shown in the Log (and on the console).", true)]
 		public static bool WEATHER_LOG_EVENTS;
 
-		/// <summary>
-		/// Perform a LoS check on client with each mob
-		/// </summary>
-		[ServerProperty("world", "always_check_los", "Perform a LoS check before aggroing. This can involve a huge lag, handle with care!", false)]
-		public static bool ALWAYS_CHECK_LOS;
+		[ServerProperty("world", "check_los_before_aggro", "Should we perform LoS checks before allowing standard NPCs to aggro from proximity.", true)]
+		public static bool CHECK_LOS_BEFORE_AGGRO;
 
-		[ServerProperty("classes", "fnf_turrets_require_los_to_aggro", "Should FnF turrets require LoS to aggro entities (may send many requests to the player)", false)]
-		public static bool FNF_TURRETS_REQUIRE_LOS_TO_AGGRO;
+		[ServerProperty("world", "check_los_before_aggro_fnf", "Should we perform LoS checks before allowing FnF turrets to aggro from proximity. If false, they will attempt to cast behind walls.", true)]
+		public static bool CHECK_LOS_BEFORE_AGGRO_FNF;
 
-		/// <summary>
-		/// Perform a LoS check on client during cast
-		/// </summary>
-		[ServerProperty("world", "check_los_during_cast", "Perform LOS checks during a spell cast.", true)]
+		[ServerProperty("world", "enable_pet_ranged_attack_los_checks", "Should we perform LoS checks before allowing archer NPCs to attack.", true)]
+		public static bool CHECK_LOS_BEFORE_NPC_RANGED_ATTACK;
+
+		[ServerProperty("world", "check_los_during_ranged_attack_minimum_interval", "The minimum interval (milliseconds) between two LoS checks performed during a ranged attack.", 200)]
+		public static int CHECK_LOS_DURING_RANGED_ATTACK_MINIMUM_INTERVAL;
+
+		[ServerProperty("world", "check_los_during_cast", "Should we perform LoS checks during spell casts.", true)]
 		public static bool CHECK_LOS_DURING_CAST;
 
-		/// <summary>
-		/// Minimum interval between two LoS checks during cast
-		/// </summary>
-		[ServerProperty("world", "check_los_during_cast_minimum_interval", "The minimum interval (milliseconds) between two LOS checks performed during a spell cast.", 200)]
-		public static int CHECK_LOS_DURING_CAST_MINIMUM_INTERVAL;
-
-		/// <summary>
-		/// Interrupt cast if a LoS check fails before end of cast
-		/// </summary>
-		[ServerProperty("world", "check_los_during_cast_interrupt", "Should the casting animation be interrupted if a during cast LOS checks fails.", false)]
+		[ServerProperty("world", "check_los_during_cast_interrupt", "Should the casting animation be interrupted if a during cast LoS check fails.", false)]
 		public static bool CHECK_LOS_DURING_CAST_INTERRUPT;
 
+		[ServerProperty("world", "check_los_during_cast_minimum_interval", "The minimum interval (milliseconds) between two LoS checks performed during a spell cast.", 200)]
+		public static int CHECK_LOS_DURING_CAST_MINIMUM_INTERVAL;
+
+		[ServerProperty("world", "los_check_timeout", "After how long (milliseconds) should a los check timeout. If less than 0, the default ECS timer interval will be used.", 1500)]
+		public static int LOS_CHECK_TIMEOUT;
+
 		/// <summary>
-		/// Perform LOS check between controlled NPC's and players
-		/// </summary>
-		[ServerProperty("world", "always_check_pet_los", "Should we perform LOS checks between controlled NPC's and players?", false)]
-		public static bool ALWAYS_CHECK_PET_LOS;
-		
 		/// HPs gained per champion's level
 		/// </summary>
 		[ServerProperty("world", "hps_per_championlevel", "The amount of extra HPs gained each time you reach a new Champion's Level", 40)]
@@ -783,114 +765,6 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		[ServerProperty("world", "zonepoint_npctemplate", "Display the zonepoint with the following npctemplate. 0 for no display", 0)]
 		public static int ZONEPOINT_NPCTEMPLATE;
-
-		/// <summary>
-		/// Line of Sight Manager Enable
-		/// </summary>
-		[ServerProperty("world", "losmgr_enable", "Enable the Line of Sight Manager where overriden methods are implemented.", false)]
-		public static bool LOSMGR_ENABLE;
-
-		/// <summary>
-		/// Line of Sight Manager Debug Level
-		/// </summary>
-		[ServerProperty("world", "losmgr_debug_level", "Set the Level of Debug for the Line of Sight (LoS) Manager (do not set level 3 in production), 0 = no debug, 1 = info, 2 = warn, 3 = debug.", 0)]
-		public static int LOSMGR_DEBUG_LEVEL;
-
-		/// <summary>
-		/// Line of Sight Manager Cleanup Frequency
-		/// </summary>
-		[ServerProperty("world", "losmgr_cleanup_frequency", "How fast should the Line of Sight (LoS) Manager clean up its data (in milliseconds), don't get under 30000 ms, raise cleanup count if you put high number here.", 120000)]
-		public static int LOSMGR_CLEANUP_FREQUENCY;
-
-		/// <summary>
-		/// Line of Sight Manager number of entries to Cleanup
-		/// </summary>
-		[ServerProperty("world", "losmgr_cleanup_entries", "Number of Entries cleaned from Line of Sight (LoS) Manager each Cleanup ticks, if you need to go above 10 000 entries consider using a shorter cleanup frequency.", 1000)]
-		public static int LOSMGR_CLEANUP_ENTRIES;
-
-		/// <summary>
-		/// Line of Sight Manager Query Timeout
-		/// </summary>
-		[ServerProperty("world", "losmgr_query_timeout", "Timeout (in milliseconds) until Line of Sight (LoS) Manager tries to resend a LoS check, -1 to disable (don't get under 100ms except for Local Network).", 300)]
-		public static int LOSMGR_QUERY_TIMEOUT;
-
-		/// <summary>
-		/// Line of Sight Manager PvP Cache Timeout
-		/// </summary>
-		[ServerProperty("world", "losmgr_player_vs_player_cache_timeout", "Set Timeout (in milliseconds) for PvP Line of Sight (LoS) Manager cache data, 0 to disable.", 200)]
-		public static int LOSMGR_PLAYER_VS_PLAYER_CACHE_TIMEOUT;
-
-		/// <summary>
-		/// Line of Sight Manager PvE Cache Timeout
-		/// </summary>
-		[ServerProperty("world", "losmgr_player_vs_environment_cache_timeout", "Set Timeout (in milliseconds) for PvE Line of Sight (LoS) Manager cache data, 0 to disable. (Should be slightly above Brain Think timer to have any effect)", 1500)]
-		public static int LOSMGR_PLAYER_VS_ENVIRONMENT_CACHE_TIMEOUT;
-
-		/// <summary>
-		/// Line of Sight Manager EvE Cache Timeout
-		/// </summary>
-		[ServerProperty("world", "losmgr_environment_vs_environment_cache_timeout", "Set Timeout (in milliseconds) for EvE Line of Sight (LoS) Manager cache data, 0 to disable. (Should be at least 2 times PvE cache to lower LoS Queries)", 5000)]
-		public static int LOSMGR_ENVIRONMENT_VS_ENVIRONMENT_CACHE_TIMEOUT;
-
-		/// <summary>
-		/// Line of Sight Manager Player Check Frequency
-		/// </summary>
-		[ServerProperty("world", "losmgr_player_check_frequency", "Line of Sight (LoS) Manager will try to reduce player queries to this frequency (in millisecond), raise this if player are experiencing lags.", 100)]
-		public static int LOSMGR_PLAYER_CHECK_FREQUENCY;
-
-		/// <summary>
-		/// Line of Sight Manager PvP threshold
-		/// </summary>
-		[ServerProperty("world", "losmgr_player_vs_player_range_threshold", "Line of Sight (LoS) Manager won't check LoS for players within this range. (Should be low to prevent abuses)", 32)]
-		public static int LOSMGR_PLAYER_VS_PLAYER_RANGE_THRESHOLD;
-
-		/// <summary>
-		/// Line of Sight Manager PvE threshold
-		/// </summary>
-		[ServerProperty("world", "losmgr_player_vs_environment_range_threshold", "Line of Sight (LoS) Manager won't check LoS for mobs and NPC within this range. (Shouldn't be under default to prevent LoS flood)", 125)]
-		public static int LOSMGR_PLAYER_VS_ENVIRONMENT_RANGE_THRESHOLD;
-
-		/// <summary>
-		/// Line of Sight Manager EvE threshold
-		/// </summary>
-		[ServerProperty("world", "losmgr_environment__vs_environment_range_threshold", "Line of Sight (LoS) Manager won't check LoS for Mobs vs Mobs within this range. (Shouldn't be under PvE Threshold)", 350)]
-		public static int LOSMGR_ENVIRONMENT_VS_ENVIRONMENT_RANGE_THRESHOLD;
-
-		/// <summary>
-		/// Line of Sight Manager EvE Contamination
-		/// </summary>
-		[ServerProperty("world", "losmgr_max_contamination_radius", "Line of Sight (LoS) Manager will update LoS of Mobs/NPCs in this range of the checker if target is a Mob, and highest value used for contamination LoS updates.", 350)]
-		public static int LOSMGR_MAX_CONTAMINATION_RADIUS;
-
-		/// <summary>
-		/// Line of Sight Manager PvE Contamination
-		/// </summary>
-		[ServerProperty("world", "losmgr_npc_contamination_radius", "Line of Sight (LoS) Manager will update LoS of Mobs/NPCs in this range of the checker, and highest value used for Player contamination LoS updates.", 250)]
-		public static int LOSMGR_NPC_CONTAMINATION_RADIUS;
-
-		/// <summary>
-		/// Line of Sight Manager Pets Contamination
-		/// </summary>
-		[ServerProperty("world", "losmgr_pet_contamination_radius", "Line of Sight (LoS) Manager will update LoS of Player's Pet in this range of the checker, keep value low to prevent abuses.", 50)]
-		public static int LOSMGR_PET_CONTAMINATION_RADIUS;
-
-		/// <summary>
-		/// Line of Sight Manager Player Contamination
-		/// </summary>
-		[ServerProperty("world", "losmgr_players_contamination_radius", "Line of Sight (LoS) Manager will update LoS of Players in this range of the checker, should be disabled to prevent PvP abuses.", 0)]
-		public static int LOSMGR_PLAYER_CONTAMINATION_RADIUS;
-
-		/// <summary>
-		/// Line of Sight Manager Guards Contamination
-		/// </summary>
-		[ServerProperty("world", "losmgr_guard_contamination_radius", "Line of Sight (LoS) Manager will update LoS of Keep Guards in this range of the checker, raising this value will pack more Guards when Aggroing.", 200)]
-		public static int LOSMGR_GUARD_CONTAMINATION_RADIUS;
-
-		/// <summary>
-		/// Line of Sight Manager Contamination Z-Factor in range checks
-		/// </summary>
-		[ServerProperty("world", "losmgr_contamination_zfactor", "Line of Sight (LoS) Manager Contamination will use this to lower or raise the Z checks when updating LoS checks. 0 = Z must be exact, 1 = Z range is radius.", 0.5)]
-		public static double LOSMGR_CONTAMINATION_ZFACTOR;
 
 		/// <summary>
 		/// Property to cause beneficial spells to target the caster if current target isn't valid
@@ -1440,10 +1314,17 @@ namespace DOL.GS.ServerProperties
 		public static int GAMENPC_BASE_CON;
 
 		/// <summary>
-		/// Chance for NPC to random walk. Default is 20
+		/// Chance for NPC to roam.
 		/// </summary>
-		[ServerProperty("npc", "gamenpc_randomwalk_chance", "Chance for NPC to random walk. Default is 20", 20)]
-		public static int GAMENPC_RANDOMWALK_CHANCE;
+		[ServerProperty("npc", "gamenpc_roam_cooldown_min", "Minimum duration in seconds between two roams.", 5)]
+		public static int GAMENPC_ROAM_COOLDOWN_MIN;
+
+		/// <summary>
+		/// Chance for NPC to roam.
+		/// </summary>
+		[ServerProperty("npc", "gamenpc_roam_cooldown_max", "Maximum duration in seconds between two roams.", 40)]
+		public static int GAMENPC_ROAM_COOLDOWN_MAX;
+
 		/// <summary>
 		/// How often, in milliseconds, to check follow distance.  Lower numbers make NPC follow closer but increase load on server.
 		/// </summary>
@@ -1471,20 +1352,27 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// NPCs heal when a target is below what percentage of their health?
 		/// </summary>
-		[ServerProperty("npc", "npc_heal_threshold", "NPCs, including pets, heal targets whose health falls below this percentage.", 75)]
+		[ServerProperty("npc", "npc_heal_threshold", "NPCs heal targets whose health falls below this percentage.", 75)]
 		public static int NPC_HEAL_THRESHOLD;
-		
+
 		/// <summary>
-		/// Charmed NPC heal when a target is below what percentage of their health?
+		/// Pets heal when a target is below what percentage of their health?
 		/// </summary>
-		[ServerProperty("npc", "charmed_npc_heal_threshold", "Charmed NPC, heal targets whose health falls below this percentage.", 50)]
-		public static int CHARMED_NPC_HEAL_THRESHOLD;
-		
+		[ServerProperty("npc", "pet_heal_threshold", "Pets (including charmed NPCs, excluding Bonedancer pets) heal targets whose health falls below this percentage.", 50)]
+		public static int PET_HEAL_THRESHOLD;
+
+		/// <summary>
+		/// Bonedancer healer pets heal when a target is below what percentage of their health?
+		/// </summary>
+		[ServerProperty("npc", "bonedancer_healer_pets_heal_threshold", "Bonedancer healer pets heal targets whose health falls below this percentage.", 90)]
+		public static int BONEDANCER_HEALER_PET_HEAL_THRESHOLD;
+
 		/// <summary>
 		/// Expand the Wild Minion RA to also improve crit chance for ranged and spell attacks?
 		/// </summary>
 		[ServerProperty("npc", "expand_wild_minion", "Expand the Wild Minion RA to also improve crit chance for ranged and spell attacks?", false)]
 		public static bool EXPAND_WILD_MINION;
+
 		#endregion
 
 		#region PVP / RVR
@@ -2904,11 +2792,8 @@ namespace DOL.GS.ServerProperties
 
 		#endregion
 
-		public static IDictionary<string, object> AllCurrentProperties
-		{
-			get; private set;
-		}
-		
+		public static IDictionary<string, object> AllCurrentProperties { get; private set; }
+
 		/// <summary>
 		/// Get a Dictionary that tracks all Properties by Key String
 		/// Returns the ServerPropertyAttribute, the Static Field with current Value, and the according DataObject
@@ -3005,7 +2890,7 @@ namespace DOL.GS.ServerProperties
 				log.ErrorFormat("Trying to load {0} value is {1}", key, prop.Value);
 			}
 		}
-		
+
 		/// <summary>
 		/// Refreshes the server properties from the DB
 		/// </summary>
@@ -3013,6 +2898,52 @@ namespace DOL.GS.ServerProperties
 		{
 			log.Info("Refreshing server properties...");
 			InitProperties();
+		}
+
+		/// <summary>
+		/// Irreversibly removes rogue properties from the Database.
+		/// </summary>
+		public static void CleanUpDatabase()
+		{
+			IList<DbServerProperty> dbProperties = GameServer.Database.SelectAllObjects<DbServerProperty>();
+			List<string> properties = [];
+
+			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+			{
+				foreach (Type type in assembly.GetTypes())
+				{
+					foreach (FieldInfo field in type.GetFields())
+					{
+						// Properties are static.
+						if (!field.IsStatic)
+							continue;
+
+						// Properties should contain a property attribute.
+						object[] attributes = field.GetCustomAttributes(typeof(ServerPropertyAttribute), false);
+
+						if (attributes.Length == 0)
+							continue;
+
+						properties.Add(((ServerPropertyAttribute) attributes[0]).Key);
+					}
+				}
+			}
+
+			foreach (DbServerProperty dbProperty in dbProperties)
+			{
+				if (properties.Contains(dbProperty.Key))
+					continue;
+
+				try
+				{
+					GameServer.Database.DeleteObject(dbProperty);
+					log.Info($"Removed rogue property: {dbProperty.Key} ({dbProperty.Value}).");
+				}
+				catch
+				{
+					log.Error($"Couldn't remove rogue property: {dbProperty.Key} ({dbProperty.Value}).");
+				}
+			}
 		}
 	}
 }

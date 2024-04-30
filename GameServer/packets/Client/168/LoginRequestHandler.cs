@@ -265,8 +265,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 					else
 					{
 						playerAccount = GameServer.Database.FindObjectByKey<DbAccount>(userName);
-
-						client.PingTime = GameLoop.GetCurrentTime();
+						client.PingTime = GameLoop.GameLoopTime;
 
 						if (playerAccount == null)
 						{
@@ -471,10 +470,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 				client.PacketProcessor?.ProcessTcpQueue();
 
 				if (client.IsConnected == false)
-				{
 					client.Disconnect();
-					ClientService.OnClientDisconnect(client);
-				}
 
 				ExitLock(userName);
 			}

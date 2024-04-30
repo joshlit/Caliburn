@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using DOL.GS.PacketHandler;
+﻿using DOL.GS.PacketHandler;
 using DOL.Language;
 
 namespace DOL.GS
@@ -11,20 +10,6 @@ namespace DOL.GS
         public PlayerAttackAction(GamePlayer playerOwner) : base(playerOwner)
         {
             _playerOwner = playerOwner;
-        }
-
-        public override bool CheckInterruptTimer()
-        {
-            if (_playerOwner.attackComponent.Attackers.IsEmpty)
-                return false;
-
-            // Don't interrupt aiming if we haven't received an interrupt timer.
-            if (!_playerOwner.IsBeingInterrupted)
-                return false;
-
-            _playerOwner.attackComponent.StopAttack();
-            OnAimInterrupt(_playerOwner.LastInterrupter);
-            return true;
         }
 
         public override void OnAimInterrupt(GameObject attacker)
@@ -44,7 +29,7 @@ namespace DOL.GS
 
         protected override bool PrepareMeleeAttack()
         {
-            _combatStyle = _styleComponent.GetStyleToUse();
+            _combatStyle = StyleComponent.GetStyleToUse();
             return base.PrepareMeleeAttack();
         }
 
@@ -95,18 +80,12 @@ namespace DOL.GS
 
             if (stopAttack)
             {
-                _attackComponent.StopAttack();
-                _attackComponent.attackAction?.CleanUp();
+                AttackComponent.StopAttack();
+                AttackComponent.attackAction.CleanUp();
                 return false;
             }
 
-            if (base.FinalizeRangedAttack())
-            {
-                _playerOwner.TempProperties.SetProperty(RangeAttackComponent.RANGED_ATTACK_START, GameLoop.GameLoopTime);
-                return true;
-            }
-
-            return false;
+            return base.FinalizeRangedAttack();
         }
     }
 }

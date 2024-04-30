@@ -21,7 +21,6 @@ namespace DOL.GS
 			Piety = npcTemplate.Piety;
 			Intelligence = npcTemplate.Intelligence;
 			Empathy = npcTemplate.Empathy;
-			MaxDistance = 0;
 			TetherRange = 0;
 
 			EquesBrain.point1check = false;
@@ -42,6 +41,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class EquesBrain : StandardMobBrain
@@ -82,7 +82,7 @@ namespace DOL.AI.Brain
 					}
 					if (player == null || !player.IsAlive || player.Client.Account.PrivLevel != 1)
 					{
-						if (AggroTable.Count > 0)
+						if (HasAggro)
 							ClearAggroList();//clear list if it contain any aggroed players
 					}
 				}

@@ -30,11 +30,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -67,7 +63,6 @@ namespace DOL.GS
 			Intelligence = npcTemplate.Intelligence;
 			Empathy = npcTemplate.Empathy;
 			Faction = FactionMgr.GetFactionByID(96);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 			MolluneroBrain sbrain = new MolluneroBrain();
@@ -235,10 +230,8 @@ namespace DOL.GS
 			Size = (byte)Util.Random(35, 45);
 			RespawnInterval = -1;
 			RoamingRange = 200;
-			MaxDistance = 2500;
 			TetherRange = 2600;
 			Faction = FactionMgr.GetFactionByID(96);
-			Faction.AddFriendFaction(FactionMgr.GetFactionByID(96));
 
 			LoadedFromScript = true;
 			MolluneroAddBrain sbrain = new MolluneroAddBrain();
@@ -248,6 +241,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class MolluneroAddBrain : StandardMobBrain

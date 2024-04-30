@@ -34,7 +34,6 @@ namespace DOL.GS.Commands
 	     "'/mob peace' toggle whether the mob can be attacked.",
 	     "'/mob aggro <level>' to set mob's aggro level (0..100)%.",
 	     "'/mob range <distance>' to set mob's aggro range.",
-	     "'/mob distance <maxdistance>' set mob max distance from its spawn (>0=real, 0=no check, <0=percent of aggro range).",
 	     "'/mob roaming <distance>' set mob random range radius (0=noroaming, -1=standard, >0=individual).",
 	     "'/mob damagetype <eDamageType>' set mob damage type.",
 	     "'/mob movehere' move mob to player's location.",
@@ -174,7 +173,6 @@ namespace DOL.GS.Commands
 						case "peace": peace(client, targetMob, args); break;
 						case "aggro": aggro(client, targetMob, args); break;
 						case "range": range(client, targetMob, args); break;
-						case "distance": distance(client, targetMob, args); break;
 						case "roaming": roaming(client, targetMob, args); break;
 						case "damagetype": damagetype(client, targetMob, args); break;
 						case "movehere": movehere(client, targetMob, args); break;
@@ -325,7 +323,6 @@ namespace DOL.GS.Commands
 			mob.Model = 408;
 
 			//Fill the living variables
-			mob.CurrentSpeed = 0;
 			mob.MaxSpeedBase = 200;
 			mob.GuildName = "";
 			mob.Size = 50;
@@ -398,7 +395,6 @@ namespace DOL.GS.Commands
 				((IOldAggressiveBrain)mob.Brain).AggroRange = 500;
 			}
 
-			mob.CurrentSpeed = 0;
 			mob.MaxSpeedBase = 200;
 			mob.GuildName = "";
 			mob.Size = 50;
@@ -478,7 +474,6 @@ namespace DOL.GS.Commands
 					((IOldAggressiveBrain)mob.Brain).AggroRange = 500;
 				}
 
-				mob.CurrentSpeed = 0;
 				mob.MaxSpeedBase = 200;
 				mob.GuildName = "";
 				mob.Size = 50;
@@ -538,7 +533,6 @@ namespace DOL.GS.Commands
 					((IOldAggressiveBrain)mob.Brain).AggroRange = 500;
 				}
 
-				mob.CurrentSpeed = 0;
 				mob.MaxSpeedBase = 200;
 				mob.GuildName = "";
 				mob.Size = 50;
@@ -968,22 +962,6 @@ namespace DOL.GS.Commands
 			}
 		}
 
-		private void distance(GameClient client, GameNPC targetMob, string[] args)
-		{
-			try
-			{
-				int distance = Convert.ToInt32(args[2]);
-				targetMob.MaxDistance = distance;
-				targetMob.SaveIntoDatabase();
-				client.Out.SendMessage("Mob max distance changed to: " + targetMob.MaxDistance, eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			}
-			catch (Exception)
-			{
-				DisplaySyntax(client, args[1]);
-				return;
-			}
-		}
-
 		private void roaming(GameClient client, GameNPC targetMob, string[] args)
 		{
 			int maxRoamingRange;
@@ -1229,17 +1207,15 @@ namespace DOL.GS.Commands
 			if (targetMob.DamageRvRMemory > 0)
 				info.Add("  - Damage RvR Memory: " + targetMob.DamageRvRMemory);
 
-			if (targetMob.Brain != null && targetMob.Brain is IControlledBrain)
+			if (targetMob.Brain is IControlledBrain brain)
 			{
-				try
-				{
-					info.Add(" + -- Owner: " + (targetMob.Brain as IControlledBrain).GetPlayerOwner() != null ? (targetMob.Brain as IControlledBrain).GetPlayerOwner().Name : (targetMob.Brain as IControlledBrain).GetNPCOwner().Name);
-				}
-				catch
-				{
-					info.Add(" + -- Owner: Not found!");
-				}
+				string ownerName;
+				GameLiving owner = brain.GetPlayerOwner();
+				owner ??= brain.GetNPCOwner();
+				ownerName = owner != null ? owner.Name : "Not found!";
+				info.Add($" + -- Owner: {ownerName}");
 			}
+
 			if (targetMob.NPCTemplate != null)
 			{
 				info.Add(" + NPCTemplate: " + "[" + targetMob.NPCTemplate.TemplateId + "] " + targetMob.NPCTemplate.Name);
@@ -1267,11 +1243,8 @@ namespace DOL.GS.Commands
 				info.Add(" + Aggro level: " + aggroBrain.AggroLevel);
 				info.Add(" + Aggro range: " + aggroBrain.AggroRange);
 
-				if (targetMob.MaxDistance < 0)
-					info.Add(" + MaxDistance: " + -targetMob.MaxDistance * aggroBrain.AggroRange / 100);
-				else
-					info.Add(" + MaxDistance: " + targetMob.MaxDistance);
-
+				if(aggroBrain is StandardMobBrain mobBrain)
+					info.Add(" + ThinkInterval: " + mobBrain.ThinkInterval +"ms");
 			}
 			else
 			{
@@ -1279,7 +1252,7 @@ namespace DOL.GS.Commands
 			}
 
 			info.Add(" + Roaming Range: " + targetMob.RoamingRange);
-			//info.Add(" + Tether Range: " + targetMob.TetherRange);
+			info.Add(" + Tether Range: " + targetMob.TetherRange);
 
 			TimeSpan respawn = TimeSpan.FromMilliseconds(targetMob.RespawnInterval);
 
@@ -2375,7 +2348,6 @@ namespace DOL.GS.Commands
 			mob.Empathy = targetMob.Empathy;
 			mob.Piety = targetMob.Piety;
 			mob.Charisma = targetMob.Charisma;
-			mob.CurrentSpeed = 0;
 			mob.MaxSpeedBase = targetMob.MaxSpeedBase;
 			mob.Inventory = targetMob.Inventory;
 			mob.EquipmentTemplateID = targetMob.EquipmentTemplateID;
@@ -2532,7 +2504,6 @@ namespace DOL.GS.Commands
 			mob.MeleeDamageType = targetMob.MeleeDamageType;
 			mob.RespawnInterval = targetMob.RespawnInterval;
 			mob.RoamingRange = targetMob.RoamingRange;
-			mob.MaxDistance = targetMob.MaxDistance;
 			mob.BodyType = targetMob.BodyType;
 
 			// also copies the stats
@@ -2547,7 +2518,6 @@ namespace DOL.GS.Commands
 			mob.Charisma = targetMob.Charisma;
 
 			//Fill the living variables
-			mob.CurrentSpeed = 0;
 			mob.MaxSpeedBase = targetMob.MaxSpeedBase;
 			mob.GuildName = targetMob.GuildName;
 			mob.Size = targetMob.Size;
@@ -3102,19 +3072,17 @@ namespace DOL.GS.Commands
 				text.Add("InView: " + targetMob.TargetInView);
 			}
 
-			if (targetMob.Brain != null && targetMob.Brain is StandardMobBrain)
+			if (targetMob.Brain is StandardMobBrain standardBrain)
 			{
-				Dictionary<GameLiving, long> aggroList = (targetMob.Brain as StandardMobBrain).AggroTable;
+				List<(GameLiving, long)> aggroList = standardBrain.GetOrderedAggroList();
 
 				if (aggroList.Count > 0)
 				{
 					text.Add("");
 					text.Add("Aggro List:");
 
-					foreach (GameLiving living in aggroList.Keys)
-					{
-						text.Add(living.Name + ": " + aggroList[living]);
-					}
+					foreach ((GameLiving, long) pair in aggroList)
+						text.Add($"{pair.Item1.Name}: {pair.Item2}");
 				}
 			}
 

@@ -1,29 +1,9 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Reflection;
 using DOL.Database;
-using DOL.Events;
 using DOL.GS.PacketHandler;
 using log4net;
 
@@ -78,19 +58,21 @@ namespace DOL.GS
 		/// <param name="player">Player to add</param>
 		public static void AddPlayerToAllGuildPlayersList(GamePlayer player)
 		{
-			if (m_guildXAllMembers.ContainsKey(player.GuildID))
+			if (string.IsNullOrEmpty(player.GuildID))
+				return;
+
+			if (m_guildXAllMembers.TryGetValue(player.GuildID, out Dictionary<string, GuildMemberDisplay> guildMemberList))
 			{
-				if (!m_guildXAllMembers[player.GuildID].ContainsKey(player.InternalID))
+				if (!guildMemberList.ContainsKey(player.InternalID))
 				{
-					Dictionary<string, GuildMemberDisplay> guildMemberList = m_guildXAllMembers[player.GuildID];
-					GuildMemberDisplay member = new GuildMemberDisplay(	player.InternalID, 
-																		player.Name, 
-																		player.Level.ToString(), 
-																		player.CharacterClass.ID.ToString(), 
-																		player.GuildRank.RankLevel.ToString(), 
-																		player.Group != null ? player.Group.MemberCount.ToString() : "1", 
-																		player.CurrentZone.Description, 
-																		player.GuildNote);
+					GuildMemberDisplay member = new(player.InternalID,
+													player.Name,
+													player.Level.ToString(),
+													player.CharacterClass.ID.ToString(),
+													player.GuildRank.RankLevel.ToString(),
+													player.Group != null ? player.Group.MemberCount.ToString() : "1",
+													player.CurrentZone.Description,
+													player.GuildNote);
 					guildMemberList.Add(player.InternalID, member);
 				}
 			}
@@ -229,6 +211,8 @@ namespace DOL.GS
 		public static void RepairRanks(Guild guild)
 		{
 			DbGuildRank rank;
+			guild.Ranks ??= new DbGuildRank[10];
+
 			for (int i = 0; i < 10; i++)
 			{
 				bool foundRank = false;
@@ -513,10 +497,10 @@ namespace DOL.GS
 		/// <summary>
 		/// Save all guild into database
 		/// </summary>
-		public static void SaveAllGuilds()
+		public static int SaveAllGuilds()
 		{
-			if (log.IsDebugEnabled)
-				log.Debug("Saving all guilds...");
+			int count = 0;
+
 			try
 			{
 				lock (m_guilds.SyncRoot)
@@ -524,6 +508,7 @@ namespace DOL.GS
 					foreach (Guild g in m_guilds.Values)
 					{
 						g.SaveIntoDatabase();
+						count++;
 					}
 				}
 			}
@@ -532,6 +517,8 @@ namespace DOL.GS
 				if (log.IsErrorEnabled)
 					log.Error("Error saving guilds.", e);
 			}
+
+			return count;
 		}
 
 		/// <summary>

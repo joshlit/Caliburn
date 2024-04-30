@@ -26,7 +26,7 @@ namespace DOL.GS
         public eRangedAttackType RangedAttackType => m_RangedAttackType;
 
         public bool AttackFinished { get; set; }
-        public eActiveWeaponSlot ActiveWeaponSlot { get; private set; }
+        public eActiveWeaponSlot ActiveWeaponSlot { get; }
 
         public WeaponAction(GameLiving owner, GameObject target, DbInventoryItem attackWeapon, DbInventoryItem leftWeapon, double effectiveness, int interruptDuration, Style combatStyle)
         {
@@ -217,9 +217,6 @@ namespace DOL.GS
 
             mainHandAD.Target.HandleDamageShields(mainHandAD);
 
-            // Remove the left-hand AttackData from the previous attack.
-            m_owner.TempProperties.RemoveProperty(LAST_ATTACK_DATA_LH);
-
             // Now left hand damage.
             if (leftHandSwingCount > 0 && mainWeapon.SlotPosition != Slot.RANGED)
             {
@@ -257,7 +254,6 @@ namespace DOL.GS
                                 }
                             }
 
-                            m_owner.TempProperties.SetProperty(LAST_ATTACK_DATA_LH, leftHandAD);
                             leftHandAD.Target.HandleDamageShields(leftHandAD);
 
                             // Reflex Attack - Offhand.

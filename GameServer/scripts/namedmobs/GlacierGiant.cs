@@ -38,11 +38,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -104,7 +100,6 @@ namespace DOL.GS
 				OF.X = 651517;
 				OF.Y = 625897;
 				OF.Z = 5320;
-				OF.MaxDistance = 5500;
 				OF.TetherRange = 5600;
 				OF.MaxSpeedBase = 280;
 				OF.Heading = 4003;
@@ -122,6 +117,7 @@ namespace DOL.GS
 		}
 	}
 }
+
 namespace DOL.AI.Brain
 {
 	public class GlacierGiantBrain : EpicBossBrain

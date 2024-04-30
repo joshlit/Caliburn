@@ -48,16 +48,11 @@ namespace DOL.GS
             get { return 100000; }
         }
         public override short MaxSpeedBase => (short) (191 + Level * 2);
-        public override int AttackRange
-        {
-            get => 180;
-            set { }
-        }
+        public override int MeleeAttackRange => 180;
         public override bool AddToWorld()
         {
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60165038);
             LoadTemplate(npcTemplate);
-            MaxDistance = 1500;
             TetherRange = 2000;
             RoamingRange = 400;
             PrincessNahemahBrain sBrain = new PrincessNahemahBrain();
@@ -70,7 +65,6 @@ namespace DOL.GS
             BodyType = 2;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
             Faction = FactionMgr.GetFactionByID(191);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(191));
             SaveIntoDatabase();
             base.AddToWorld();
             return true;
@@ -131,7 +125,7 @@ namespace DOL.AI.Brain
 
                 foreach (GameNPC mob_c in Body.GetNPCsInRadius(2000))
                 {
-                    if (mob_c?.Brain is NahemahMinionBrain && mob_c.IsAlive && mob_c.IsAvailable)
+                    if (mob_c?.Brain is NahemahMinionBrain && mob_c.IsAlive && mob_c.CanJoinFight)
                     {
                         AddAggroListTo(mob_c.Brain as NahemahMinionBrain);
                     }
@@ -179,7 +173,6 @@ namespace DOL.GS
             LoadTemplate(npcTemplate);
             RoamingRange = 350;
             RespawnInterval = -1;
-            MaxDistance = 1500;
             TetherRange = 2000;
             IsWorthReward = false; // worth no reward
             Realm = eRealm.None;
@@ -191,7 +184,6 @@ namespace DOL.GS
             BodyType = 2;
 
             Faction = FactionMgr.GetFactionByID(191);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(191));
 
             base.AddToWorld();
             return true;

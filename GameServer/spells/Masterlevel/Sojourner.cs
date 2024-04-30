@@ -95,7 +95,6 @@ namespace DOL.GS.Spells
                 merchant.Realm = casterPlayer.Realm;
                 merchant.Name = "Ancient Transmuter";
                 merchant.Model = 993;
-                merchant.CurrentSpeed = 0;
                 merchant.MaxSpeedBase = 0;
                 merchant.GuildName = "";
                 merchant.Size = 50;
@@ -131,7 +130,7 @@ namespace DOL.GS.Spells
                 if (!player.InCombat && !GameRelic.IsPlayerCarryingRelic(player))
                 {
                     SendEffectAnimation(player, 0, false, 1);
-					player.MoveToBind();
+                    player.MoveToBind();
                 }
             }
         }
@@ -139,15 +138,15 @@ namespace DOL.GS.Spells
     #endregion
 
     //no shared timer
-	#region Sojourner-7
-	[SpellHandlerAttribute("EssenceResist")]
-	public class EssenceResistHandler : AbstractResistBuff
-	{
-		public override eBuffBonusCategory BonusCategory1 { get { return eBuffBonusCategory.BaseBuff; } }
-		public override eProperty Property1 { get { return eProperty.Resist_Natural; } }
-		public EssenceResistHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
-	}
-	#endregion Sojourner-7
+    #region Sojourner-7
+    [SpellHandlerAttribute("EssenceResist")]
+    public class EssenceResistHandler : AbstractResistBuff
+    {
+        public override eBuffBonusCategory BonusCategory1 { get { return eBuffBonusCategory.BaseBuff; } }
+        public override eProperty Property1 { get { return eProperty.Resist_Natural; } }
+        public EssenceResistHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
+    }
+    #endregion Sojourner-7
 
     //no shared timer
     #region Sojourner-8
@@ -157,7 +156,7 @@ namespace DOL.GS.Spells
         protected ECSGameTimer m_expireTimer;
         protected GameNPC m_npc;
         protected GamePlayer m_target;
-		protected IPoint3D m_loc;
+        protected Point3D m_loc;
 
         public override void OnDirectEffect(GameLiving target)
         {
@@ -226,13 +225,13 @@ namespace DOL.GS.Spells
         protected virtual int ExpiredCallback(ECSGameTimer callingTimer)
         {
             m_target.IsStunned = false;
-			m_target.DismountSteed(true);
+            m_target.DismountSteed(true);
             m_target.DebuffCategory[(int)eProperty.SpellFumbleChance]-=100;
             GameEventMgr.RemoveHandler(m_target, GameLivingEvent.AttackedByEnemy, new DOLEventHandler(OnAttack));
             m_npc.StopMoving();
             m_npc.RemoveFromWorld();
-			//sometimes player can't move after zephyr :
-			m_target.Out.SendUpdateMaxSpeed();
+            //sometimes player can't move after zephyr :
+            m_target.Out.SendUpdateMaxSpeed();
             return 0;
         }
 
@@ -285,20 +284,17 @@ namespace DOL.GS.Spells
             {
                 //Calculate random target
                 m_loc = GetTargetLoc();
-				playerCaster.Out.SendCheckLOS(playerCaster, m_npc, new CheckLOSResponse(ZephyrCheckLOS));
+                playerCaster.Out.SendCheckLos(playerCaster, m_npc, new CheckLosResponse(ZephyrCheckLos));
             }
         }
 
-        public void ZephyrCheckLOS(GamePlayer player, ushort response, ushort targetOID)
+        public void ZephyrCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
         {
-            if (targetOID == 0)
-                return;
-
-            if ((response & 0x100) == 0x100)
+            if (response is eLosCheckResponse.TRUE)
                 m_npc.WalkTo(m_loc, 100);
         }
 
-        public virtual IPoint3D GetTargetLoc()
+        public virtual Point3D GetTargetLoc()
         {
             double targetX = m_npc.X + Util.Random(-1500, 1500);
             double targetY = m_npc.Y + Util.Random(-1500, 1500);

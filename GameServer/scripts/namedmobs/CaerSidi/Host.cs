@@ -177,7 +177,6 @@ namespace DOL.GS
                 CO.Flags ^= eFlags.DONTSHOWNAME;
                 CO.Flags ^= eFlags.PEACE;
                 CO.Faction = FactionMgr.GetFactionByID(64);
-                CO.Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));
                 CO.X = 26995;
                 CO.Y = 29733;
                 CO.Z = 17871;
@@ -230,11 +229,7 @@ namespace DOL.GS
             return base.AttackDamage(weapon) * Strength / 150  * ServerProperties.Properties.EPICS_DMG_MULTIPLIER;
         }
 
-        public override int AttackRange
-        {
-            get { return 350; }
-            set { }
-        }
+        public override int MeleeAttackRange => 350;
 
         public override int GetResist(eDamageType damageType)
         {
@@ -304,7 +299,6 @@ namespace DOL.GS
             Name = "Host";
             PackageID = "HostCopy";
             RespawnInterval = -1;
-            MaxDistance = 0;
             TetherRange = 0;
             Size = 60;
             Level = 79;
@@ -312,7 +306,6 @@ namespace DOL.GS
             Flags = eFlags.GHOST;
 
             Faction = FactionMgr.GetFactionByID(64);
-            Faction.AddFriendFaction(FactionMgr.GetFactionByID(64));
             BodyType = 6;
             Realm = eRealm.None;
 
@@ -4012,8 +4005,7 @@ namespace DOL.AI.Brain
                         {
                             if (BafMobs == true && npc.TargetObject == Body.TargetObject)
                             {
-                                npc.MaxDistance = 10000; //set mob distance to make it reach target
-                                npc.TetherRange = 10000; //set tether to not return to home
+                                npc.TetherRange = 0; //set tether to not return to home
                                 if (!npc.IsWithinRadius(Body.TargetObject, 100))
                                 {
                                     npc.MaxSpeedBase = 300; //speed is is not near to reach target faster
@@ -4035,7 +4027,6 @@ namespace DOL.AI.Brain
                         {
                             if (BafMobs == false)
                             {
-                                npc.MaxDistance = npc.NPCTemplate.MaxDistance; //return distance to normal
                                 npc.TetherRange = npc.NPCTemplate.TetherRange; //return tether to normal
                                 npc.MaxSpeedBase = npc.NPCTemplate.MaxSpeed; //return speed to normal
                             }
@@ -4060,10 +4051,8 @@ namespace DOL.AI.Brain
                 {
                     if (player != null)
                     {
-                        if (player.IsAlive && player.Client.Account.PrivLevel == 1 && !AggroTable.ContainsKey(player))
-                        {
+                        if (player.IsAlive && player.Client.Account.PrivLevel == 1 && !AggroList.ContainsKey(player))
                             AddToAggroList(player, 10);
-                        }
                     }
                 }
             }

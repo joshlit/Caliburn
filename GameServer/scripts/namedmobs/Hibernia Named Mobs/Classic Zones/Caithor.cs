@@ -30,11 +30,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override bool HasAbility(string keyName)
 		{
 			if (IsAlive && keyName == GS.Abilities.CCImmunity)
@@ -172,11 +168,7 @@ namespace DOL.GS
 		{
 			return base.AttackDamage(weapon) * Strength / 100;
 		}
-		public override int AttackRange
-		{
-			get { return 350; }
-			set { }
-		}
+		public override int MeleeAttackRange => 350;
 		public override double GetArmorAF(eArmorSlot slot)
 		{
 			return 350;
@@ -207,7 +199,6 @@ namespace DOL.GS
 			Level = (byte)Util.Random(62, 65);
 			Model = 339;
 			Size = 160;
-			MaxDistance = 3500;
 			TetherRange = 4000;
 			Flags = 0;
 			LoadEquipmentTemplateFromDatabase("65b95161-a813-41cb-be0c-a57d132f8173");

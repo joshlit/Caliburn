@@ -1,22 +1,3 @@
-/*
- * DAWN OF LIGHT - The first free open source DAoC server emulator
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- */
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +5,6 @@ using System.Linq;
 using System.Text;
 using DOL.Database;
 using DOL.Events;
-using DOL.GS;
 using DOL.GS.Housing;
 using DOL.GS.PacketHandler;
 using DOL.GS.Quests;
@@ -702,11 +682,21 @@ namespace DOL.GS
 			if (m_ObjectState == eObjectState.Active)
 				return false;
 
+			if (CurrentRegion == null)
+			{
+				if (log.IsWarnEnabled)
+					log.Warn($"Invalid region for ({this})");
+
+				return false;
+			}
+
 			Zone zone = CurrentRegion.GetZone(X, Y);
 
 			if (zone == null)
 			{
-				log.Warn($"Couldn't find a zone for (Name: {Name}) (ID: {InternalID})");
+				if (log.IsWarnEnabled)
+					log.Warn($"Couldn't find a zone for ({this})");
+
 				return false;
 			}
 
@@ -1000,52 +990,14 @@ namespace DOL.GS
 
 		#region ConLevel/DurLevel
 
-		/// <summary>
-		/// Calculate con-level against other object
-		/// &lt;=-3 = grey
-		/// -2 = green
-		/// -1 = blue
-		/// 0 = yellow (same level)
-		/// 1 = orange
-		/// 2 = red
-		/// &gt;=3 = violet
-		/// </summary>
-		/// <returns>conlevel</returns>
-		public double GetConLevel(GameObject compare)
+		public int GetConLevel(GameObject compare)
 		{
-			return GetConLevel(EffectiveLevel, compare.EffectiveLevel);
-			//			return (compare.Level - Level) / ((double)(Level / 10 + 1));
+			return ConLevels.GetConLevel(EffectiveLevel, compare.EffectiveLevel);
 		}
 
-		/// <summary>
-		/// Calculate con-level against other compareLevel
-		/// -3- = grey
-		/// -2 = green
-		/// -1 = blue  (compareLevel is 1 con lower)
-		/// 0 = yellow (same level)
-		/// 1 = orange (compareLevel is 1 con higher)
-		/// 2 = red
-		/// 3+ = violet
-		/// </summary>
-		/// <returns>conlevel</returns>
-		public static double GetConLevel(int level, int compareLevel)
+		public static int GetConLevel(int level, int compareLevel)
 		{
-			int constep = Math.Max(1, (level + 9) / 10);
-			double stepping = 1.0 / constep;
-			int leveldiff = level - compareLevel;
-			return 0 - leveldiff * stepping;
-		}
-
-		/// <summary>
-		/// Calculate a level based on source level and a con level
-		/// </summary>
-		/// <param name="level"></param>
-		/// <param name="con"></param>
-		/// <returns></returns>
-		public static int GetLevelFromCon(int level, double con)
-		{
-			int constep = Math.Max(1, (level + 10) / 10);
-			return Math.Max((int)0, (int)(level + constep * con));
+			return ConLevels.GetConLevel(level, compareLevel);
 		}
 
 		#endregion
