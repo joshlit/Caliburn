@@ -426,7 +426,7 @@ namespace DOL.GS
 						}
 						case "abomination":
 						{
-							SayTo(owner, $"As one of the chosen warriors of Arawn, I have a mighty arsenal of weapons at your disposal. If you wish it, I am able to [taunt] your enemies so that they will focus on me instead of you. {empower}");
+							SayTo(owner, $"As one of the chosen warriors of Arawn, I have a mighty arsenal of [weapons] at my disposal. If you wish it, I am able to [taunt] your enemies so that they will focus on me instead of you. {empower}");
 							return true;
 						}
 						default:
