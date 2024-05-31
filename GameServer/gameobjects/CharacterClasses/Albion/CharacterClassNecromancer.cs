@@ -3,6 +3,7 @@ using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerClass;
+using DOL.GS.Scripts;
 
 namespace DOL.GS
 {
@@ -11,12 +12,14 @@ namespace DOL.GS
 	/// </summary>
 	public class CharacterClassNecromancer : ClassDisciple
 	{
-		public override void Init(GamePlayer player)
+		public override void Init(IGamePlayer player)
 		{
 			base.Init(player);
 
 			// Force caster form when creating this player in the world.
-			player.Model = (ushort)player.Client.Account.Characters[player.Client.ActiveCharIndex].CreationModel;
+			if (player is GamePlayer)
+				player.Model = (ushort)player.Client.Account.Characters[player.Client.ActiveCharIndex].CreationModel;
+
 			player.Shade(false);
 		}
 
@@ -60,7 +63,7 @@ namespace DOL.GS
 			if (Player.IsShade)
 				Player.Shade(false);
 
-			Player.InitControlledBrainArray(0);
+			((GamePlayer)Player)?.InitControlledBrainArray(0);
 		}
 
 		/// <summary>
@@ -100,7 +103,7 @@ namespace DOL.GS
 		/// <returns></returns>
 		public override ShadeECSGameEffect CreateShadeEffect()
 		{
-			return new NecromancerShadeECSGameEffect(new ECSGameEffectInitParams(Player, 0, 1));
+			return new NecromancerShadeECSGameEffect(new ECSGameEffectInitParams((GameLiving)Player, 0, 1));
 		}
 
 		/// <summary>
@@ -125,7 +128,7 @@ namespace DOL.GS
 				{
 					GameNPC pet = Player.ControlledBrain.Body;
 
-					foreach (GameObject attacker in Player.attackComponent.Attackers.Keys)
+					foreach (GameObject attacker in Player.AttackComponent.Attackers.Keys)
 					{
 						if (attacker is GameNPC npcAttacker)
 						{
@@ -134,7 +137,7 @@ namespace DOL.GS
 								if (npcAttacker.Brain is IOldAggressiveBrain npcAttackerBrain)
 								{
 									npcAttacker.StopAttack();
-									npcAttackerBrain.AddToAggroList(pet, npcAttackerBrain.GetBaseAggroAmount(Player));
+									npcAttackerBrain.AddToAggroList(pet, npcAttackerBrain.GetBaseAggroAmount((GameLiving)Player));
 								}
 							}
 						}

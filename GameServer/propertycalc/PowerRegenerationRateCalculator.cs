@@ -24,8 +24,7 @@ namespace DOL.GS.PropertyCalc
 
             double regen = living.Level / 10.0 + living.Level / 2.75;
 
-            // What is this? NPCs don't have power.
-            if (living is GameNPC && living.InCombat)
+			if (living is GameNPC && living.InCombat)
                 regen /= 2.0;
 
             regen *= ServerProperties.Properties.MANA_REGEN_RATE;

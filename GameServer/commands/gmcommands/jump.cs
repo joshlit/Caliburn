@@ -7,7 +7,7 @@ using DOL.Language;
 namespace DOL.GS.Commands
 {
 	[CmdAttribute("&jump",
-		ePrivLevel.GM,
+		ePrivLevel.Player,
 		"GMCommands.Jump.Description",
 		"GMCommands.Jump.Information",
 		"GMCommands.Jump.Usage.ToPlayerName",

@@ -4,6 +4,7 @@ using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.Commands;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 using DOL.Language;
 
@@ -105,7 +106,7 @@ namespace DOL.GS
                     newSpellHandler.Tick();
                 else
                 {
-                    if (Owner is GamePlayer player)
+                    if (Owner is IGamePlayer player)
                     {
                         if (newSpellHandler.Spell.CastTime > 0 && SpellHandler is not ChamberSpellHandler && newSpellHandler.Spell.SpellType != eSpellType.Chamber)
                         {
@@ -120,13 +121,16 @@ namespace DOL.GS
                             }
                         }
 
-                        if (player.SpellQueue)
+                        if (player is GamePlayer gamePlayer)
                         {
-                            player.Out.SendMessage("You are already casting a spell! You prepare this spell as a follow up!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-                            QueuedSpellHandler = newSpellHandler;
+                            if (gamePlayer.SpellQueue)
+                            {
+                                player.Out.SendMessage("You are already casting a spell! You prepare this spell as a follow up!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+                                QueuedSpellHandler = newSpellHandler;
+                            }
+                            else
+                                player.Out.SendMessage("You are already casting a spell!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                         }
-                        else
-                            player.Out.SendMessage("You are already casting a spell!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
                     }
                     else
                         QueuedSpellHandler = newSpellHandler;

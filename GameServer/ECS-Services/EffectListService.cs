@@ -115,7 +115,7 @@ namespace DOL.GS
                                         }
                                         else
                                         {
-                                            ((SpellHandler) spellHandler).MessageToCaster("You do not have enough power and your spell was canceled.", eChatType.CT_SpellExpires);
+                                            ((SpellHandler)spellHandler).MessageToCaster("You do not have enough power and your spell was canceled.", eChatType.CT_SpellExpires);
                                             EffectService.RequestCancelConcEffect(pulseEffect);
                                             continue;
                                         }
@@ -129,7 +129,7 @@ namespace DOL.GS
                                     if (spell.IsHarmful && spell.SpellType != eSpellType.SpeedDecrease)
                                     {
                                         if (!pulseEffect.Owner.IsMezzed && !pulseEffect.Owner.IsStunned)
-                                            ((SpellHandler) spellHandler).SendCastAnimation();
+                                            ((SpellHandler)spellHandler).SendCastAnimation();
                                     }
                                 }
 
@@ -289,7 +289,7 @@ namespace DOL.GS
                 target.effectListComponent.Effects.TryGetValue(effectType, out List<ECSGameEffect> effects);
 
                 if (effects != null)
-                    return (ECSGameAbilityEffect) effects.Where(e => e is ECSGameAbilityEffect).FirstOrDefault();
+                    return (ECSGameAbilityEffect)effects.Where(e => e is ECSGameAbilityEffect).FirstOrDefault();
                 else
                     return null;
             }
@@ -302,7 +302,7 @@ namespace DOL.GS
                 target.effectListComponent.Effects.TryGetValue(effectType, out List<ECSGameEffect> effects);
 
                 if (effects != null)
-                    return (ECSImmunityEffect) effects.Where(e => e is ECSImmunityEffect).FirstOrDefault();
+                    return (ECSImmunityEffect)effects.Where(e => e is ECSImmunityEffect).FirstOrDefault();
                 else
                     return null;
             }
@@ -315,7 +315,7 @@ namespace DOL.GS
                 target.effectListComponent.Effects.TryGetValue(eEffect.Pulse, out List<ECSGameEffect> effects);
 
                 if (effects != null)
-                    return (ECSPulseEffect) effects.Where(e => e is ECSPulseEffect && e.SpellHandler.Spell == spell).FirstOrDefault();
+                    return (ECSPulseEffect)effects.Where(e => e is ECSPulseEffect && e.SpellHandler.Spell == spell).FirstOrDefault();
                 else
                     return null;
             }

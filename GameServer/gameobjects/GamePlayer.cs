@@ -20,6 +20,8 @@ using DOL.GS.PlayerTitles;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Quests;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Relics;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -34,8 +36,13 @@ namespace DOL.GS
     /// <summary>
     /// This class represents a player inside the game
     /// </summary>
-    public class GamePlayer : GameLiving
+    public class GamePlayer : GameLiving, IGamePlayer
     {
+        public AttackComponent AttackComponent { get { return attackComponent; } }
+        public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
+        public StyleComponent StyleComponent { get { return styleComponent; } }
+        public EffectListComponent EffectListComponent { get { return effectListComponent; } }
+
         private const int SECONDS_TO_QUIT_ON_LINKDEATH = 60;
 
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -1765,7 +1772,7 @@ namespace DOL.GS
 
             if (Realm != eRealm.None)
             {
-                if (Level >= ServerProperties.Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
+                if (Level >= Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
                 {
                     // actual lost exp, needed for 2nd stage deaths
                     long lostExp = Experience;
@@ -1803,7 +1810,7 @@ namespace DOL.GS
                 }
             }
 
-            if (Level >= ServerProperties.Properties.PVE_CON_LOSS_LEVEL)
+            if (Level >= Properties.PVE_CON_LOSS_LEVEL)
             {
                 int deathConLoss = TempProperties.GetProperty<int>(DEATH_CONSTITUTION_LOSS_PROPERTY); // get back constitution lost at death
                 if (deathConLoss > 0)
@@ -1823,7 +1830,7 @@ namespace DOL.GS
             StartEnduranceRegeneration();
             LastDeathPvP = false;
 
-            var maxChargeItems = ServerProperties.Properties.MAX_CHARGE_ITEMS;
+            var maxChargeItems = Properties.MAX_CHARGE_ITEMS;
             /*
             foreach (var item in this.Inventory.EquippedItems)
             {
@@ -7124,7 +7131,9 @@ namespace DOL.GS
         #region Duel
 
         public GameDuel Duel { get; private set; }
-        public GamePlayer DuelPartner => Duel?.GetPartnerOf(this);
+        public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
+
+        public bool IsDuelReady { get; set; }
 
         public void OnDuelStart(GameDuel duel)
         {
@@ -7137,7 +7146,10 @@ namespace DOL.GS
             if (Duel == null)
                 return;
 
+            IsDuelReady = false;
             Duel = null;
+
+            Client.Out.SendMessage("You are no longer ready for your next duel.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
         }
 
         public bool IsDuelPartner(GameLiving living)
@@ -7145,7 +7157,7 @@ namespace DOL.GS
             if (living == null)
                 return false;
 
-            GamePlayer partner = DuelPartner;
+            GameLiving partner = DuelPartner;
 
             if (partner == null)
                 return false;
@@ -8972,6 +8984,7 @@ namespace DOL.GS
                 instance.OnPlayerLeaveInstance(this);
 
             Duel?.Stop();
+
             return true;
         }
 
@@ -12310,7 +12323,7 @@ namespace DOL.GS
         /// </summary>
         /// <param name="enemy"></param>
         /// <returns>true if enemy can be detected</returns>
-        public virtual bool CanDetect(GamePlayer enemy)
+        public virtual bool CanDetect(IGamePlayer enemy)
         {
             if (enemy.CurrentRegionID != CurrentRegionID)
                 return false;
@@ -12331,8 +12344,8 @@ namespace DOL.GS
                      || enemy.CharacterClass is ClassRanger
                      || enemy.CharacterClass is ClassHunter
                      || enemy.CharacterClass is ClassScout)
-                && this.IsWithinRadius(enemy, 650)
-                && !enemy.effectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
+                && this.IsWithinRadius((GameObject)enemy, 650)
+                && !enemy.EffectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
             {
                 return true;
             }
@@ -12353,8 +12366,8 @@ namespace DOL.GS
             if (levelDiff < 0) levelDiff = 0;
 
             int range = 0;
-            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Camouflage) != null;
-            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Vanish) != null;
+            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Camouflage) != null;
+            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Vanish) != null;
             if (HasAbility(Abilities.DetectHidden) && !enemyHasVanish && !enemyHasCamouflage)
             {
                 // we have detect hidden and enemy don't = higher range
@@ -12432,7 +12445,7 @@ namespace DOL.GS
 
             // Fin
             // vampiir stealth range, uncomment when add eproperty stealthrange i suppose
-            return this.IsWithinRadius( enemy, range );
+            return this.IsWithinRadius((GameLiving)enemy, range );
         }
 
         #endregion

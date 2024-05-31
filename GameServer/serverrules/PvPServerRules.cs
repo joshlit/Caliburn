@@ -167,8 +167,8 @@ namespace DOL.GS.ServerRules
 					return false;
 				}
 
-				if (!playerAttacker.IsDuelPartner(defender))
-				{
+                if (!playerAttacker.IsDuelPartner(defender))
+                {
 					//check guild
 					if (playerAttacker.Guild != null && playerAttacker.Guild == playerDefender.Guild)
 					{

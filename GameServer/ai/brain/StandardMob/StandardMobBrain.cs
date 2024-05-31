@@ -7,6 +7,7 @@ using System.Threading;
 using DOL.GS;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -527,12 +528,7 @@ namespace DOL.AI.Brain
             GameLiving realTarget = target;
 
             if (realTarget is GameNPC npcTarget && npcTarget.Brain is IControlledBrain npcTargetBrain)
-            {
-                GamePlayer realTargetOwner = npcTargetBrain.GetPlayerOwner();
-
-                if (realTargetOwner != null)
-                    realTarget = realTargetOwner;
-            }
+                realTarget = npcTargetBrain.GetLivingOwner();
 
             // Only attack if green+ to target
             if (realTarget.IsObjectGreyCon(Body))
@@ -546,6 +542,9 @@ namespace DOL.AI.Brain
                 else if (realTarget is GameNPC realTargetNpc && Body.Faction.EnemyFactions.Contains(realTargetNpc.Faction))
                     return true;
             }
+
+            if (Body is GameKeepGuard && realTarget is IGamePlayer && realTarget.Realm != Body.Realm)
+                return true;
 
             // We put this here to prevent aggroing non-factions npcs
             return (Body.Realm != eRealm.None || realTarget is not GameNPC) && AggroLevel > 0;
@@ -629,16 +628,18 @@ namespace DOL.AI.Brain
             if (!CanBAF || Body.Faction == null)
                 return;
 
-            GamePlayer playerPuller;
+            IGamePlayer playerPuller;
 
             // Only BAF on players and pets of players
-            if (puller is GamePlayer)
-                playerPuller = (GamePlayer) puller;
+            if (puller is IGamePlayer)
+                playerPuller = (IGamePlayer) puller;
             else if (puller is GameNPC pet && pet.Brain is ControlledMobBrain brain)
             {
-                playerPuller = brain.GetPlayerOwner();
+                GameLiving livingOwner = brain.GetLivingOwner();
 
-                if (playerPuller == null)
+                if (livingOwner is IGamePlayer)
+                    playerPuller = (IGamePlayer)livingOwner;
+                else
                     return;
             }
             else
@@ -648,9 +649,9 @@ namespace DOL.AI.Brain
             if (!playerPuller.TempProperties.TrySetProperty(ResetBafPropertyAction.Property, true))
                  return;
 
-            _ = new ResetBafPropertyAction(playerPuller);
+            _ = new ResetBafPropertyAction((GameObject)playerPuller);
             CanBAF = false; // Mobs only BAF once per fight
-            int maxAdds = GetMaxAddsCountFromBaf(puller, out List<GamePlayer> otherTargets);
+            int maxAdds = GetMaxAddsCountFromBaf(puller, out List<IGamePlayer> otherTargets);
             IEnumerable<StandardMobBrain> brainsInRadius = GetFriendlyAndAvailableBrainsInRadiusOrderedByDistance(BAFMaxRange, maxAdds);
 
             foreach (StandardMobBrain brain in brainsInRadius)
@@ -659,7 +660,7 @@ namespace DOL.AI.Brain
                 GameLiving target;
 
                 if (otherTargets != null && otherTargets.Count > 1)
-                    target = otherTargets[Util.Random(0, otherTargets.Count - 1)];
+                    target = (GameLiving)otherTargets[Util.Random(0, otherTargets.Count - 1)];
                 else
                     target = puller;
 
@@ -667,7 +668,7 @@ namespace DOL.AI.Brain
                 brain.AttackMostWanted();
             }
 
-            int GetMaxAddsCountFromBaf(GameLiving puller, out List<GamePlayer> otherTargets)
+            int GetMaxAddsCountFromBaf(GameLiving puller, out List<IGamePlayer> otherTargets)
             {
                 int numAttackers = 0;
                 otherTargets = null;
@@ -691,7 +692,7 @@ namespace DOL.AI.Brain
                             otherTargets = new(group.MemberCount);
                     }
 
-                    foreach (GamePlayer playerInGroup in group.GetPlayersInTheGroup())
+                    foreach (IGamePlayer playerInGroup in group.GetIPlayersInTheGroup())
                     {
                         if (playerInGroup != null && (playerInGroup.InternalID == puller.InternalID || playerInGroup.IsWithinRadius(puller, BAFPlayerRange, true)))
                         {
@@ -712,7 +713,7 @@ namespace DOL.AI.Brain
                     if (otherTargets == null && Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !Properties.BAF_MOBS_ATTACK_PULLER)
                         otherTargets = new(bg.PlayerCount);
 
-                    foreach (GamePlayer player2 in bg.Members.Keys)
+                    foreach (IGamePlayer player2 in bg.Members.Keys)
                     {
                         if (player2 != null && (player2.InternalID == puller.InternalID || player2.IsWithinRadius(puller, BAFPlayerRange, true)))
                         {

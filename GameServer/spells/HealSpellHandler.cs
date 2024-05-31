@@ -4,6 +4,7 @@ using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Spells
 {
+    using DOL.GS.Scripts;
     using Effects;
 
     /// <summary>
@@ -14,8 +15,6 @@ namespace DOL.GS.Spells
     {
         // constructor
         public HealSpellHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
-
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /// <summary>
         /// Execute heal spell
@@ -118,7 +117,7 @@ namespace DOL.GS.Spells
                 return false;
             }
 
-            if (target is GamePlayer && (target as GamePlayer).NoHelp && Caster is GamePlayer && target != Caster)
+            if (target is GamePlayer && (target as GamePlayer).NoHelp && Caster is IGamePlayer && target != Caster)
             {
                 //player not grouped, anyone else
                 //player grouped, different group
@@ -146,8 +145,8 @@ namespace DOL.GS.Spells
             double criticalvalue = 0;
             int criticalchance = Caster.GetModified(eProperty.CriticalHealHitChance);
             double effectiveness = 0;
-            if (Caster is GamePlayer)
-                effectiveness = (Caster as GamePlayer).Effectiveness + (double)(Caster.GetModified(eProperty.HealingEffectiveness)) * 0.01;
+            if (Caster is IGamePlayer)
+                effectiveness = (Caster as IGamePlayer).Effectiveness + (double)(Caster.GetModified(eProperty.HealingEffectiveness)) * 0.01;
             if (Caster is GameNPC)
                 effectiveness = 1.0;
 
@@ -158,7 +157,7 @@ namespace DOL.GS.Spells
 
             int randNum = Util.CryptoNextInt(0, 100); //grab our random number
 
-            if (this.Caster is GamePlayer spellCaster && spellCaster.UseDetailedCombatLog)
+            if (Caster is GamePlayer spellCaster && spellCaster.UseDetailedCombatLog)
             {
                 spellCaster.Out.SendMessage($"heal crit chance: {criticalchance} random: {randNum}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
                 spellCaster.Out.SendMessage($"heal effectiveness: {Caster.GetModified(eProperty.HealingEffectiveness)}%", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
@@ -220,6 +219,7 @@ namespace DOL.GS.Spells
                     }
                 }
             }
+
             #endregion
 
             int heal = target.ChangeHealth(Caster, eHealthChangeType.Spell, (int)amount);
@@ -231,13 +231,13 @@ namespace DOL.GS.Spells
             if (target.DamageRvRMemory > 0 &&
                 (target is NecromancerPet &&
                 ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null
-                || target is GamePlayer))
+                || target is IGamePlayer))
             {
                 healedrp = (long)Math.Max(heal, 0);
                 target.DamageRvRMemory -= healedrp;
 
                 //if we heal a target that is in RvR, the healer will get rewards from their heal target's target
-                if(target.TargetObject is GamePlayer enemy && enemy.Realm != target.Realm)
+                if(target.TargetObject is IGamePlayer enemy && enemy.Realm != target.Realm)
                 {
                     enemy.AddXPGainer(m_caster, healedrp);
                 }
@@ -306,7 +306,7 @@ namespace DOL.GS.Spells
                     #region PVP DAMAGE
 
                     if (target is NecromancerPet &&
-                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is GamePlayer)
+                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is IGamePlayer)
                     {
                         if (target.DamageRvRMemory > 0)
                             target.DamageRvRMemory = 0; //Remise a zéro compteur dommages/heal rps
@@ -327,7 +327,7 @@ namespace DOL.GS.Spells
                     #region PVP DAMAGE
 
                     if (target is NecromancerPet &&
-                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is GamePlayer)
+                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is IGamePlayer)
                     {
                         if (target.DamageRvRMemory > 0)
                             target.DamageRvRMemory = 0; //Remise a zéro compteur dommages/heal rps
@@ -368,6 +368,10 @@ namespace DOL.GS.Spells
                     if (npc.Brain is StandardMobBrain mobBrain)
                     {
                         mobBrain.AddToAggroList(Caster, ad.Damage);
+                    }
+                    else if (npc.Brain is MimicBrain mimicBrain)
+                    {
+                        mimicBrain.AddToAggroList(Caster, ad.Damage);
                     }
                     npc.AddXPGainer(Caster, ad.Damage);
                 }
@@ -419,7 +423,7 @@ namespace DOL.GS.Spells
                     #region PVP DAMAGE
 
                     if (target is NecromancerPet &&
-                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is GamePlayer)
+                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is IGamePlayer)
                     {
                         if (target.DamageRvRMemory > 0)
                             target.DamageRvRMemory = 0; //Remise a zéro compteur dommages/heal rps
@@ -438,7 +442,7 @@ namespace DOL.GS.Spells
                 if (heal < amount)
                 {
                     if (target is NecromancerPet &&
-                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is GamePlayer)
+                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is IGamePlayer)
                     {
                         if (target.DamageRvRMemory > 0)
                             target.DamageRvRMemory = 0; //Remise a zéro compteur dommages/heal rps
@@ -447,7 +451,7 @@ namespace DOL.GS.Spells
                 else
                 {
                     if (target is NecromancerPet &&
-                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is GamePlayer)
+                        ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null || target is IGamePlayer)
                     {
                         if (target.DamageRvRMemory > 0)
                             target.DamageRvRMemory -= (long)Math.Max(heal, 0);
@@ -525,31 +529,38 @@ namespace DOL.GS.Spells
             }
 
             int upperLimit = (int)(spellValue * 1.25);
+
             if (upperLimit < 1)
             {
                 upperLimit = 1;
             }
 
             double eff = 1.25;
-            if (Caster is GamePlayer)
+
+            if (Caster is IGamePlayer)
             {
                 double lineSpec = Caster.GetModifiedSpecLevel(m_spellLine.Spec);
                 if (lineSpec < 1)
                     lineSpec = 1;
+
                 eff = 0.25;
+
                 if (Spell.Level > 0)
                 {
                     eff += (lineSpec - 1.0) / Spell.Level;
+
                     if (eff > 1.25)
                         eff = 1.25;
                 }
             }
 
             int lowerLimit = (int)(spellValue * eff);
+
             if (lowerLimit < 1)
             {
                 lowerLimit = 1;
             }
+
             if (lowerLimit > upperLimit)
             {
                 lowerLimit = upperLimit;
@@ -557,6 +568,7 @@ namespace DOL.GS.Spells
 
             min = lowerLimit;
             max = upperLimit;
+
             return;
         }
     }

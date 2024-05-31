@@ -5,7 +5,11 @@ using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DOL.GS.Spells
 {
@@ -36,7 +40,7 @@ namespace DOL.GS.Spells
 
         public override bool CheckBeginCast(GameLiving selectedTarget)
         {
-            if (Caster is GamePlayer playerCaster)
+            if (Caster is IGamePlayer playerCaster)
             {
                 IControlledBrain controlledBrain = playerCaster.ControlledBrain;
 

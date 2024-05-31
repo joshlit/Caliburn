@@ -8,6 +8,7 @@ using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerClass;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.Language;
@@ -2537,7 +2538,7 @@ namespace DOL.GS.Spells
 			int hitChance = 88 + (spellLevel - target.Level) / 2;
 			hitChance += m_caster.GetModified(eProperty.ToHitBonus);
 
-			if (m_caster is not GamePlayer || target is not GamePlayer)
+			if (m_caster is not IGamePlayer || target is not IGamePlayer)
 			{
 				int mobScalar = m_caster.GetConLevel(target);
 				hitChance -= (int) (mobScalar * Properties.PVE_SPELL_CONHITPERCENT);

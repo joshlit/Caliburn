@@ -7,6 +7,8 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Keeps;
 using DOL.GS.Quests;
+using DOL.GS.Scripts;
+using DOL.GS.Spells;
 using DOL.Language;
 using log4net;
 
@@ -234,7 +236,13 @@ namespace DOL.GS.PacketHandler
 					pak.WriteByte(flags3); // new in 1.71 (region instance ID from StoC_0x20) OR flags 3?
 					pak.WriteShort(0x00); // new in 1.71 unknown
 
-					string name = npc.Name;
+					string name;
+
+					if (npc is MimicNPC mimic && !GameServer.ServerRules.IsSameRealm(m_gameClient.Player, mimic, true))
+						name = mimic.RaceName + " " + GlobalConstants.REALM_RANK_NAMES[(int)mimic.Realm - 1, (int)mimic.Gender - 1, (mimic.RealmLevel / 10)];//mimic.RealmRankTitle(m_gameClient.Account.Language);
+					else
+						name = npc.Name;
+
 					string guildName = npc.GuildName;
 
 					if (LanguageMgr.GetTranslation(m_gameClient, npc) is DbLanguageGameNpc translation)

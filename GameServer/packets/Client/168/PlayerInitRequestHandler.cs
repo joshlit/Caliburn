@@ -64,7 +64,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 					updateTempProperties = true;
 					player.EnteredGame = true;
 					player.Notify(GamePlayerEvent.GameEntered, player);
-					ShowPatchNotes(player);
+					//ShowPatchNotes(player);
 					//player.EffectList.RestoreAllEffects();
 					EffectService.RestoreAllEffects(player);
 					checkInstanceLogin = true;

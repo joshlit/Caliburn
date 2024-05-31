@@ -2,6 +2,7 @@ using System;
 using DOL.AI.Brain;
 using DOL.Events;
 using DOL.GS.Effects;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -27,12 +28,12 @@ namespace DOL.GS.Spells
 			if (gameNpc.Brain is not JuggernautBrain juggernautBrain)
 				return;
 
-			var player = juggernautBrain.Owner as GamePlayer;
+			var player = juggernautBrain.Owner as IGamePlayer;
 
 			if (player == null)
 				return;
 
-			AtlasOF_JuggernautECSEffect effect = (AtlasOF_JuggernautECSEffect)EffectListService.GetEffectOnTarget(player, eEffect.Juggernaut);
+			AtlasOF_JuggernautECSEffect effect = (AtlasOF_JuggernautECSEffect)EffectListService.GetEffectOnTarget((GameLiving)player, eEffect.Juggernaut);
 			effect?.Cancel(false);
 
 			base.OnNpcReleaseCommand(e, sender, arguments);

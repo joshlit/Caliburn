@@ -1,6 +1,7 @@
 using System;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerClass;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -30,7 +31,7 @@ namespace DOL.GS.Spells
                 Effectiveness = 1.0;
             else if (Spell.Level <= 0)
                 Effectiveness = 1.0;
-            else if (Caster is GamePlayer playerCaster)
+            else if (Caster is IGamePlayer playerCaster)
             {
                 if (playerCaster.CharacterClass.ID != (int)eCharacterClass.Savage && Spell.Target != eSpellTarget.ENEMY)
                 {
@@ -52,7 +53,7 @@ namespace DOL.GS.Spells
                         Effectiveness = Math.Min(1.25, Effectiveness);
                         Effectiveness *= 1.0 + m_caster.GetModified(eProperty.DebuffEffectivness) * 0.01;
 
-                        if (playerCaster.UseDetailedCombatLog && m_caster.GetModified(eProperty.DebuffEffectivness) > 0)
+                        if (playerCaster is GamePlayer player && player.UseDetailedCombatLog && m_caster.GetModified(eProperty.DebuffEffectivness) > 0)
                             playerCaster.Out.SendMessage($"debuff effectiveness: {m_caster.GetModified(eProperty.DebuffEffectivness)}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
                     }
                     else
@@ -62,7 +63,7 @@ namespace DOL.GS.Spells
                     }
                 }
             }
-            else if (Caster is NecromancerPet necroPetCaster && necroPetCaster.Owner is GamePlayer playerOwner && Spell.Target == eSpellTarget.ENEMY)
+            else if (Caster is NecromancerPet necroPetCaster && necroPetCaster.Owner is IGamePlayer playerOwner && Spell.Target == eSpellTarget.ENEMY)
             {
                 specLevel = playerOwner.GetModifiedSpecLevel(m_spellLine.Spec);
 
@@ -70,12 +71,12 @@ namespace DOL.GS.Spells
                 Effectiveness += (specLevel - 1.0) * 0.5 / Spell.Level;
                 Effectiveness = Math.Max(0.75, Effectiveness);
                 Effectiveness = Math.Min(1.25, Effectiveness);
-                Effectiveness *= 1.0 + playerOwner.GetModified(eProperty.DebuffEffectivness) * 0.01;                
+                Effectiveness *= 1.0 + playerOwner.GetModified(eProperty.DebuffEffectivness) * 0.01;
 
                 if (Spell.SpellType == eSpellType.ArmorFactorDebuff)
                     Effectiveness *= 1 + target.GetArmorAbsorb(eArmorSlot.TORSO);
 
-                if (playerOwner.UseDetailedCombatLog && m_caster.GetModified(eProperty.DebuffEffectivness) > 0)
+                if (playerOwner is GamePlayer player && player.UseDetailedCombatLog && m_caster.GetModified(eProperty.DebuffEffectivness) > 0)
                     playerOwner.Out.SendMessage($"debuff effectiveness: {m_caster.GetModified(eProperty.DebuffEffectivness)}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
             }
             else
@@ -85,7 +86,7 @@ namespace DOL.GS.Spells
             {
                 Effectiveness *= 1.0 + m_caster.GetModified(eProperty.BuffEffectiveness) * 0.01;
 
-                if (Caster is GamePlayer gamePlayer && gamePlayer.UseDetailedCombatLog && m_caster.GetModified(eProperty.BuffEffectiveness) > 0 )
+                if (Caster is GamePlayer gamePlayer && gamePlayer.UseDetailedCombatLog && m_caster.GetModified(eProperty.BuffEffectiveness) > 0)
                     gamePlayer.Out.SendMessage($"buff effectiveness: {m_caster.GetModified(eProperty.BuffEffectiveness)}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
             }
             else
@@ -132,7 +133,7 @@ namespace DOL.GS.Spells
             if (Util.Chance(critChance))
             {
                 critMod *= 1 + Util.Random(1, 10) * 0.1;
-                playerCaster?.Out.SendMessage($"Your {Spell.Name} critically debuffs the enemy for {Math.Round(critMod - 1,3) * 100}% additional effect!", eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                playerCaster?.Out.SendMessage($"Your {Spell.Name} critically debuffs the enemy for {Math.Round(critMod - 1, 3) * 100}% additional effect!", eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
             }
 
             return critMod;
@@ -155,8 +156,10 @@ namespace DOL.GS.Spells
                 MessageToCaster("Your target already has an effect of that type!", eChatType.CT_Spell);
                 return;
             }
+
             base.ApplyEffectOnTarget(target);
         }
+
         public override eProperty Property1 { get { return eProperty.Strength; } }
 
         // constructor
@@ -176,8 +179,10 @@ namespace DOL.GS.Spells
                 MessageToCaster("Your target already has an effect of that type!", eChatType.CT_Spell);
                 return;
             }
+
             base.ApplyEffectOnTarget(target);
         }
+
         public override eProperty Property1 { get { return eProperty.Dexterity; } }
 
         // constructor
@@ -197,8 +202,10 @@ namespace DOL.GS.Spells
                 MessageToCaster("Your target already has an effect of that type!", eChatType.CT_Spell);
                 return;
             }
+
             base.ApplyEffectOnTarget(target);
         }
+
         public override eProperty Property1 { get { return eProperty.Constitution; } }
 
         // constructor
@@ -215,7 +222,7 @@ namespace DOL.GS.Spells
         {
             get
             {
-                if (Caster is GamePlayer c && (c.CharacterClass is ClassRanger || c.CharacterClass is ClassHunter) && (SpellLine.KeyName.ToLower().Equals("beastcraft") || SpellLine.KeyName.ToLower().Equals("pathfinding")))
+                if (Caster is IGamePlayer c && (c.CharacterClass is ClassRanger || c.CharacterClass is ClassHunter) && (SpellLine.KeyName.ToLower().Equals("beastcraft") || SpellLine.KeyName.ToLower().Equals("pathfinding")))
                     return eBuffBonusCategory.BaseBuff;
 
                 if (Spell.Target == eSpellTarget.SELF)
@@ -227,6 +234,7 @@ namespace DOL.GS.Spells
                 return eBuffBonusCategory.Other; // no caps for spec line buffs
             }
         }
+
         public override eProperty Property1 { get { return eProperty.ArmorFactor; } }
 
         // constructor
@@ -272,7 +280,7 @@ namespace DOL.GS.Spells
         // constructor
         public CombatSpeedBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
-    
+
     /// <summary>
     /// Haste Buff stacking with other Combat Speed Buff
     /// </summary>
@@ -353,7 +361,6 @@ namespace DOL.GS.Spells
         public MesmerizeDurationBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
 
-
     /// <summary>
     /// Acuity buff
     /// </summary>
@@ -401,6 +408,7 @@ namespace DOL.GS.Spells
         // constructor
         public EvadeChanceBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
+
     /// <summary>
     /// Parry chance buff
     /// </summary>
@@ -412,6 +420,7 @@ namespace DOL.GS.Spells
         // constructor
         public ParryChanceBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
+
     /// <summary>
     /// WeaponSkill buff
     /// </summary>
@@ -423,6 +432,7 @@ namespace DOL.GS.Spells
         // constructor
         public WeaponSkillBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
+
     /// <summary>
     /// Stealth Skill buff
     /// </summary>
@@ -434,6 +444,7 @@ namespace DOL.GS.Spells
         // constructor
         public StealthSkillBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
+
     /// <summary>
     /// To Hit buff
     /// </summary>
@@ -445,6 +456,7 @@ namespace DOL.GS.Spells
         // constructor
         public ToHitSkillBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
     }
+
     /// <summary>
     /// Magic Resists Buff
     /// </summary>
@@ -461,14 +473,20 @@ namespace DOL.GS.Spells
     public class StyleAbsorbBuff : SingleStatBuff
     {
         public override eProperty Property1 { get { return eProperty.StyleAbsorb; } }
-        public StyleAbsorbBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
+
+        public StyleAbsorbBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line)
+        {
+        }
     }
 
     [SpellHandlerAttribute("ExtraHP")]
     public class ExtraHP : SingleStatBuff
     {
         public override eProperty Property1 { get { return eProperty.ExtraHP; } }
-        public ExtraHP(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
+
+        public ExtraHP(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line)
+        {
+        }
     }
 
     /// <summary>
@@ -490,6 +508,7 @@ namespace DOL.GS.Spells
                 return eBuffBonusCategory.Other; // no caps for spec line buffs
             }
         }
+
         public override eProperty Property1 { get { return eProperty.ArmorFactor; } }
 
         // constructor
@@ -500,13 +519,19 @@ namespace DOL.GS.Spells
     public class FlexibleSkillBuff : SingleStatBuff
     {
         public override eProperty Property1 { get { return eProperty.Skill_Flexible_Weapon; } }
-        public FlexibleSkillBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
+
+        public FlexibleSkillBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line)
+        {
+        }
     }
 
     [SpellHandler("ResiPierceBuff")]
     public class ResiPierceBuff : SingleStatBuff
     {
         public override eProperty Property1 { get { return eProperty.ResistPierce; } }
-        public ResiPierceBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
+
+        public ResiPierceBuff(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line)
+        {
+        }
     }
 }

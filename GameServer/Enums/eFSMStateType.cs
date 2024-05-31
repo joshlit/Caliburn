@@ -9,6 +9,10 @@
         RETURN_TO_SPAWN,
         PATROLLING,
         PASSIVE,
-        DEAD
+        DEAD,
+        FOLLOW_THE_LEADER,
+        LEADER,
+        CAMP,
+        DUEL
     }
 }

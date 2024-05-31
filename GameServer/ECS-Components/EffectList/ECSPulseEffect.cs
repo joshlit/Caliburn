@@ -13,7 +13,7 @@ namespace DOL.GS
         public Dictionary<GameLiving, ECSGameSpellEffect> ChildEffects { get; } = new();
 
         public ECSPulseEffect(GameLiving owner, ISpellHandler handler, int duration, int pulseFreq, double effectiveness, ushort icon, bool cancelEffect = false)
-            : base (new ECSGameEffectInitParams(owner, duration, effectiveness, handler))
+            : base(new ECSGameEffectInitParams(owner, duration, effectiveness, handler))
         {
             PulseFreq = pulseFreq;
             CancelEffect = cancelEffect;
