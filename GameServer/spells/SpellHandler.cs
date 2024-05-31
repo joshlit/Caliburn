@@ -1716,7 +1716,7 @@ namespace DOL.GS.Spells
 							{
 								if (npcInRadius is CommanderPet commander && commander.Owner == player)
 									list.Add(commander);
-								else if (npcInRadius is BDSubPet {Brain: IControlledBrain brain} subpet && brain.GetPlayerOwner() == player)
+								else if (npcInRadius is BdSubPet {Brain: IControlledBrain brain} subpet && brain.GetPlayerOwner() == player)
 								{
 									if (!Spell.IsHealing)
 										list.Add(subpet);
@@ -2498,10 +2498,12 @@ namespace DOL.GS.Spells
 		/// <returns>chance that the spell lands on target</returns>
 		public virtual int CalculateToHitChance(GameLiving target)
 		{
-			int spellLevel = Spell.Level + m_caster.GetModified(eProperty.SpellLevel);
+			int spellLevel;
 
 			if (m_caster is GamePlayer playerCaster)
 			{
+				spellLevel = Spell.Level + m_caster.GetModified(eProperty.SpellLevel);
+
 				if (spellLevel > playerCaster.MaxLevel)
 					spellLevel = playerCaster.MaxLevel;
 
@@ -2511,6 +2513,8 @@ namespace DOL.GS.Spells
 					spellLevel = (lastAD != null && lastAD.Style != null) ? lastAD.Style.Level : Math.Min(playerCaster.MaxLevel, target.Level);
 				}
 			}
+			else
+				spellLevel = m_caster.EffectiveLevel;
 
 			/*
 			http://www.camelotherald.com/news/news_article.php?storyid=704
@@ -2530,20 +2534,14 @@ namespace DOL.GS.Spells
 			- Tolakram
 			 */
 
-			int hitChance = m_caster.GetModified(eProperty.ToHitBonus);
+			int hitChance = 88 + (spellLevel - target.Level) / 2;
+			hitChance += m_caster.GetModified(eProperty.ToHitBonus);
 
-			if (m_caster is GameNPC)
-				hitChance += (int)(87.5 - (target.Level - m_caster.Level));
-			else
+			if (m_caster is not GamePlayer || target is not GamePlayer)
 			{
-				hitChance += 88 + (spellLevel - target.Level) / 2;
-
-				if (target is GameNPC)
-				{
-					int mobScalar = m_caster.GetConLevel(target);
-					hitChance -= (int) (mobScalar * Properties.PVE_SPELL_CONHITPERCENT);
-					hitChance += Math.Max(0, target.attackComponent.Attackers.Count - 1) * Properties.MISSRATE_REDUCTION_PER_ATTACKERS;
-				}
+				int mobScalar = m_caster.GetConLevel(target);
+				hitChance -= (int) (mobScalar * Properties.PVE_SPELL_CONHITPERCENT);
+				hitChance += Math.Max(0, target.attackComponent.Attackers.Count - 1) * Properties.MISSRATE_REDUCTION_PER_ATTACKERS;
 			}
 
 			if (m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.PiercingMagic))

@@ -48,7 +48,7 @@ namespace DOL.GS
         public bool IsNearSpawn => Owner.IsWithinRadius(Owner.SpawnPoint, 25);
         public bool IsDestinationValid { get; private set; }
         public bool IsAtDestination => !IsDestinationValid || (Destination.X == Owner.X && Destination.Y == Owner.Y && Destination.Z == Owner.Z);
-        public bool CanRoam => Properties.ALLOW_ROAM && RoamingRange != 0 && string.IsNullOrWhiteSpace(PathID);
+        public bool CanRoam => Properties.ALLOW_ROAM && RoamingRange > 0 && string.IsNullOrWhiteSpace(PathID);
         public double HorizontalVelocityForClient { get; private set; }
         public Point3D PositionForClient => _needsBroadcastUpdate ? _positionForUpdatePackets : Owner;
         public bool HasActiveResetHeadingAction => _resetHeadingAction != null && _resetHeadingAction.IsAlive;
@@ -244,7 +244,7 @@ namespace DOL.GS
 
         public void ReturnToSpawnPoint(short speed)
         {
-            StopFollowing();
+            StopMoving();
             Owner.TargetObject = null;
             Owner.attackComponent.StopAttack();
             (Owner.Brain as StandardMobBrain)?.ClearAggroList();
@@ -259,6 +259,7 @@ namespace DOL.GS
 
         public void Roam(short speed)
         {
+            // Note that `CanRoam` returns false if `RoamingRange` is <= 0.
             int maxRoamingRadius = Owner.RoamingRange > 0 ? Owner.RoamingRange : Owner.CurrentRegion.IsDungeon ? 5 : 500;
 
             if (Owner.CurrentZone.IsPathingEnabled)
@@ -776,13 +777,13 @@ namespace DOL.GS
         private enum MovementState
         {
             NONE = 0,
-            REQUEST = 1,      // Was requested to move.
-            WALK_TO = 2,      // Is moving and has a destination.
-            FOLLOW = 4,       // Is following an object.
-            ON_PATH = 8,      // Is following a path / is patrolling.
-            AT_WAYPOINT = 16, // Is waiting at a waypoint.
-            PATHING = 32,     // Is moving using PathCalculator.
-            TURN_TO = 64      // Is facing a direction for a certain duration.
+            REQUEST = 1 << 1,      // Was requested to move.
+            WALK_TO = 1 << 2,      // Is moving and has a destination.
+            FOLLOW = 1 << 3,       // Is following an object.
+            ON_PATH = 1 << 4,      // Is following a path / is patrolling.
+            AT_WAYPOINT = 1 << 5,  // Is waiting at a waypoint.
+            PATHING = 1 << 6,      // Is moving using PathCalculator.
+            TURN_TO = 1 << 7       // Is facing a direction for a certain duration.
         }
     }
 }

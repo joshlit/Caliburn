@@ -429,7 +429,6 @@ namespace DOL.AI.Brain
             // Keep Necromancer shades so that we can attack them if their pets die.
             return !living.IsAlive ||
                    living.ObjectState != GameObject.eObjectState.Active ||
-                   living.IsStealthed ||
                    living.CurrentRegion != Body.CurrentRegion ||
                    !Body.IsWithinRadius(living, MAX_AGGRO_LIST_DISTANCE) ||
                    (!GameServer.ServerRules.IsAllowedToAttack(Body, living, true) && !living.effectListComponent.ContainsEffectForEffectType(eEffect.Shade));
@@ -543,7 +542,7 @@ namespace DOL.AI.Brain
             if (Body.Faction != null)
             {
                 if (realTarget is GamePlayer realTargetPlayer)
-                    return Body.Faction.GetAggroToFaction(realTargetPlayer) > 75;
+                    return Body.Faction.GetStandingToFaction(realTargetPlayer) is Faction.Standing.AGGRESIVE;
                 else if (realTarget is GameNPC realTargetNpc && Body.Faction.EnemyFactions.Contains(realTargetNpc.Faction))
                     return true;
             }
@@ -1146,39 +1145,14 @@ namespace DOL.AI.Brain
                 return false;
             }
 
-            ECSGameEffect effect = EffectListService.GetEffectOnTarget(target, spellEffect);
+            // True if the target has the effect, or the immunity effect for this effect.
+            // Treat NPC immunity effects as full immunity effects.
+            return EffectListService.GetEffectOnTarget(target, spellEffect) != null || HasImmunityEffect(EffectService.GetImmunityEffectFromSpell(spell)) || HasImmunityEffect(EffectService.GetNpcImmunityEffectFromSpell(spell));
 
-            if (effect != null)
-                return true;
-
-            eEffect immunityToCheck = eEffect.Unknown;
-
-            switch (spellEffect)
+            bool HasImmunityEffect(eEffect immunityEffect)
             {
-                case eEffect.Stun:
-                {
-                    immunityToCheck = eEffect.StunImmunity;
-                    break;
-                }
-                case eEffect.Mez:
-                {
-                    immunityToCheck = eEffect.MezImmunity;
-                    break;
-                }
-                case eEffect.Snare:
-                case eEffect.MeleeSnare:
-                {
-                    immunityToCheck = eEffect.SnareImmunity;
-                    break;
-                }
-                case eEffect.Nearsight:
-                {
-                    immunityToCheck = eEffect.NearsightImmunity;
-                    break;
-                }
+                return immunityEffect != eEffect.Unknown && EffectListService.GetEffectOnTarget(target, immunityEffect) != null;
             }
-
-            return immunityToCheck != eEffect.Unknown && EffectListService.GetEffectOnTarget(target, immunityToCheck) != null;
         }
 
         #endregion

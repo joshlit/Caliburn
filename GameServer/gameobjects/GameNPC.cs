@@ -172,16 +172,9 @@ namespace DOL.GS
 
 				if (Level != value)
 				{
+					// This is a newly created NPC, so notify nearby players of its creation
 					if (Level < 1 && ObjectState == eObjectState.Active)
-					{
-						// This is a newly created NPC, so notify nearby players of its creation
-						foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-						{
-							player.Out.SendNPCCreate(this);
-							if (m_inventory != null)
-								player.Out.SendLivingEquipmentUpdate(this);
-						}
-					}
+						ClientService.CreateNpcForPlayers(this);
 
 					base.Level = value;
 					AutoSetStats();  // Recalculate stats when level changes
@@ -295,15 +288,9 @@ namespace DOL.GS
 			set
 			{
 				base.Realm = value;
+
 				if (ObjectState == eObjectState.Active)
-				{
-					foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-					{
-						player.Out.SendNPCCreate(this);
-						if (m_inventory != null)
-							player.Out.SendLivingEquipmentUpdate(this);
-					}
-				}
+					ClientService.CreateNpcForPlayers(this);
 			}
 		}
 
@@ -316,15 +303,9 @@ namespace DOL.GS
 			set
 			{
 				base.Name = value;
+
 				if (ObjectState == eObjectState.Active)
-				{
-					foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-					{
-						player.Out.SendNPCCreate(this);
-						if (m_inventory != null)
-							player.Out.SendLivingEquipmentUpdate(this);
-					}
-				}
+					ClientService.CreateNpcForPlayers(this);
 			}
 		}
 
@@ -361,15 +342,9 @@ namespace DOL.GS
 			set
 			{
 				base.GuildName = value;
+
 				if (ObjectState == eObjectState.Active)
-				{
-					foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-					{
-						player.Out.SendNPCCreate(this);
-						if (m_inventory != null)
-							player.Out.SendLivingEquipmentUpdate(this);
-					}
-				}
+					ClientService.CreateNpcForPlayers(this);
 			}
 		}
 
@@ -667,17 +642,11 @@ namespace DOL.GS
 			{
 				eFlags oldflags = m_flags;
 				m_flags = value;
+
 				if (ObjectState == eObjectState.Active)
 				{
 					if (oldflags != m_flags)
-					{
-						foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-						{
-							player.Out.SendNPCCreate(this);
-							if (m_inventory != null)
-								player.Out.SendLivingEquipmentUpdate(this);
-						}
-					}
+						ClientService.CreateNpcForPlayers(this);
 				}
 			}
 		}
@@ -1007,7 +976,7 @@ namespace DOL.GS
 			InitializeActiveWeaponFromInventory();
 		}
 
-		public void InitializeActiveWeaponFromInventory()
+		public virtual void InitializeActiveWeaponFromInventory()
 		{
 			if (Inventory == null)
 				return;
@@ -1955,7 +1924,7 @@ namespace DOL.GS
 
 		#region Add/Remove/Create/Remove/Update
 
-		public override void OnUpdateByPlayerService()
+		public override void OnUpdateOrCreateForPlayer()
 		{
 			m_lastVisibleToPlayerTick = GameLoop.GameLoopTime;
 
@@ -1975,24 +1944,7 @@ namespace DOL.GS
 			if (MAX_PASSENGERS > 0)
 				Riders = new GamePlayer[MAX_PASSENGERS];
 
-			bool anyPlayer = false;
-
-			foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-			{
-				if (player == null)
-					continue;
-
-				player.Out.SendNPCCreate(this);
-
-				if (m_inventory != null)
-					player.Out.SendLivingEquipmentUpdate(this);
-
-				anyPlayer = true;
-			}
-
-			if (anyPlayer)
-				m_lastVisibleToPlayerTick = GameLoop.GameLoopTime;
-
+			ClientService.CreateNpcForPlayers(this);
 			m_spawnPoint.X = X;
 			m_spawnPoint.Y = Y;
 			m_spawnPoint.Z = Z;
@@ -2139,17 +2091,7 @@ namespace DOL.GS
 				player.Out.SendObjectRemove(this);
 
 			// New position.
-			foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-			{
-				if (player == null)
-					continue;
-
-				player.Out.SendNPCCreate(this);
-
-				if (m_inventory != null)
-					player.Out.SendLivingEquipmentUpdate(this);
-			}
-
+			ClientService.CreateNpcForPlayers(this);
 			return true;
 		}
 
@@ -2288,55 +2230,74 @@ namespace DOL.GS
 		/// <returns>aggro state as string</returns>
 		public virtual string GetAggroLevelString(GamePlayer player, bool firstLetterUppercase)
 		{
-			// "aggressive", "hostile", "neutral", "friendly"
-			// TODO: correct aggro strings
-			// TODO: some merchants can be aggressive to players even in same realm
-			// TODO: findout if trainers can be aggro at all
-
-			//int aggro = CalculateAggroLevelToTarget(player);
-
-			// "aggressive towards you!", "hostile towards you.", "neutral towards you.", "friendly."
-			// TODO: correct aggro strings
-			string aggroLevelString = "";
-			int aggroLevel;
+			string aggroLevelString;
 			IOldAggressiveBrain aggroBrain = Brain as IOldAggressiveBrain;
-			//Calculate Faction aggro - base AggroLevel needs to be greater tha 0 for Faction aggro calc to work.
+
 			if (Faction != null && aggroBrain != null && aggroBrain.AggroLevel > 0 && aggroBrain.AggroRange > 0)
 			{
-				aggroLevel = Faction.GetAggroToFaction(player);
-				
 				if (GameServer.ServerRules.IsSameRealm(this, player, true))
 				{
-					if (firstLetterUppercase) aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly2");
-					else aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly1");
+					if (firstLetterUppercase)
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly2");
+					else
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly1");
 				}
-				else if (aggroLevel > 75)
-					aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Aggressive1");
-				else if (aggroLevel > 50)
-					aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Hostile1");
-				else if (aggroLevel > 25)
-					aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Neutral1");
 				else
-					aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly1");
+				{
+					string translationString = string.Empty;
+
+					switch (Faction.GetStandingToFaction(player))
+					{
+						case Faction.Standing.AGGRESIVE:
+						{
+							translationString = "GameNPC.GetAggroLevelString.Aggressive1";
+							break;
+						}
+						case Faction.Standing.HOSTILE:
+						{
+							translationString = "GameNPC.GetAggroLevelString.Hostile1";
+							break;
+						}
+						case Faction.Standing.NEUTRAL:
+						{
+							translationString = "GameNPC.GetAggroLevelString.Neutral1";
+							break;
+						}
+						case Faction.Standing.FRIENDLY:
+						{
+							translationString = "GameNPC.GetAggroLevelString.Friendly1";
+							break;
+						}
+					}
+
+					aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, translationString);
+				}
 			}
 			else
 			{
 				if (GameServer.ServerRules.IsSameRealm(this, player, true))
 				{
-					if (firstLetterUppercase) aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly2");
-					else aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly1");
+					if (firstLetterUppercase)
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly2");
+					else
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Friendly1");
 				}
 				else if (aggroBrain != null && aggroBrain.AggroLevel > 0)
 				{
-					if (firstLetterUppercase) aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Aggressive2");
-					else aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Aggressive1");
+					if (firstLetterUppercase)
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Aggressive2");
+					else
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Aggressive1");
 				}
 				else
 				{
-					if (firstLetterUppercase) aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Neutral2");
-					else aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Neutral1");
+					if (firstLetterUppercase)
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Neutral2");
+					else
+						aggroLevelString = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.Neutral1");
 				}
 			}
+
 			return LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.GetAggroLevelString.TowardsYou", aggroLevelString);
 		}
 
@@ -2551,9 +2512,10 @@ namespace DOL.GS
 		/// <returns>false if interaction is prevented</returns>
 		public override bool Interact(GamePlayer player)
 		{
-			if (!base.Interact(player)) return false;
-			//if (!GameServer.ServerRules.IsSameRealm(this, player, true) && Faction.GetAggroToFaction(player) > 25)
-			if (!GameServer.ServerRules.IsSameRealm(this, player, true) && Faction != null && Faction.GetAggroToFaction(player) > 50)
+			if (!base.Interact(player))
+				return false;
+
+			if (!GameServer.ServerRules.IsSameRealm(this, player, true) && Faction != null && Faction.GetStandingToFaction(player) >= Faction.Standing.HOSTILE)
 			{
 				player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameNPC.Interact.DirtyLook",
 					GetName(0, true, player.Client.Account.Language, this)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -2561,20 +2523,23 @@ namespace DOL.GS
 				Notify(GameObjectEvent.InteractFailed, this, new InteractEventArgs(player));
 				return false;
 			}
+
 			if (MAX_PASSENGERS > 1)
 			{
-				string name = "";
+				string name;
+
 				if (this is GameTaxiBoat)
 					name = "boat";
-				if (this is GameSiegeRam)
+				else if (this is GameSiegeRam)
 					name = "ram";
+				else
+					name = string.Empty;
 
-				if (this is GameSiegeRam && player.Realm != this.Realm)
+				if (this is GameSiegeRam && player.Realm != Realm)
 				{
 					player.Out.SendMessage($"This siege equipment is owned by an enemy realm!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return false;
 				}
-				
 
 				if (RiderSlot(player) != -1)
 				{
@@ -2589,18 +2554,14 @@ namespace DOL.GS
 				}
 
 				if (player.IsRiding)
-				{
 					player.DismountSteed(true);
-				}
 
 				if (player.IsOnHorse)
-				{
 					player.IsOnHorse = false;
-				}
 
 				player.MountSteed(this, true);
 			}
-			
+
 			FireAmbientSentence(eAmbientTrigger.interact, player);
 			return true;
 		}
@@ -2725,13 +2686,13 @@ namespace DOL.GS
 			attackComponent.RequestStartAttack(target);
 		}
 
-		private int scalingFactor = Properties.GAMENPC_SCALING;
+		private double weaponSkillScalingFactor = 15;
 		private int orbsReward = 0;
 		
 		public override double GetWeaponSkill(DbInventoryItem weapon)
 		{
-			double weaponSkill = (Level + 1) * (ScalingFactor / 7.5) * (1 + 0.01 * GetWeaponStat(weapon) / 2);
-			return Math.Max(0, weaponSkill * GetModified(eProperty.WeaponSkill) * 0.01);
+			double weaponSkill = Math.Max(1, (int) Level) * (WeaponSkillScalingFactor / 5.75) * (1 + 0.01 * (GetWeaponStat(weapon) + 30) / 2);
+			return Math.Max(1, weaponSkill * GetModified(eProperty.WeaponSkill) * 0.01);
 		}
 
 		public void SetLastMeleeAttackTick()
@@ -2907,7 +2868,7 @@ namespace DOL.GS
 									playerXpGainer.ObjectState == eObjectState.Active &&
 									playerXpGainer.IsAlive &&
 									playerXpGainer.IsWithinRadius(this, WorldMgr.MAX_EXPFORKILL_DISTANCE))
-									Faction.KillMember(playerXpGainer);
+									Faction.OnMemberKilled(playerXpGainer);
 							}
 						}
 					}
@@ -3039,10 +3000,7 @@ namespace DOL.GS
 		/// <param name="target"></param>
 		public void SwitchToMelee(GameObject target)
 		{
-			// Tolakram: Order is important here.  First StopAttack, then switch weapon
-			StopFollowing();
 			attackComponent.StopAttack();
-
 			DbInventoryItem twohand = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
 			DbInventoryItem righthand = Inventory.GetItem(eInventorySlot.RightHandWeapon);
 
@@ -3052,7 +3010,8 @@ namespace DOL.GS
 			{
 				if (Util.Chance(50))
 					SwitchWeapon(eActiveWeaponSlot.TwoHanded);
-				else SwitchWeapon(eActiveWeaponSlot.Standard);
+				else
+					SwitchWeapon(eActiveWeaponSlot.Standard);
 			}
 			else
 				SwitchWeapon(eActiveWeaponSlot.Standard);
@@ -3362,10 +3321,7 @@ namespace DOL.GS
 					DbInventoryItem invitem;
 
 					if (lootTemplate is DbItemUnique)
-					{
-						GameServer.Database.AddObject(lootTemplate);
 						invitem = GameInventoryItem.Create(lootTemplate as DbItemUnique);
-					}
 					else
 						invitem = GameInventoryItem.Create(lootTemplate);
 
@@ -3842,14 +3798,10 @@ namespace DOL.GS
 
 			if (LosChecker == null && Brain is StandardMobBrain brain)
 			{
-				foreach (GamePlayer playerInRange in GetPlayersInRadius((ushort) brain.AggroRange))
-				{
-					if (playerInRange != null)
-					{
-						LosChecker = playerInRange;
-						break;
-					}
-				}
+				List<GamePlayer> playersInRadius = GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
+
+				if (playersInRadius.Count > 0)
+					LosChecker = playersInRadius[Util.Random(playersInRadius.Count - 1)];
 			}
 
 			if (LosChecker == null)
@@ -4563,7 +4515,8 @@ namespace DOL.GS
 		private double m_campBonus = 1;
 
 		public virtual double CampBonus { get => m_campBonus; set => m_campBonus = value; }
-		public int ScalingFactor { get => scalingFactor; set => scalingFactor = value; }
+		public virtual double MaxHealthScalingFactor => 1.0;
+		public double WeaponSkillScalingFactor { get => weaponSkillScalingFactor; set => weaponSkillScalingFactor = value; }
 		public int OrbsReward { get => orbsReward; set => orbsReward = value; }
 	}
 }
