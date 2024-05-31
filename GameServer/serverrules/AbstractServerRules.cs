@@ -1334,7 +1334,7 @@ namespace DOL.GS.ServerRules
 				 * challenge code may not kick in. It could also kick in if the monster is low yellow to the high level player, depending on the group strength of the pair.
 				 */
 
-				GamePlayer highestLevelPlayerInGroup = player;
+				IGamePlayer highestLevelPlayerInGroup = player;
 
 				foreach (GamePlayer gamePlayer in player.Group.GetPlayersInTheGroup())
 				{
@@ -1342,7 +1342,7 @@ namespace DOL.GS.ServerRules
 						highestLevelPlayerInGroup = gamePlayer;
 				}
 
-				ConColor conColorForHighestLevelPlayerInGroup = ConLevels.GetConColor(highestLevelPlayerInGroup.GetConLevel(killedNPC));
+				ConColor conColorForHighestLevelPlayerInGroup = ConLevels.GetConColor(ConLevels.GetConLevel(highestLevelPlayerInGroup.Level,killedNPC.Level)); 
 
 				if (conColorForHighestLevelPlayerInGroup == ConColor.GREY)
 					return 0;
@@ -1363,7 +1363,7 @@ namespace DOL.GS.ServerRules
 
 				// If we're checking the highest level player, or if the npc is of the same or higher con level for us.
 				// We shouldn't try to treat the NPC as if it was of a different con color if it's already of that color to us (this could raise or lower the experience).
-				if (highestLevelPlayerInGroup == player || ConLevels.GetConColor(player.GetConLevel(killedNPC)) <= conColorForHighestLevelPlayerInGroup)
+				if (highestLevelPlayerInGroup == player || ConLevels.GetConColor(((GamePlayer)player).GetConLevel(killedNPC)) <= conColorForHighestLevelPlayerInGroup)
 					return killedNPC.ExperienceValue / groupMemberCount;
 
 				// Find an adequate NPC level so that its con color for the player being handled matches the con color of the highest level player in the group.
@@ -1401,7 +1401,7 @@ namespace DOL.GS.ServerRules
 				else if (conColorForHighestLevelPlayerInGroup == ConColor.YELLOW)
 					level = player.Level;
 
-				if (player.XPLogState is eXPLogState.Verbose)
+				if (((GamePlayer)player).XPLogState is eXPLogState.Verbose)
 					player.Out.SendMessage($"Base XP set to match the one of a level {level} NPC", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
 				// If level is still 0 here, something might have gone wrong or the player's level is very low.
@@ -1510,25 +1510,26 @@ namespace DOL.GS.ServerRules
 
 			void ShowXpStatsToPlayer()
 			{
-				if (player == null || (player.XPLogState is not eXPLogState.On && player.XPLogState is not eXPLogState.Verbose))
+                GamePlayer gplayer = player as GamePlayer;
+				if (gplayer == null || (gplayer.XPLogState is not eXPLogState.On && gplayer.XPLogState is not eXPLogState.Verbose))
 					return;
 
 				System.Globalization.NumberFormatInfo format = System.Globalization.NumberFormatInfo.InvariantInfo;
 
-				player.Out.SendMessage($"Base XP: {baseXpReward.ToString("N0", format)} | Solo Cap : {xpCap.ToString("N0", format)} | %Cap: {(double) baseXpReward / xpCap * 100:0.##}%", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                gplayer.Out.SendMessage($"Base XP: {baseXpReward.ToString("N0", format)} | Solo Cap : {xpCap.ToString("N0", format)} | %Cap: {(double) baseXpReward / xpCap * 100:0.##}%", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
-				if (player.XPLogState is eXPLogState.Verbose)
+				if (gplayer.XPLogState is eXPLogState.Verbose)
 				{
 					if (modifiedByDamage && damagePercent < 1)
 						player.Out.SendMessage($"%Damage inflicted: {damagePercent:0.##}%", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
-					double levelPercent = (double) (player.Experience + totalReward - player.ExperienceForCurrentLevel) / (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) * 100.0;
+					double levelPercent = (double) (gplayer.Experience + totalReward - gplayer.ExperienceForCurrentLevel) / (gplayer.ExperienceForNextLevel - gplayer.ExperienceForCurrentLevel) * 100.0;
 					double campPercent = (double) campBonus / baseXpReward * 100.0;
 					double groupPercent = (double) groupBonus / baseXpReward * 100.0;
 					double outpostPercent = (double) outpostBonus / baseXpReward * 100.0;
 
-					player.Out.SendMessage($"XP needed: {player.ExperienceForNextLevel.ToString("N0", format)} | {levelPercent:0.##}% done with current level", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-					player.Out.SendMessage($"# of kills needed to level at this rate: {(double) (player.ExperienceForNextLevel - player.Experience) / totalReward:0.##}", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					player.Out.SendMessage($"XP needed: {gplayer.ExperienceForNextLevel.ToString("N0", format)} | {levelPercent:0.##}% done with current level", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					player.Out.SendMessage($"# of kills needed to level at this rate: {(double) (gplayer.ExperienceForNextLevel - gplayer.Experience) / totalReward:0.##}", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
 					if (campBonus > 0)
 						player.Out.SendMessage($"Camp: {campBonus.ToString("N0", format)} | {campPercent:0.##}% bonus", eChatType.CT_System, eChatLoc.CL_SystemWindow);

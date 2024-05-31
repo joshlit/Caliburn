@@ -3875,7 +3875,7 @@ namespace DOL.GS.Scripts
                 && ControlledBrain is IControlledBrain brain && brain.Body is GameSummonedPet pet
                 && pet.ControlledNpcList != null)
                 foreach (ABrain subBrain in pet.ControlledNpcList)
-                    if (subBrain != null && subBrain.Body is BDSubPet subPet && subPet.PetSpecLine == specLine.KeyName)
+                    if (subBrain != null && subBrain.Body is BdSubPet subPet && subPet.PetSpecLine == specLine.KeyName)
                         subPet.SortSpells();
 
             return specPoints;
@@ -5763,7 +5763,7 @@ namespace DOL.GS.Scripts
 
             // Level up pets and subpets
             if (ServerProperties.Properties.PET_LEVELS_WITH_OWNER &&
-                ControlledBrain is ControlledNpcBrain brain && brain.Body is GameSummonedPet pet)
+                ControlledBrain is ControlledMobBrain brain && brain.Body is GameSummonedPet pet)
             {
                 if (pet.SetPetLevel())
                 {
@@ -6140,9 +6140,9 @@ namespace DOL.GS.Scripts
         {
             base.OnAttackedByEnemy(ad);
 
-            if (ControlledBrain != null && ControlledBrain is ControlledNpcBrain)
+            if (ControlledBrain != null && ControlledBrain is ControlledMobBrain)
             {
-                var brain = (ControlledNpcBrain)ControlledBrain;
+                var brain = (ControlledMobBrain)ControlledBrain;
                 brain.OnOwnerAttacked(ad);
             }
 
@@ -7289,8 +7289,6 @@ namespace DOL.GS.Scripts
                     {
                         m_respawnTimer.Stop();
                     }
-                    // register Mob as "respawning"
-                    CurrentRegion.MobsRespawning.TryAdd(this, respawnInt);
 
                     m_respawnTimer.Start(respawnInt);
                 }
@@ -7304,7 +7302,6 @@ namespace DOL.GS.Scripts
         /// <returns>the new interval</returns>
         protected override int RespawnTimerCallback(ECSGameTimer respawnTimer)
         {
-            CurrentRegion.MobsRespawning.TryRemove(this, out _);
 
             lock (m_respawnTimerLock)
             {
@@ -7438,7 +7435,7 @@ namespace DOL.GS.Scripts
             if (partner == null)
                 return false;
 
-            if (living is GameNPC npc && npc.Brain is ControlledNpcBrain brain)
+            if (living is GameNPC npc && npc.Brain is ControlledMobBrain brain)
                 living = brain.GetLivingOwner();
 
             return partner == living;

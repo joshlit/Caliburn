@@ -3954,7 +3954,7 @@ namespace DOL.GS
 		/// <summary>
 		/// Styles for this NPC
 		/// </summary>
-		private IList m_styles = new List<Style>(0);
+		protected IList m_styles = new List<Style>(0);
 		public IList Styles
 		{
 			get { return m_styles; }
