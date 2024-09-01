@@ -8,7 +8,6 @@ using DOL.Database;
 using DOL.GS.Keeps;
 using DOL.GS.Quests;
 using DOL.GS.Scripts;
-using DOL.GS.Spells;
 using DOL.Language;
 using log4net;
 

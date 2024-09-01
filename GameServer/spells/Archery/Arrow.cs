@@ -2,6 +2,7 @@ using System;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.SkillHandler;
 
 namespace DOL.GS.Spells
@@ -23,7 +24,7 @@ namespace DOL.GS.Spells
 		{
 			// Half of the damage is magical.
 			// Subtract any spelldamage bonus and re-calculate after half damage is calculated.
-			if (Caster is GamePlayer playerCaster)
+			if (Caster is IGamePlayer playerCaster)
 				return CasterEffectiveness * (0.5 - playerCaster.GetModified(eProperty.SpellDamage) * 0.01);
 			else
 				return CasterEffectiveness * 0.5;
@@ -171,9 +172,9 @@ namespace DOL.GS.Spells
 
 				bool arrowBlock = false;
 
-				if (target is GamePlayer && !target.IsStunned && !target.IsMezzed && !target.IsSitting && m_handler.Spell.LifeDrainReturn != (int)Archery.eShotType.Critical)
+				if (target is IGamePlayer && !target.IsStunned && !target.IsMezzed && !target.IsSitting && m_handler.Spell.LifeDrainReturn != (int)Archery.eShotType.Critical)
 				{
-					GamePlayer player = (GamePlayer)target;
+					IGamePlayer player = (IGamePlayer)target;
 					DbInventoryItem lefthand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
 					if (lefthand != null && (player.ActiveWeapon == null || player.ActiveWeapon.Item_Type == Slot.RIGHTHAND || player.ActiveWeapon.Item_Type == Slot.LEFTHAND))
 					{
@@ -218,7 +219,7 @@ namespace DOL.GS.Spells
 							if (blockchance >= Util.Random(1, 100))
 							{
 								arrowBlock = true;
-								m_handler.MessageToLiving(player, "You block " + caster.GetName(0, false) + "'s arrow!", eChatType.CT_System);
+								m_handler.MessageToLiving((GameLiving)player, "You block " + caster.GetName(0, false) + "'s arrow!", eChatType.CT_System);
 
 								if (m_handler.Spell.Target != eSpellTarget.AREA)
 								{
@@ -235,8 +236,8 @@ namespace DOL.GS.Spells
 					// now calculate the magical part of arrow damage (similar to bolt calculation).  Part 1 Physical, Part 2 Magical
 
 					double damage = m_handler.Spell.Damage / 2; // another half is physical damage
-					if (target is GamePlayer)
-						ad.ArmorHitLocation = ((GamePlayer)target).CalculateArmorHitLocation(ad);
+					if (target is IGamePlayer)
+						ad.ArmorHitLocation = ((IGamePlayer)target).CalculateArmorHitLocation(ad);
 
 					DbInventoryItem armor = null;
 					if (target.Inventory != null)
@@ -294,7 +295,7 @@ namespace DOL.GS.Spells
 						}
 						else
 						{
-							int critMax = (target is GamePlayer) ? ad.Damage / 2 : ad.Damage;
+							int critMax = (target is IGamePlayer) ? ad.Damage / 2 : ad.Damage;
 							ad.CriticalDamage = Util.Random(critMax / 10, critMax);
 						}
 					}

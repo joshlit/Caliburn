@@ -5458,7 +5458,7 @@ namespace DOL.GS
                     Bonus = Bonus - 1;
                 }
                 else if ((eProperty) BonusType is eProperty.SpellDuration or eProperty.BuffEffectiveness
-                         or eProperty.DebuffEffectivness or eProperty.HealingEffectiveness
+                         or eProperty.DebuffEffectiveness or eProperty.HealingEffectiveness
                          or eProperty.FatigueConsumption or eProperty.PowerPoolCapBonus or eProperty.SpellPowerCost)
                 {
                     Bonus = Bonus - 1;
@@ -5520,7 +5520,7 @@ namespace DOL.GS
                     itemBonus = itemBonus + 1;
                 }
                 else if ((eProperty) BonusType is eProperty.SpellDuration or eProperty.BuffEffectiveness
-                         or eProperty.DebuffEffectivness or eProperty.HealingEffectiveness
+                         or eProperty.DebuffEffectiveness or eProperty.HealingEffectiveness
                          or eProperty.FatigueConsumption or eProperty.PowerPoolCapBonus or eProperty.SpellPowerCost)
                 {
                     itemBonus = itemBonus + 1;
@@ -5998,7 +5998,7 @@ namespace DOL.GS
                         //2 uti TOA bonuses
                         case eProperty.SpellDuration:
                         case eProperty.BuffEffectiveness:
-                        case eProperty.DebuffEffectivness:
+                        case eProperty.DebuffEffectiveness:
                         case eProperty.HealingEffectiveness:
                         case eProperty.FatigueConsumption:
                         case eProperty.PowerPoolCapBonus:

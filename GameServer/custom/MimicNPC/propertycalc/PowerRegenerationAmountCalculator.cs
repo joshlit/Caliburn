@@ -1,6 +1,7 @@
+using DOL.GS.PropertyCalc;
 using DOL.GS.Scripts;
 
-namespace DOL.GS.PropertyCalc
+namespace DOL.GS.Scripts
 {
     /// <summary>
     /// The power regen rate calculator
@@ -27,7 +28,7 @@ namespace DOL.GS.PropertyCalc
             double regen = living.Level / 10.0 + living.Level / 2.75;
 
             // What is this? NPCs don't have power.
-            if (living is GameNPC && living.InCombat)
+            if (living is GameNPC && living is not MimicNPC && living.InCombat)
                 regen /= 2.0;
 
             regen *= ServerProperties.Properties.MANA_REGEN_AMOUNT_MODIFIER;

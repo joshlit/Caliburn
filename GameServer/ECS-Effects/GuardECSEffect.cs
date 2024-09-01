@@ -1,6 +1,9 @@
 ﻿using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.SkillHandler;
 using DOL.Language;
+using log4net;
+using System;
 
 namespace DOL.GS
 {
@@ -36,8 +39,8 @@ namespace DOL.GS
             if (Source == null || Target == null)
                 return;
 
-            GamePlayer playerSource = Source as GamePlayer;
-            GamePlayer playerTarget = Target as GamePlayer;
+            IGamePlayer playerSource = Source as IGamePlayer;
+            IGamePlayer playerTarget = Target as IGamePlayer;
 
             if (playerSource != null && playerTarget != null)
             {

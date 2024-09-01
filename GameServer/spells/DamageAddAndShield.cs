@@ -83,10 +83,10 @@ namespace DOL.GS.Spells
             if (!AreArgumentsValid(attackData, out GameLiving target, out GameLiving attacker))
                 return;
 
-            GamePlayer player2 = null;
+            IGamePlayer player2 = null;
 
             if (attacker is GameNPC npcT && npcT.Brain is IControlledBrain b)
-                player2 = b.GetPlayerOwner();
+                player2 = b.GetIPlayerOwner();
 
             double damage;
             double damageResisted;

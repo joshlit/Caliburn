@@ -26,7 +26,7 @@ namespace DOL.GS.PlayerClass
 
         public override eClassType ClassType
         {
-            get { return eClassType.Hybrid; }
+            get { return eClassType.ListCaster; }
         }
 
         public override List<PlayerRace> EligibleRaces => new List<PlayerRace>()

@@ -31,9 +31,7 @@ namespace DOL.GS
 
         private const int VISIBLE_TO_PLAYER_SPAN = 60000;
 
-        private int m_databaseLevel;
-
-        public override eGameObjectType GameObjectType => eGameObjectType.NPC;
+		public override eGameObjectType GameObjectType => eGameObjectType.NPC;
 
         #region Formations/Spacing
 
@@ -177,7 +175,9 @@ namespace DOL.GS
 			set
 			{
 				base.Level = value;
-				AutoSetStats();
+
+                if (this is not MimicNPC)
+                    AutoSetStats();
 
 				if (m_health > MaxHealth)
 					m_health = MaxHealth;
@@ -3112,7 +3112,7 @@ namespace DOL.GS
 			// It makes repositioning them easier without having to constantly attack them.
 			if (attacker != this)
 			{
-				if (Brain is not IControlledBrain controlledBrain || controlledBrain.GetPlayerOwner() == null)
+				if (Brain is not IControlledBrain controlledBrain || controlledBrain.GetIPlayerOwner() == null)
 					duration += 2500;
 			}
 
@@ -3876,7 +3876,7 @@ namespace DOL.GS
             if (LosChecker == null && Brain is IControlledBrain controlledBrain)
                 LosChecker = controlledBrain.GetPlayerOwner();
 
-			if (LosChecker == null && Brain is StandardMobBrain brain)
+			if (LosChecker == null && (Brain is StandardMobBrain brain || Brain is MimicBrain))
 			{
 				List<GamePlayer> playersInRadius = GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
 
@@ -3969,6 +3969,10 @@ namespace DOL.GS
 			set
 			{
 				m_styles = value;
+                // Kaedius - Not sure where to put these
+                //m_styles.Add(SkillBase.GetStyleByID(342, 23));
+                //m_styles.Add(SkillBase.GetStyleByID(106, 1));
+                //m_styles.Add(SkillBase.GetStyleByID(133, 1));
 				SortStyles();
 			}
 		}
@@ -4026,12 +4030,11 @@ namespace DOL.GS
             if (StylesAnytime != null)
                 StylesAnytime.Clear();
 
-			var styleList = m_styles as ArrayList;
-			if (styleList == null)
-				return;
-			
-			foreach (Style s in styleList.ToArray())
-			{
+            if (m_styles == null)
+                return;
+
+            foreach (Style s in m_styles)
+            {
 				if (s == null)
 				{
 					if (log.IsWarnEnabled)

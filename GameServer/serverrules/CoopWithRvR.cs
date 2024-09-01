@@ -3,6 +3,7 @@ using System.Linq;
 using DOL.Database;
 using DOL.Events;
 using DOL.GS.Keeps;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.ServerRules;
 
@@ -57,10 +58,10 @@ public class CoopWithRvr : AbstractServerRules
                 => SelectRuleSet(player).CanTakeFallDamage(player);
     public override bool CheckAbilityToUseItem(GameLiving living, DbItemTemplate item)
                 => SelectRuleSet(living).CheckAbilityToUseItem(living, item);
-    public override int GetObjectSpecLevel(GamePlayer player, eObjectType objectType)
-                => SelectRuleSet(player).GetObjectSpecLevel(player, objectType);
-    public override int GetBaseObjectSpecLevel(GamePlayer player, eObjectType objectType)
-                => SelectRuleSet(player).GetBaseObjectSpecLevel(player, objectType);
+    public override int GetObjectSpecLevel(IGamePlayer player, eObjectType objectType)
+                => SelectRuleSet((GameObject)player).GetObjectSpecLevel(player, objectType);
+    public override int GetObjectBaseSpecLevel(IGamePlayer player, eObjectType objectType)
+                => SelectRuleSet((GameObject)player).GetObjectBaseSpecLevel(player, objectType);
     public override void OnNPCKilled(GameNPC killedNPC, GameObject killer)
                 => SelectRuleSet(killedNPC).OnNPCKilled(killedNPC, killer);
     public override void OnLivingKilled(GameLiving killedLiving, GameObject killer)

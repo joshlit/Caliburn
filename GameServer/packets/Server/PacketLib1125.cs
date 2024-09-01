@@ -6,7 +6,6 @@ using System.Reflection;
 using DOL.Database;
 using DOL.GS.Housing;
 using DOL.GS.Scripts;
-using DOL.GS.Spells;
 using log4net;
 
 namespace DOL.GS.PacketHandler

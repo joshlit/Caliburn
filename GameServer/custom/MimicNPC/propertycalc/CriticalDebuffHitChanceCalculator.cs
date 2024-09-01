@@ -1,8 +1,8 @@
 ﻿using System;
 using DOL.AI.Brain;
-using DOL.GS.Scripts;
+using DOL.GS.PropertyCalc;
 
-namespace DOL.GS.PropertyCalc
+namespace DOL.GS.Scripts
 {
     /// <summary>
     /// The critical hit chance calculator. Returns 0 .. 100 chance.
@@ -23,7 +23,7 @@ namespace DOL.GS.PropertyCalc
         {
             int chance = living.AbilityBonus[(int) property];
 
-            if (living is NecromancerPet necroPet && necroPet.Brain is IControlledBrain necroBrain && necroBrain.GetPlayerOwner() is GamePlayer playerOwner)
+            if (living is NecromancerPet necroPet && necroPet.Brain is IControlledBrain necroBrain && necroBrain.GetIPlayerOwner() is IGamePlayer playerOwner)
                 chance += playerOwner.GetAbility<RealmAbilities.AtlasOF_WildArcanaAbility>()?.Amount ?? 0;
 
             return Math.Min(chance, 50);

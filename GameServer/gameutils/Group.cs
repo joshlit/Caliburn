@@ -204,13 +204,10 @@ namespace DOL.GS
             }))
                 return false;
 
-            GamePlayer player = living as GamePlayer;
-            MimicNPC mimic = living as MimicNPC;
+            IGamePlayer player = living as IGamePlayer;
 
             if (player?.Duel != null)
                 player.Duel.Stop();
-            else if (mimic?.Duel != null)
-                mimic.Duel.Stop();
 
             UpdateGroupWindow();
             // update icons of joined player to everyone in the group
@@ -234,7 +231,7 @@ namespace DOL.GS
                 // Update how the added player sees their pet and themself.
                 if (controlledBrain != null)
                 {
-                    SendControlledBodyGuildID(player, playerGuild, controlledBrain.Body);
+                    SendControlledBodyGuildID((GamePlayer)player, playerGuild, controlledBrain.Body);
                     updateOneself = true;
                 }
 
@@ -255,13 +252,13 @@ namespace DOL.GS
                     if (groupMemberControlledBrain != null)
                     {
                         // Update how the added player sees the group member's pet and themself.
-                        SendControlledBodyGuildID(player, playerGuild, groupMemberControlledBrain.Body);
+                        SendControlledBodyGuildID((GamePlayer)player, playerGuild, groupMemberControlledBrain.Body);
                         updateOneself = true;
                     }
                 }
 
                 if (updateOneself)
-                    player.Out.SendObjectGuildID(player, playerGuild ?? Guild.DummyGuild);
+                    player.Out.SendObjectGuildID((GamePlayer)player, playerGuild ?? Guild.DummyGuild);
             }
 
             return true;
@@ -282,7 +279,7 @@ namespace DOL.GS
 
             living.Group = null;
             living.GroupIndex = 0xFF;
-            GamePlayer player = living as GamePlayer;
+            IGamePlayer player = living as IGamePlayer;
 
             // Update Player.
             if (player != null)
@@ -290,7 +287,7 @@ namespace DOL.GS
                 player.Out.SendGroupWindowUpdate();
                 player.Out.SendQuestListUpdate();
 
-                List<ECSGameAbilityEffect> abilityEffects = player.effectListComponent.GetAbilityEffects();
+                List<ECSGameAbilityEffect> abilityEffects = player.EffectListComponent.GetAbilityEffects();
 
                 // Cancel ability effects.
                 foreach (ECSGameAbilityEffect abilityEffect in abilityEffects)
@@ -301,7 +298,7 @@ namespace DOL.GS
                         {
                             if (abilityEffect is GuardECSGameEffect guard)
                             {
-                                if (guard.Source is GamePlayer && guard.Target is GamePlayer)
+                                if (guard.Source is IGamePlayer && guard.Target is IGamePlayer)
                                     EffectService.RequestCancelEffect(guard);
                             }
 
@@ -312,7 +309,7 @@ namespace DOL.GS
                         {
                             if (abilityEffect is ProtectECSGameEffect protect)
                             {
-                                if (protect.Source is GamePlayer && protect.Target is GamePlayer)
+                                if (protect.Source is IGamePlayer && protect.Target is IGamePlayer)
                                     EffectService.RequestCancelEffect(protect);
                             }
 
@@ -323,7 +320,7 @@ namespace DOL.GS
                         {
                             if (abilityEffect is InterceptECSGameEffect intercept)
                             {
-                                if (intercept.Source is GamePlayer && intercept.Target is GamePlayer)
+                                if (intercept.Source is IGamePlayer && intercept.Target is IGamePlayer)
                                     EffectService.RequestCancelEffect(intercept);
                             }
 
@@ -343,7 +340,7 @@ namespace DOL.GS
                     // Update how the removed player sees their pet and themself.
                     if (controlledBrain != null)
                     {
-                        SendControlledBodyGuildID(player, playerGuild, controlledBrain.Body);
+                        SendControlledBodyGuildID((GamePlayer)player, playerGuild, controlledBrain.Body);
                         updateOneself = true;
                     }
 
@@ -363,14 +360,20 @@ namespace DOL.GS
                             // Update how the removed player sees the group member's pet and themself.
                             if (groupMemberControlledBrain != null)
                             {
-                                SendControlledBodyGuildID(player, groupMember.Guild, groupMemberControlledBrain.Body);
+                                SendControlledBodyGuildID((GamePlayer)player, groupMember.Guild, groupMemberControlledBrain.Body);
                                 updateOneself = true;
                             }
                         }
                     }
 
                     if (updateOneself)
-                        player.Out.SendObjectGuildID(player, playerGuild ?? Guild.DummyGuild);
+                        player.Out.SendObjectGuildID((GamePlayer)player, playerGuild ?? Guild.DummyGuild);
+                }
+
+                if (player is MimicNPC mimic)
+                {
+                    mimic.StopCurrentSpellcast();
+                    mimic.CancelAllConcentrationEffects();
                 }
 
                 player.Out.SendMessage("You leave your group.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
