@@ -974,8 +974,7 @@ namespace DOL.GS.Scripts
             // Sort spells into lists
             foreach (Spell spell in m_spells)
             {
-                // TODO: Boon of the Fallen (2876) is spammed
-                if (spell == null || spell.ID == 2876)
+                if (spell == null)
                     continue;
 
                 if (spell.SpellType == eSpellType.Bolt)

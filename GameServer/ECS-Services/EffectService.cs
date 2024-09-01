@@ -490,6 +490,7 @@ namespace DOL.GS
 
                 // Misc.
                 case eSpellType.OffensiveProc:
+                case eSpellType.OffensiveProcPvE:
                     return eEffect.OffensiveProc;
                 case eSpellType.DefensiveProc:
                     return eEffect.DefensiveProc;

@@ -5,6 +5,7 @@ using DOL.Database;
 using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 using log4net;
 
@@ -437,12 +438,13 @@ namespace DOL.GS.Spells
 		protected override void EventHandler( DOLEvent e, object sender, EventArgs arguments )
 		{
 			AttackFinishedEventArgs args = arguments as AttackFinishedEventArgs;
+
 			if (args == null || args.AttackData == null)
 				return;
 
 			GameNPC target = args.AttackData.Target as GameNPC;
 			
-			if(target != null && !(target.Brain is IControlledBrain && ((IControlledBrain)target.Brain).GetPlayerOwner() != null))
+			if (target != null && target is not MimicNPC && !(target.Brain is IControlledBrain && ((IControlledBrain)target.Brain).GetIPlayerOwner() != null))
 				base.EventHandler(e, sender, arguments);
 		}
 
