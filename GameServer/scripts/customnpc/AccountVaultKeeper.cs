@@ -7,6 +7,8 @@ namespace DOL.GS
 {
     public class AccountVaultKeeper : GameNPC
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public override bool Interact(GamePlayer player)
         {
             if (!base.Interact(player))
@@ -161,7 +163,7 @@ namespace DOL.GS
 
         public override string GetOwner(GamePlayer player)
         {
-            return $"{player.Client.Account.Name}_{player.Realm}";
+            return $"{player.Client.Account.Name}";
         }
 
         /// <summary>

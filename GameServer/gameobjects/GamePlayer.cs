@@ -35,7 +35,7 @@ namespace DOL.GS
     /// <summary>
     /// This class represents a player inside the game
     /// </summary>
-    public class GamePlayer : GameLiving
+    public class GamePlayer : GameLiving, IGamePlayer
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -1786,7 +1786,7 @@ namespace DOL.GS
 
             if (Realm != eRealm.None)
             {
-                if (Level >= ServerProperties.Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
+                if (Level >= Properties.PVE_EXP_LOSS_LEVEL && !HCFlag)
                 {
                     // actual lost exp, needed for 2nd stage deaths
                     long lostExp = Experience;
@@ -1824,7 +1824,7 @@ namespace DOL.GS
                 }
             }
 
-            if (Level >= ServerProperties.Properties.PVE_CON_LOSS_LEVEL)
+            if (Level >= Properties.PVE_CON_LOSS_LEVEL)
             {
                 int deathConLoss = TempProperties.GetProperty<int>(DEATH_CONSTITUTION_LOSS_PROPERTY); // get back constitution lost at death
                 if (deathConLoss > 0)
@@ -1844,7 +1844,7 @@ namespace DOL.GS
             StartEnduranceRegeneration();
             LastDeathPvP = false;
 
-            var maxChargeItems = ServerProperties.Properties.MAX_CHARGE_ITEMS;
+            var maxChargeItems = Properties.MAX_CHARGE_ITEMS;
             /*
             foreach (var item in this.Inventory.EquippedItems)
             {
@@ -6875,6 +6875,8 @@ namespace DOL.GS
                 IsSitting = false;
                 UpdatePlayerStatus();
             }
+            
+            RemoveTemporaryItems();
 
             // then buffs drop messages
             base.ProcessDeath(killer);
@@ -7106,7 +7108,9 @@ namespace DOL.GS
         #region Duel
 
         public GameDuel Duel { get; private set; }
-        public GamePlayer DuelPartner => Duel?.GetPartnerOf(this);
+        public GameLiving DuelPartner => Duel?.GetPartnerOf(this);
+
+        public bool IsDuelReady { get; set; }
 
         public void OnDuelStart(GameDuel duel)
         {
@@ -7119,7 +7123,10 @@ namespace DOL.GS
             if (Duel == null)
                 return;
 
+            IsDuelReady = false;
             Duel = null;
+
+            Client.Out.SendMessage("You are no longer ready for your next duel.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
         }
 
         public bool IsDuelPartner(GameLiving living)
@@ -7127,7 +7134,7 @@ namespace DOL.GS
             if (living == null)
                 return false;
 
-            GamePlayer partner = DuelPartner;
+            GameLiving partner = DuelPartner;
 
             if (partner == null)
                 return false;
@@ -8932,6 +8939,8 @@ namespace DOL.GS
             }
 
             UpdateWaterBreathState(eWaterBreath.None);
+            
+            RemoveTemporaryItems();
 
             if (IsOnHorse)
                 IsOnHorse = false;
@@ -8940,7 +8949,69 @@ namespace DOL.GS
                 instance.OnPlayerLeaveInstance(this);
 
             Duel?.Stop();
+
             return true;
+        }
+
+        private void RemoveTemporaryItems()
+        {
+            var player = this;
+            lock (Inventory)
+            {
+                var items = Inventory.GetItemRange(eInventorySlot.MinEquipable, eInventorySlot.LastBackpack);
+                bool removedSomething = false;
+                foreach (DbInventoryItem invItem in items)
+                {
+                    if (player.CurrentRegion.IsNightTime)
+                    {
+
+                        switch (invItem.Id_nb)
+                        {
+                            case "Sun_Crush":
+                            case "Sun_Slash":
+                            case "Sun_Thrust":
+                            case "Sun_Flex":
+                            case "Sun_TwoHanded":
+                            case "Sun_Polearm":
+                            case "Sun_Bow":
+                            case "Sun_Staff":
+                            case "Sun_MFist":
+                            case "Sun_Axe":
+                            case "Sun_LeftAxe":
+                            case "Sun_Claw":
+                            case "Sun_2HCrush":
+                            case "Sun_2HAxe":
+                            case "Sun_MStaff":
+                            case "Sun_FlexScythe":
+                            case "Sun_Spear":
+                                removedSomething = true;
+                                player.Inventory.RemoveItem(invItem);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (invItem.Id_nb)
+                        {
+                            case "Moon_Mace":
+                            case "Moon_MaceM":
+                            case "Moon_MaceH":
+                            case "Moon_Staff":
+                                removedSomething = true;
+                                player.Inventory.RemoveItem(invItem);
+                                break;
+                        }
+                    }
+                }
+
+                if (removedSomething)
+                {
+                    if(player.CurrentRegion.IsNightTime)
+                        player.Out.SendMessage("The power of Belt of Sun has left you!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    else
+                        player.Out.SendMessage("The power of the Belt of Moon has left you!",eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                }
+            }
         }
 
         /// <summary>
@@ -11430,7 +11501,7 @@ namespace DOL.GS
             this.TempProperties.SetProperty(REALM_LOYALTY_KEY, lastRealmLoyaltyUpdateTime);
             this.TempProperties.SetProperty(CURRENT_LOYALTY_KEY, loyaltyDays);
 
-            DbAccountXMoney MoneyForRealm = DOLDB<DbAccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId).And(DB.Column("Realm").IsEqualTo(this.Realm)));
+            DbAccountXMoney MoneyForRealm = DOLDB<DbAccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId));
 
             if (MoneyForRealm == null)
             {
@@ -11442,43 +11513,40 @@ namespace DOL.GS
 
                 DbAccountXMoney newMoney = new DbAccountXMoney();
                 newMoney.AccountId = this.Client.Account.ObjectId;
-                newMoney.Realm = (int)this.Realm;
+                newMoney.Realm = 1;
 
                 foreach (DbCoreCharacter character in this.Client.Account.Characters) // cycling through their toons
                 {
-                    if ((eRealm)character.Realm == this.Realm) // account money is realm bound
+                    realmCopper += character.Copper;
+                    realmSilver += character.Silver;
+                    realmGold += character.Gold;
+                    realmPlatinum += character.Platinum;
+                    realmMithril += character.Mithril;
+
+                    if (realmCopper > 100)
                     {
-                        realmCopper += character.Copper;
-                        realmSilver += character.Silver;
-                        realmGold += character.Gold;
-                        realmPlatinum += character.Platinum;
-                        realmMithril += character.Mithril;
-
-                        if (realmCopper > 100)
-                        {
-                            realmCopper -= 100;
-                            realmSilver += 1;
-                        }
-                        if (realmSilver > 100)
-                        {
-                            realmSilver -= 100;
-                            realmGold += 1;
-                        }
-                        if (realmGold > 1000)
-                        {
-                            realmGold -= 1000;
-                            realmPlatinum += 1;
-                        }
-
+                        realmCopper -= 100;
+                        realmSilver += 1;
                     }
+                    if (realmSilver > 100)
+                    {
+                        realmSilver -= 100;
+                        realmGold += 1;
+                    }
+                    if (realmGold > 1000)
+                    {
+                        realmGold -= 1000;
+                        realmPlatinum += 1;
+                    }
+                        
                 }
-
+                
                 newMoney.Copper = realmCopper;
                 newMoney.Silver = realmSilver;
                 newMoney.Gold = realmGold;
                 newMoney.Platinum = realmPlatinum;
                 newMoney.Mithril = realmMithril;
-
+                
                 GameServer.Database.AddObject(newMoney);
                 MoneyForRealm = newMoney;
             }
@@ -11695,13 +11763,13 @@ namespace DOL.GS
                     GameServer.Database.SaveObject(realmLoyalty);
                 }
 
-                DbAccountXMoney MoneyForRealm = DOLDB<DbAccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId).And(DB.Column("Realm").IsEqualTo(this.Realm)));
+                DbAccountXMoney MoneyForRealm = DOLDB<DbAccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId));
 
                 if (MoneyForRealm == null)
                 {
                     DbAccountXMoney newMoney = new DbAccountXMoney();
                     newMoney.AccountId = this.Client.Account.ObjectId;
-                    newMoney.Realm = (int)this.Realm;
+                    newMoney.Realm = 1;
                     newMoney.Copper = DBCharacter.Copper;
                     newMoney.Silver = DBCharacter.Silver;
                     newMoney.Gold = DBCharacter.Gold;
@@ -11718,6 +11786,7 @@ namespace DOL.GS
                     MoneyForRealm.Mithril = Mithril;
                     GameServer.Database.SaveObject(MoneyForRealm);
                 }
+
 
                 // Ff this player is a GM always check and set the IgnoreStatistics flag
                 if (Client.Account.PrivLevel > (uint)ePrivLevel.Player && DBCharacter.IgnoreStatistics == false)
@@ -12172,7 +12241,7 @@ namespace DOL.GS
         /// </summary>
         /// <param name="enemy"></param>
         /// <returns>true if enemy can be detected</returns>
-        public virtual bool CanDetect(GamePlayer enemy)
+        public virtual bool CanDetect(IGamePlayer enemy)
         {
             if (enemy.CurrentRegionID != CurrentRegionID)
                 return false;
@@ -12193,8 +12262,8 @@ namespace DOL.GS
                      || enemy.CharacterClass is ClassRanger
                      || enemy.CharacterClass is ClassHunter
                      || enemy.CharacterClass is ClassScout)
-                && this.IsWithinRadius(enemy, 650)
-                && !enemy.effectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
+                && this.IsWithinRadius((GameObject)enemy, 650)
+                && !enemy.EffectListComponent.ContainsEffectForEffectType(eEffect.Camouflage))
             {
                 return true;
             }
@@ -12215,8 +12284,8 @@ namespace DOL.GS
             if (levelDiff < 0) levelDiff = 0;
 
             int range = 0;
-            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Camouflage) != null;
-            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget(enemy, eEffect.Vanish) != null;
+            bool enemyHasCamouflage = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Camouflage) != null;
+            bool enemyHasVanish = EffectListService.GetAbilityEffectOnTarget((GameLiving)enemy, eEffect.Vanish) != null;
             if (HasAbility(Abilities.DetectHidden) && !enemyHasVanish && !enemyHasCamouflage)
             {
                 // we have detect hidden and enemy don't = higher range
@@ -12294,7 +12363,7 @@ namespace DOL.GS
 
             // Fin
             // vampiir stealth range, uncomment when add eproperty stealthrange i suppose
-            return this.IsWithinRadius( enemy, range );
+            return this.IsWithinRadius((GameLiving)enemy, range );
         }
 
         #endregion
@@ -14761,18 +14830,18 @@ namespace DOL.GS
         }
         #endregion
 
-        #region Constructors
-        /// <summary>
-        /// Returns the string representation of the GamePlayer
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return new StringBuilder(base.ToString())
-                .Append(" class=").Append(CharacterClass.Name)
-                .Append('(').Append(CharacterClass.ID.ToString()).Append(')')
-                .ToString();
-        }
+		#region Constructors
+		/// <summary>
+		/// Returns the string representation of the GamePlayer
+		/// </summary>
+		/// <returns></returns>
+		public override string ToString()
+		{
+			return new StringBuilder(base.ToString())
+				.Append(" class=").Append(CharacterClass.Name)
+				.Append('(').Append(CharacterClass.ID.ToString()).Append(')')
+				.ToString();
+		}
 
         public static GamePlayer CreateTestableGamePlayer() { return CreateTestableGamePlayer(new DefaultCharacterClass()); }
 

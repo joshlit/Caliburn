@@ -2,6 +2,7 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 
 namespace DOL.GS
@@ -67,7 +68,7 @@ namespace DOL.GS
         {
             if (TriggersImmunity)
             {
-                if (OwnerPlayer != null)
+                if (OwnerPlayer != null || Owner is MimicNPC)
                 {
                     if ((EffectType == eEffect.Stun && SpellHandler.Caster is GameSummonedPet) || SpellHandler is UnresistableStunSpellHandler)
                         return;

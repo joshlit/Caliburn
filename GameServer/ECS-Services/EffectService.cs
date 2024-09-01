@@ -7,6 +7,7 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.Spells;
 using DOL.Language;
 using ECS.Debug;
@@ -142,7 +143,7 @@ namespace DOL.GS
                 else if (spellEffect is not ECSImmunityEffect)
                     SendSpellAnimation(spellEffect);
                 if (e is StatDebuffECSEffect && spell.CastTime == 0)
-                    StatDebuffECSEffect.TryDebuffInterrupt(spell, e.OwnerPlayer, caster);
+                    StatDebuffECSEffect.TryDebuffInterrupt(spell, e.Owner, caster);
             }
             else
                 e.OnStartEffect();
@@ -191,6 +192,16 @@ namespace DOL.GS
 
                     if (npc is NecromancerPet)
                         SendPlayerUpdates(npcBrain.Owner as GamePlayer);
+                }
+
+                if (npc is MimicNPC mimic)
+                {
+                    if (mimic.Group != null)
+                    {
+                        if (mimic.Group.GetPlayersInTheGroup().Count > 0)
+                            foreach (GamePlayer playerMember in mimic.Group.GetPlayersInTheGroup())
+                                mimic.Group.UpdateAllToMember(playerMember, true, false);
+                    }
                 }
             }
         }
@@ -255,6 +266,15 @@ namespace DOL.GS
 
                 player.Out.SendUpdateIcons(ecsList, ref e.Owner.effectListComponent.GetLastUpdateEffectsCount());
                 player.Out.SendConcentrationList();
+            }
+            else if (e.Owner is MimicNPC mimic)
+            {
+                if (mimic.Group != null)
+                {
+                    if (mimic.Group.GetPlayersInTheGroup().Count > 0)
+                        foreach (GamePlayer playerMember in mimic.Group.GetPlayersInTheGroup())
+                            mimic.Group.UpdateAllToMember(playerMember, true, false);
+                }
             }
             else if (e.Owner is GameNPC npc && npc.Brain is IControlledBrain npcBrain)
                 npcBrain.UpdatePetWindow();
@@ -594,6 +614,10 @@ namespace DOL.GS
                     return eEffect.RvrResurrectionIllness;
 
                 #endregion
+                
+                //Artifacts
+                case eSpellType.AlvarusMorph:
+                    return eEffect.Morph;
 
                 // Pets.
                 case eSpellType.SummonTheurgistPet:

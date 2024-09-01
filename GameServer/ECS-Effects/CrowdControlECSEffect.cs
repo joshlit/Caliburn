@@ -3,7 +3,6 @@ using System.Linq;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.ServerProperties;
-using DOL.GS.Spells;
 
 namespace DOL.GS
 {
@@ -14,7 +13,7 @@ namespace DOL.GS
         {
             if (Properties.IMMUNITY_TIMER_USE_ADAPTIVE)
             {
-                ImmunityDuration = Math.Min(60000, (int) (Duration * Properties.IMMUNITY_TIMER_ADAPTIVE_LENGTH)); //cap at 60s
+                ImmunityDuration = Math.Min(60000, (int)(Duration * Properties.IMMUNITY_TIMER_ADAPTIVE_LENGTH)); //cap at 60s
             }
             else
             {
@@ -29,13 +28,13 @@ namespace DOL.GS
             Owner.DisableTurning(true);
             if (Owner is GameNPC npc)
                 npc.StopMoving();
-            if(Owner.effectListComponent.GetAllEffects().FirstOrDefault(x => x.GetType() == typeof(SpeedOfSoundECSEffect)) == null)
+            if (Owner.effectListComponent.GetAllEffects().FirstOrDefault(x => x.GetType() == typeof(SpeedOfSoundECSEffect)) == null)
                 UpdatePlayerStatus();
-            
+
             //check for conquest activity
             if (Caster is GamePlayer caster)
             {
-                if(ConquestService.ConquestManager.IsPlayerInConquestArea(caster))
+                if (ConquestService.ConquestManager.IsPlayerInConquestArea(caster))
                     ConquestService.ConquestManager.AddContributor(caster);
             }
         }
@@ -45,9 +44,7 @@ namespace DOL.GS
             Owner.DisableTurning(false);
             UpdatePlayerStatus();
 
-            if (SpellHandler.Caster.Realm == 0 || Owner.Realm == 0)
-                Owner.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
-            else
+            if (SpellHandler.Caster is GamePlayer)
                 Owner.LastAttackedByEnemyTickPvP = GameLoop.GameLoopTime;
         }
 
@@ -74,6 +71,12 @@ namespace DOL.GS
     /// </summary>
     public class StunECSGameEffect : AbstractCrowdControlECSEffect
     {
+        public StunECSGameEffect(ECSGameEffectInitParams initParams, int immunityTime)
+           : this(initParams)
+        {
+            ImmunityDuration = immunityTime;
+        }
+
         public StunECSGameEffect(ECSGameEffectInitParams initParams)
             : base(initParams)
         {
@@ -88,11 +91,10 @@ namespace DOL.GS
             Owner.IsStunned = true;
             OnHardCCStart();
             UpdatePlayerStatus();
-            
+
             // "You are stunned!"
             // "{0} is stunned!"
             OnEffectStartsMsg(Owner, true, true, true);
-
         }
 
         public override void OnStopEffect()
@@ -100,11 +102,10 @@ namespace DOL.GS
             Owner.IsStunned = false;
             OnHardCCStop();
             UpdatePlayerStatus();
-            
+
             // "You recover from the stun.."
             // "{0} recovers from the stun."
             OnEffectExpiresMsg(Owner, true, false, true);
-
         }
     }
 
@@ -124,7 +125,7 @@ namespace DOL.GS
             Owner.IsMezzed = true;
             OnHardCCStart();
             UpdatePlayerStatus();
-            
+
             // "You are entranced!"
             // "You are mesmerized!"
             OnEffectStartsMsg(Owner, true, true, true);
@@ -135,7 +136,7 @@ namespace DOL.GS
             Owner.IsMezzed = false;
             OnHardCCStop();
             UpdatePlayerStatus();
-            
+
             // "You are no longer entranced."
             // "You recover from the mesmerize."
             OnEffectExpiresMsg(Owner, true, false, true);

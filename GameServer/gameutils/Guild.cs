@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using DOL.Database;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
@@ -606,7 +607,7 @@ namespace DOL.GS
 			if (log.IsDebugEnabled)
 				log.Debug("Adding player to the guild, guild name=\"" + Name + "\"; player name=" + addPlayer.Name);
 
-			if (addPlayer.Realm != this.Realm) return false;
+			//if (addPlayer.Realm != this.Realm) return false;
 
 			try
 			{
@@ -1043,18 +1044,23 @@ namespace DOL.GS
 
 		public void UpdateGuildWindow()
 		{
-			List<GamePlayer> guildPlayers;
-
+			List<GamePlayer> guildPlayers = new List<GamePlayer>();
 			lock (m_memberListLock)
 			{
 				guildPlayers = m_onlineGuildPlayers.Values.ToList();
 			}
 			
-			foreach (GamePlayer player in guildPlayers)
+			Parallel.ForEach(guildPlayers, player =>
+			{
 				player.Guild.UpdateMember(player);
-
-			if (guildPlayers.Count > 0 && guildPlayers[0] != null)
-				guildPlayers[0].Guild.SaveIntoDatabase();
+			});
+			
+			/*
+			foreach (GamePlayer player in guildPlayers)
+			{
+				player.Guild.UpdateMember(player);
+			}*/
+			if(guildPlayers.Count > 0 && guildPlayers[0] != null) guildPlayers[0].Guild.SaveIntoDatabase();
 		}
 	}
 }

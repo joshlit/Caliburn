@@ -118,5 +118,7 @@ namespace DOL.GS
 		SiegeCauldron = 82, // need log
 		SiegeRam = 83, // need log
 		SiegeTrebuchet = 84, // need log
+
+		Gem = 200,
 	}
 }

@@ -127,7 +127,7 @@ namespace DOL.GS.PropertyCalc
 
         public static int GetItemBonusCap(GameLiving living)
         {
-            return living == null ? 0 : (int) (living.Level * 1.5);
+            return living == null ? 0 : (int) (living.Level * 2.02);
         }
 
         public static int GetItemBonusCapIncrease(GameLiving living, eProperty property)

@@ -15,6 +15,7 @@ using DOL.GS.ServerProperties;
 using DOL.Language;
 using ECS.Debug;
 using log4net;
+using Microsoft.AspNetCore.Routing;
 
 namespace DOL.GS.ServerRules
 {
@@ -361,9 +362,11 @@ namespace DOL.GS.ServerRules
 			if (attacker is GameNPC)
 				if ((((GameNPC)attacker).Flags & GameNPC.eFlags.PEACE) != 0)
 					return false;
+
 			if (defender is GameNPC)
 				if ((((GameNPC)defender).Flags & GameNPC.eFlags.PEACE) != 0)
 					return false;
+
 			// Players can't attack mobs while they have immunity
 			if (playerAttacker != null && defender != null)
 			{
@@ -417,8 +420,8 @@ namespace DOL.GS.ServerRules
 			if (attacker is GameNPC attacknpc && defender is GameNPC defendnpc)
 			{
 				// Mobs can't attack keep guards
-				if (defender is GameKeepGuard && attacker.Realm == 0)
-					return false;
+				//if (defender is GameKeepGuard && attacker.Realm == 0)
+				//	return false;
 
 				// Town guards however can attack mobs
 				if (attacknpc is GameGuard)
@@ -1082,10 +1085,10 @@ namespace DOL.GS.ServerRules
 				}
 			}
 
-			#region Worth no experience
+            #region Worth no experience
 
-			//"This monster has been charmed recently and is worth no experience."
-			string message = "You gain no experience from this kill!";
+            //"This monster has been charmed recently and is worth no experience."
+            string message = "You gain no experience from this kill!";
 			if (killedNPC.CurrentRegion?.Time - GameNPC.CHARMED_NOEXP_TIMEOUT <
 			    killedNPC.TempProperties.GetProperty<long>(GameNPC.CHARMED_TICK_PROP))
 			{
@@ -1156,11 +1159,11 @@ namespace DOL.GS.ServerRules
 			{
 				if (de.Key is GameLiving living)
 				{
-					var player = living as GamePlayer;
+					var player = living as IGamePlayer;
 
 					if (player != null)
 					{
-						BattleGroup clientBattleGroup = player.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
+						BattleGroup clientBattleGroup = ((GameLiving)player).TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
 						if (clientBattleGroup != null)
 						{
 							livingsToAward.Add(living);
@@ -1183,7 +1186,7 @@ namespace DOL.GS.ServerRules
 				}
 			}
 
-			foreach (GameLiving living in livingsToAward)
+            foreach (GameLiving living in livingsToAward)
 			{
 				DictionaryEntry de = new(living, XPGainerList[living]);
 				AwardExperience(de, killedNPC, killer, totalDamage, plrGrpExp, isGroupInRange);
@@ -1541,10 +1544,11 @@ namespace DOL.GS.ServerRules
 		private int GetUniqueClassCount(Group group)
         {
 			HashSet<eCharacterClass> groupClasses = new HashSet<eCharacterClass>();
-            foreach (var player in group.GetPlayersInTheGroup().ToList())
-            {
+			foreach (IGamePlayer player in group.GetIPlayersInTheGroup().ToList())
+			{
 				groupClasses.Add((eCharacterClass)player.CharacterClass.ID);
-            }
+			}
+
 			return groupClasses.Count;
         }
 
@@ -1596,7 +1600,7 @@ namespace DOL.GS.ServerRules
 			foreach (DictionaryEntry de in XPGainerList)
 			{
 				GameLiving living = de.Key as GameLiving;
-				GamePlayer expGainPlayer = living as GamePlayer;
+				IGamePlayer expGainPlayer = living as IGamePlayer;
 				if (living == null)
 				{
 					continue;
@@ -1629,17 +1633,17 @@ namespace DOL.GS.ServerRules
 				//rp bonuses from RR and Group
 				//20% if R1L0 char kills RR10,if RR10 char kills R1L0 he will get -20% bonus
 				//100% if full group,scales down according to player count in group and their range to target
-				if (living is GamePlayer)
+				if (living is IGamePlayer)
 				{
-					GamePlayer killerPlayer = living as GamePlayer;
+					IGamePlayer killerPlayer = living as IGamePlayer;
 					if (killerPlayer.Group != null && killerPlayer.Group.MemberCount > 1)
 					{
 						lock (killerPlayer.Group)
 						{
 							int count = 0;
-							foreach (GamePlayer player in killerPlayer.Group.GetPlayersInTheGroup())
+							foreach (IGamePlayer player in killerPlayer.Group.GetIPlayersInTheGroup())
 							{
-								if (!player.IsWithinRadius(killedLiving, WorldMgr.MAX_EXPFORKILL_DISTANCE)) continue;
+								if (!((GameLiving)player).IsWithinRadius(killedLiving, WorldMgr.MAX_EXPFORKILL_DISTANCE)) continue;
 								count++;
 							}
 							realmPoints = (int)(realmPoints * (1.0 + count * 0.125));
@@ -1672,7 +1676,7 @@ namespace DOL.GS.ServerRules
 					xpReward = expCap;
 
 				eXPSource xpSource = eXPSource.NPC;
-				if (killedLiving is GamePlayer)
+				if (killedLiving is IGamePlayer)
 				{
 					xpSource = eXPSource.Player;
 				}
@@ -2318,7 +2322,7 @@ namespace DOL.GS.ServerRules
 		/// <returns>The color handling</returns>
 		public virtual byte GetColorHandling(GameClient client)
 		{
-			return 0;
+			return 2;
 		}
 
 		/// <summary>

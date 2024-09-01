@@ -1885,8 +1885,12 @@ namespace DOL.GS
 			m_propertyNames.Add(eProperty.MythicalEmpCapBonus, "Mythical Stat Cap (Empathy)");
 			m_propertyNames.Add(eProperty.MythicalAcuCapBonus, "Mythical Stat Cap (Acuity)");
 
+            m_propertyNames.Add(eProperty.Socket_Charge, "Charge Socket");
+            m_propertyNames.Add(eProperty.Socket_Proc, "Proc Socket");
+            m_propertyNames.Add(eProperty.Socket_Stat, "Stat Socket");
+
             #endregion
-		}
+        }
 
 		#endregion
 

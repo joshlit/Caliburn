@@ -395,7 +395,7 @@ namespace DOL.GS
 		public override bool WhisperReceive(GameLiving source, string text)
 		{
 			// Everything below this comment should not exist in a strict 1.65 level. Feel free to add it back in if desired.
-			return false;
+
 			GamePlayer owner = (Brain as IControlledBrain).Owner as GamePlayer;
 
 			if (source == null || source != owner)
@@ -426,7 +426,7 @@ namespace DOL.GS
 						}
 						case "abomination":
 						{
-							SayTo(owner, $"As one of the chosen warriors of Arawn, I have a mighty arsenal of weapons at your disposal. If you wish it, I am able to [taunt] your enemies so that they will focus on me instead of you. {empower}");
+							SayTo(owner, $"As one of the chosen warriors of Arawn, I have a mighty arsenal of [weapons] at my disposal. If you wish it, I am able to [taunt] your enemies so that they will focus on me instead of you. {empower}");
 							return true;
 						}
 						default:

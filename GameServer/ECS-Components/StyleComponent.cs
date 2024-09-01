@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
@@ -56,7 +58,7 @@ namespace DOL.GS
         /// Holds the time at which the style was set
         /// </summary>
         protected long m_nextCombatStyleTime;
-        
+
         //if automatic backup styles are enabled, this is the one that will be used
         public Style AutomaticBackupStyle { get; set; }
 
@@ -127,7 +129,7 @@ namespace DOL.GS
                 player.Out.SendMessage($"{AutomaticBackupStyle.Name} is no longer a valid backup style for your spec level and has been cleared.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 AutomaticBackupStyle = null;
             }
-           
+
             //determine which style will actually be used
             Style styleToUse;
 
@@ -153,15 +155,17 @@ namespace DOL.GS
         public Style NPCGetStyleToUse()
         {
             var p = _owner as GameNPC;
-            if (p.Styles == null || p.Styles.Count < 1 || p.TargetObject == null)
-                return null;
+
+            MimicNPC mimic = _owner as MimicNPC;
+
+            if (mimic == null)
+            {
+                if (p.Styles == null || p.Styles.Count < 1 || p.TargetObject == null)
+                    return null;
+            }
 
             AttackData lastAttackData = p.attackComponent.attackAction.LastAttackData;
 
-            // Chain and defensive styles are excluded from the chance roll because they would almost never happen otherwise. 
-            // For example, an NPC blocks 10% of the time, so the default 20% style chance effectively means the defensive 
-            // style would only actually occur during 2% of of a mob's attacks. In comparison, a style chain would only happen 
-            // 0.4% of the time.
             if (p.StylesChain != null && p.StylesChain.Count > 0)
                 foreach (Style s in p.StylesChain)
                     if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
@@ -173,16 +177,18 @@ namespace DOL.GS
                         && p.CheckStyleStun(s)) // Make sure we don't spam stun styles like Brutalize
                         return s;
 
-            if (Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE))
+            bool chance = mimic != null ? true : Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE);
+
+            if (chance)
             {
-                // All of the remaining lists are randomly picked from,
-                // as this creates more variety with each combat result.
-                // For example, a mob with both Pincer and Ice Storm
-                // styles could potentially use one or the other with
-                // each attack roll that succeeds.
-                
-                // First, check positional styles (in order of back, side, front)
-                // in case the defender is facing another direction
+                if (mimic != null && !mimic.MimicBrain.PvPMode && mimic.MimicBrain.IsMainTank)
+                {
+                    Style s = CheckTaunt(mimic, lastAttackData);
+
+                    if (s != null)
+                        return s;
+                }
+
                 if (p.StylesBack != null && p.StylesBack.Count > 0)
                 {
                     Style s = p.StylesBack[Util.Random(0, p.StylesBack.Count - 1)];
@@ -204,9 +210,39 @@ namespace DOL.GS
                         return s;
                 }
 
-                // Pick a random anytime style
                 if (p.StylesAnytime != null && p.StylesAnytime.Count > 0)
-                    return p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                {
+                    Style s = p.StylesAnytime[Util.Random(0, p.StylesAnytime.Count - 1)];
+                    if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
+                            return s;
+                }
+
+                if (mimic != null && (mimic.MimicBrain.PvPMode || mimic.Group == null))
+                {
+                    Style s = CheckTaunt(mimic, lastAttackData);
+
+                    if (s != null)
+                        return s;
+                }
+            }
+
+            return null;
+        }
+
+        private Style CheckTaunt(MimicNPC mimic, AttackData lastAttackData)
+        {
+            if (mimic.ActiveWeapon != null)
+            {
+                if (mimic.StylesTaunt != null && mimic.StylesTaunt.Count > 0)
+                {
+                    foreach (Style s in mimic.StylesTaunt)
+                    {
+
+                        if (s.WeaponTypeRequirement == mimic.ActiveWeapon.Object_Type)
+                            if (StyleProcessor.CanUseStyle(lastAttackData, mimic, s, mimic.ActiveWeapon))
+                                return s;
+                    }
+                }
             }
 
             return null;

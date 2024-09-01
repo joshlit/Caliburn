@@ -1,52 +1,55 @@
 using DOL.GS.Effects;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
-	/// <summary>
-	/// Base class for spells with immunity like mez/root/stun/nearsight
-	/// </summary>
-	public abstract class ImmunityEffectSpellHandler : SpellHandler
-	{
-		/// <summary>
-		/// called when spell effect has to be started and applied to targets
-		/// </summary>
-		public override void FinishSpellCast(GameLiving target)
-		{
-			m_caster.Mana -= PowerCost(target);
-			base.FinishSpellCast(target);
-		}
+    /// <summary>
+    /// Base class for spells with immunity like mez/root/stun/nearsight
+    /// </summary>
+    public abstract class ImmunityEffectSpellHandler : SpellHandler
+    {
+        /// <summary>
+        /// called when spell effect has to be started and applied to targets
+        /// </summary>
+        public override void FinishSpellCast(GameLiving target)
+        {
+            m_caster.Mana -= PowerCost(target);
+            base.FinishSpellCast(target);
+        }
 
-		/// <summary>
-		/// Determines wether this spell is better than given one
-		/// </summary>
-		/// <param name="oldeffect"></param>
-		/// <param name="neweffect"></param>
-		/// <returns>true if this spell is better version than compare spell</returns>
-		public override bool IsNewEffectBetter(GameSpellEffect oldeffect, GameSpellEffect neweffect)
-		{
-			if (oldeffect.Owner is GamePlayer) return false; //no overwrite for players
-			return base.IsNewEffectBetter(oldeffect, neweffect);
-		}
+        /// <summary>
+        /// Determines wether this spell is better than given one
+        /// </summary>
+        /// <param name="oldeffect"></param>
+        /// <param name="neweffect"></param>
+        /// <returns>true if this spell is better version than compare spell</returns>
+        public override bool IsNewEffectBetter(GameSpellEffect oldeffect, GameSpellEffect neweffect)
+        {
+            if (oldeffect.Owner is IGamePlayer)
+                return false; //no overwrite for players
 
-		public override void ApplyEffectOnTarget(GameLiving target)
-		{
-			if (target == null || target.CurrentRegion == null)
-				return;
+            return base.IsNewEffectBetter(oldeffect, neweffect);
+        }
 
-			if (target.Realm == 0 || Caster.Realm == 0)
-			{
-				target.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
-				Caster.LastAttackTickPvE = GameLoop.GameLoopTime;
-			}
-			else
-			{
-				target.LastAttackedByEnemyTickPvP = GameLoop.GameLoopTime;
-				Caster.LastAttackTickPvP = GameLoop.GameLoopTime;
-			}
+        public override void ApplyEffectOnTarget(GameLiving target)
+        {
+            if (target == null || target.CurrentRegion == null)
+                return;
 
-			base.ApplyEffectOnTarget(target);
-			target.StartInterruptTimer(target.SpellInterruptDuration, AttackData.eAttackType.Spell, Caster);
-		}
+            if (target.Realm == 0 || Caster.Realm == 0)
+            {
+                target.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
+                Caster.LastAttackTickPvE = GameLoop.GameLoopTime;
+            }
+            else
+            {
+                target.LastAttackedByEnemyTickPvP = GameLoop.GameLoopTime;
+                Caster.LastAttackTickPvP = GameLoop.GameLoopTime;
+            }
+
+            base.ApplyEffectOnTarget(target);
+            target.StartInterruptTimer(target.SpellInterruptDuration, AttackData.eAttackType.Spell, Caster);
+        }
 
 		protected override int CalculateEffectDuration(GameLiving target)
 		{
@@ -62,12 +65,14 @@ namespace DOL.GS.Spells
 
 			duration -= duration * target.GetResistBase(Spell.DamageType) * 0.01;
 
-			if (duration < 1)
-				duration = 1;
-			else if (duration > (Spell.Duration * 4))
-				duration = (Spell.Duration * 4);
-			return (int)duration;
-		}
+            if (duration < 1)
+                duration = 1;
+            else if (duration > (Spell.Duration * 4))
+                duration = (Spell.Duration * 4);
+
+            return
+                (int)duration;
+        }
 
 		/// <summary>
 		/// Creates the corresponding spell effect for the spell
@@ -80,12 +85,12 @@ namespace DOL.GS.Spells
 			return new GameSpellAndImmunityEffect(this, CalculateEffectDuration(target), 0, effectiveness);
 		}
 
-		/// <summary>
-		/// constructor
-		/// </summary>
-		/// <param name="caster">The spell caster</param>
-		/// <param name="spell">The spell being cast</param>
-		/// <param name="spellLine">The spell's spellline</param>
-		public ImmunityEffectSpellHandler(GameLiving caster, Spell spell, SpellLine spellLine) : base(caster, spell, spellLine) {}
-	}
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="caster">The spell caster</param>
+        /// <param name="spell">The spell being cast</param>
+        /// <param name="spellLine">The spell's spellline</param>
+        public ImmunityEffectSpellHandler(GameLiving caster, Spell spell, SpellLine spellLine) : base(caster, spell, spellLine) { }
+    }
 }

@@ -22,7 +22,7 @@ namespace DOL.GS
     /// <summary>
     /// all available and buffable/bonusable properties on livings
     /// </summary>
-    public enum eProperty : byte
+    public enum eProperty : int
 	{
 		Undefined = 0,
 		// Note, these are set in the ItemDB now.  Changing
@@ -326,6 +326,15 @@ namespace DOL.GS
 		RealmPoints = 253,
 		ArcaneSyphon = 254,
 		LivingEffectiveness = 255,
-		MaxProperty = 255
+
+
+
+		Socket_Charge = 300,
+        Socket_Proc = 301,
+        Socket_Stat = 302,
+
+
+
+        MaxProperty = 10000,
 	}
 }

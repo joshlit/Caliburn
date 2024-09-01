@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using DOL.Database;
+using DOL.GS.Scripts;
 using DOL.GS.Styles;
 using static DOL.GS.GameObject;
 
@@ -212,7 +213,7 @@ namespace DOL.GS
             }
 
             // Damage is doubled on sitting players, but only with melee weapons; arrows and magic do normal damage.
-            if (_target is GamePlayer playerTarget && playerTarget.IsSitting)
+            if (_target is IGamePlayer playerTarget && playerTarget.IsSitting)
                 _effectiveness *= 2;
 
             _interruptDuration = attackSpeed;
@@ -227,7 +228,7 @@ namespace DOL.GS
             {
                 _owner.rangeAttackComponent.RangedAttackState = eRangedAttackState.Aim;
 
-                if (_owner is not GamePlayer || !_owner.effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
+                if (_owner is not IGamePlayer || !_owner.effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
                 {
                     // The 'stance' parameter appears to be used to tell whether or not the animation should be held, and doesn't seem to be related to the weapon speed.
                     foreach (GamePlayer player in _owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))

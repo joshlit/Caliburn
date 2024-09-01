@@ -313,7 +313,7 @@ namespace DOL.GS
 
             static bool Predicate(GamePlayer player, object unused)
             {
-                return player.Client.Account.PrivLevel == (uint) ePrivLevel.Player;
+                return player.Client.Account.PrivLevel == (uint)ePrivLevel.Player;
             }
         }
 
@@ -323,7 +323,7 @@ namespace DOL.GS
 
             static bool Predicate(GamePlayer player, object unused)
             {
-                return player.Client.Account.PrivLevel > (uint) ePrivLevel.Player;
+                return player.Client.Account.PrivLevel > (uint)ePrivLevel.Player;
             }
         }
 
@@ -442,7 +442,7 @@ namespace DOL.GS
 
             static bool Predicate(GameClient client, GameClient otherClient)
             {
-                return client.Account != null && client.Account.PrivLevel <= (uint) ePrivLevel.Player && client.TcpEndpointAddress.Equals(otherClient.TcpEndpointAddress) && client != otherClient;
+                return client.Account != null && client.Account.PrivLevel <= (uint)ePrivLevel.Player && client.TcpEndpointAddress.Equals(otherClient.TcpEndpointAddress) && client != otherClient;
             }
         }
 
@@ -472,7 +472,7 @@ namespace DOL.GS
             if (player.NpcUpdateCache.TryGetValue(npc, out CachedNpcValues cachedNpcValues))
             {
                 cachedNpcValues.Time = GameLoop.GameLoopTime;
-                cachedNpcValues.HealthPercent =  npc.HealthPercent;
+                cachedNpcValues.HealthPercent = npc.HealthPercent;
             }
             else
                 player.NpcUpdateCache[npc] = new CachedNpcValues(GameLoop.GameLoopTime, npc.HealthPercent);
