@@ -677,7 +677,7 @@ namespace DOL.AI.Brain
 
             // Only BAF on players and pets of players
             if (puller is IGamePlayer)
-                playerPuller = (IGamePlayer) puller;
+                playerPuller = (IGamePlayer)puller;
             else if (puller is GameNPC pet && pet.Brain is ControlledMobBrain brain)
             {
                 GameLiving livingOwner = brain.GetLivingOwner();

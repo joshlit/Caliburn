@@ -3,6 +3,7 @@ using System.Linq;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.ServerProperties;
+using DOL.GS.Spells;
 
 namespace DOL.GS
 {
@@ -44,7 +45,9 @@ namespace DOL.GS
             Owner.DisableTurning(false);
             UpdatePlayerStatus();
 
-            if (SpellHandler.Caster is GamePlayer)
+            if (SpellHandler.Caster.Realm == 0 || Owner.Realm == 0)
+                Owner.LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
+            else
                 Owner.LastAttackedByEnemyTickPvP = GameLoop.GameLoopTime;
         }
 

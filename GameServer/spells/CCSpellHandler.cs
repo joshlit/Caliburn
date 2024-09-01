@@ -173,7 +173,7 @@ namespace DOL.GS.Spells
                 earlyResist = true;
             }
 
-            if (target is GameNPC && target.HealthPercent < 75)
+            if (target is GameNPC && target is not MimicNPC && target.HealthPercent < 75)
             {
                 MessageToCaster("Your target is enraged and resists the spell!", eChatType.CT_System);
                 earlyResist = true;

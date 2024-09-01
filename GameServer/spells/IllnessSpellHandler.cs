@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DOL.Database;
 using DOL.GS.Effects;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -12,7 +13,7 @@ namespace DOL.GS.Spells
 	{
 		public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
 		{
-			GamePlayer targetPlayer = Target as GamePlayer;
+			IGamePlayer targetPlayer = Target as IGamePlayer;
 
 			if (targetPlayer != null)
             {

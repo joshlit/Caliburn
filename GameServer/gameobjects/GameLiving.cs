@@ -1010,15 +1010,10 @@ namespace DOL.GS
 		public virtual bool IsBeingInterrupted => IsBeingInterruptedIgnoreSelfInterrupt || SelfInterruptTime > GameLoop.GameLoopTime;
 		public virtual bool IsBeingInterruptedIgnoreSelfInterrupt => InterruptTime > GameLoop.GameLoopTime;
 
-        /// <summary>
-        /// Base chance this living can be interrupted
-        /// </summary>
-        public virtual int BaseInterruptChance => 95;
-
-        /// <summary>
-        /// How long does an interrupt last?
-        /// </summary>
-        public virtual int SpellInterruptDuration => Properties.SPELL_INTERRUPT_DURATION;
+		/// <summary>
+		/// How long does an interrupt last?
+		/// </summary>
+		public virtual int SpellInterruptDuration => Properties.SPELL_INTERRUPT_DURATION;
 
         /// <summary>
         /// Additional interrupt time if interrupted again
@@ -1075,13 +1070,13 @@ namespace DOL.GS
 
             // Proc chance is 2.5% per SPD, i.e. 10% for a 3.5 SPD weapon. - Tolakram, changed average speed to 3.5
 
-            double procChance = (weapon.ProcChance > 0 ? weapon.ProcChance : 10) * (weapon.SPD_ABS / 35.0);
+            int procChance = (int)Math.Ceiling((weapon.ProcChance > 0 ? weapon.ProcChance : 10) * (weapon.SPD_ABS / 35.0));
 
             //Error protection and log for Item Proc's
             Spell procSpell = null;
             Spell procSpell1 = null;
 
-            if (this is GamePlayer)
+            if (this is IGamePlayer)
             {
                 procSpell = SkillBase.GetSpellByID(weapon.ProcSpellID);
                 procSpell1 = SkillBase.GetSpellByID(weapon.ProcSpellID1);
@@ -1097,15 +1092,14 @@ namespace DOL.GS
             }
 
             // Proc #1
-            if (procSpell != null && Util.ChanceDouble(procChance))
+            if (procSpell != null && Util.Chance(procChance))
                 StartWeaponMagicalEffect(weapon, ad, SkillBase.GetSpellLine(GlobalSpellsLines.Item_Effects), weapon.ProcSpellID, false);
 
             // Proc #2
-            if (procSpell1 != null && Util.ChanceDouble(procChance))
+            if (procSpell1 != null && Util.Chance(procChance))
                 StartWeaponMagicalEffect(weapon, ad, SkillBase.GetSpellLine(GlobalSpellsLines.Item_Effects), weapon.ProcSpellID1, false);
 
             // Poison
-
             if (weapon.PoisonSpellID != 0)
             {
                 if (ad.Target.EffectList.GetOfType<RemedyEffect>() != null)
@@ -1177,20 +1171,20 @@ namespace DOL.GS
                         {
                             bool rangeCheck = spellHandler.Spell.Target == eSpellTarget.ENEMY && spellHandler.Spell.Range > 0;
 
-                            if (!rangeCheck || ad.Attacker.IsWithinRadius(ad.Target, spellHandler.CalculateSpellRange()))
-                                spellHandler.StartSpell(ad.Target, weapon);
-                        }
-                    }
-                }
-            }
-        }
+							if (!rangeCheck || ad.Attacker.IsWithinRadius(ad.Target, spellHandler.CalculateSpellRange()))
+								spellHandler.StartSpell(ad.Target, weapon);
+						}
+					}
+				}
+			}
+		}
 
-		/// <summary>
-		/// Remove engage effect on this living if it is present.
-		/// </summary>
-		public void CancelEngageEffect()
-		{
-			EngageECSGameEffect effect = (EngageECSGameEffect)EffectListService.GetEffectOnTarget(this, eEffect.Engage);
+        /// <summary>
+        /// Remove engage effect on this living if it is present.
+        /// </summary>
+        public void CancelEngageEffect()
+        {
+            EngageECSGameEffect effect = (EngageECSGameEffect)EffectListService.GetEffectOnTarget(this, eEffect.Engage);
 
             if (effect != null)
                 effect.Cancel(false, false);
@@ -1950,7 +1944,7 @@ namespace DOL.GS
 					// Non-damaging spells that always break mez.
 					removeMez = true;
 				}
-				else if ((ad.IsSpellResisted || this is GameNPC) && ad.SpellHandler is not MesmerizeSpellHandler)
+				else if ((ad.IsSpellResisted || this is GameNPC && this is not MimicNPC) && ad.SpellHandler is not MesmerizeSpellHandler)
 					removeMez = true;
 			}
 
@@ -2993,7 +2987,7 @@ namespace DOL.GS
 
 			if (this is NecromancerPet necroPet && necroPet.Brain is IControlledBrain necroBrain)
 			{
-				GamePlayer player = necroBrain.GetPlayerOwner();
+				IGamePlayer player = necroBrain.GetIPlayerOwner();
 
 				if (player != null && DamageRvRMemory > 0)
 				{
@@ -3036,7 +3030,7 @@ namespace DOL.GS
 			{
 				int stackingBonus = 0;
 
-				if (this is GamePlayer p)
+				if (this is IGamePlayer p)
 					stackingBonus = p.PowerRegenStackingBonus;
 
 				if (Mana < MaxMana)

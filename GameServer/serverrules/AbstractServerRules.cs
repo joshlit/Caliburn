@@ -435,9 +435,10 @@ namespace DOL.GS.ServerRules
 				if (attacknpc is GameSummonedPet || attacknpc.Brain is ControlledMobBrain)
 					return true;
 
-				// Mobs can attack mobs only if they both have a faction or if any is confused.
-				if ((defendnpc.Faction == null || attacknpc.Faction == null) && !defendnpc.IsConfused && !attacknpc.IsConfused)
-					return false;
+                // Mobs can attack mobs only if they both have a faction or if any is confused.
+                if (attacknpc is not MimicNPC && defendnpc is not MimicNPC)
+                    if ((defendnpc.Faction == null || attacknpc.Faction == null) && !defendnpc.IsConfused && !attacknpc.IsConfused)
+						return false;
 			}
 
 			// Checking for shadowed necromancer, can't be attacked.
@@ -951,7 +952,7 @@ namespace DOL.GS.ServerRules
 		/// <param name="player">player whom specializations are checked</param>
 		/// <param name="objectType">object type</param>
 		/// <returns>specialization in object or 0</returns>
-		public virtual int GetObjectSpecLevel(GamePlayer player, eObjectType objectType)
+		public virtual int GetObjectSpecLevel(IGamePlayer player, eObjectType objectType)
 		{
 			int res = 0;
 
@@ -970,7 +971,7 @@ namespace DOL.GS.ServerRules
 		/// <param name="player">player whom specializations are checked</param>
 		/// <param name="objectType">object type</param>
 		/// <returns>specialization in object or 0</returns>
-		public virtual int GetObjectBaseSpecLevel(GamePlayer player, eObjectType objectType)
+		public virtual int GetObjectBaseSpecLevel(IGamePlayer player, eObjectType objectType)
 		{
 			int res = 0;
 
@@ -1220,12 +1221,12 @@ namespace DOL.GS.ServerRules
 			if (de.Key is not GameLiving living || living.ObjectState != GameObject.eObjectState.Active || !living.IsWithinRadius(killedNPC, WorldMgr.MAX_EXPFORKILL_DISTANCE))
 				return;
 
-			GamePlayer player;
+			IGamePlayer player;
 
 			if (living is NecromancerPet necroPet && necroPet.Brain is IControlledBrain necroBrain)
 				player = necroBrain.GetPlayerOwner();
 			else
-				player = living as GamePlayer;
+				player = living as IGamePlayer;
 
 			double damagePercent = (float) de.Value / totalDamage;
 
@@ -1333,9 +1334,9 @@ namespace DOL.GS.ServerRules
 				 * challenge code may not kick in. It could also kick in if the monster is low yellow to the high level player, depending on the group strength of the pair.
 				 */
 
-				GamePlayer highestLevelPlayerInGroup = player;
+				IGamePlayer highestLevelPlayerInGroup = player;
 
-				foreach (GamePlayer gamePlayer in player.Group.GetPlayersInTheGroup())
+				foreach (IGamePlayer gamePlayer in player.Group.GetIPlayersInTheGroup())
 				{
 					if (gamePlayer.Level > highestLevelPlayerInGroup.Level)
 						highestLevelPlayerInGroup = gamePlayer;
@@ -1400,7 +1401,7 @@ namespace DOL.GS.ServerRules
 				else if (conColorForHighestLevelPlayerInGroup == ConColor.YELLOW)
 					level = player.Level;
 
-				if (player.XPLogState is eXPLogState.Verbose)
+				if (player is GamePlayer && ((GamePlayer)player).XPLogState is eXPLogState.Verbose)
 					player.Out.SendMessage($"Base XP set to match the one of a level {level} NPC", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
 				// If level is still 0 here, something might have gone wrong or the player's level is very low.
@@ -1509,25 +1510,26 @@ namespace DOL.GS.ServerRules
 
 			void ShowXpStatsToPlayer()
 			{
-				if (player == null || (player.XPLogState is not eXPLogState.On && player.XPLogState is not eXPLogState.Verbose))
+                GamePlayer gplayer = player as GamePlayer;
+                if (gplayer == null || (gplayer.XPLogState is not eXPLogState.On && gplayer.XPLogState is not eXPLogState.Verbose))
 					return;
 
 				System.Globalization.NumberFormatInfo format = System.Globalization.NumberFormatInfo.InvariantInfo;
 
 				player.Out.SendMessage($"Base XP: {baseXpReward.ToString("N0", format)} | Solo Cap : {xpCap.ToString("N0", format)} | %Cap: {(double) baseXpReward / xpCap * 100:0.##}%", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
-				if (player.XPLogState is eXPLogState.Verbose)
+				if (gplayer.XPLogState is eXPLogState.Verbose)
 				{
 					if (modifiedByDamage && damagePercent < 1)
 						player.Out.SendMessage($"%Damage inflicted: {damagePercent:0.##}%", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
-					double levelPercent = (double) (player.Experience + totalReward - player.ExperienceForCurrentLevel) / (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) * 100.0;
+					double levelPercent = (double) (gplayer.Experience + totalReward - gplayer.ExperienceForCurrentLevel) / (gplayer.ExperienceForNextLevel - gplayer.ExperienceForCurrentLevel) * 100.0;
 					double campPercent = (double) campBonus / baseXpReward * 100.0;
 					double groupPercent = (double) groupBonus / baseXpReward * 100.0;
 					double outpostPercent = (double) outpostBonus / baseXpReward * 100.0;
 
-					player.Out.SendMessage($"XP needed: {player.ExperienceForNextLevel.ToString("N0", format)} | {levelPercent:0.##}% done with current level", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-					player.Out.SendMessage($"# of kills needed to level at this rate: {(double) (player.ExperienceForNextLevel - player.Experience) / totalReward:0.##}", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					player.Out.SendMessage($"XP needed: {gplayer.ExperienceForNextLevel.ToString("N0", format)} | {levelPercent:0.##}% done with current level", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					player.Out.SendMessage($"# of kills needed to level at this rate: {(double) (gplayer.ExperienceForNextLevel - gplayer.Experience) / totalReward:0.##}", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
 					if (campBonus > 0)
 						player.Out.SendMessage($"Camp: {campBonus.ToString("N0", format)} | {campPercent:0.##}% bonus", eChatType.CT_System, eChatLoc.CL_SystemWindow);

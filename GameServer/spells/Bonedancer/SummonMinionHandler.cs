@@ -40,7 +40,7 @@ namespace DOL.GS.Spells
 
         public override bool CheckBeginCast(GameLiving selectedTarget)
         {
-            if (Caster is GamePlayer playerCaster)
+            if (Caster is IGamePlayer playerCaster)
             {
                 IControlledBrain controlledBrain = playerCaster.ControlledBrain;
 
@@ -69,7 +69,8 @@ namespace DOL.GS.Spells
                 if (newPetLevel > m_spell.Value)
                     newPetLevel = (byte) m_spell.Value;
 
-                if (cumulativeLevel + newPetLevel > 75)
+                // Kaedius OD defaults to 75. Kept Caliburn
+                if (cumulativeLevel + newPetLevel > 122)
                 {
                     MessageToCaster("Your commander is not powerful enough to control a minion of this level.", eChatType.CT_SpellResisted);
                     return false;

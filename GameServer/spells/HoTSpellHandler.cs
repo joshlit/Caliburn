@@ -74,7 +74,7 @@ namespace DOL.GS.Spells
 
             if (target.DamageRvRMemory > 0 &&
                 (target is NecromancerPet &&
-                ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null
+                ((target as NecromancerPet).Brain as IControlledBrain).GetIPlayerOwner() != null
                 || target is IGamePlayer))
             {
                 if (target.DamageRvRMemory > 0)

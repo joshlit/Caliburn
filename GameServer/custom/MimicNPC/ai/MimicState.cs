@@ -53,7 +53,7 @@ namespace DOL.AI.Brain
                 _brain.Roam = true;
                 _brain.Defend = false;
 
-                _brain.Body.RoamingRange = 10000;
+                _brain.Body.RoamingRange = 100000;
 
                 //_brain.CheckDefensiveAbilities();
                 //_brain.Body.SortSpells();
@@ -390,8 +390,9 @@ namespace DOL.AI.Brain
                     {
                         _nextRoamingTickSet = true;
                         _nextRoamingTick += Util.Random(MinCooldown, MaxCooldown) * 1000;
+                        _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
                     }
-
+                    
                     if (ServiceUtils.ShouldTickAdjust(ref _nextRoamingTick))
                     {
                         // We're not updating `_nextRoamingTick` here because we want it to be set after the NPC stopped moving.

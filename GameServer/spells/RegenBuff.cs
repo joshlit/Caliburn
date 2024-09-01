@@ -20,6 +20,7 @@
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.PropertyCalc;
+using DOL.GS.Scripts;
 using System.Collections;
 using System.Collections.Specialized;
 
@@ -47,10 +48,10 @@ namespace DOL.GS.Spells
     {
         public override void ApplyEffectOnTarget(GameLiving target)
         {
-            if (target is GamePlayer && (((GamePlayer)target).CharacterClass.ID == (int)eCharacterClass.Vampiir
-                || ((GamePlayer)target).CharacterClass.ID == (int)eCharacterClass.MaulerAlb
-                || ((GamePlayer)target).CharacterClass.ID == (int)eCharacterClass.MaulerMid
-                || ((GamePlayer)target).CharacterClass.ID == (int)eCharacterClass.MaulerHib)) { MessageToCaster("This spell has no effect on this class!", eChatType.CT_Spell); return; }
+            if (target is IGamePlayer && (((IGamePlayer)target).CharacterClass.ID == (int)eCharacterClass.Vampiir
+                || ((IGamePlayer)target).CharacterClass.ID == (int)eCharacterClass.MaulerAlb
+                || ((IGamePlayer)target).CharacterClass.ID == (int)eCharacterClass.MaulerMid
+                || ((IGamePlayer)target).CharacterClass.ID == (int)eCharacterClass.MaulerHib)) { MessageToCaster("This spell has no effect on this class!", eChatType.CT_Spell); return; }
 			base.ApplyEffectOnTarget(target);
 		}
 		public override eBuffBonusCategory BonusCategory1 { get { return eBuffBonusCategory.BaseBuff; } }
