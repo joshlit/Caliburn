@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using DOL.Database;
 using DOL.GS.PacketHandler;
-using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using log4net;
 
@@ -352,7 +351,7 @@ namespace DOL.GS.Keeps
 				toughness = 25; //Our "normal" toughness is 10% for OF keeps, increasing damage on Thid CK doors
 			}
 
-			if (source is IGamePlayer)
+			if (source is GamePlayer)
 			{
 				baseDamage = (baseDamage - (baseDamage * 5 * Component.Keep.Level / 100)) * toughness / 100;
 				styleDamage = (styleDamage - (styleDamage * 5 * Component.Keep.Level / 100)) * toughness / 100;

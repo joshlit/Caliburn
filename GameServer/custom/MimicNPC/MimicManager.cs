@@ -25,8 +25,8 @@ namespace DOL.GS.Scripts
                                                     new Point3D(37200, 51200, 3950),
                                                     new Point3D(19820, 19305, 4050),
                                                     new Point3D(53300, 26100, 4270),
-                                                    600,
-                                                    600,
+                                                    30,
+                                                    120,
                                                     20,
                                                     24);
         }

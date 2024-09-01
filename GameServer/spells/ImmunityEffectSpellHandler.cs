@@ -60,7 +60,7 @@ namespace DOL.GS.Spells
 			// work against monsters, only realm enemies (i.e. enemy players and enemy realm guards).
 			double duration = base.CalculateEffectDuration(target);
 
-			if (!(target is IGamePlayer) && !(target is Keeps.GameKeepGuard))
+			if (!(target is GamePlayer) && !(target is Keeps.GameKeepGuard))
 				return (int)duration;
 
 			duration -= duration * target.GetResistBase(Spell.DamageType) * 0.01;

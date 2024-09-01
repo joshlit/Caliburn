@@ -10,13 +10,6 @@ using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
 using DOL.GS.Styles;
 using DOL.Language;
-using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using static DOL.GS.GameObject;
 
 namespace DOL.GS
@@ -221,13 +214,14 @@ namespace DOL.GS
 
             get
             {
-                if (owner is IGamePlayer player)
+                if (owner is IGamePlayer)
                 {
                     DbInventoryItem weapon = owner.ActiveWeapon;
 
                     if (weapon == null)
                         return 0;
 
+                    var player = owner as IGamePlayer;
                     GameLiving target = player.TargetObject as GameLiving;
 
                     // TODO: Change to real distance of bows.
@@ -1700,7 +1694,7 @@ namespace DOL.GS
         {
             double weaponSkill = (baseWeaponSkill + INHERENT_WEAPON_SKILL) * specModifier;
 
-            if (owner is IGamePlayer)
+            if (owner is GamePlayer)
                 weaponSkill *= relicBonus;
 
             return weaponSkill;
@@ -1746,7 +1740,7 @@ namespace DOL.GS
             armorFactor = target.GetArmorAF(armorSlot) + INHERENT_ARMOR_FACTOR;
 
             // Gives an extra 0.4~20 bonus AF to players. Ideally this should be done in `ArmorFactorCalculator`.
-            if (target is IGamePlayer)
+            if (target is GamePlayer)
                 armorFactor += target.Level * 20 / 50.0;
 
             absorb = target.GetArmorAbsorb(armorSlot);
@@ -2692,7 +2686,7 @@ namespace DOL.GS
             int missChance = ad.Attacker is IGamePlayer or GameSummonedPet ? 18 : 25;
             missChance -= ad.Attacker.GetModified(eProperty.ToHitBonus);
 
-            if (owner is not IGamePlayer || ad.Attacker is not IGamePlayer)
+            if (owner is not GamePlayer || ad.Attacker is not GamePlayer)
             {
                 missChance += 5 * ad.Attacker.GetConLevel(owner);
                 missChance -= Math.Max(0, Attackers.Count - 1) * Properties.MISSRATE_REDUCTION_PER_ATTACKERS;

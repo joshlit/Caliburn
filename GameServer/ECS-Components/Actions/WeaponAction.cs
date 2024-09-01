@@ -149,7 +149,7 @@ namespace DOL.GS
             else
                 mainHandAD = _owner.attackComponent.MakeAttack(this, _target, mainWeapon, style, mainHandEffectiveness, _interruptDuration, false);
 
-            _owner.attackComponent.attackAction.LastAttackData = mainHandAD;
+            m_owner.TempProperties.SetProperty(LAST_ATTACK_DATA, mainHandAD);
 
             if (mainHandAD.Target == null ||
                 mainHandAD.AttackResult == eAttackResult.OutOfRange ||
@@ -266,8 +266,8 @@ namespace DOL.GS
 
             if (mainHandAD.AttackType == AttackData.eAttackType.Ranged)
             {
-                _owner.CheckWeaponMagicalEffect(mainHandAD, mainWeapon);
-                HandleDamageAdd(_owner, mainHandAD);
+                m_owner.CheckWeaponMagicalEffect(mainHandAD, mainWeapon);
+                HandleDamageAdd(m_owner, mainHandAD);
             }
 
             switch (mainHandAD.AttackResult)

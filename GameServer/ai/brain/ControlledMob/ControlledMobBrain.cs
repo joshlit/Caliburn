@@ -30,6 +30,8 @@ namespace DOL.AI.Brain
 		public const short MIN_OWNER_FOLLOW_DIST = 50;
 		//4000 - rough guess, needs to be confirmed
 		public const short MAX_OWNER_FOLLOW_DIST = 10000; // setting this to max stick distance
+		public const short MIN_ENEMY_FOLLOW_DIST = 90;
+		public const short MAX_ENEMY_FOLLOW_DIST = 5000;
 
         protected int m_tempX = 0;
         protected int m_tempY = 0;
@@ -79,6 +81,8 @@ namespace DOL.AI.Brain
 		}
 
 		protected bool m_isMainPet = true;
+        public bool checkAbility;
+        public bool sortedSpells;
 
         public override int AggroRange => Math.Min(base.AggroRange, MAX_PET_AGGRO_DISTANCE);
 
@@ -142,16 +146,6 @@ namespace DOL.AI.Brain
                 throw new Exception("Unrecognized owner: " + owner.GetType().FullName);
 
             //No GamePlayer at the top of the tree
-            return null;
-        }
-
-        public virtual IGamePlayer GetIPlayerOwner()
-        {
-            GameLiving living = GetLivingOwner();
-
-            if (living != null && living is IGamePlayer player)
-                return player;
-
             return null;
         }
 
@@ -427,11 +421,11 @@ namespace DOL.AI.Brain
 				{
 					case Abilities.Intercept:
 					{
-						IGamePlayer playerOwner = GetIPlayerOwner();
+						GamePlayer playerOwner = GetPlayerOwner();
 
 						if (playerOwner != null)
 						{
-							InterceptAbilityHandler.CheckExistingEffectsOnTarget(Body, (GameLiving)playerOwner, false, out bool foundOurEffect, out InterceptECSGameEffect existingEffectFromAnotherSource);
+							InterceptAbilityHandler.CheckExistingEffectsOnTarget(Body, playerOwner, false, out bool foundOurEffect, out InterceptECSGameEffect existingEffectFromAnotherSource);
 
 							if (foundOurEffect)
 								break;
@@ -439,18 +433,18 @@ namespace DOL.AI.Brain
 							if (existingEffectFromAnotherSource != null)
 								EffectService.RequestImmediateCancelEffect(existingEffectFromAnotherSource);
 
-							new InterceptECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1), Body, (GameLiving)playerOwner);
+							new InterceptECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1), Body, playerOwner);
 						}
 
                         break;
                     }
                     case Abilities.Guard:
                     {
-                        IGamePlayer playerOwner = GetIPlayerOwner();
+                        GamePlayer playerOwner = GetPlayerOwner();
 
                         if (playerOwner != null)
                         {
-                            GuardAbilityHandler.CheckExistingEffectsOnTarget(Body, (GameLiving)playerOwner, false, out bool foundOurEffect, out GuardECSGameEffect existingEffectFromAnotherSource);
+                            GuardAbilityHandler.CheckExistingEffectsOnTarget(Body, playerOwner, false, out bool foundOurEffect, out GuardECSGameEffect existingEffectFromAnotherSource);
 
                             if (foundOurEffect)
                                 break;
@@ -458,18 +452,18 @@ namespace DOL.AI.Brain
 							if (existingEffectFromAnotherSource != null)
 								EffectService.RequestImmediateCancelEffect(existingEffectFromAnotherSource);
 
-							new GuardECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1, null), Body, (GameLiving)playerOwner);
+							new GuardECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1, null), Body, playerOwner);
 						}
 
                         break;
                     }
                     case Abilities.Protect:
                     {
-                        IGamePlayer playerOwner = GetIPlayerOwner();
+                        GamePlayer playerOwner = GetPlayerOwner();
 
 						if (playerOwner != null)
 						{
-							ProtectAbilityHandler.CheckExistingEffectsOnTarget(Body, (GameLiving)playerOwner, false, out bool foundOurEffect, out ProtectECSGameEffect existingEffectFromAnotherSource);
+							ProtectAbilityHandler.CheckExistingEffectsOnTarget(Body, playerOwner, false, out bool foundOurEffect, out ProtectECSGameEffect existingEffectFromAnotherSource);
 
 							if (foundOurEffect)
 								break;
@@ -477,7 +471,7 @@ namespace DOL.AI.Brain
 							if (existingEffectFromAnotherSource != null)
 								EffectService.RequestImmediateCancelEffect(existingEffectFromAnotherSource);
 
-							new ProtectECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1, null), Body, (GameLiving)playerOwner);
+							new ProtectECSGameEffect(new ECSGameEffectInitParams(Body, 0, 1, null), Body, playerOwner);
 						}
 
                         break;

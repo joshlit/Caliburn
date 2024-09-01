@@ -139,8 +139,7 @@ namespace DOL.GS.Spells
 
 		protected virtual void DealDamage(GameLiving target)
 		{
-			if (!target.IsAlive || target.ObjectState != GameLiving.eObjectState.Active)
-				return;
+			if (!target.IsAlive || target.ObjectState != GameLiving.eObjectState.Active) return;
 
 			// calc damage
 			AttackData ad = CalculateDamageToTarget(target);

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using DOL.Database;
 using DOL.GS.Keeps;
-using DOL.GS.Scripts;
 
 namespace DOL.GS.ServerRules
 {
@@ -198,7 +197,7 @@ namespace DOL.GS.ServerRules
 		/// <param name="player">player whom specializations are checked</param>
 		/// <param name="objectType">object type</param>
 		/// <returns>specialization in object or 0</returns>
-		int GetObjectSpecLevel(IGamePlayer player, eObjectType objectType);
+		int GetObjectSpecLevel(GamePlayer player, eObjectType objectType);
 
 		/// <summary>
 		/// Get object specialization level based on server type
@@ -206,7 +205,7 @@ namespace DOL.GS.ServerRules
 		/// <param name="player">player whom specializations are checked</param>
 		/// <param name="objectType">object type</param>
 		/// <returns>specialization in object or 0</returns>
-		int GetObjectBaseSpecLevel(IGamePlayer player, eObjectType objectType);
+		int GetObjectBaseSpecLevel(GamePlayer player, eObjectType objectType);
 
 		/// <summary>
 		/// Invoked on NPC death and deals out

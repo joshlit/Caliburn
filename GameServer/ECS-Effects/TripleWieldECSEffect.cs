@@ -71,7 +71,8 @@ namespace DOL.GS
 			int modifier = 100;
 			//double dpsCap = (1.2 + 0.3 * attacker.Level) * 0.7;
 			//double dps = Math.Min(atkArgs.AttackData.Weapon.DPS_AF/10.0, dpsCap);
-			double baseDamage = attackData.Weapon.DPS_AF * attackData.WeaponSpeed * 0.001;
+			double baseDamage = attackData.Weapon.DPS_AF / 10.0 *
+								attackData.WeaponSpeed;
 
 			modifier += 25 * attackData.Target.GetConLevel(attackData.Attacker);
 			modifier = Math.Min(300, modifier);

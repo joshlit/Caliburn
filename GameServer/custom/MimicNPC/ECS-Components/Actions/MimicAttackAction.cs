@@ -24,9 +24,9 @@ namespace DOL.GS
         private bool HasLosOnCurrentTarget => _losCheckTarget == _target && _hasLos;
 
 
-        public MimicAttackAction(MimicNPC owner) : base(owner)
+        public MimicAttackAction(MimicNPC mimicOwner) : base(mimicOwner)
         {
-            _mimicOwner = owner;
+            _mimicOwner = mimicOwner;
         }
 
         protected override bool PrepareMeleeAttack()
@@ -115,7 +115,7 @@ namespace DOL.GS
                 _mimicOwner.SwitchToMelee(_target);
         }
 
-        protected override void CleanUp()
+        public override void CleanUp()
         {
             if (_mimicOwner.Brain is NecromancerPetBrain necromancerPetBrain)
                 necromancerPetBrain.ClearAttackSpellQueue();

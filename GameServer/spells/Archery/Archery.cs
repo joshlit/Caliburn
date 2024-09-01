@@ -4,7 +4,6 @@ using System.Linq;
 using DOL.AI.Brain;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
-using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -41,7 +40,7 @@ namespace DOL.GS.Spells
 				return false;
 			}
 
-			if (Caster is IGamePlayer && Caster.ActiveWeapon != null && GlobalConstants.IsBowWeapon((eObjectType) Caster.ActiveWeapon.Object_Type))
+			if (Caster is GamePlayer && Caster.ActiveWeapon != null && GlobalConstants.IsBowWeapon((eObjectType) Caster.ActiveWeapon.Object_Type))
 			{
 				if (Spell.LifeDrainReturn == (int) eShotType.Critical && !Caster.IsStealthed)
 				{
@@ -77,7 +76,7 @@ namespace DOL.GS.Spells
 			// miss rate is 0 on same level opponent
 			int hitchance = 100 + bonustohit;
 
-			if (Caster is not IGamePlayer || target is not IGamePlayer)
+			if (Caster is not GamePlayer || target is not GamePlayer)
 			{
 				hitchance -= (int)(Caster.GetConLevel(target) * ServerProperties.Properties.PVE_SPELL_CONHITPERCENT);
 				hitchance += Math.Max(0, target.attackComponent.Attackers.Count - 1) * ServerProperties.Properties.MISSRATE_REDUCTION_PER_ATTACKERS;
@@ -118,7 +117,7 @@ namespace DOL.GS.Spells
 		public override AttackData CalculateDamageToTarget(GameLiving target)
 		{
 			AttackData ad = base.CalculateDamageToTarget(target);
-			IGamePlayer player;
+			GamePlayer player;
 			//GameSpellEffect bladeturn = FindEffectOnTarget(target, "Bladeturn");
             target.effectListComponent.Effects.TryGetValue(eEffect.Bladeturn, out var bladeturn);
 			if (bladeturn != null)
@@ -127,9 +126,9 @@ namespace DOL.GS.Spells
 				{
 					case (int)eShotType.Critical:
 						{
-							if (target is IGamePlayer)
+							if (target is GamePlayer)
 							{
-								player = target as IGamePlayer;
+								player = target as GamePlayer;
 								player.Out.SendMessage("A shot penetrated your magic barrier!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 							}
 							ad.AttackResult = eAttackResult.HitUnstyled;
@@ -138,7 +137,7 @@ namespace DOL.GS.Spells
 
 					case (int)eShotType.Power:
 						{
-							player = target as IGamePlayer;
+							player = target as GamePlayer;
 							player.Out.SendMessage("A shot penetrated your magic barrier!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 							ad.AttackResult = eAttackResult.HitUnstyled;
                             EffectService.RequestImmediateCancelEffect(bladeturn.FirstOrDefault());
@@ -153,10 +152,9 @@ namespace DOL.GS.Spells
 								player = Caster as GamePlayer;
 								player.Out.SendMessage("Your strike was absorbed by a magical barrier!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 							}
-
-							if (target is IGamePlayer)
+							if (target is GamePlayer)
 							{
-								player = target as IGamePlayer;
+								player = target as GamePlayer;
 								player.Out.SendMessage("The blow was absorbed by a magical barrier!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 								ad.AttackResult = eAttackResult.Missed;
 								EffectService.RequestImmediateCancelEffect(bladeturn.FirstOrDefault());
@@ -169,7 +167,7 @@ namespace DOL.GS.Spells
 			if (ad.AttackResult != eAttackResult.Missed)
 			{
 				GameNPC npc = target as GameNPC;
-				if (npc != null && npc is not MimicNPC)
+				if (npc != null)
 				{
 					if (npc.Brain != null && (npc.Brain is IControlledBrain) == false)
 					{
@@ -212,7 +210,7 @@ namespace DOL.GS.Spells
 		public override double CalculateDamageBase(GameLiving target)
 		{
 			double spellDamage = Spell.Damage;
-			IGamePlayer player = Caster as IGamePlayer;
+			GamePlayer player = Caster as GamePlayer;
 
 			if (player != null)
 			{
@@ -293,7 +291,7 @@ namespace DOL.GS.Spells
 				percent = 1.0 - ((dex - 60) * 0.15 + (dex - 250) * 0.05) * 0.01;
 			}
 
-			IGamePlayer player = m_caster as IGamePlayer;
+			GamePlayer player = m_caster as GamePlayer;
 
 			if (player != null)
 			{
@@ -337,9 +335,7 @@ namespace DOL.GS.Spells
 				chance += mod * 10;
 				chance = Math.Max(1, chance);
 				chance = Math.Min(99, chance);
-				if (attacker is IGamePlayer)
-					chance = 100;
-
+				if (attacker is GamePlayer) chance = 100;
 				if (Util.Chance((int)chance))
 				{
 					Caster.TempProperties.SetProperty(INTERRUPT_TIMEOUT_PROPERTY, GameLoop.GameLoopTime + Caster.SpellInterruptDuration);

@@ -17,7 +17,6 @@
  *
  */
 using DOL.GS;
-using DOL.GS.Scripts;
 
 namespace DOL.AI.Brain
 {
@@ -76,7 +75,6 @@ namespace DOL.AI.Brain
         void Goto(GameObject target);
         void UpdatePetWindow();
         GamePlayer GetPlayerOwner();
-        IGamePlayer GetIPlayerOwner();
         GameNPC GetNPCOwner();
         GameLiving GetLivingOwner();
         void SetAggressionState(eAggressionState state);

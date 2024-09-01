@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using DOL.AI.Brain;
-using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS.Spells
@@ -51,8 +50,6 @@ namespace DOL.GS.Spells
 
             if (target is GameNPC npc && npc.Brain is StandardMobBrain brain)
                 brain.AddToAggroList(Caster, 1);
-			else if (target is MimicNPC mnpc)
-                    mnpc.MimicBrain.AddToAggroList(Caster, 1);
 
             if (Spell.CastTime > 0)
                 target.StartInterruptTimer(target.SpellInterruptDuration, AttackData.eAttackType.Spell, Caster);

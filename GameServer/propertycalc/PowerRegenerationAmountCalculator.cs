@@ -1,5 +1,3 @@
-using DOL.GS.Scripts;
-
 namespace DOL.GS.PropertyCalc
 {
     /// <summary>

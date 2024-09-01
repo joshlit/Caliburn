@@ -151,6 +151,8 @@ namespace DOL.GS.Spells
 			}
 		}
 
+		#endregion
+
         #endregion LOS on Keeps
 
         /// <summary>

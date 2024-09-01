@@ -39,11 +39,6 @@ namespace DOL.GS
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public AttackComponent AttackComponent { get { return attackComponent; } }
-        public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
-        public StyleComponent StyleComponent { get { return styleComponent; } }
-        public EffectListComponent EffectListComponent { get { return effectListComponent; } }
-
         private const int SECONDS_TO_QUIT_ON_LINKDEATH = 60;
 
         private readonly object m_LockObject = new();
@@ -2610,7 +2605,7 @@ namespace DOL.GS
             return HealthRegenerationPeriod;
         }
 
-        public int PowerRegenStackingBonus { get; set; } = 0;
+        public int PowerRegenStackingBonus = 0;
 
         protected override int PowerRegenerationTimerCallback(ECSGameTimer selfRegenerationTimer)
         {

@@ -25,7 +25,6 @@ namespace DOL.GS.Scripts
         public int ChangeHealth(GameObject changeSource, eHealthChangeType healthChangeType, int changeAmount);
         public int CalculateMaxHealth(int level, int constitution);
         public int CalculateMaxMana(int level, int manaStat);
-        public int GetBaseStat(eStat stat);
 
         public List<Tuple<Skill, Skill>> GetAllUsableSkills(bool update = false);
         public List<Tuple<SpellLine, List<Skill>>> GetAllUsableListSpells(bool update = false);
@@ -35,8 +34,6 @@ namespace DOL.GS.Scripts
         public int GetAbilityLevel(string keyName);
         public bool HasSpecialization(string keyName);
         public int GetBaseSpecLevel(string keyName);
-        public int GetWeaponStat(DbInventoryItem weapon);
-        public double GetWeaponSkill(DbInventoryItem weapon);
         public int GetModifiedSpecLevel(string keyName);
         public void DisableSkill(Skill skill, int duration);
 
@@ -56,7 +53,6 @@ namespace DOL.GS.Scripts
         public void OnDuelStart(GameDuel duel);
         public void OnDuelStop();
         public GameLiving DuelPartner { get; }
-        public GameDuel Duel { get; }
         public bool IsDuelPartner(GameLiving living);
         public bool IsDuelReady { get; set; }
 
@@ -66,8 +62,6 @@ namespace DOL.GS.Scripts
         public bool IsWithinRadius(GameObject obj, int radius);
         public bool IsWithinRadius(IPoint3D point, int radius, bool ignoreZ);
         public List<GamePlayer> GetPlayersInRadius(ushort radiusToCheck);
-        public List<GameNPC> GetNPCsInRadius(ushort radiusToCheck);
-        public int GetConLevel(GameObject compare);
 
         public bool IsControlledNPC(GameNPC npc);
         public void CommandNpcRelease();
@@ -111,8 +105,6 @@ namespace DOL.GS.Scripts
         public int RealmLevel { get; set; }
         public int MLLevel { get; set; }
         public eRealm Realm { get; set; }
-        public bool Champion { get; set; }
-        public int ChampionLevel { get; set; }
 
         public double Effectiveness { get; set; }
         public double SpecLock { get; set; }
@@ -150,8 +142,6 @@ namespace DOL.GS.Scripts
         public int Mana { get; set; }
         public int MaxMana { get; }
 
-        public int PowerRegenStackingBonus { get; set; }
-
         public int Endurance { get; set; }
         public short MaxSpeedBase { get; set; }
 
@@ -160,7 +150,6 @@ namespace DOL.GS.Scripts
         public int Quickness { get; }
         public int Intelligence { get; }
 
-        public Zone CurrentZone { get; }
         public Region CurrentRegion { get; set; }
         public ushort CurrentRegionID { get; set; }
         public int Z { get; }

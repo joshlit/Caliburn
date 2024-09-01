@@ -1,6 +1,5 @@
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerClass;
-using DOL.GS.Scripts;
 
 namespace DOL.GS.Spells
 {
@@ -100,7 +99,7 @@ namespace DOL.GS.Spells
         {
             get
             {
-                if (Caster is IGamePlayer c && (c.CharacterClass is ClassRanger || c.CharacterClass is ClassHunter) && (SpellLine.KeyName.ToLower().Equals("beastcraft") || SpellLine.KeyName.ToLower().Equals("pathfinding")))
+                if (Caster is GamePlayer c && (c.CharacterClass is ClassRanger || c.CharacterClass is ClassHunter) && (SpellLine.KeyName.ToLower().Equals("beastcraft") || SpellLine.KeyName.ToLower().Equals("pathfinding")))
                     return eBuffBonusCategory.BaseBuff;
 
                 if (Spell.Target == eSpellTarget.SELF)

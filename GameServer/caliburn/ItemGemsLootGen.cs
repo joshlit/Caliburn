@@ -21,7 +21,7 @@ namespace DOL.GS {
             ProcsChargesSpellIds = procsChargesLineXSpells.Select(a => a.SpellID).Where(SpellID =>
             {
 
-                Spell procSpell = SkillBase.GetSpellByID(SpellID);
+                Spell procSpell = SkillBase.FindSpell(SpellID, line);
                 return procSpell != null && procSpell.SpellType.ToString().Contains("Summon") == false;
 
             }).ToList();

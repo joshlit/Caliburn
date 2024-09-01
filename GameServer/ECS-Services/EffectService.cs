@@ -428,7 +428,6 @@ namespace DOL.GS
                 case eSpellType.MeleeDamageBuff:
                     return eEffect.MeleeDamageBuff;
                 case eSpellType.CombatSpeedBuff:
-                case eSpellType.HasteBuff:
                     return eEffect.MeleeHasteBuff;
                 //case eSpellType.Celerity: // Possibly the same as CombatSpeedBuff?
                 //    return eEffect.Celerity;
