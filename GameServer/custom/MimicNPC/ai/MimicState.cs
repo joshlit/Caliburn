@@ -49,7 +49,7 @@ namespace DOL.AI.Brain
                 _brain.AggroLevel = 100;
                 _brain.AggroRange = 3600;
 
-                _brain.PvPMode = true;
+                _brain.PvPMode = _brain.Body.CurrentZone.IsRvR || _brain.Body.CurrentRegion.IsRvR;
                 _brain.Roam = true;
                 _brain.Defend = false;
 
@@ -110,9 +110,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is entering IDLE");
-
             base.Enter();
         }
 
@@ -162,9 +159,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is entering FOLLOW_THE_LEADER");
-
             if (_brain.Body.Group != null)
             {
                 leader = _brain.Body.Group.LivingLeader;
@@ -242,9 +236,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is entering AGGRO");
-
             _brain.MimicBody.Sit(false);
 
             _aggroTime = GameLoop.GameLoopTime;
@@ -354,9 +345,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is entering ROAM");
-
             base.Enter();
         }
 
@@ -417,9 +405,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is entering CAMP");
-
             if (_brain.Body.Group?.MimicGroup.CampPoint == null || !_brain.Body.IsWithinRadius(_brain.Body.Group?.MimicGroup.CampPoint, 1500))
             {
                 _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
