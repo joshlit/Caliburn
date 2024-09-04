@@ -1742,7 +1742,7 @@ namespace DOL.AI.Brain
                 case eSpellType.SummonSpiritFighter:
 
                 if (Body.ControlledBrain != null)
-                    return false;
+                    break;
 
                 Body.TargetObject = Body;
 

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DOL.AI;
+using DOL.AI.Brain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +11,7 @@ namespace DOL.GS.Scripts
 {
     public class MimicGroup
     {
+        private Group _group;
         public GameLiving MainLeader { get; private set; }
         public GameLiving MainAssist { get; private set; }
         public GameLiving MainTank { get; private set; }
@@ -16,8 +19,6 @@ namespace DOL.GS.Scripts
         public GameLiving MainPuller { get; private set; }
         public Point3D CampPoint { get; private set; }
         public Point2D PullFromPoint {get; private set; }
-           
-        public Queue<QueueRequest> GroupQueue = new Queue<QueueRequest>();
 
         public List<GameLiving> CCTargets = new List<GameLiving>();
 
@@ -28,40 +29,15 @@ namespace DOL.GS.Scripts
             get { return MainAssist.TargetObject; }
         }
 
-        public MimicGroup(GameLiving leader) 
+        public MimicGroup(GameLiving leader, Group group) 
         {
             MainLeader = leader;
             MainAssist = leader;
             MainTank = leader;
             MainCC = leader;
             MainPuller = leader;
-        }
 
-        public void AddToQueue(QueueRequest request)
-        {
-            GroupQueue.Enqueue(request);
-        }
-
-        public QueueRequest ProcessQueue(eMimicGroupRole role)
-        {
-            lock (GroupQueue)
-            {
-                return GroupQueue.FirstOrDefault(x => x.Role == role);
-            }
-        }
-
-        public void RespondQueue(eQueueMessageResult result)
-        {
-            switch (result)
-            {
-            }
-        }
-
-        private void RemoveQueue(QueueRequest request)
-        {
-            lock(GroupQueue)
-            {
-            }
+            _group = group;
         }
 
         public bool SetLeader(GameLiving living)
@@ -129,20 +105,6 @@ namespace DOL.GS.Scripts
         public void SetPullPoint(Point2D point)
         {
             PullFromPoint = new Point2D(point);
-        }
-
-        public class QueueRequest
-        {
-            public GameLiving Requester { get; private set; }
-            public eQueueMessage QueueMessage { get; private set; }
-            public eMimicGroupRole Role { get; private set; }
-
-            public QueueRequest(GameLiving requester, eQueueMessage request, eMimicGroupRole role)
-            {
-                Requester = requester;
-                QueueMessage = request;
-                Role = role;
-            }
         }
     }
 }

@@ -150,7 +150,9 @@ namespace DOL.AI.Brain
 
     public class MimicState_FollowLeader : MimicState
     {
-        private GameLiving leader;
+        private GameLiving _leader;
+        private int _followDistance;
+        private int _targetFollowDistance => 80 + _brain.Body.GroupIndex * 20;
 
         public MimicState_FollowLeader(MimicBrain brain) : base(brain)
         {
@@ -161,11 +163,12 @@ namespace DOL.AI.Brain
         {
             if (_brain.Body.Group != null)
             {
-                leader = _brain.Body.Group.LivingLeader;
-                _brain.Body.Follow(_brain.Body.Group.LivingLeader, 200, 5000);
+                _leader = _brain.Body.Group.LivingLeader;
+                _followDistance = _targetFollowDistance;
+                _brain.Body.Follow(_brain.Body.Group.LivingLeader, _followDistance, 5000);
             }
             else
-                _brain.FSM.SetCurrentState(eFSMStateType.IDLE);
+                _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
 
             base.Enter();
         }
@@ -180,19 +183,16 @@ namespace DOL.AI.Brain
                 return;
             }
 
-            if (leader == null)
-                leader = _brain.Body.Group.LivingLeader;
+            if (_leader == null)
+                _leader = _brain.Body.Group.LivingLeader;
 
-            //if (!_brain.PreventCombat)
-            //{
-            //if (_brain.CheckProximityAggro(_brain.AggroRange))
-            //{
-            //    _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
-            //    return;
-            //}
-            //}
+            if (_followDistance != _targetFollowDistance)
+            {
+                _followDistance = _targetFollowDistance;
+                _brain.Body.Follow(_leader, _followDistance, 5000);
+            }
 
-            if ((leader.IsCasting || leader.IsAttacking) && leader.TargetObject is GameLiving livingTarget && _brain.CanAggroTarget(livingTarget))
+            if ((_leader.IsCasting || _leader.IsAttacking) && _leader.TargetObject is GameLiving livingTarget && _brain.CanAggroTarget(livingTarget))
             {
                 _brain.OnLeaderAggro();
                 _brain.AddToAggroList(livingTarget, 1);
@@ -200,10 +200,10 @@ namespace DOL.AI.Brain
                 return;
             }
 
-            if (_brain.Body.FollowTarget != leader)
-                _brain.Body.Follow(_brain.Body.Group.LivingLeader, 200, 5000);
+            if (_brain.Body.FollowTarget != _leader)
+                _brain.Body.Follow(_brain.Body.Group.LivingLeader, _followDistance, 5000);
 
-            if (!_brain.Body.InCombat)
+            if (!_brain.Body.InCombat && !_brain.Body.IsCasting)
             {
                 if (!_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive))
                     _brain.MimicBody.Sit(_brain.CheckStats(75));
@@ -470,9 +470,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is entering RETURN_TO_SPAWN");
-
             if (_brain.Body.WasStealthed)
                 _brain.Body.Flags |= GameNPC.eFlags.STEALTH;
 
@@ -525,9 +522,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} is PATROLLING");
-
             _brain.Body.MoveOnPath(_brain.Body.MaxSpeed);
             _brain.ClearAggroList();
             base.Enter();
@@ -557,9 +551,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} has entered DUEL state");
-
             _brain.ClearAggroList();
 
             _brain.MimicBody.IsDuelReady = false;
@@ -597,9 +588,6 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
-            if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
-                Console.WriteLine($"{_brain.Body} has entered DEAD state");
-
             _brain.ClearAggroList();
             base.Enter();
         }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,7 +38,7 @@ namespace DOL.GS
         {
             LivingLeader = leader;
             m_groupMembers = new ReaderWriterList<GameLiving>(ServerProperties.Properties.GROUP_MAX_MEMBER);
-            MimicGroup = new MimicGroup(leader);
+            MimicGroup = new MimicGroup(leader, this);
         }
 
         /// <summary>
@@ -200,6 +201,7 @@ namespace DOL.GS
                 l.Add(living);
                 living.Group = this;
                 living.GroupIndex = (byte)(l.Count - 1);
+
                 return true;
             }))
                 return false;
@@ -329,6 +331,16 @@ namespace DOL.GS
                     }
                 }
 
+                if (player is MimicNPC mimic)
+                {
+                    mimic.StopCurrentSpellcast();
+                    mimic.CancelAllConcentrationEffects();
+
+                    mimic.MimicBrain.PvPMode = true;
+                    mimic.MimicBrain.AggroRange = 3600;
+                    mimic.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+                }
+
                 // Part of the hack to make friendly pets untargetable (or targetable again) with TAB on a PvP server.
                 // We could also check for non controlled pets (turrets for example) around the player, but it isn't very important.
                 if (GameServer.Instance.Configuration.ServerType == EGameServerType.GST_PvP)
@@ -370,12 +382,6 @@ namespace DOL.GS
                         player.Out.SendObjectGuildID((GamePlayer)player, playerGuild ?? Guild.DummyGuild);
                 }
 
-                if (player is MimicNPC mimic)
-                {
-                    mimic.StopCurrentSpellcast();
-                    mimic.CancelAllConcentrationEffects();
-                }
-
                 player.Out.SendMessage("You leave your group.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 player.Notify(GamePlayerEvent.LeaveGroup, player);
             }
@@ -410,6 +416,7 @@ namespace DOL.GS
 
             UpdateGroupIndexes();
             GameEventMgr.Notify(GroupEvent.MemberDisbanded, this, new MemberDisbandedEventArgs(living));
+
             return true;
         }
 
