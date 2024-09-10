@@ -3876,7 +3876,7 @@ namespace DOL.GS
             if (LosChecker == null && Brain is IControlledBrain controlledBrain)
                 LosChecker = controlledBrain.GetPlayerOwner();
 
-			if (LosChecker == null && (Brain is StandardMobBrain brain || Brain is MimicBrain))
+			if (LosChecker == null && Brain is StandardMobBrain brain)
 			{
 				List<GamePlayer> playersInRadius = GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
 

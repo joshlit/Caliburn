@@ -175,16 +175,16 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (_brain.Body.Group == null)
+            if (_leader == null || (_leader != null && _leader.ObjectState != GameObject.eObjectState.Active || !_brain.Body.Group.IsInTheGroup(_leader)))
+                _leader = _brain.Body.Group.LivingLeader;
+
+            if (_brain.Body.Group == null || _leader == _brain.Body)
             {
                 _brain.Body.StopFollowing();
                 _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
 
                 return;
             }
-
-            if (_leader == null)
-                _leader = _brain.Body.Group.LivingLeader;
 
             if (_followDistance != _targetFollowDistance)
             {
@@ -203,9 +203,12 @@ namespace DOL.AI.Brain
             if (_brain.Body.FollowTarget != _leader)
                 _brain.Body.Follow(_brain.Body.Group.LivingLeader, _followDistance, 5000);
 
-            if (!_brain.Body.InCombat && !_brain.Body.IsCasting)
+            if (!_brain.Body.InCombat)
             {
-                if (!_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive))
+                if (_brain.Body.IsSitting && !_brain.CheckStats(75))
+                    _brain.MimicBody.Sit(false);
+
+                if (!_brain.Body.IsSitting && !_brain.Body.IsCasting && !_brain.CheckSpells(MimicBrain.eCheckSpellType.Defensive))
                     _brain.MimicBody.Sit(_brain.CheckStats(75));
             }
 
@@ -372,7 +375,7 @@ namespace DOL.AI.Brain
                 {
                     _brain.Body.StopMoving();
                 }
-                else if (!delayRoam && !_brain.Body.IsCasting && !_brain.Body.IsSitting && !_brain.Body.IsMoving && !_brain.Body.movementComponent.HasActiveResetHeadingAction)
+                else if (!delayRoam && !_brain.Body.IsSitting && !_brain.Body.IsMoving && !_brain.Body.movementComponent.HasActiveResetHeadingAction)
                 {
                     if (!_nextRoamingTickSet)
                     {

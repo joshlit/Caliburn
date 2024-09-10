@@ -327,7 +327,7 @@ namespace DOL.GS.Spells
 			if (Caster is IGamePlayer)
 			{
 				if (CastState != eCastState.Focusing)
-					(Caster as IGamePlayer).Out.SendMessage(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "SpellHandler.CasterMove"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+					(Caster as IGamePlayer).Out.SendMessage(LanguageMgr.GetTranslation((Caster as IGamePlayer).Client, "SpellHandler.CasterMove"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 				else
 					Caster.CancelFocusSpell(true);
 			}
