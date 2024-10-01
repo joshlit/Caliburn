@@ -56,9 +56,72 @@ namespace DOL.GS.Scripts
     }
 
     [CmdAttribute(
-       "&mgroup",
-       ePrivLevel.Player,
-       "/mgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
+    "&mspawner",
+    ePrivLevel.Player,
+    "/mspawner - Spawns mimics at regular intervals at the groundset position. Args: realm, levelMin, levelMax, max amount")]
+
+    public class MimicSpawnerCommandHandler : AbstractCommandHandler, ICommandHandler
+    {
+        public void OnCommand(GameClient client, string[] args)
+        {
+            Point3D position = new Point3D(client.Player.X, client.Player.Y, client.Player.Z);
+
+            if (client.Player.GroundTarget != null && client.Player.GroundTarget.IsWithinRadius(position, WorldMgr.VISIBILITY_DISTANCE))
+                position = new Point3D(client.Player.GroundTarget);
+
+            if (args.Length > 1)
+                args[1] = args[1].ToLower();
+
+            int levelMin = int.Parse(args[2]);
+            int levelMax = int.Parse(args[3]);
+            int maxAmount = int.Parse(args[4]);
+
+            levelMin = Math.Max(1, levelMin);
+            levelMax = Math.Min(levelMax, 50);
+
+            if (levelMin > levelMax)
+            {
+                int tempMin = levelMin;
+                levelMin = levelMax;
+                levelMax = tempMin;
+            }
+
+            if (maxAmount > 500 || maxAmount < 0)
+                maxAmount = 1;
+
+            MimicSpawner mimicSpawner = null;
+
+            switch (args[1])
+            {
+                case "alb":
+                case "albion":
+                mimicSpawner = new MimicSpawner(eRealm.Albion, levelMin, levelMax, maxAmount, position, client.Player.CurrentRegionID);
+                break;
+
+                case "mid":
+                case "midgard":
+                mimicSpawner = new MimicSpawner(eRealm.Midgard, levelMin, levelMax, maxAmount, position, client.Player.CurrentRegionID);
+                break;
+
+                case "hib":
+                case "hibernia:":
+                mimicSpawner = new MimicSpawner(eRealm.Hibernia, levelMin, levelMax, maxAmount, position, client.Player.CurrentRegionID);
+                break;
+            }
+
+            if (mimicSpawner != null)
+            {
+                if (mimicSpawner.AddToWorld())
+                    MimicSpawning.MimicSpawners.Add(mimicSpawner);
+            }
+        }
+    }
+
+    [CmdAttribute(
+    "&mgroup",
+    ePrivLevel.Player,
+    "/mgroup - To summon a group of mimics from a realm. Args: realm, amount, level")]
+
     public class SummonMimicGroupCommandHandler : AbstractCommandHandler, ICommandHandler
     {
         public void OnCommand(GameClient client, string[] args)
@@ -100,7 +163,7 @@ namespace DOL.GS.Scripts
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
 
-                    if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
+                    if (client.Player.GroundTarget.GetDistance(playerPos) < WorldMgr.VISIBILITY_DISTANCE)
                         position = new Point3D(client.Player.GroundTarget);
                 }
 
@@ -359,12 +422,61 @@ namespace DOL.GS.Scripts
             if (client.Player.Group == null)
                 return;
 
+            int X = client.Player.X;
+            int Y = client.Player.Y;
+            int Z = client.Player.Z;
+            ushort heading = client.Player.Heading;
+
             foreach (GameLiving groupMember in client.Player.Group.GetMembersInTheGroup())
             {
                 if (groupMember is MimicNPC mimicNPC)
                 {
-                    mimicNPC.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
-                    mimicNPC.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+                    bool movePet = false;
+
+                    if (mimicNPC.ControlledBrain != null)
+                    {
+                        if (mimicNPC.CharacterClass.ID is not ((int)eCharacterClass.Theurgist) and not ((int)eCharacterClass.Animist))
+                            movePet = true;
+                    }
+
+                    if (client.Player.CurrentRegionID == mimicNPC.CurrentRegionID)
+                    {
+                        mimicNPC.MoveInRegion(client.Player.CurrentRegionID, X, Y, Z + 10, heading, true);
+
+                        if (movePet)
+                        {
+                            Point2D point = mimicNPC.GetPointFromHeading(mimicNPC.Heading, 64);
+                            IControlledBrain npc = mimicNPC.ControlledBrain;
+
+                            if (npc != null)
+                            {
+                                GameNPC petBody = npc.Body;
+                                petBody.MoveInRegion(mimicNPC.CurrentRegionID, point.X, point.Y, Z + 10, (ushort)((mimicNPC.Heading + 2048) % 4096), true);
+
+                                if (petBody != null && petBody.ControlledNpcList != null)
+                                {
+                                    foreach (IControlledBrain controlledBrain in petBody.ControlledNpcList)
+                                    {
+                                        if (controlledBrain != null && controlledBrain.Body != null)
+                                        {
+                                            GameNPC petBody2 = controlledBrain.Body;
+
+                                            if (petBody2 != null)
+                                                petBody2.MoveInRegion(mimicNPC.CurrentRegionID, point.X, point.Y, Z + 10, (ushort)((mimicNPC.Heading + 2048) % 4096), false);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        mimicNPC.MoveTo(client.Player.CurrentRegionID, X, Y, Z + 10, heading);
+                        mimicNPC.MimicBrain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+
+                        groupMember.Group.UpdateMember(mimicNPC, true, false);
+                        groupMember.Group.UpdateGroupWindow();
+                    }
                 }
             }
         }
@@ -406,7 +518,7 @@ namespace DOL.GS.Scripts
 
                     int baseChance = 90;
 
-                    if (MimicConfig.LEVEL_BIAS)
+                    if (MimicConfig.LFG_LEVEL_BIAS)
                     {
                         int biasAmount = 5;
                         int levelDifference = player.Level - entry.Level;
