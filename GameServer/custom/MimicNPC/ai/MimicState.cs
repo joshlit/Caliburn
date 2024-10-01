@@ -49,7 +49,8 @@ namespace DOL.AI.Brain
                 _brain.AggroLevel = 100;
                 _brain.AggroRange = 3600;
 
-                _brain.PvPMode = _brain.Body.CurrentZone.IsRvR || _brain.Body.CurrentRegion.IsRvR;
+                _brain.PvPMode = _brain.Body.CurrentRegion.IsRvR || _brain.Body.CurrentZone.IsRvR;
+
                 _brain.Roam = true;
                 _brain.Defend = false;
 
@@ -227,7 +228,7 @@ namespace DOL.AI.Brain
 
     public class MimicState_Aggro : MimicState
     {
-        private const int LEAVE_WHEN_OUT_OF_COMBAT_FOR = 10000;
+        private const int LEAVE_WHEN_OUT_OF_COMBAT_FOR = 25000;
 
         private long _aggroTime = GameLoop.GameLoopTime; // Used to prevent leaving on the first think tick, due to `InCombatInLast` returning false.
         private long _checkAggroTime = GameLoop.GameLoopTime + 5000;
@@ -251,8 +252,10 @@ namespace DOL.AI.Brain
         public override void Exit()
         {
             _brain.Body.StopAttack();
-            _brain.Body.TargetObject = null;
+            _brain.Body.StopMoving();
+            _brain.Body.StopCurrentSpellcast();
             _brain.ClearAggroList();
+            _brain.Body.TargetObject = null;
 
             if (_brain.MimicBody.CharacterClass.ID == (int)eCharacterClass.Reaver)
             {
@@ -269,7 +272,7 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            if (_brain.PvPMode && _checkAggroTime < GameLoop.GameLoopTime)
+            if (_checkAggroTime < GameLoop.GameLoopTime)
             {
                 _brain.CheckProximityAggro(_brain.AggroRange);
                 _checkAggroTime = GameLoop.GameLoopTime + 5000;
@@ -313,7 +316,7 @@ namespace DOL.AI.Brain
                             if (_brain.Body.Group.MimicGroup.CampPoint != null)
                                 _brain.FSM.SetCurrentState(eFSMStateType.CAMP);
                             else if (_brain.Body.Group.LivingLeader == _brain.Body)
-                                _brain.FSM.SetCurrentState(eFSMStateType.IDLE);
+                                _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
                             else
                                 _brain.FSM.SetCurrentState(eFSMStateType.FOLLOW_THE_LEADER);
                         }
@@ -348,6 +351,9 @@ namespace DOL.AI.Brain
 
         public override void Enter()
         {
+            if (!_brain.PvPMode)
+                _brain.AggroRange = 2000;
+
             base.Enter();
         }
 
@@ -361,14 +367,11 @@ namespace DOL.AI.Brain
             if (_brain.PreventCombat)
                 return;
 
-            if (_brain.CheckProximityAggro(_brain.AggroRange))
+            if (!_brain.HasAggro)
             {
-                _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
-                return;
-            }
+                if (_brain.Body.IsSitting && !_brain.CheckStats(75))
+                    _brain.MimicBody.Sit(false);
 
-            if (!_brain.Body.InCombat)
-            {
                 delayRoam = _brain.CheckDelayRoam();
 
                 if (delayRoam && _brain.Body.IsDestinationValid)
@@ -383,7 +386,7 @@ namespace DOL.AI.Brain
                         _nextRoamingTick += Util.Random(MinCooldown, MaxCooldown) * 1000;
                         _brain.Body.SpawnPoint = new Point3D(_brain.Body.X, _brain.Body.Y, _brain.Body.Z);
                     }
-                    
+
                     if (ServiceUtils.ShouldTickAdjust(ref _nextRoamingTick))
                     {
                         // We're not updating `_nextRoamingTick` here because we want it to be set after the NPC stopped moving.
@@ -391,6 +394,15 @@ namespace DOL.AI.Brain
                         _brain.Body.Roam(Speed);
                     }
                 }
+            }
+
+            if (!_brain.PvPMode && delayRoam)
+                return;
+
+            if (_brain.CheckProximityAggro(_brain.AggroRange))
+            {
+                _brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
+                return;
             }
 
             base.Think();
