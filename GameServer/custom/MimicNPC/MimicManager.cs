@@ -5,6 +5,7 @@ using DOL.GS.Realm;
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -25,8 +26,8 @@ namespace DOL.GS.Scripts
                                                     new Point3D(37200, 51200, 3950),
                                                     new Point3D(19820, 19305, 4050),
                                                     new Point3D(53300, 26100, 4270),
-                                                    600,
-                                                    600,
+                                                    300,
+                                                    1500,
                                                     20,
                                                     24);
         }
@@ -46,19 +47,14 @@ namespace DOL.GS.Scripts
             }
 
             private ECSGameTimer m_masterTimer;
-            private ECSGameTimer m_spawnTimer;
+
+            private MimicSpawner m_albSpawner;
+            private MimicSpawner m_hibSpawner;
+            private MimicSpawner m_midSpawner;
 
             private int m_timerInterval = 600000; // 10 minutes
+            private int m_dormantInterval;
             private long m_resetMaxTime = 0;
-
-            private List<MimicNPC> m_albMimics = new List<MimicNPC>();
-            private List<MimicNPC> m_albStagingList = new List<MimicNPC>();
-
-            private List<MimicNPC> m_hibMimics = new List<MimicNPC>();
-            private List<MimicNPC> m_hibStagingList = new List<MimicNPC>();
-
-            private List<MimicNPC> m_midMimics = new List<MimicNPC>();
-            private List<MimicNPC> m_midStagingList = new List<MimicNPC>();
 
             private readonly List<BattleStats> m_battleStats = new List<BattleStats>();
 
@@ -85,251 +81,109 @@ namespace DOL.GS.Scripts
 
             public void Start()
             {
-                // For quick mass testing.
-                //Parallel.For(0, 2000, TickInternal);
-
-                if (m_masterTimer == null)
+                if (m_masterTimer != null)
                 {
-                    m_masterTimer = new ECSGameTimer(null, new ECSGameTimer.ECSTimerCallback(MasterTimerCallback));
-                    m_masterTimer.Start();
+                    if (!m_masterTimer.IsAlive)
+                        m_masterTimer.Start();
+
+                    m_albSpawner.Start();
+                    m_hibSpawner.Start();
+                    m_midSpawner.Start();
                 }
-            }
+                else
+                {
+                    ResetMaxMimics();
 
-            public void TickInternal(int index)
-            {
-                MimicNPC albMimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), 24);
-                MimicManager.AddMimicToWorld(albMimic, m_albSpawnPoint, m_region);
+                    m_masterTimer = new ECSGameTimer(null, new ECSGameTimer.ECSTimerCallback(MasterTimerCallback), m_timerInterval);
 
-                MimicNPC hibMimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), 24);
-                MimicManager.AddMimicToWorld(hibMimic, m_hibSpawnPoint, m_region);
-
-                MimicNPC midMimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), 24);
-                MimicManager.AddMimicToWorld(midMimic, m_midSpawnPoint, m_region);
+                    m_albSpawner = new MimicSpawner(eRealm.Albion, m_minLevel, m_maxLevel, m_currentMaxAlb, m_albSpawnPoint, m_region, 0, true);
+                    m_hibSpawner = new MimicSpawner(eRealm.Hibernia, m_minLevel, m_maxLevel, m_currentMaxHib, m_hibSpawnPoint, m_region, 0, true);
+                    m_midSpawner = new MimicSpawner(eRealm.Midgard, m_minLevel, m_maxLevel, m_currentMaxMid, m_midSpawnPoint, m_region, 0, true);
+                }
             }
 
             public void Stop()
             {
-                if (m_masterTimer != null)
-                {
-                    m_masterTimer.Stop();
-                    m_masterTimer = null;
-                }
-
-                if (m_spawnTimer != null)
-                {
-                    m_spawnTimer.Stop();
-                    m_spawnTimer = null;
-                }
-
-                ValidateLists();
-
-                m_albStagingList.Clear();
-                m_hibStagingList.Clear();
-                m_midStagingList.Clear();
+                m_masterTimer?.Stop();
+                m_albSpawner?.Stop();
+                m_hibSpawner?.Stop();
+                m_midSpawner?.Stop();
             }
 
             public void Clear()
             {
                 Stop();
 
-                if (m_albMimics.Count != 0)
+                m_masterTimer = null;
+
+                if (m_albSpawner != null)
                 {
-                    foreach (MimicNPC mimic in m_albMimics)
+                    foreach (MimicNPC mimic in m_albSpawner.Mimics)
                         mimic.Delete();
 
-                    m_albMimics.Clear();
+                    m_albSpawner.Delete();
+                    m_albSpawner = null;
                 }
 
-                if (m_hibMimics.Count != 0)
+                if (m_hibSpawner != null)
                 {
-                    foreach (MimicNPC mimic in m_hibMimics)
+                    foreach (MimicNPC mimic in m_hibSpawner.Mimics)
                         mimic.Delete();
 
-                    m_hibMimics.Clear();
+                    m_hibSpawner.Delete();
+                    m_hibSpawner = null;
                 }
 
-                if (m_midMimics.Count != 0)
+                if (m_midSpawner != null)
                 {
-                    foreach (MimicNPC mimic in m_midMimics)
+                    foreach (MimicNPC mimic in m_midSpawner.Mimics)
                         mimic.Delete();
 
-                    m_midMimics.Clear();
+                    m_midSpawner.Delete();
+                    m_midSpawner = null;
                 }
             }
 
             private int MasterTimerCallback(ECSGameTimer timer)
             {
-                if (GameLoop.GameLoopTime > m_resetMaxTime)
+                if (GameLoop.GameLoopTime > m_resetMaxTime &&
+                    !m_albSpawner.IsRunning &&
+                    !m_hibSpawner.IsRunning &&
+                    !m_midSpawner.IsRunning)
+                {
                     ResetMaxMimics();
+                }
 
-                ValidateLists();
-                RefreshLists();
-                SpawnLists();
-
-                int totalMimics = m_albMimics.Count + m_hibMimics.Count + m_midMimics.Count;
-                log.Info("Alb: " + m_albMimics.Count + "/" + m_currentMaxAlb);
-                log.Info("Hib: " + m_hibMimics.Count + "/" + m_currentMaxHib);
-                log.Info("Mid: " + m_midMimics.Count + "/" + m_currentMaxMid);
+                int totalMimics = m_albSpawner.Mimics.Count + m_hibSpawner.Mimics.Count + m_midSpawner.Mimics.Count;
+                log.Info("Alb: " + m_albSpawner.Mimics.Count + "/" + m_currentMaxAlb);
+                log.Info("Hib: " + m_hibSpawner.Mimics.Count + "/" + m_currentMaxHib);
+                log.Info("Mid: " + m_midSpawner.Mimics.Count + "/" + m_currentMaxMid);
                 log.Info("Total Mimics: " + totalMimics + "/" + m_currentMaxTotalMimics);
 
                 return m_timerInterval + Util.Random(-300000, 300000); // 10 minutes + or - 5 minutes
             }
 
             /// <summary>
-            /// Removes any dead or deleted mimics from each realm list.
+            /// Gets a new total maximum and minimum of mimics for each realm randomly.
             /// </summary>
-            private void ValidateLists()
+            private void ResetMaxMimics()
             {
-                if (m_albMimics.Count != 0)
+                m_currentMaxTotalMimics = Util.Random(m_minTotalMimics, m_maxTotalMimics);
+                m_currentMaxAlb = 0;
+                m_currentMaxHib = 0;
+                m_currentMaxMid = 0;
+
+                for (int i = 0; i < m_currentMaxTotalMimics; i++)
                 {
-                    List<MimicNPC> validatedList = new List<MimicNPC>();
+                    int randomRealm = Util.Random(2);
 
-                    foreach (MimicNPC mimic in m_albMimics)
-                    {
-                        if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
-                            validatedList.Add(mimic);
-                    }
-
-                    m_albMimics = validatedList;
+                    if (randomRealm == 0)
+                        m_currentMaxAlb++;
+                    else if (randomRealm == 1)
+                        m_currentMaxHib++;
+                    else if (randomRealm == 2)
+                        m_currentMaxMid++;
                 }
-
-                if (m_hibMimics.Count != 0)
-                {
-                    List<MimicNPC> validatedList = new List<MimicNPC>();
-
-                    foreach (MimicNPC mimic in m_hibMimics)
-                    {
-                        if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
-                            validatedList.Add(mimic);
-                    }
-
-                    m_hibMimics = validatedList;
-                }
-
-                if (m_midMimics.Count != 0)
-                {
-                    List<MimicNPC> validatedList = new List<MimicNPC>();
-
-                    foreach (MimicNPC mimic in m_midMimics)
-                    {
-                        if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
-                            validatedList.Add(mimic);
-                    }
-
-                    m_midMimics = validatedList;
-                }
-            }
-
-            /// <summary>
-            /// Adds new mimics to each realm list based on the difference between max and current count
-            /// </summary>
-            private void RefreshLists()
-            {
-                if (m_albMimics.Count < m_currentMaxAlb)
-                {
-                    for (int i = 0; i < m_currentMaxAlb - m_albMimics.Count; i++)
-                    {
-                        byte level = (byte)Util.Random(m_minLevel, m_maxLevel);
-                        MimicNPC mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Albion), level);
-                        m_albMimics.Add(mimic);
-                    }
-                }
-
-                if (m_hibMimics.Count < m_currentMaxHib)
-                {
-                    for (int i = 0; i < m_currentMaxHib - m_hibMimics.Count; i++)
-                    {
-                        byte level = (byte)Util.Random(m_minLevel, m_maxLevel);
-                        MimicNPC mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Hibernia), level);
-                        m_hibMimics.Add(mimic);
-                    }
-                }
-
-                if (m_midMimics.Count < m_currentMaxMid)
-                {
-                    for (int i = 0; i < m_currentMaxMid - m_midMimics.Count; i++)
-                    {
-                        byte level = (byte)Util.Random(m_minLevel, m_maxLevel);
-                        MimicNPC mimic = MimicManager.GetMimic(MimicManager.GetRandomMimicClass(eRealm.Midgard), level);
-                        m_midMimics.Add(mimic);
-                    }
-                }
-            }
-
-            private void SpawnLists()
-            {
-                m_albStagingList = new List<MimicNPC>();
-                m_hibStagingList = new List<MimicNPC>();
-                m_midStagingList = new List<MimicNPC>();
-
-                if (m_albMimics.Count != 0)
-                {
-                    foreach (MimicNPC mimic in m_albMimics)
-                    {
-                        if (mimic.ObjectState != GameObject.eObjectState.Active)
-                            m_albStagingList.Add(mimic);
-                    }
-                }
-
-                if (m_hibMimics.Count != 0)
-                {
-                    foreach (MimicNPC mimic in m_hibMimics)
-                    {
-                        if (mimic.ObjectState != GameObject.eObjectState.Active)
-                            m_hibStagingList.Add(mimic);
-                    }
-                }
-
-                if (m_midMimics.Count != 0)
-                {
-                    foreach (MimicNPC mimic in m_midMimics)
-                    {
-                        if (mimic.ObjectState != GameObject.eObjectState.Active)
-                            m_midStagingList.Add(mimic);
-                    }
-                }
-
-                SetGroupMembers(m_albStagingList);
-                SetGroupMembers(m_hibStagingList);
-                SetGroupMembers(m_midStagingList);
-
-                m_spawnTimer = new ECSGameTimer(null, new ECSGameTimer.ECSTimerCallback(Spawn), 1000);
-            }
-
-            private int Spawn(ECSGameTimer timer)
-            {
-                bool albDone = false;
-                bool hibDone = false;
-                bool midDone = false;
-
-                if (m_albStagingList.Count != 0)
-                {
-                    MimicManager.AddMimicToWorld(m_albStagingList[m_albStagingList.Count - 1], m_albSpawnPoint, m_region);
-                    m_albStagingList.RemoveAt(m_albStagingList.Count - 1);
-                }
-                else
-                    albDone = true;
-
-                if (m_hibStagingList.Count != 0)
-                {
-                    MimicManager.AddMimicToWorld(m_hibStagingList[m_hibStagingList.Count - 1], m_hibSpawnPoint, m_region);
-                    m_hibStagingList.RemoveAt(m_hibStagingList.Count - 1);
-                }
-                else
-                    hibDone = true;
-
-                if (m_midStagingList.Count != 0)
-                {
-                    MimicManager.AddMimicToWorld(m_midStagingList[m_midStagingList.Count - 1], m_midSpawnPoint, m_region);
-                    m_midStagingList.RemoveAt(m_midStagingList.Count - 1);
-                }
-                else
-                    midDone = true;
-
-                if (albDone && hibDone && midDone)
-                    return 0;
-                else
-                    return 5000;
             }
 
             private void SetGroupMembers(List<MimicNPC> list)
@@ -365,31 +219,6 @@ namespace DOL.GS.Scripts
                 }
             }
 
-            /// <summary>
-            /// Gets a new total maximum and minimum of mimics for each realm randomly.
-            /// </summary>
-            private void ResetMaxMimics()
-            {
-                m_currentMaxTotalMimics = Util.Random(m_minTotalMimics, m_maxTotalMimics);
-                m_currentMaxAlb = 0;
-                m_currentMaxHib = 0;
-                m_currentMaxMid = 0;
-
-                for (int i = 0; i < m_currentMaxTotalMimics; i++)
-                {
-                    eRealm randomRealm = (eRealm)Util.Random(1, 3);
-
-                    if (randomRealm == eRealm.Albion)
-                        m_currentMaxAlb++;
-                    else if (randomRealm == eRealm.Hibernia)
-                        m_currentMaxHib++;
-                    else if (randomRealm == eRealm.Midgard)
-                        m_currentMaxMid++;
-                }
-
-                m_resetMaxTime = GameLoop.GameLoopTime + Util.Random(1800000, 3600000);
-            }
-
             public void UpdateBattleStats(MimicNPC mimic)
             {
                 m_battleStats.Add(new BattleStats(mimic.Name, mimic.RaceName, mimic.CharacterClass.Name, mimic.Kills, true));
@@ -408,11 +237,7 @@ namespace DOL.GS.Scripts
 
                 List<BattleStats> masterStatList = new List<BattleStats>();
                 masterStatList.AddRange(currentStats);
-
-                lock (m_battleStats)
-                {
-                    masterStatList.AddRange(m_battleStats);
-                }
+                masterStatList.AddRange(m_battleStats);
 
                 List<BattleStats> sortedList = masterStatList.OrderByDescending(obj => obj.TotalKills).ToList();
 
@@ -441,20 +266,9 @@ namespace DOL.GS.Scripts
 
                 switch (player.Realm)
                 {
-                    case eRealm.Albion:
-                    if (m_albMimics.Count != 0)
-                        message += "Alb count: " + m_albMimics.Count;
-                    break;
-
-                    case eRealm.Hibernia:
-                    if (m_hibMimics.Count != 0)
-                        message += "Hib count: " + m_hibMimics.Count;
-                    break;
-
-                    case eRealm.Midgard:
-                    if (m_midMimics.Count != 0)
-                        message += "Mid count: " + m_midMimics.Count;
-                    break;
+                    case eRealm.Albion: message += "Alb count: " + m_albSpawner.SpawnCount; break;
+                    case eRealm.Hibernia: message += "Hib count: " + m_hibSpawner.SpawnCount; break;
+                    case eRealm.Midgard: message += "Mid count: " + m_midSpawner.SpawnCount; break;
                 }
 
                 player.Out.SendMessage(message, PacketHandler.eChatType.CT_System, PacketHandler.eChatLoc.CL_PopupWindow);
@@ -464,31 +278,22 @@ namespace DOL.GS.Scripts
             {
                 List<MimicNPC> masterList = new List<MimicNPC>();
 
-                lock (m_albMimics)
+                foreach (MimicNPC mimic in m_albSpawner.Mimics)
                 {
-                    foreach (MimicNPC mimic in m_albMimics)
-                    {
-                        if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
-                            masterList.Add(mimic);
-                    }
+                    if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
+                        masterList.Add(mimic);
                 }
 
-                lock (m_hibMimics)
+                foreach (MimicNPC mimic in m_hibSpawner.Mimics)
                 {
-                    foreach (MimicNPC mimic in m_hibMimics)
-                    {
-                        if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
-                            masterList.Add(mimic);
-                    }
+                    if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
+                        masterList.Add(mimic);
                 }
 
-                lock (m_midMimics)
+                foreach (MimicNPC mimic in m_midSpawner.Mimics)
                 {
-                    foreach (MimicNPC mimic in m_midMimics)
-                    {
-                        if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
-                            masterList.Add(mimic);
-                    }
+                    if (mimic != null && mimic.ObjectState == GameObject.eObjectState.Active && mimic.ObjectState != GameObject.eObjectState.Deleted)
+                        masterList.Add(mimic);
                 }
 
                 return masterList;
@@ -515,6 +320,23 @@ namespace DOL.GS.Scripts
     }
 
     #endregion Battlegrounds
+
+    #region Spawning
+
+    public static class MimicSpawning
+    {
+        public static List<MimicSpawner> MimicSpawners
+        {
+            get
+            {
+                return _mimicSpawners ?? (_mimicSpawners = new List<MimicSpawner>());
+            }
+        }
+
+        private static List<MimicSpawner> _mimicSpawners;
+    }
+
+    #endregion Spawning
 
     public static class MimicManager
     {
@@ -1375,8 +1197,8 @@ namespace DOL.GS.Scripts
         private const string albMaleNames = "Gareth,Lancelot,Cedric,Tristan,Percival,Gawain,Arthur,Merlin,Galahad,Ector,Uther,Mordred,Bors,Lionel,Agravain,Bedivere,Kay,Lamorak,Erec,Gaheris,Pellinore,Loholt,Leodegrance,Aglovale,Tor,Ywain,Uri,Cador,Elayne,Tristram,Cei,Gavain,Kei,Launcelot,Meleri,Isolde,Dindrane,Ragnelle,Lunete,Morgause,Yseult,Bellicent,Brangaine,Blanchefleur,Enid,Vivian,Laudine,Selivant,Lisanor,Ganelon,Cundrie,Guinevere,Norgal,Vivienne,Clarissant,Ettard,Morgaine,Serene,Serien,Selwod,Siraldus,Corbenic,Gurnemanz,Terreban,Malory,Dodinel,Serien,Gurnemanz,Manessen,Herzeleide,Taulat,Serien,Bohort,Ysabele,Karados,Dodinel,Peronell,Dinadan,Segwarides,Lucan,Lamorat,Enide,Parzival,Aelfric,Geraint,Rivalin,Blanchefleur,Gurnemanz,Terreban,Launceor,Clarissant,Herzeleide,Taulat,Zerbino,Serien,Bohort,Ysabele,Dodinel,Peronell,Serenadine,Dinadan,Caradoc,Segwarides,Lucan,Lamorat,Enide,Parzival,Aelfric,Geraint,Rivalin,Blanchefleur,Kaherdin,Gurnemanz,Terreban,Launceor,Clarissant,Patrise,Navarre,Taulat,Iseut,Guivret,Madouc,Ygraine,Tristran,Perceval,Lanzarote,Lamorat,Ysolt,Evaine,Guenever,Elisena,Rowena,Deirdre,Maelis,Clarissant,Palamedes,Yseult,Iseult,Palomides,Brangaine,Laudine,Herlews,Tristram,Alundyne,Blasine,Dinas";
         private const string albFemaleNames = "Guinevere,Isolde,Morgana,Elaine,Vivienne,Nimue,Lynette,Rhiannon,Enid,Iseult,Bellicent,Brangaine,Blanchefleur,Laudine,Selivant,Lisanor,Elidor,Brisen,Linet,Serene,Serien,Selwod,Ysabele,Karados,Peronell,Serenadine,Dinadan,Clarissant,Igraine,Aelfric,Herzeleide,Taulat,Zerbino,Iseut,Guivret,Madouc,Ygraine,Elisena,Rowena,Deirdre,Maelis,Herlews,Alundyne,Blasine,Dinas,Evalach,Rohais,Soredamors,Orguelleuse,Egletine,Fenice,Amide,Lionesse,Eliduc,Silvayne,Amadas,Amadis,Iaonice,Emerause,Ysabeau,Idonia,Alardin,Lessele,Evelake,Herzeleide,Carahes,Elyabel,Igrayne,Laudine,Guenloie,Isolt,Urgan,Yglais,Nimiane,Arabele,Amabel,Clarissant,Patrise,Navarre,Iseut,Guivret,Madouc,Ygraine,Elisena,Rowena,Deirdre,Maelis,Herlews,Alundyne,Blasine,Dinas,Evalach,Rohais,Soredamors,Orguelleuse,Egletine,Fenice,Amide,Lionesse,Eliduc,Silvayne,Amadas,Amadis,Iaonice,Emerause,Ysabeau,Idonia,Alardin,Lessele,Evelake,Herzeleide,Carahes,Elyabel,Igrayne,Laudine,Guenloie,Isolt,Urgan,Yglais,Nimiane,Arabele,Amabel";
 
-        private const string hibMaleNames = "Aonghus,Breandán,Cian,Dallán,Eógan,Fearghal,Gréagóir,Iomhar,Lorcán,Máirtín,Neachtan,Odhrán,Páraic,Ruairí,Seosamh,Toiréasa,Áed,Beircheart,Colm,Domhnall,Éanna,Fergus,Goll,Irial,Liam,MacCon,Naoimhín,Ódhran,Pádraig,Ronán,Seánán,Tadhgán,Úilliam,Ailill,Bran,Cairbre,Daithi,Eoghan,Faolan,Gorm,Iollan,Lughaidh,Manannan,Niall,Oisin,Pádraig,Rónán,Séadna,Tadhg,Ultán,Alastar,Bairre,Caoilte,Dáire,Énna,Fiachra,Gairm,Imleach,Jarlath,Kian,Laoiseach,Malachy,Naoise,Odhrán,Páidín,Roibéard,Seamus,Turlough,Uilleag,Alastriona,Bairrfhionn,Caoimhe,Dymphna,Éabha,Fionnuala,Gráinne,Isolt,Laoise,Máire,Niamh,Oonagh,Pádraigín,Róisín,Saoirse,Teagan,Úna,Aoife,Bríd,Caitríona,Deirdre,Éibhlin,Fia,Gormlaith,Iseult,Jennifer,Kerstin,Léan,Máighréad,Nóirín,Órlaith,Plurabelle,Ríoghnach,Siobhán,Treasa,Úrsula,Aodh,Baird,Caoimhín,Dáire,Éamon,Fearghas,Gartlach,Íomhar,József,Lochlainn,Mánus,Naois,Óisin,Páidín,Roibeárd,Seaán,Tomás,Uilliam,Ailbhe,Bairrionn,Caoilinn,Dairine,Eabhnat,Fearchara,Gormfhlaith,Ite,Juliana,Kaitlín,Laochlann,Nollaig,Órnait,Pála,Roise,Seaghdha,Tomaltach,Uinseann,Ailbín,Bairrionn,Caoimhín,Dairine,Eabhnat,Fearchara,Gormfhlaith,Ite,Juliana,Kaitlín,Laochlann,Nollaig,Órnait,Pála,Roise,Seaghdha,Tomaltach,Uinseann";
-        private const string hibFemaleNames = "Aibhlinn,Brighid,Caoilfhionn,Deirdre,Éabha,Fionnuala,Gráinne,Iseult,Jennifer,Kerstin,Léan,Máire,Niamh,Oonagh,Pádraigín,Róisín,Saoirse,Teagan,Úna,Aoife,Aisling,Bláthnat,Clíodhna,Dymphna,Éidín,Fíneachán,Gormfhlaith,Íomhar,Juliana,Kaitlín,Laoise,Máighréad,Nóirín,Órlaith,Plurabelle,Ríoghnach,Siobhán,Treasa,Úrsula,Ailbhe,Bairrfhionn,Caoilinn,Dairine,Éabhnat,Fearchara,Gormlaith,Ite,Laochlann,Máirtín,Nollaig,Órnait,Pála,Roise,Seaghdha,Tomaltach,Uinseann,Ailbín,Ailis,Bláth,Dairín,Éadaoin,Fionn,Grá,Iseabal,Jacinta,Káit,Laoiseach,Máire,Nuala,Órfhlaith,Póilín,Saibh,Téadgh";
+        private const string hibMaleNames = "Aonghus,Breandan,Cian,Dallan,Eogan,Fearghal,Greagoir,Iomhar,Lorcan,Mairtin,Neachtan,Odhran,Paraic,Ruairi,Seosamh,Toireasa,aed,Beircheart,Colm,Domhnall,eanna,Fergus,Goll,Irial,Liam,MacCon,Naoimhin,odhran,Padraig,Ronan,Seanan,Tadhgan,Uilliam,Ailill,Bran,Cairbre,Daithi,Eoghan,Faolan,Gorm,Iollan,Lughaidh,Manannan,Niall,Oisin,Padraig,Ronan,Seadna,Tadhg,Ultan,Alastar,Bairre,Caoilte,Daire,enna,Fiachra,Gairm,Imleach,Jarlath,Kian,Laoiseach,Malachy,Naoise,Odhran,Paidin,Roibeard,Seamus,Turlough,Uilleag,Alastriona,Bairrfhionn,Caoimhe,Dymphna,eabha,Fionnuala,Grainne,Isolt,Laoise,Maire,Niamh,Oonagh,Padraigin,Roisin,Saoirse,Teagan,Una,Aoife,Brid,Caitriona,Deirdre,eibhlin,Fia,Gormlaith,Iseult,Jennifer,Kerstin,Lean,Maighread,Noirin,orlaith,Plurabelle,Rioghnach,Siobhan,Treasa,Ursula,Aodh,Baird,Caoimhin,Daire,eamon,Fearghas,Gartlach,iomhar,Jozsef,Lochlainn,Manus,Naois,oisin,Paidin,Roibeard,Seaan,Tomas,Uilliam,Ailbhe,Bairrionn,Caoilinn,Dairine,Eabhnat,Gormfhlaith,Ite,Juliana,Kaitlin,Laochlann,Nollaig,ornait,Pala,Roise,Seaghdha,Tomaltach,Uinseann,Ailbin,Bairrionn,Caoimhin,Dairine,Eabhnat,Fearchara,Gormfhlaith,Ite,Juliana,Kaitlin,Laochlann,Nollaig,ornait,Pala,Roise,Seaghdha,Tomaltach,Uinseann";
+        private const string hibFemaleNames = "Aibhlinn,Brighid,Caoilfhionn,Deirdre,eabha,Fionnuala,Grainne,Iseult,Jennifer,Kerstin,Lean,Maire,Niamh,Oonagh,Padraigin,Roisin,Saoirse,Teagan,Una,Aoife,Aisling,Blathnat,Cliodhna,Dymphna,eidin,Fineachan,Gormfhlaith,iomhar,Juliana,Kaitlin,Laoise,Maighread,Noirin,orlaith,Plurabelle,Rioghnach,Siobhan,Treasa,Ursula,Ailbhe,Bairrfhionn,Caoilinn,Dairine,eabhnat,Fearchara,Gormlaith,Ite,Laochlann,Mairtin,Nollaig,ornait,Pala,Roise,Seaghdha,Tomaltach,Uinseann,Ailbin,Ailis,Blath,Dairin,eadaoin,Fionn,Gra,Iseabal,Jacinta,Kait,Laoiseach,Nuala,orfhlaith,Poilin,Saibh,Teadgh";
 
         private const string midMaleNames = "Agnar,Bjorn,Dagur,Eirik,Fjolnir,Geir,Haldor,Ivar,Jarl,Kjartan,Leif,Magnus,Njall,Orvar,Ragnald,Sigbjorn,Thrain,Ulf,Vifil,Arni,Bardi,Dain,Einar,Faldan,Grettir,Hogni,Ingvar,Jokul,Koll,Leiknir,Mord,Nikul,Ornolf,Ragnvald,Sigmund,Thorfinn,Ulfar,Vali,Yngvar,Asgeir,Bolli,Darri,Egill,Flosi,Gisli,Hjortur,Ingolf,Jokull,Kolbeinn,Leikur,Mordur,Nils,Orri,Ragnaldur,Sigurdur,Thormundur,Ulfur,Valur,Yngvi,Arnstein,Bardur,David,Egill,Flosi,Gisli,Hjortur,Ingolf,Jokull,Kolbeinn,Leikur,Mordur,Nils,Orri,Ragnaldur,Sigurdur,Thormundur,Ulfur,Valur,Yngvi,Arnstein,Bardur,David,Eik,Fridgeir,Grimur,Hafthor,Ivar,Jorundur,Kari,Ljotur,Mord,Nokkvi,Oddur,Rafn,Steinar,Thorir,Valgard,Yngve,Askur,Baldur,Dagr,Eirikur,Fridleif";
         private const string midFemaleNames = "Aesa,Bjorg,Dalla,Edda,Fjola,Gerd,Halla,Inga,Jora,Kari,Lina,Marna,Njola,Orna,Ragna,Sif,Thora,Ulfhild,Vika,Alva,Bodil,Dagny,Eira,Frida,Gisla,Hildur,Ingibjorg,Jofrid,Kolfinna,Leidr,Mina,Olina,Ragnheid,Sigrid,Thordis,Una,Yrsa,Asgerd,Bergthora,Eilif,Flosa,Gudrid,Hjordis,Ingimund,Jolninna,Lidgerd,Mjoll,Oddny,Ranveig,Sigrun,Thorhalla,Valdis,Alfhild,Bardis,Davida,Eilika,Fridleif,Gudrun,Hjortur,Jokulina,Kolfinna,Leiknir,Mordur,Njall,Orvar,Ragnald,Sigbjorn,Thrain,Ulf,Vifil,Arnstein,Bardur,David,Egill,Fridgeir,Grimur,Hafthor,Ivar,Jorundur,Kari,Ljotur,Mord,Nokkvi,Oddur,Rafn,Steinar,Thorir,Valgard,Yngve,Askur,Baldur,Dagr,Eirikur,Fridleif,Grimur,Halfdan,Ivarr,Kjell,Ljung,Nikul,Ornolf,Ragnvald,Sigurdur,Thormundur,Ulfur,Valur,Yngvi";

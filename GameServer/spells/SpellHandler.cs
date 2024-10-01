@@ -857,7 +857,9 @@ namespace DOL.GS.Spells
             if (IsSummoningSpell && Caster.CurrentRegion.IsCapitalCity)
             {
                 // Message: You can't summon here!
-                ChatUtil.SendErrorMessage(Caster as GamePlayer, "GamePlayer.CastEnd.Fail.BadRegion", null);
+				if (Caster is GamePlayer)
+					ChatUtil.SendErrorMessage(Caster as GamePlayer, "GamePlayer.CastEnd.Fail.BadRegion", null);
+
                 return false;
             }
 

@@ -2,6 +2,7 @@
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.API;
 using DOL.GS.Effects;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
@@ -38,14 +39,15 @@ namespace DOL.GS.Scripts
         public StyleComponent StyleComponent { get { return styleComponent; } }
         public EffectListComponent EffectListComponent { get { return effectListComponent; } }
 
+        private MimicSpawner _mimicSpawner;
+        public MimicSpawner MimicSpawner 
+        { 
+            get { return _mimicSpawner; } 
+            set { _mimicSpawner = value; } 
+        }
+
         public IPacketLib Out { get { return _dummyLib; } }
         public GameClient Client { get { return _dummyClient; } }
-        public GamePlayer Dev { private get; set; }
-
-        public void DevOut(string message)
-        {
-            Dev.Out.SendMessage(message, eChatType.CT_Say, eChatLoc.CL_ChatWindow);
-        }
 
         public bool CanUseSideStyles { get { return StylesSide != null && StylesSide.Count > 0; } }
         public bool CanUseBackStyles { get { return StylesBack != null && StylesBack.Count > 0; } }
@@ -122,8 +124,6 @@ namespace DOL.GS.Scripts
             {
                 return 0;
             }));
-
-            Dev = ClientService.GetPlayers()[0];
         }
 
         private void SetBrain(eMimicClass mimicClass)
@@ -274,8 +274,16 @@ namespace DOL.GS.Scripts
                 case 5: armorType = eObjectType.Plate; break;
             }
 
-            MimicEquipment.SetArmor(this, armorType);
-            //MimicEquipment.SetArmorROG(this, Realm, (eCharacterClass)CharacterClass.ID, Level, armorType);
+            if (MimicConfig.ARMOR_ROG)
+            {
+                int min = Math.Max(1, Level - 3);
+                int max = Math.Min(51, Level + 3);
+                byte level = (byte)Util.Random(min, max);
+
+                MimicEquipment.SetArmorROG(this, Realm, (eCharacterClass)CharacterClass.ID, level, armorType);
+            }
+            else
+                MimicEquipment.SetArmor(this, armorType);
         }
 
         public override bool Interact(GamePlayer player)
@@ -338,6 +346,8 @@ namespace DOL.GS.Scripts
                     message += "IsMezzed: " + IsMezzed + "\n";
                     message += "IsStunned: " + IsStunned + "\n";
                     message += "IsRooted: " + IsRooted + "\n";
+                    message += "PvPMode: " + MimicBrain.PvPMode + "\n";
+                    message += "Prevent Combat: " + MimicBrain.PreventCombat;
                     break;
                 }
 
@@ -542,22 +552,35 @@ namespace DOL.GS.Scripts
 
                 case "Stats":
                 {
-                    message = string.Format("Level: {0}\n Str: {1}\n Con: {2}\n Dex: {3}\n Qui: {4}\n Int: {5}\n Pie: {6}\n Emp: {7}\n Cha: {8}\n" +
-                                            " HP: {9}\n AF: {10}\n, End: {11}\n Power: {12}\n",
-                                            Level,
-                                            Strength,
-                                            Constitution,
-                                            Dexterity,
-                                            Quickness,
-                                            Intelligence,
-                                            Piety,
-                                            Empathy,
-                                            Charisma,
-                                            Health,
-                                            EffectiveOverallAF,
-                                            Endurance,
-                                            Mana);
+                    message = "Level: " + Level + "\n" +
 
+                    "Str: " + GetBaseStat(eStat.STR) + " (" + Strength + ")" +
+                    GetModifiedStats(eStat.STR, eProperty.Strength) +
+
+                    "Con: " + GetBaseStat(eStat.CON) + " (" + Constitution + ")" +
+                     GetModifiedStats(eStat.CON, eProperty.Constitution) +
+
+                    "Dex: " + GetBaseStat(eStat.DEX) + " (" + Dexterity + ")" +
+                    GetModifiedStats(eStat.DEX, eProperty.Dexterity) +
+
+                    "Qui: " + GetBaseStat(eStat.QUI) + " (" + Quickness + ")" +
+                    GetModifiedStats(eStat.QUI, eProperty.Quickness);
+
+                    switch (CharacterClass.ManaStat) 
+                    {
+                        case eStat.UNDEFINED: break;
+
+                        case eStat.INT: message += "Int: " + GetBaseStat(eStat.INT) + " (" + Intelligence + ")" + GetModifiedStats(eStat.INT, eProperty.Intelligence); break;
+                        case eStat.PIE: message += "Pie: " + GetBaseStat(eStat.PIE) + " (" + Piety + ")" + GetModifiedStats(eStat.PIE, eProperty.Piety); break;
+                        case eStat.EMP: message += "Emp: " + GetBaseStat(eStat.EMP) + " (" + Empathy + ")" + GetModifiedStats(eStat.EMP, eProperty.Empathy); break;
+                        case eStat.CHR: message += "Cha: " + GetBaseStat(eStat.CHR) + " (" + Charisma + ")" + GetModifiedStats(eStat.CHR, eProperty.Charisma); break;
+                    }
+
+                    message += "Health: " + Health + "/" + MaxHealth + " (" + HealthPercent + "%)\n" +
+                               "End: " + Endurance + "/" + MaxEndurance + " (" + EndurancePercent + "%)\n" +
+                               "Power: " + Mana + "/" + MaxMana + " (" + ManaPercent + "%)\n" +
+                               "AF: " + EffectiveOverallAF + "\n" +
+                               "Conc: " + Concentration + "/" + MaxConcentration + "\n";
                     break;
                 }
 
@@ -654,6 +677,14 @@ namespace DOL.GS.Scripts
             }
 
             return base.SayReceive(source, str);
+        }
+
+        private string GetModifiedStats(eStat stat, eProperty property)
+        {
+            string str = " Item: " + GetModifiedFromItems(property) +
+                         " Buffs: " + GetModifiedFromBuffs(property) + "\n";
+
+            return str;
         }
 
         public override bool ReceiveItem(GameLiving source, DbInventoryItem item)
@@ -1309,6 +1340,7 @@ namespace DOL.GS.Scripts
                 return false;
 
             Duel?.Stop();
+            MimicSpawner?.Remove(this);
 
             if (ControlledBrain != null)
                 CommandNpcRelease();
@@ -6037,6 +6069,8 @@ namespace DOL.GS.Scripts
         {
             base.OnAttackedByEnemy(ad);
 
+            MimicBrain.OnAttackedByEnemy(ad);
+
             if (ControlledBrain != null && ControlledBrain is ControlledMobBrain)
             {
                 var brain = (ControlledMobBrain)ControlledBrain;
@@ -6770,8 +6804,8 @@ namespace DOL.GS.Scripts
         public override void ProcessDeath(GameObject killer)
         {
             // Ambient trigger upon killing player
-            if (killer is GameNPC)
-                (killer as GameNPC).FireAmbientSentence(GameNPC.eAmbientTrigger.killing, killer as GameLiving);
+            //if (killer is GameNPC)
+            //    (killer as GameNPC).FireAmbientSentence(GameNPC.eAmbientTrigger.killing, killer as GameLiving);
 
             CharacterClass.Die(killer);
 
@@ -6845,6 +6879,7 @@ namespace DOL.GS.Scripts
             }
 
             Duel?.Stop();
+            MimicSpawner?.Remove(this);
 
             eChatType messageType;
 

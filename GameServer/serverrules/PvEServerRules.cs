@@ -20,6 +20,7 @@
 using System;
 using DOL.AI.Brain;
 using DOL.Database;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.ServerRules
 {
@@ -45,15 +46,16 @@ namespace DOL.GS.ServerRules
                 IControlledBrain controlled = ((GameNPC)attacker).Brain as IControlledBrain;
                 if (controlled != null)
                 {
-                    attacker = controlled.GetPlayerOwner();
+                    attacker = controlled.GetLivingOwner();
                     quiet = true; // silence all attacks by controlled npc
                 }
             }
+
             if (defender is GameNPC)
             {
                 IControlledBrain controlled = ((GameNPC)defender).Brain as IControlledBrain;
                 if (controlled != null)
-                    defender = controlled.GetPlayerOwner();
+                    defender = controlled.GetLivingOwner();
             }
 
             //"You can't attack yourself!"
@@ -69,7 +71,7 @@ namespace DOL.GS.ServerRules
 
             if (attacker.Realm != eRealm.None && defender.Realm != eRealm.None)
             {
-                if (attacker is GamePlayer && ((GamePlayer)attacker).IsDuelPartner(defender))
+                if (attacker is IGamePlayer && ((IGamePlayer)attacker).IsDuelPartner(defender))
                     return true;
 
                 if (quiet == false) MessageToLiving(attacker, "You can not attack other players on this server!");
@@ -107,7 +109,7 @@ namespace DOL.GS.ServerRules
                 IControlledBrain controlled = ((GameNPC)source).Brain as IControlledBrain;
                 if (controlled != null)
                 {
-                    source = controlled.GetPlayerOwner();
+                    source = controlled.GetLivingOwner();
                     quiet = true; // silence all attacks by controlled npc
                 }
             }
@@ -115,7 +117,7 @@ namespace DOL.GS.ServerRules
             {
                 IControlledBrain controlled = ((GameNPC)target).Brain as IControlledBrain;
                 if (controlled != null)
-                    target = controlled.GetPlayerOwner();
+                    target = controlled.GetLivingOwner();
             }
 
             if (source == target)

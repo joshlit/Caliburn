@@ -65,8 +65,8 @@ namespace DOL.GS
                     long startTick = GameLoop.GetCurrentTime();
                     timer.Tick();
                     long stopTick = GameLoop.GetCurrentTime();
-
-                    if (stopTick - startTick > 25)
+                    //TODO: See if the spawning time can be reduced.
+                    if (stopTick - startTick > 25 && timer.Owner?.Name != "Mimic Spawner")
                         log.Warn($"Long {SERVICE_NAME}.{nameof(Tick)} for Timer Callback: {timer.Callback?.Method?.DeclaringType}:{timer.Callback?.Method?.Name}  Owner: {timer.Owner?.Name} Time: {stopTick - startTick}ms");
                 }
             }

@@ -32,7 +32,7 @@ namespace DOL.GS
         protected override bool PrepareMeleeAttack()
         {
             if (StyleComponent.NextCombatStyle == null)
-                _combatStyle = StyleComponent.NPCGetStyleToUse();
+                _combatStyle = StyleComponent.MimicGetStyleToUse();
             else
                 _combatStyle = StyleComponent.NextCombatStyle;
 

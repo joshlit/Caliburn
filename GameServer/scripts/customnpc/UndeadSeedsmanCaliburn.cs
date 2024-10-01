@@ -71,9 +71,9 @@ namespace DOL.GS.Scripts
             this.Size = 61;
             this.Name = "haunted appletree"; //same as live
             this.Level = (byte)Util.Random(18, 23); //from live, they range from level 18 to 23.
+            this.StartHealthRegeneration();
             return 0;
         }
-
     }
 
 
@@ -174,6 +174,7 @@ namespace DOL.GS.Scripts
             seedsman.SetOwnBrain(ubrain);
             seedsman.AddToWorld();
             seedsman.Brain.Start();
+            seedsman.Brain.FSM.SetCurrentState(eFSMStateType.IDLE);
             seedsman.StartPlanting();
         }
 

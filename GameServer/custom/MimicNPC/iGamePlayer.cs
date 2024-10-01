@@ -109,6 +109,8 @@ namespace DOL.GS.Scripts
         public byte Level { get; set; }
         public byte MaxLevel { get; }
         public int RealmLevel { get; set; }
+        public long RealmPoints { get; set; }
+        public long BountyPoints { get; set; }
         public int MLLevel { get; set; }
         public eRealm Realm { get; set; }
         public bool Champion { get; set; }

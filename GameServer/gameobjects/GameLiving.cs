@@ -1875,18 +1875,6 @@ namespace DOL.GS
             }
             else if (ad.IsSpellResisted && ad.Target is GameNPC npc)
                 npc.CancelReturnToSpawnPoint();
-
-            if (Group != null)
-            {
-                if (Group.GetMembersInTheGroup().Any())
-                {
-                    foreach (GameLiving groupMember in Group.GetMembersInTheGroup())
-                    {
-                        if (groupMember is MimicNPC mimic && groupMember != this)
-                            ((MimicBrain)mimic.Brain).OnGroupMemberAttacked(ad);
-                    }
-                }
-            }
         }
 
 		/// <summary>
