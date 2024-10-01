@@ -9,6 +9,7 @@ using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
+using DOL.GS.Styles;
 using DOL.Language;
 using log4net;
 using Microsoft.VisualBasic;
@@ -31,20 +32,15 @@ namespace DOL.AI.Brain
 
         public override bool IsActive => Body != null && Body.IsAlive && Body.ObjectState == GameObject.eObjectState.Active;
 
-        public bool IsMainPuller
-        { get { return Body.Group?.MimicGroup.MainPuller == Body; } }
+        public bool IsMainPuller { get { return Body.Group?.MimicGroup.MainPuller == Body; } }
 
-        public bool IsMainTank
-        { get { return Body.Group?.MimicGroup.MainTank == Body; } }
+        public bool IsMainTank { get { return Body.Group?.MimicGroup.MainTank == Body; } }
 
-        public bool IsMainLeader
-        { get { return Body.Group?.MimicGroup.MainLeader == Body; } }
+        public bool IsMainLeader { get { return Body.Group?.MimicGroup.MainLeader == Body; } }
 
-        public bool IsMainCC
-        { get { return Body.Group?.MimicGroup.MainCC == Body; } }
+        public bool IsMainCC { get { return Body.Group?.MimicGroup.MainCC == Body; } }
 
-        public bool IsMainAssist
-        { get { return Body.Group?.MimicGroup.MainAssist == Body; } }
+        public bool IsMainAssist { get { return Body.Group?.MimicGroup.MainAssist == Body; } }
 
         private MimicNPC _mimicBody;
 
@@ -164,7 +160,7 @@ namespace DOL.AI.Brain
                 case eAttackResult.HitUnstyled:
                 case eAttackResult.Missed:
                 case eAttackResult.Parried:
-                AddToAggroList(ad.Attacker, ad.Attacker.EffectiveLevel + ad.Damage + ad.CriticalDamage);
+                AddToAggroList(ad.Attacker, 1);
                 break;
             }
 
@@ -174,10 +170,13 @@ namespace DOL.AI.Brain
 
         public virtual bool CheckProximityAggro(int aggroRange)
         {
-            FireAmbientSentence();
+            //FireAmbientSentence();
 
-            CheckPlayerAggro();
-            CheckNPCAggro(aggroRange);
+            if (PvPMode || AggroLevel > 0 && AggroRange > 0 && !HasAggro && Body.CurrentSpellHandler == null)
+            {
+                CheckPlayerAggro();
+                CheckNPCAggro(aggroRange);
+            }
 
             // Some calls rely on this method to return if there's something in the aggro list, not necessarily to perform a proximity aggro check.
             // But this doesn't necessarily return whether or not the check was positive, only the current state (LoS checks take time).
@@ -227,31 +226,69 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual void CheckNPCAggro(int aggroRange)
         {
-            foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)aggroRange))
+            List<GameNPC> npcsInRadius = Body.GetNPCsInRadius((ushort)aggroRange);
+
+            if (npcsInRadius.Count > 1)
             {
-                if (!CanAggroTarget(npc))
-                    continue;
+                int startIndex = Util.Random(0, npcsInRadius.Count - 1);
 
-                if (npc is IGamePlayer player && player.IsStealthed && !MimicBody.CanDetect(player))
-                    continue;
-
-                if (npc is GameTaxi or GameTrainingDummy)
-                    continue;
-
-                if (Properties.CHECK_LOS_BEFORE_AGGRO)
+                for (int i = 0; i < npcsInRadius.Count; i++)
                 {
-                    // Check LoS if either the target or the current mob is a pet
-                    if (npc.Brain is ControlledMobBrain theirControlledMobBrain && theirControlledMobBrain.GetPlayerOwner() is GamePlayer theirOwner)
-                    {
-                        theirOwner.Out.SendCheckLos(Body, npc, new CheckLosResponse(LosCheckForAggroCallback));
+                    int index = startIndex + i;
+
+                    if (index >= npcsInRadius.Count)
+                        index = i - (npcsInRadius.Count - startIndex);
+
+                    if (!CanAggroTarget(npcsInRadius[index]))
                         continue;
+
+                    if (npcsInRadius[index] is IGamePlayer player && player.IsStealthed && !MimicBody.CanDetect(player))
+                        continue;
+
+                    if (npcsInRadius[index] is GameTaxi or GameTrainingDummy)
+                        continue;
+
+                    if (Properties.CHECK_LOS_BEFORE_AGGRO)
+                    {
+                        // Check LoS if either the target or the current mob is a pet
+                        if (npcsInRadius[index].Brain is ControlledMobBrain theirControlledMobBrain && theirControlledMobBrain.GetPlayerOwner() is GamePlayer theirOwner)
+                        {
+                            theirOwner.Out.SendCheckLos(Body, npcsInRadius[index], new CheckLosResponse(LosCheckForAggroCallback));
+                            continue;
+                        }
                     }
+
+                    AddToAggroList(npcsInRadius[index], 1);
+
+                    return;
                 }
-
-                AddToAggroList(npc, 1);
-
-                //return;
             }
+
+            //foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)aggroRange))
+            //{
+            //    if (!CanAggroTarget(npc))
+            //        continue;
+
+            //    if (npc is IGamePlayer player && player.IsStealthed && !MimicBody.CanDetect(player))
+            //        continue;
+
+            //    if (npc is GameTaxi or GameTrainingDummy)
+            //        continue;
+
+            //    if (Properties.CHECK_LOS_BEFORE_AGGRO)
+            //    {
+            //        // Check LoS if either the target or the current mob is a pet
+            //        if (npc.Brain is ControlledMobBrain theirControlledMobBrain && theirControlledMobBrain.GetPlayerOwner() is GamePlayer theirOwner)
+            //        {
+            //            theirOwner.Out.SendCheckLos(Body, npc, new CheckLosResponse(LosCheckForAggroCallback));
+            //            continue;
+            //        }
+            //    }
+
+            //    AddToAggroList(npc, 1);
+
+            //    return;
+            //}
         }
 
         public virtual void FireAmbientSentence()
@@ -844,6 +881,9 @@ namespace DOL.AI.Brain
 
             if (Body.TargetObject != null)
             {
+                if (Body.ControlledBrain != null)
+                    Body.ControlledBrain.Attack(Body.TargetObject);
+
                 if (!IsFleeing && CheckSpells(eCheckSpellType.Offensive))
                 {
                     Body.StopAttack();
@@ -851,9 +891,6 @@ namespace DOL.AI.Brain
                 else
                 {
                     CheckOffensiveAbilities();
-
-                    if (Body.ControlledBrain != null)
-                        Body.ControlledBrain.Attack(Body.TargetObject);
 
                     if (MimicBody.CharacterClass.ClassType == eClassType.ListCaster && MimicBody.CharacterClass.ID != (int)eCharacterClass.Valewalker)
                     {
@@ -887,7 +924,7 @@ namespace DOL.AI.Brain
                                     IsFleeing = false;
                                     TargetFleePosition = null;
 
-                                    if (Body.IsWithinRadius(Body.TargetObject, 500))
+                                    if (Body.IsWithinRadius(Body.TargetObject, 400))
                                     {
                                         Flee(1800);
                                         return;
@@ -957,10 +994,19 @@ namespace DOL.AI.Brain
 
         private void Flee(int distance)
         {
-            IsFleeing = true;
-            MimicBody.Sprint(true);
             TargetFleePosition = GetFleePoint(distance);
-            Body.PathTo(TargetFleePosition, Body.MaxSpeed);
+
+            if (TargetFleePosition != null)
+            {
+                IsFleeing = true;
+                MimicBody.Sprint(true);
+
+                Body.PathTo(TargetFleePosition, Body.MaxSpeed);
+            }
+            else
+            {
+                IsFleeing = false;
+            }
         }
 
         public void ResetFlanking()
@@ -997,20 +1043,54 @@ namespace DOL.AI.Brain
 
         private Point3D GetFleePoint(int fleeDistance)
         {
-            float diffx = (long)Body.TargetObject.X - Body.X;
-            float diffy = (long)Body.TargetObject.Y - Body.Y;
+            ushort heading;
 
-            float distance = (float)Math.Sqrt(diffx * diffx + diffy * diffy);
+            if (Body.IsObjectInFront(Body.TargetObject, 120))
+                heading = (ushort)(Body.Heading - 2048);
+            else
+                heading = Body.Heading;
 
-            diffx = (diffx / distance) * fleeDistance;
-            diffy = (diffy / distance) * fleeDistance;
+            if (heading < 0)
+                heading += 4096;
 
-            int newX = (int)(Body.TargetObject.X - diffx);
-            int newY = (int)(Body.TargetObject.Y - diffy);
+            if (heading > 4096)
+                heading -= 4096;
 
-            Vector3? target = PathingMgr.Instance.GetClosestPointAsync(Body.CurrentZone, new Vector3(newX, newY, 0));
+            Point2D point = Body.GetPointFromHeading(heading, fleeDistance);
 
-            return new Point3D((int)target?.X, (int)target?.Y, (int)target?.Z);
+            if (Body.CurrentRegion.GetZone(point.X, point.Y) == null)
+            {
+                Point2D validPoint = null;
+
+                for (int i = 0; i < 8; i++)
+                {
+                    heading += 512;
+
+                    if (heading > 4096)
+                        heading -= 4096;
+
+                    validPoint = Body.GetPointFromHeading(heading, fleeDistance);
+
+                    if (Body.CurrentRegion.GetZone(validPoint.X, validPoint.Y) != null)
+                    {
+                        point = validPoint;
+                        break;
+                    }
+                }
+
+                if (point == null)
+                    return null;
+            }
+
+            if (PathingMgr.Instance.HasNavmesh(Body.CurrentZone))
+            {
+                Vector3? target = PathingMgr.Instance.GetClosestPointAsync(Body.CurrentZone, new Vector3(point.X, point.Y, Body.Z));
+
+                if (target.HasValue)
+                    return new Point3D(target.Value.X, target.Value.Y, target.Value.Z);
+            }
+
+            return new Point3D(point.X, point.Y, Body.Z);
         }
 
         private eOpeningPosition GetPositional()
@@ -1196,9 +1276,23 @@ namespace DOL.AI.Brain
             if (realTarget is GameNPC npcTarget && npcTarget.Brain is IControlledBrain npcTargetBrain)
                 realTarget = npcTargetBrain.GetLivingOwner();
 
-            // Only attack if green+ to target
-            if (realTarget.IsObjectGreyCon(Body))
+            // Only attack if target is green+
+            if (Body.IsObjectGreyCon(realTarget))
                 return false;
+
+            if (!PvPMode && FSM.GetCurrentState() == FSM.GetState(eFSMStateType.ROAMING))
+            {
+                ConColor conLimit = (ConColor)Body.GetConLevel(realTarget);
+
+                if (conLimit >= ConColor.PURPLE)
+                    return false;
+
+                if (Body.Group == null && conLimit >= ConColor.ORANGE)
+                    return false;
+
+                if (realTarget is GameNPC npc && npc.Brain is StandardMobBrain brain && brain.HasAggro)
+                    return false;
+            }
 
             if (realTarget is IGamePlayer && realTarget.Realm != Body.Realm)
                 return true;
@@ -1227,6 +1321,15 @@ namespace DOL.AI.Brain
             {
                 FSM.SetCurrentState(eFSMStateType.AGGRO);
                 Think();
+            }
+
+            if (Body.Group != null)
+            {
+                foreach (GameLiving groupMember in Body.Group.GetMembersInTheGroup())
+                {
+                    if (groupMember is MimicNPC mimic && groupMember != Body)
+                        ((MimicBrain)mimic.Brain).OnGroupMemberAttacked(ad);
+                }
             }
         }
 
