@@ -1,4 +1,5 @@
 ﻿using DOL.GS;
+using DOL.GS.Scripts;
 
 namespace DOL.AI.Brain
 {
@@ -48,7 +49,7 @@ namespace DOL.AI.Brain
         public override void Think()
         {
             ControlledMobBrain brain = _brain as ControlledMobBrain;
-            GamePlayer playerOwner = brain.GetPlayerOwner();
+            IGamePlayer playerOwner = brain.GetIPlayerOwner();
 
             if (playerOwner != null)
             {
@@ -92,7 +93,7 @@ namespace DOL.AI.Brain
         public override void Think()
         {
             ControlledMobBrain brain = _brain as ControlledMobBrain;
-            GamePlayer playerOwner = brain.GetPlayerOwner();
+            IGamePlayer playerOwner = brain.GetIPlayerOwner();
 
             if (playerOwner != null)
             {
@@ -163,7 +164,7 @@ namespace DOL.AI.Brain
         public override void Think()
         {
             ControlledMobBrain brain = _brain as ControlledMobBrain;
-            GamePlayer playerOwner = brain.GetPlayerOwner();
+            IGamePlayer playerOwner = brain.GetIPlayerOwner();
 
             if (playerOwner != null)
             {

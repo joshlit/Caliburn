@@ -25,7 +25,20 @@ namespace DOL.AI.Brain
 		/// </summary>
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public const int MAX_PET_AGGRO_DISTANCE = 512; // Tolakram - Live test with caby pet - I was extremely close before auto aggro
+        public override bool IsActive
+        {
+            get 
+            {
+                if (GetNPCOwner() is GameNPC npcOwner && npcOwner is MimicNPC)
+                {
+                    return Body != null && Body.IsAlive && Body.ObjectState == GameObject.eObjectState.Active;
+                }
+                else
+                    return base.IsActive;
+            }
+        }
+
+        public const int MAX_PET_AGGRO_DISTANCE = 512; // Tolakram - Live test with caby pet - I was extremely close before auto aggro
 		// note that a minimum distance is inforced in GameNPC
 		public const short MIN_OWNER_FOLLOW_DIST = 50;
 		//4000 - rough guess, needs to be confirmed
@@ -352,10 +365,10 @@ namespace DOL.AI.Brain
 			if (Body.IsAttacking)
 				Disengage();
 
-			if (Owner is GamePlayer
+			if (Owner is IGamePlayer
 			    && IsMainPet
-			    && ((GamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Animist
-			    && ((GamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Theurgist)
+			    && ((IGamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Animist
+			    && ((IGamePlayer)Owner).CharacterClass.ID != (int)eCharacterClass.Theurgist)
 				Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
 			else if (Owner is GameNPC)
 				Body.Follow(Owner, MIN_OWNER_FOLLOW_DIST, MAX_OWNER_FOLLOW_DIST);
@@ -382,7 +395,7 @@ namespace DOL.AI.Brain
         /// <returns>true if started</returns>
         public override bool Start()
         {
-            if (!base.Start())
+            if (!base.Start() && Owner is not MimicNPC)
                 return false;
 
             if (WalkState == eWalkState.Follow)
