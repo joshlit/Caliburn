@@ -39,7 +39,7 @@ namespace DOL.GS.Scripts
                 {
                     Point2D playerPos = new Point2D(client.Player.X, client.Player.Y);
 
-                    if (client.Player.GroundTarget.GetDistance(playerPos) < 5000)
+                    if (client.Player.GroundTarget.GetDistance(playerPos) < WorldMgr.VISIBILITY_DISTANCE)
                         position = new Point3D(client.Player.GroundTarget);
                 }
 
@@ -499,7 +499,7 @@ namespace DOL.GS.Scripts
             if (player == null)
                 return;
 
-            var entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
+            var entries = MimicLFGManager.GetLFG(player.Level);
             string message;
 
             if (args.Length < 2)
@@ -531,24 +531,25 @@ namespace DOL.GS.Scripts
 
                     if (Util.Chance(baseChance) && !entry.RefusedGroup)
                     {
+                        MimicNPC mimic = MimicManager.GetMimic(entry.MimicClass, entry.Level, entry.Name, entry.Gender);
+
+                        if (!GameServer.ServerRules.IsAllowedToGroup(player, mimic, false))
+                            return;
+
                         if (player.Group == null)
                         {
                             player.Group = new Group(player);
                             player.Group.AddMember(player);
                         }
 
-                        if (player.Group.GetMembersInTheGroup().Count < ServerProperties.Properties.GROUP_MAX_MEMBER)
+                        if (player.Group.MemberCount < ServerProperties.Properties.GROUP_MAX_MEMBER)
                         {
-                            MimicNPC mimic = MimicManager.GetMimic(entry.MimicClass, entry.Level, entry.Name, entry.Gender);
                             MimicManager.AddMimicToWorld(mimic, new Point3D(player.X, player.Y, player.Z), player.CurrentRegionID);
-
                             player.Group.AddMember(mimic);
-
-                            MimicLFGManager.Remove(player.Realm, entry);
+                            MimicLFGManager.Remove(entry);
 
                             // Send a refreshed list with new indexes to avoid using wrong indexes while leaving the dialogue open
-                            entries = MimicLFGManager.GetLFG(player.Realm, player.Level);
-
+                            entries = MimicLFGManager.GetLFG(player.Level);
                             message = BuildMessage(entries);
                         }
                         else

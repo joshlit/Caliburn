@@ -302,7 +302,7 @@ namespace DOL.GS
                 {
                     case 163://new frontiers
                     case 165: //cathal valley
-                    case 233://Sumoner hall
+                    //case 233://Sumoner hall
                     case 234://1to4BG
                     case 235://5to9BG
                     case 236://10to14BG
@@ -312,8 +312,8 @@ namespace DOL.GS
                     case 240://30to34BG
                     case 241://35to39BG
                     case 242://40to44BG and Test BG
-                    case 244://Frontiers RvR dungeon
-                    case 249://Darkness Falls - RvR dungeon
+                    //case 244://Frontiers RvR dungeon
+                    //case 249://Darkness Falls - RvR dungeon
                     case 489://lvl5-9 Demons breach
                         return true;
                     default:

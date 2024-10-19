@@ -363,7 +363,10 @@ namespace DOL.GS.Scripts
 
                 case "Group":
                 {
-                    if (Group != null && Group.GetMembersInTheGroup().Count < 8)
+                    if (!GameServer.ServerRules.IsAllowedToGroup(player, this, false))
+                        break;
+
+                    if (Group != null && Group.MemberCount < Properties.GROUP_MAX_MEMBER)
                     {
                         Group.AddMember(player);
                         break;
@@ -376,7 +379,7 @@ namespace DOL.GS.Scripts
                     }
                     else
                     {
-                        if (player.Group.GetMembersInTheGroup().Contains(this) || player.Group.MemberCount > 8)
+                        if (player.Group.IsInTheGroup(this) || player.Group.MemberCount > Properties.GROUP_MAX_MEMBER)
                             break;
                     }
 

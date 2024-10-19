@@ -290,7 +290,7 @@ namespace DOL.GS.ServerRules
 
 		public abstract bool IsSameRealm(GameLiving source, GameLiving target, bool quiet);
 		public abstract bool IsAllowedCharsInAllRealms(GameClient client);
-		public abstract bool IsAllowedToGroup(GamePlayer source, GamePlayer target, bool quiet);
+		public abstract bool IsAllowedToGroup(IGamePlayer source, IGamePlayer target, bool quiet);
 		public abstract bool IsAllowedToJoinGuild(GamePlayer source, Guild guild);
 		public abstract bool IsAllowedToTrade(GameLiving source, GameLiving target, bool quiet);
 		public abstract bool IsAllowedToUnderstand(GameLiving source, GamePlayer target);

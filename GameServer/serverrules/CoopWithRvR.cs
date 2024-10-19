@@ -19,8 +19,8 @@ public class CoopWithRvr : AbstractServerRules
     public override bool IsAllowedCharsInAllRealms(GameClient client)
         => true;
 
-    public override bool IsAllowedToGroup(GamePlayer source, GamePlayer target, bool quiet)
-        => SelectRuleSet(source).IsAllowedToGroup(source, target, quiet);
+    public override bool IsAllowedToGroup(IGamePlayer source, IGamePlayer target, bool quiet)
+        => SelectRuleSet((GameObject)source).IsAllowedToGroup(source, target, quiet);
 
     public override bool IsAllowedToJoinGuild(GamePlayer source, Guild guild)
         => SelectRuleSet(source).IsAllowedToJoinGuild(source, guild);
@@ -32,14 +32,27 @@ public class CoopWithRvr : AbstractServerRules
         => SelectRuleSet(source).IsAllowedToUnderstand(source, target);
 
     public override bool IsSameRealm(GameLiving source, GameLiving target, bool quiet)
-        => SelectRuleSet(source).IsSameRealm(source, target, quiet);
+    {
+        if (source.Group != null && source.Group.IsInTheGroup(target))
+            return true;
 
-    public override byte GetColorHandling(GameClient client)
-        => SelectRuleSet(client.Player).GetColorHandling(client);
-
+        return SelectRuleSet(source).IsSameRealm(source, target, quiet);
+    }
 
     public override bool IsAllowedToAttack(GameLiving attacker, GameLiving defender, bool quiet)
-                => SelectRuleSet(attacker).IsAllowedToAttack(attacker, defender, quiet);
+    {
+        if (attacker is IGamePlayer iGamePlayerAttacker && iGamePlayerAttacker.IsDuelPartner(defender))
+            return true;
+
+        if (attacker.Group != null && attacker.Group.IsInTheGroup(defender))
+            return false;
+
+        return SelectRuleSet(attacker).IsAllowedToAttack(attacker, defender, quiet);
+    }
+
+    public override byte GetColorHandling(GameClient client)
+    => SelectRuleSet(client.Player).GetColorHandling(client);
+
     public override bool IsAllowedToCastSpell(GameLiving caster, GameLiving target, Spell spell, SpellLine spellLine)
                 => SelectRuleSet(caster).IsAllowedToCastSpell(caster, target, spell, spellLine);
     public override bool IsAllowedToSpeak(GamePlayer source, string communicationType)

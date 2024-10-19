@@ -37,9 +37,6 @@ namespace DOL.GS.ServerRules
 			if (!base.IsAllowedToAttack(attacker, defender, quiet))
 				return false;
 
-			//if (attacker is MimicNPC && ((MimicNPC)attacker).Duel != null && defender != ((MimicNPC)attacker).DuelTarget)
-			//	return false;
-
 			// if controlled NPC - do checks for owner instead
 			if (attacker is GameNPC)
 			{
@@ -51,15 +48,15 @@ namespace DOL.GS.ServerRules
 				}
 			}
 
-			if (defender is GameNPC)
-			{
-				IControlledBrain controlled = ((GameNPC)defender).Brain as IControlledBrain;
+            if (defender is GameNPC)
+            {
+                IControlledBrain controlled = ((GameNPC)defender).Brain as IControlledBrain;
 				if (controlled != null)
                     defender = controlled.GetLivingOwner();
 			}
 
 			//"You can't attack yourself!"
-			if(attacker == defender)
+			if (attacker == defender)
 			{
 				if (quiet == false) MessageToLiving(attacker, "You can't attack yourself!");
 				return false;
@@ -73,15 +70,15 @@ namespace DOL.GS.ServerRules
 					return true;
 				
 				if (attacker.Realm == 0)
-				{
 					return FactionMgr.CanLivingAttack(attacker, defender);
-				}
 
-				if(quiet == false) MessageToLiving(attacker, "You can't attack a member of your realm!");
+				if (quiet == false) 
+					MessageToLiving(attacker, "You can't attack a member of your realm!");
+
 				return false;
 			}
 
-			return true;
+            return true;
 		}
 
 		public override bool IsSameRealm(GameLiving source, GameLiving target, bool quiet)
@@ -99,6 +96,7 @@ namespace DOL.GS.ServerRules
 					quiet = true; // silence all attacks by controlled npc
 				}
 			}
+
 			if (target is GameNPC)
 			{
 				IControlledBrain controlled = ((GameNPC)target).Brain as IControlledBrain;
@@ -123,11 +121,14 @@ namespace DOL.GS.ServerRules
 				if ((((GameNPC)source).Flags & GameNPC.eFlags.PEACE) != 0)
 					return true;
 
-			if(source.Realm != target.Realm)
+			if (source.Realm != target.Realm)
 			{
-				if(quiet == false) MessageToLiving(source, target.GetName(0, true) + " is not a member of your realm!");
+				if (quiet == false) 
+					MessageToLiving(source, target.GetName(0, true) + " is not a member of your realm!");
+
 				return false;
 			}
+
 			return true;
 		}
 
@@ -140,13 +141,16 @@ namespace DOL.GS.ServerRules
 			return false;
 		}
 
-		public override bool IsAllowedToGroup(GamePlayer source, GamePlayer target, bool quiet)
+		public override bool IsAllowedToGroup(IGamePlayer source, IGamePlayer target, bool quiet)
 		{
-			if(source == null || target == null) return false;
+			if (source == null || target == null)
+				return false;
 			
 			if (source.Realm != target.Realm)
 			{
-				if(quiet == false) MessageToLiving(source, "You can't group with a player from another realm!");
+				if (quiet == false) 
+					MessageToLiving((GameLiving)source, "You can't group with a player from another realm!");
+
 				return false;
 			}
 

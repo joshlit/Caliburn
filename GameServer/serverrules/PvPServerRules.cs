@@ -5,6 +5,7 @@ using DOL.Database;
 using DOL.Events;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS.ServerRules
@@ -393,7 +394,7 @@ namespace DOL.GS.ServerRules
 			return true;
 		}
 
-		public override bool IsAllowedToGroup(GamePlayer source, GamePlayer target, bool quiet)
+		public override bool IsAllowedToGroup(IGamePlayer source, IGamePlayer target, bool quiet)
 		{
 			return true;
 		}

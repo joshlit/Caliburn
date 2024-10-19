@@ -106,28 +106,6 @@ namespace DOL.GS.Scripts
         MainCC
     }
 
-    public enum eQueueMessage
-    {
-        None = -1,
-
-        WaitForBuffs,
-
-        LowPower,
-        OutOfPower,
-
-        LowEndurance,
-        OutOfEndurance
-    }
-
-    public enum eQueueMessageResult
-    {
-        None = -1,
-
-        Accept,
-        Deny,
-        OnHold
-    }
-
     public enum eSpecType
     {
         None = -1,

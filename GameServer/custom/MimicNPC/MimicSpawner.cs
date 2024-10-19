@@ -31,7 +31,7 @@ namespace DOL.GS.Scripts
         private ECSGameTimer _timer;
         private int _dormantInterval;
         private int _timerIntervalMin = 1000;
-        private int _timerIntervalMax = 2000;
+        private int _timerIntervalMax = 10000;
 
         private List<MimicNPC> _mimics;
 

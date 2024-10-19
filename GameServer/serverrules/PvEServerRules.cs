@@ -113,6 +113,7 @@ namespace DOL.GS.ServerRules
                     quiet = true; // silence all attacks by controlled npc
                 }
             }
+
             if (target is GameNPC)
             {
                 IControlledBrain controlled = ((GameNPC)target).Brain as IControlledBrain;
@@ -159,7 +160,7 @@ namespace DOL.GS.ServerRules
             return true;
         }
 
-        public override bool IsAllowedToGroup(GamePlayer source, GamePlayer target, bool quiet)
+        public override bool IsAllowedToGroup(IGamePlayer source, IGamePlayer target, bool quiet)
         {
             return true;
         }
