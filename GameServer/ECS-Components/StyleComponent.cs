@@ -8,6 +8,7 @@ using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DOL.GS
 {
@@ -156,13 +157,8 @@ namespace DOL.GS
         {
             var p = _owner as GameNPC;
 
-            MimicNPC mimic = _owner as MimicNPC;
-
-            if (mimic == null)
-            {
-                if (p.Styles == null || p.Styles.Count < 1 || p.TargetObject == null)
+            if (p.Styles == null || p.Styles.Count < 1 || p.TargetObject == null)
                     return null;
-            }
 
             AttackData lastAttackData = p.attackComponent.attackAction.LastAttackData;
 
@@ -177,18 +173,10 @@ namespace DOL.GS
                         && p.CheckStyleStun(s)) // Make sure we don't spam stun styles like Brutalize
                         return s;
 
-            bool chance = mimic != null ? true : Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE);
+            bool chance = Util.Chance(Properties.GAMENPC_CHANCES_TO_STYLE);
 
             if (chance)
             {
-                if (mimic != null && !mimic.MimicBrain.PvPMode && mimic.MimicBrain.IsMainTank)
-                {
-                    Style s = CheckTaunt(mimic, lastAttackData);
-
-                    if (s != null)
-                        return s;
-                }
-
                 if (p.StylesBack != null && p.StylesBack.Count > 0)
                 {
                     Style s = p.StylesBack[Util.Random(0, p.StylesBack.Count - 1)];
@@ -216,14 +204,6 @@ namespace DOL.GS
                     if (StyleProcessor.CanUseStyle(lastAttackData, p, s, p.ActiveWeapon))
                             return s;
                 }
-
-                if (mimic != null && (mimic.MimicBrain.PvPMode || mimic.Group == null))
-                {
-                    Style s = CheckTaunt(mimic, lastAttackData);
-
-                    if (s != null)
-                        return s;
-                }
             }
 
             return null;
@@ -249,32 +229,54 @@ namespace DOL.GS
                         && mimic.CheckStyleStun(s)) // Make sure we don't spam stun styles like Brutalize
                         return s;
 
+            Style style;
+
             if (!mimic.MimicBrain.PvPMode && mimic.MimicBrain.IsMainTank)
             {
-                Style s = CheckTaunt(mimic, lastAttackData);
+                style = CheckTaunt(mimic, lastAttackData);
 
-                if (s != null)
-                    return s;
+                if (style != null)
+                    return style;
             }
 
             if (mimic.StylesBack != null && mimic.StylesBack.Count > 0)
-                return GetStyle(mimic.StylesBack, lastAttackData, mimic);
+            {
+                style = GetStyle(mimic.StylesBack, lastAttackData, mimic);
+
+                if (style != null)
+                    return style;
+            }
 
             if (mimic.StylesSide != null && mimic.StylesSide.Count > 0)
-                return GetStyle(mimic.StylesSide, lastAttackData, mimic);
+            {
+                style = GetStyle(mimic.StylesSide, lastAttackData, mimic);
+
+                if (style != null)
+                    return style;
+            }
 
             if (mimic.StylesFront != null && mimic.StylesFront.Count > 0)
-                return GetStyle(mimic.StylesFront, lastAttackData, mimic);
+            {
+                style = GetStyle(mimic.StylesFront, lastAttackData, mimic);
+
+                if (style != null)
+                    return style;
+            }
 
             if (mimic.StylesAnytime != null && mimic.StylesAnytime.Count > 0)
-                return GetStyle(mimic.StylesAnytime, lastAttackData, mimic);
+            {
+                style = GetStyle(mimic.StylesAnytime, lastAttackData, mimic);
+
+                if (style != null)
+                    return style;
+            }
 
             if (mimic.MimicBrain.PvPMode || mimic.Group == null)
             {
-                Style s = CheckTaunt(mimic, lastAttackData);
+                style = CheckTaunt(mimic, lastAttackData);
 
-                if (s != null)
-                    return s;
+                if (style != null)
+                    return style;
             }
 
             return null;
@@ -282,7 +284,7 @@ namespace DOL.GS
 
         private Style GetStyle(List<Style> styles, AttackData lastAttackData, GameLiving mimic)
         {
-            Style style = styles.First();
+            Style style = null;
 
             if (styles.Count > 1)
             {
