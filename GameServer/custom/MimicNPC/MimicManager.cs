@@ -417,7 +417,7 @@ namespace DOL.GS.Scripts
 
             if (realm == eRealm.None)
             {
-                int randomIndex = Util.Random(mimicClasses.Length - 1);
+                int randomIndex = Util.Random(1, mimicClasses.Length - 1);
                 return (eMimicClass)mimicClasses.GetValue(randomIndex);
             }
 

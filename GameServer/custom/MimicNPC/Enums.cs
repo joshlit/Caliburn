@@ -17,7 +17,7 @@ namespace DOL.GS.Scripts
 
     public enum eMimicClass
     {
-        None = -1,
+        None = 0,
 
         Armsman = 2,
         Cabalist = 13,
