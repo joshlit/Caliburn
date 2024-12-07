@@ -709,6 +709,9 @@ namespace DOL.AI.Brain
                 else
                     target = puller;
 
+                if (target is IGamePlayer gamePlayer)
+                    gamePlayer.Group?.MimicGroup.CCTargets.Add(brain.Body);
+
                 brain.AddToAggroList(target, 1);
             }
 
