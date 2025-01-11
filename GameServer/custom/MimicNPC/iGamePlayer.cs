@@ -63,11 +63,20 @@ namespace DOL.GS.Scripts
         public void AddXPGainer(GameObject xpGainer, float damageAmount);
         public void GainRealmPoints(long amount, bool modify);
         public int GetDistanceTo(IPoint3D point);
+        public int GetDistance(IPoint2D point);
+        public bool CanSeeObject(GameObject obj);
         public bool IsWithinRadius(GameObject obj, int radius);
         public bool IsWithinRadius(IPoint3D point, int radius, bool ignoreZ);
         public List<GamePlayer> GetPlayersInRadius(ushort radiusToCheck);
         public List<GameNPC> GetNPCsInRadius(ushort radiusToCheck);
         public int GetConLevel(GameObject compare);
+
+        public void PickupObject(GameObject floorObject, bool checkRange);
+        public void AddMoney(long money);
+        public void AddMoney(long money, string messageFormat);
+        public void AddMoney(long money, string messageFormat, eChatType ct, eChatLoc cl);
+        public bool RemoveMoney(long money);
+        public long GetCurrentMoney();
 
         public bool IsControlledNPC(GameNPC npc);
         public void CommandNpcRelease();
@@ -92,6 +101,11 @@ namespace DOL.GS.Scripts
         public IGameInventory Inventory { get; set; }
         public DbInventoryItem ActiveWeapon { get; }
         public eActiveWeaponSlot ActiveWeaponSlot { get; }
+
+        public bool Autoloot { get; set; }
+        public bool AutoSplitLoot { get; set; }
+        public bool CanUseCrossRealmItems { get; }
+        public int OutOfClassROGPercent { get; set; }
 
         public IControlledBrain ControlledBrain { get; set; }
 
@@ -165,6 +179,8 @@ namespace DOL.GS.Scripts
         public Zone CurrentZone { get; }
         public Region CurrentRegion { get; set; }
         public ushort CurrentRegionID { get; set; }
+        public IList<IArea> CurrentAreas { get; set; }
+
         public int Z { get; }
     }
 }

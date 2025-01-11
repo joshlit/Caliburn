@@ -2826,10 +2826,12 @@ namespace DOL.GS
             {
                 if (CurrentRegion == null || CurrentRegion.Time - CHARMED_NOEXP_TIMEOUT < TempProperties.GetProperty<long>(CHARMED_TICK_PROP))
                     return false;
+
                 if (this.Brain is IControlledBrain)
                     return false;
 
                 HybridDictionary XPGainerList = new HybridDictionary();
+
                 lock (m_xpGainers.SyncRoot)
                 {
                     foreach (DictionaryEntry gainer in m_xpGainers)
@@ -2837,17 +2839,21 @@ namespace DOL.GS
                         XPGainerList.Add(gainer.Key, gainer.Value);
                     }
                 }
-                if (XPGainerList.Keys.Count == 0) return false;
+
+                if (XPGainerList.Keys.Count == 0) 
+                    return false;
+
                 foreach (DictionaryEntry de in XPGainerList)
                 {
                     GameObject obj = (GameObject)de.Key;
+
                     if (obj is GamePlayer)
                     {
                         //If a gameplayer with privlevel > 1 attacked the
                         //mob, then the players won't gain xp ...
                         if (((GamePlayer)obj).Client.Account.PrivLevel > 1)
                             return false;
-                        //If a player to which we are gray killed up we
+                        //If a player to which we are gray killed us we
                         //aren't worth anything either
                         if (((GamePlayer)obj).IsObjectGreyCon(this))
                             return false;
@@ -2863,6 +2869,7 @@ namespace DOL.GS
                             return false;
                     }
                 }
+
                 return true;
             }
             set
@@ -3316,9 +3323,7 @@ namespace DOL.GS
             lock (m_xpGainers.SyncRoot)
             {
                 foreach (DictionaryEntry gainer in m_xpGainers)
-                {
                     XPGainerList.Add(gainer.Key, gainer.Value);
-                }
             }
 
             if (XPGainerList.Keys.Count == 0)
@@ -3340,9 +3345,9 @@ namespace DOL.GS
                     //[StephenxPimentel] - Zone Bonus XP Support
                     if (Properties.ENABLE_ZONE_BONUSES)
                     {
-                        GamePlayer killerPlayer;
+                        IGamePlayer killerPlayer;
 
-                        if (killer is GamePlayer player)
+                        if (killer is IGamePlayer player)
                             killerPlayer = player;
                         else if (killer is GameNPC npc)
                         {
@@ -3355,13 +3360,15 @@ namespace DOL.GS
                             return;
 
                         int zoneBonus = (((int)value * ZoneBonus.GetCoinBonus(killerPlayer) / 100));
+
                         if (zoneBonus > 0)
                         {
                             long amount = (long)(zoneBonus * ServerProperties.Properties.MONEY_DROP);
+
                             killerPlayer.AddMoney(amount,
                                                   ZoneBonus.GetBonusMessage(killerPlayer, (int)(zoneBonus * ServerProperties.Properties.MONEY_DROP), ZoneBonus.eZoneBonusType.COIN),
                                                   eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                            InventoryLogging.LogInventoryAction(this, killerPlayer, eInventoryActionType.Loot, amount);
+                            InventoryLogging.LogInventoryAction(this, (GameObject)killerPlayer, eInventoryActionType.Loot, amount);
                         }
                     }
 
@@ -3379,9 +3386,9 @@ namespace DOL.GS
                     }
 
                     //Mythical Coin bonus property (Can be used for any equipped item, bonus 235)
-                    if (killer is GamePlayer)
+                    if (killer is IGamePlayer)
                     {
-                        GamePlayer killerPlayer = killer as GamePlayer;
+                        IGamePlayer killerPlayer = killer as IGamePlayer;
                         if (killerPlayer.GetModified(eProperty.MythicalCoin) > 0)
                         {
                             value += (value * killerPlayer.GetModified(eProperty.MythicalCoin)) / 100;
@@ -3427,36 +3434,41 @@ namespace DOL.GS
                     }
                 }
 
-                GamePlayer playerAttacker = null;
+                IGamePlayer playerAttacker = null;
                 BattleGroup activeBG = null;
 
-                if (killer is GamePlayer playerKiller && activeBG != null)
+                if (killer is IGamePlayer playerKiller && activeBG != null)
                     activeBG = playerKiller.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
 
                 foreach (GameObject gainer in XPGainerList.Keys)
                 {
                     //if a battlegroup killed the mob, filter out any non BG players
-                    if (activeBG != null && gainer is GamePlayer p &&
+                    if (activeBG != null && gainer is IGamePlayer p &&
                         p.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null) != activeBG)
                         continue;
 
-                    if (gainer is GamePlayer)
+                    if (gainer is IGamePlayer)
                     {
-                        playerAttacker = gainer as GamePlayer;
+                        playerAttacker = gainer as IGamePlayer;
+
                         if (loot.Realm == 0)
-                            loot.Realm = ((GamePlayer)gainer).Realm;
+                            loot.Realm = ((IGamePlayer)gainer).Realm;
                     }
+
                     loot.AddOwner(gainer);
+
                     if (gainer is GameNPC)
                     {
                         IControlledBrain brain = ((GameNPC)gainer).Brain as IControlledBrain;
+
                         if (brain != null)
                         {
-                            playerAttacker = brain.GetPlayerOwner();
-                            loot.AddOwner(brain.GetPlayerOwner());
+                            playerAttacker = brain.GetIPlayerOwner();
+                            loot.AddOwner((GameObject)playerAttacker);
                         }
                     }
                 }
+
                 if (playerAttacker == null)
                     return; // no loot if mob kills another mob
 
@@ -3467,13 +3479,14 @@ namespace DOL.GS
 
                 foreach (GameObject gainer in XPGainerList.Keys)
                 {
-                    if (gainer is GamePlayer)
+                    if (gainer is IGamePlayer)
                     {
-                        GamePlayer player = gainer as GamePlayer;
-                        if (player.Autoloot && loot.IsWithinRadius(player, 2400)) // should be large enough for most casters to autoloot
+                        IGamePlayer player = gainer as IGamePlayer;
+                        if (player.Autoloot && loot.IsWithinRadius((GameObject)player, 2400)) // should be large enough for most casters to autoloot
                         {
                             if (player.Group == null || (player.Group != null && player == player.Group.Leader))
                                 aplayer.Add(player);
+
                             autolootlist.Add(loot);
                         }
                     }
@@ -3489,7 +3502,7 @@ namespace DOL.GS
             {
                 foreach (GameObject obj in autolootlist)
                 {
-                    foreach (GamePlayer player in aplayer)
+                    foreach (IGamePlayer player in aplayer)
                     {
                         player.PickupObject(obj, true);
                         break;

@@ -53,10 +53,10 @@ namespace DOL.GS
         /// <summary>
         /// Gets/sets the group Player leader
         /// </summary>
-        public GamePlayer Leader
+        public IGamePlayer Leader
         {
-            get { return LivingLeader as GamePlayer; }
-            private set { LivingLeader = value; }
+            get { return LivingLeader as IGamePlayer; }
+            private set { LivingLeader = (GameLiving)value; }
         }
 
         /// <summary>
@@ -177,10 +177,10 @@ namespace DOL.GS
             return m_groupMembers.OfType<IGamePlayer>().ToArray();
         }
 
-        public ICollection<GamePlayer> GetNearbyPlayersInTheGroup(GamePlayer source)
+        public ICollection<IGamePlayer> GetNearbyPlayersInTheGroup(IGamePlayer source)
         {
-            return m_groupMembers.OfType<GamePlayer>().Where(groupmate =>
-                source.GetDistance(groupmate) <= WorldMgr.MAX_EXPFORKILL_DISTANCE).ToArray();
+            return m_groupMembers.OfType<IGamePlayer>().Where(groupmate =>
+                source.GetDistance((GameLiving)groupmate) <= WorldMgr.MAX_EXPFORKILL_DISTANCE).ToArray();
         }
 
         /// <summary>

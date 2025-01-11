@@ -4,6 +4,7 @@ using System.Linq;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 
 namespace DOL.GS
 {
@@ -245,15 +246,15 @@ namespace DOL.GS
 
             try
             {
-                GamePlayer player = null;
+                IGamePlayer player = null;
 
-                if (killer is GamePlayer)
+                if (killer is IGamePlayer)
                 {
-                    player = killer as GamePlayer;
+                    player = killer as IGamePlayer;
                 }
                 else if (killer is GameNPC && (killer as GameNPC).Brain is IControlledBrain)
                 {
-                    player = ((killer as GameNPC).Brain as ControlledMobBrain).GetPlayerOwner();
+                    player = ((killer as GameNPC).Brain as ControlledMobBrain).GetIPlayerOwner();
                 }
 
                 // allow the leader to decide the loot realm
@@ -331,7 +332,7 @@ namespace DOL.GS
                                             timedDrops[
                                                 Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
 
-                                    lock (player._xpGainersLock)
+                                    lock (((GameLiving)player)._xpGainersLock)
                                     {
                                         DbItemTemplate drop =
                                             GameServer.Database.FindObjectByKey<DbItemTemplate>(lootTemplate
@@ -346,7 +347,7 @@ namespace DOL.GS
                                                 .GetProperty<List<string>>(
                                                     XPItemDroppersKey); //check our list of dropped monsters
                                         if (itemsDropped == null) itemsDropped = new List<string>();
-                                        GamePlayer GroupedTimerToUse = null;
+                                        IGamePlayer GroupedTimerToUse = null;
 
                                         if (player.Group != null)
                                             GroupedTimerToUse =
@@ -482,7 +483,7 @@ namespace DOL.GS
                                             timedDrops[
                                                 Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
 
-                                    lock (player._xpGainersLock)
+                                    lock (((GameLiving)player)._xpGainersLock)
                                     {
                                         DbItemTemplate drop =
                                             GameServer.Database.FindObjectByKey<DbItemTemplate>(lootTemplate
@@ -496,7 +497,7 @@ namespace DOL.GS
                                             player.TempProperties
                                                 .GetProperty<List<string>>(
                                                     XPItemDroppersKey); //check our list of dropped monsters
-                                        GamePlayer GroupedTimerToUse = null;
+                                        IGamePlayer GroupedTimerToUse = null;
                                         if (itemsDropped == null) itemsDropped = new List<string>();
 
                                         if (player.Group != null)
@@ -601,14 +602,14 @@ namespace DOL.GS
             return loot;
         }
 
-        private GamePlayer CheckGroupForValidXpTimer(String xpItemKey, int dropCooldown, GamePlayer player)
+        private IGamePlayer CheckGroupForValidXpTimer(String xpItemKey, int dropCooldown, IGamePlayer player)
         {
             //check if any group member has a valid timer to use
-            foreach (GamePlayer groupMember in player.Group.GetNearbyPlayersInTheGroup(player))
+            foreach (IGamePlayer groupMember in player.Group.GetNearbyPlayersInTheGroup(player))
             {
                 if ((player.CurrentZone != groupMember.CurrentZone) ||
                     player.CurrentRegion != groupMember.CurrentRegion) continue;
-                if (player.GetDistance(groupMember) > WorldMgr.MAX_EXPFORKILL_DISTANCE) continue;
+                if (player.GetDistance((GameLiving)groupMember) > WorldMgr.MAX_EXPFORKILL_DISTANCE) continue;
                 long tempProp = groupMember.TempProperties.GetProperty<long>(xpItemKey, 0);
                 if (tempProp == 0 || tempProp + dropCooldown < GameLoop.GameLoopTime)
                     return groupMember;
@@ -627,7 +628,7 @@ namespace DOL.GS
         /// <param name="player">Player used to determine realm</param>
         /// <returns>lootList (for readability)</returns>
         private LootList GenerateLootFromMobXLootTemplates(DbMobXLootTemplate mobXLootTemplates,
-            List<DbLootTemplate> lootTemplates, LootList lootList, GamePlayer player)
+            List<DbLootTemplate> lootTemplates, LootList lootList, IGamePlayer player)
         {
             if (mobXLootTemplates == null || lootTemplates == null || player == null)
                 return lootList;

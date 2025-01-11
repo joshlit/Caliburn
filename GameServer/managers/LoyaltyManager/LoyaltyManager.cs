@@ -2,26 +2,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
+using DOL.GS.Scripts;
 
 namespace DOL.GS;
 
 public class LoyaltyManager
 {
-    private static Dictionary<GamePlayer, PlayerLoyalty> _CachedPlayerLoyaltyDict;
+    private static Dictionary<IGamePlayer, PlayerLoyalty> _CachedPlayerLoyaltyDict;
 
     public static object CachedDictLock = new object();
 
     public LoyaltyManager()
     {
-        _CachedPlayerLoyaltyDict = new Dictionary<GamePlayer, PlayerLoyalty>();
+        _CachedPlayerLoyaltyDict = new Dictionary<IGamePlayer, PlayerLoyalty>();
     }
     
-    public static PlayerLoyalty GetPlayerLoyalty(GamePlayer player)
+    public static PlayerLoyalty GetPlayerLoyalty(IGamePlayer player)
     {
         if (player == null) return null;
         PlayerLoyalty playerLoyalty = null;
 
-        if (_CachedPlayerLoyaltyDict == null) _CachedPlayerLoyaltyDict = new Dictionary<GamePlayer, PlayerLoyalty>();
+        if (_CachedPlayerLoyaltyDict == null) _CachedPlayerLoyaltyDict = new Dictionary<IGamePlayer, PlayerLoyalty>();
         bool alreadyExists = false;
 
         //need to do this since we can't safely lock the object in the IF statement below
@@ -42,12 +43,12 @@ public class LoyaltyManager
         return playerLoyalty;
     }
 
-    public static void CachePlayer(GamePlayer player)
+    public static void CachePlayer(IGamePlayer player)
     {
         List<DbAccountXRealmLoyalty> realmLoyalty = new List<DbAccountXRealmLoyalty>(DOLDB<DbAccountXRealmLoyalty>.SelectObjects(DB.Column("AccountID").IsEqualTo(player.Client.Account.ObjectId)));
 
         if (_CachedPlayerLoyaltyDict == null)
-            _CachedPlayerLoyaltyDict = new Dictionary<GamePlayer, PlayerLoyalty>();
+            _CachedPlayerLoyaltyDict = new Dictionary<IGamePlayer, PlayerLoyalty>();
 
         lock (CachedDictLock)
         {
@@ -86,7 +87,7 @@ public class LoyaltyManager
             _CachedPlayerLoyaltyDict.Add(player, playerLoyalty);
     }
     
-    public static RealmLoyalty GetPlayerRealmLoyalty(GamePlayer player)
+    public static RealmLoyalty GetPlayerRealmLoyalty(IGamePlayer player)
     {
         if (player == null) return null;
 

@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using DOL.Events;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using log4net;
 
 namespace DOL.GS.Quests
@@ -73,7 +74,7 @@ namespace DOL.GS.Quests
 			: base(owner)
 		{
             log.Info("INFO: Successfully entered TaskDungeonMission!");
-			GamePlayer player = owner as GamePlayer;
+			IGamePlayer player = owner as IGamePlayer;
 
             if (owner is Group)
             {
@@ -461,10 +462,13 @@ namespace DOL.GS.Quests
 
 		public override long RewardMoney
 		{
-			get {
-				GamePlayer player = m_owner as GamePlayer;
+			get 
+            {
+				IGamePlayer player = m_owner as IGamePlayer;
+
 				if (m_owner is Group)
 					player = (m_owner as Group).Leader;
+
 				return player.Level * player.Level * 100;
 			}
 		}
@@ -487,12 +491,16 @@ namespace DOL.GS.Quests
 		{
 			get
 			{
-				GamePlayer player = m_owner as GamePlayer;
+				IGamePlayer player = m_owner as IGamePlayer;
+
 				if (m_owner is Group)
 					player = (m_owner as Group).Leader;
+
 				long amount = XPMagicNumber * player.Level;
+
 				if (player.Level > 1)
 					amount += XPMagicNumber * (player.Level - 1);
+
 				return amount;
 				/*
 				long XPNeeded = (m_owner as GamePlayer).ExperienceForNextLevel - (m_owner as GamePlayer).ExperienceForCurrentLevel;
@@ -503,13 +511,13 @@ namespace DOL.GS.Quests
 
 		public override void FinishMission()
 		{
-			if (m_owner is GamePlayer)
+			if (m_owner is IGamePlayer)
 			{
-				(m_owner as GamePlayer).Out.SendMessage("Mission Complete", eChatType.CT_ScreenCenter, eChatLoc.CL_ChatWindow);
+				(m_owner as IGamePlayer).Out.SendMessage("Mission Complete", eChatType.CT_ScreenCenter, eChatLoc.CL_ChatWindow);
 			}
 			else if (m_owner is Group)
 			{
-				foreach (GamePlayer player in (m_owner as Group).GetPlayersInTheGroup())
+				foreach (IGamePlayer player in (m_owner as Group).GetPlayersInTheGroup())
 				{
 					player.Out.SendMessage("Mission Complete", eChatType.CT_ScreenCenter, eChatLoc.CL_ChatWindow);
 				}

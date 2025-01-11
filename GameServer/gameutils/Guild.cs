@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DOL.Database;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 using log4net;
 
@@ -220,7 +221,7 @@ namespace DOL.GS
 		/// <param name="donating"></param>
 		/// <param name="amount"></param>
 		/// <returns></returns>
-		public void SetGuildBank(GamePlayer donating, double amount)
+		public void SetGuildBank(IGamePlayer donating, double amount)
 		{
 			if (donating == null || donating.Guild == null)
 				return;
@@ -247,7 +248,7 @@ namespace DOL.GS
 			donating.Guild.UpdateGuildWindow();
 			m_DBguild.Bank += amount;
 
-            InventoryLogging.LogInventoryAction(donating, "(GUILD;" + Name + ")", eInventoryActionType.Other, long.Parse(amount.ToString()));
+            InventoryLogging.LogInventoryAction((GameObject)donating, "(GUILD;" + Name + ")", eInventoryActionType.Other, long.Parse(amount.ToString()));
 			//donating.SaveIntoDatabase();
 			donating.Out.SendUpdatePlayer();			
 			return;

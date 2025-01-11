@@ -10851,6 +10851,7 @@ namespace DOL.GS
                         Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                         return;
                     }
+
                     if (floorItem.GetPickupTime > 0)
                     {
                         Out.SendMessage("You must wait another " + floorItem.GetPickupTime / 1000 + " seconds to pick up " + floorItem.Name + "!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -10859,6 +10860,7 @@ namespace DOL.GS
 
                     Group group = Group;
                     BattleGroup mybattlegroup = TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
+
                     if (mybattlegroup != null && mybattlegroup.GetBGLootType() == true && mybattlegroup.GetBGTreasurer() != null)
                     {
                         GamePlayer theTreasurer = mybattlegroup.GetBGTreasurer();
@@ -10887,15 +10889,16 @@ namespace DOL.GS
                     else if (group != null && group.AutosplitLoot)
                     {
                         List<GameObject> owners = new List<GameObject>((GameObject[])floorItem.Owners);
-                        List<GamePlayer> eligibleMembers = new List<GamePlayer>(8);
-                        foreach (GamePlayer ply in group.GetNearbyPlayersInTheGroup(this))
+                        List<IGamePlayer> eligibleMembers = new List<IGamePlayer>(8);
+
+                        foreach (IGamePlayer ply in group.GetNearbyPlayersInTheGroup(this))
                         {
                             if (ply.IsAlive
                                 && ply.CanSeeObject(floorObject)
-                                && this.IsWithinRadius( ply, WorldMgr.MAX_EXPFORKILL_DISTANCE )
+                                && this.IsWithinRadius((GameObject)ply, WorldMgr.MAX_EXPFORKILL_DISTANCE )
                                 && (ply.ObjectState == eObjectState.Active)
                                 && (ply.AutoSplitLoot)
-                                && (owners.Contains(ply) || owners.Count == 0)
+                                && (owners.Contains((GameObject)ply) || owners.Count == 0)
                                 && (ply.Inventory.FindFirstEmptySlot(eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack) != eInventorySlot.Invalid))
                             {
                                 eligibleMembers.Add(ply);
@@ -10909,7 +10912,8 @@ namespace DOL.GS
                         }
 
                         int i = Util.Random(0, eligibleMembers.Count - 1);
-                        GamePlayer eligibleMember = eligibleMembers[i];
+                        IGamePlayer eligibleMember = eligibleMembers[i];
+
                         if (eligibleMember != null)
                         {
                             bool good = false;
@@ -10953,6 +10957,7 @@ namespace DOL.GS
             if (floorObject is GameMoney)
             {
                 GameMoney moneyObject = floorObject as GameMoney;
+
                 lock (moneyObject)
                 {
                     if (moneyObject.ObjectState != eObjectState.Active)
@@ -10964,7 +10969,8 @@ namespace DOL.GS
                         var eligibleMembers = from p in Group.GetNearbyPlayersInTheGroup(this)
                             where p.IsAlive && p.CanSeeObject(floorObject) && p.ObjectState == eObjectState.Active
                             select p;
-                        var gamePlayers = eligibleMembers as GamePlayer[] ?? eligibleMembers.ToArray();
+                        var gamePlayers = eligibleMembers as IGamePlayer[] ?? eligibleMembers.ToArray();
+
                         if (!gamePlayers.Any())
                         {
                             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.NoOneGroupWantsMoney"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -10972,7 +10978,8 @@ namespace DOL.GS
                         }
 
                         long moneyToPlayer = moneyObject.TotalCopper / gamePlayers.Count();
-                        foreach (GamePlayer eligibleMember in gamePlayers)
+
+                        foreach (IGamePlayer eligibleMember in gamePlayers)
                         {
                             if (eligibleMember.Guild != null && eligibleMember.Guild.IsGuildDuesOn())
                             {
@@ -10982,13 +10989,13 @@ namespace DOL.GS
                                 else
                                     eligibleMember.AddMoney(moneyToPlayer);
 
-                                InventoryLogging.LogInventoryAction("(ground)", eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
+                                InventoryLogging.LogInventoryAction("(ground)", (GameObject)eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
                                 eligibleMember.Guild.SetGuildBank(eligibleMember, moneyToGuild);
                             }
                             else
                             {
                                 eligibleMember.AddMoney(moneyToPlayer, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
-                                InventoryLogging.LogInventoryAction("(ground)", eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
+                                InventoryLogging.LogInventoryAction("(ground)", (GameObject)eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
                             }
                         }
                     }
