@@ -21,6 +21,7 @@ using DOL.GS.PlayerTitles;
 using DOL.GS.PropertyCalc;
 using DOL.GS.Quests;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
@@ -44,6 +45,11 @@ namespace DOL.GS
         public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
         public StyleComponent StyleComponent { get { return styleComponent; } }
         public EffectListComponent EffectListComponent { get { return effectListComponent; } }
+        public IPropertyIndexer ItemBonus { get; set; }
+        public IPropertyIndexer BaseBuffBonusCategory { get; }
+        public IPropertyIndexer SpecBuffBonusCategory { get; }
+        public IPropertyIndexer DebuffCategory { get; }
+        public IPropertyIndexer BuffBonusCategory4 { get; }
 
         private const int SECONDS_TO_QUIT_ON_LINKDEATH = 60;
 
@@ -471,6 +477,8 @@ namespace DOL.GS
             get { return DBCharacter != null ? DBCharacter.GuildNote : String.Empty; }
             set { if (DBCharacter != null) DBCharacter.GuildNote = value; }
         }
+
+        public Lock XpGainersLock { get; set; }
 
         /// <summary>
         /// Gets or sets the autoloot flag for this player
@@ -4110,6 +4118,12 @@ namespace DOL.GS
             GainRealmPoints(amount, true, true);
         }
 
+        public void AddXPGainer(GameObject xpGainer, float damageAmount)
+        {
+            if (xpGainer is not GameLiving living) return;
+            base.AddXPGainer(living, damageAmount);
+        }
+
         /// <summary>
         /// Called when this living gains realm points
         /// </summary>
@@ -6467,6 +6481,11 @@ namespace DOL.GS
             return Dps * 0.1;
         }
 
+        double IGamePlayer.ApplyWeaponQualityAndConditionToDamage(DbInventoryItem weapon, double damage)
+        {
+            return ApplyWeaponQualityAndConditionToDamage(weapon, damage);
+        }
+
         public static double ApplyWeaponQualityAndConditionToDamage(DbInventoryItem weapon, double damage)
         {
             return damage * weapon.Quality * 0.01 * weapon.Condition / weapon.MaxCondition;
@@ -6989,6 +7008,8 @@ namespace DOL.GS
             disables.Add(new Tuple<Skill, int>(skill, duration));
             Out.SendDisableSkill(disables);
         }
+
+        public IPropertyIndexer AbilityBonus { get; }
 
         /// <summary>
         /// Grey out collection of skills on client for specified duration
@@ -10296,7 +10317,7 @@ namespace DOL.GS
 
         public virtual void RefreshItemBonuses()
         {
-            ItemBonus = new();
+            ItemBonus = new PropertyIndexer();
             string slotToLoad = string.Empty;
             switch (VisibleActiveWeaponSlots)
             {
@@ -11775,6 +11796,10 @@ namespace DOL.GS
         /// </summary>
         public override bool IsStealthed => effectListComponent.ContainsEffectForEffectType(eEffect.Stealth);
 
+        public int Encumberance { get; }
+        public int MaxEncumberance { get; }
+        public bool IsOverencumbered { get; set; }
+
         public override void Stealth(bool goStealth)
         {
             if (IsStealthed == goStealth)
@@ -13167,6 +13192,8 @@ namespace DOL.GS
             }
         }
 
+        public bool IsShade { get; }
+
         /// <summary>
         /// The model ID used for shade morphs.
         /// </summary>
@@ -13219,6 +13246,9 @@ namespace DOL.GS
         {
             CharacterClass.Shade(state, out _);
         }
+
+        public ShadeECSGameEffect ShadeEffect { get; set; }
+
         #endregion
 
         #region Siege Weapon

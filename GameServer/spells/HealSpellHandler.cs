@@ -107,7 +107,7 @@ namespace DOL.GS.Spells
             else
                 effectiveness = 1.0;
 
-            if (Caster is IGamePlayer spellCaster && spellCaster.UseDetailedCombatLog && effectiveness != 1)
+            if (Caster is GamePlayer spellCaster && spellCaster.UseDetailedCombatLog && effectiveness != 1)
                 spellCaster.Out.SendMessage($"heal effectiveness: {effectiveness:0.##}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 
             amount *= 1.0 + RelicMgr.GetRelicBonusModifier(Caster.Realm, eRelicType.Magic);
@@ -194,10 +194,10 @@ namespace DOL.GS.Spells
                 MessageToCaster($"You heal for an extra {criticalAmount:0} hit points! ({criticalChance:0.##}%)", eChatType.CT_Spell);
 
             // Check for conquest activity.
-            if (playerTarget != null)
+            if (playerTarget is GamePlayer p)
             {
-                if (ConquestService.ConquestManager.IsPlayerInConquestArea(playerTarget))
-                    ConquestService.ConquestManager.AddContributor(playerTarget);
+                if (ConquestService.ConquestManager.IsPlayerInConquestArea(p))
+                    ConquestService.ConquestManager.AddContributor(p);
             }
 
             foreach (GameLiving attacker in target.attackComponent.Attackers.Keys)

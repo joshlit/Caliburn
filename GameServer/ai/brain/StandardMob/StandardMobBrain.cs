@@ -694,7 +694,7 @@ namespace DOL.AI.Brain
 
             _ = new ResetBafPropertyAction((GameLiving)playerPuller);
             CanBaf = false; // Mobs only BAF once per fight.
-            int maxAdds = GetMaxAddsCountFromBaf(puller, out List<GamePlayer> otherTargets, out int attackersCount);
+            int maxAdds = GetMaxAddsCountFromBaf(puller, out List<IGamePlayer> otherTargets, out int attackersCount);
             int bafRadius = BAF_MIN_RADIUS + (Math.Min(8, attackersCount) - 1) * BAF_EXTRA_RADIUS_PER_OTHER_PLAYER;
 
             if (Body.CurrentZone.IsDungeon)

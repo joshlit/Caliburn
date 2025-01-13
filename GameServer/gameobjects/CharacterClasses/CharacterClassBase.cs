@@ -377,18 +377,18 @@ namespace DOL.GS
 
 		public virtual bool CreateShadeEffect(out ECSGameAbilityEffect effect)
 		{
-			effect = EffectListService.GetAbilityEffectOnTarget(Player, eEffect.Shade);
+			effect = EffectListService.GetAbilityEffectOnTarget((GameLiving)Player, eEffect.Shade);
 
 			if (effect != null)
 				return false;
 
-			effect = new ShadeECSGameEffect(new ECSGameEffectInitParams(Player, 0, 1));
+			effect = new ShadeECSGameEffect(new ECSGameEffectInitParams((GameLiving)Player, 0, 1));
 			return effect.IsBuffActive;
 		}
 
 		public virtual bool CancelShadeEffect(out ECSGameAbilityEffect effect)
 		{
-			effect = EffectListService.GetAbilityEffectOnTarget(Player, eEffect.Shade);
+			effect = EffectListService.GetAbilityEffectOnTarget((GameLiving)Player, eEffect.Shade);
 			return effect != null && EffectService.RequestImmediateCancelEffect(effect);
 		}
 

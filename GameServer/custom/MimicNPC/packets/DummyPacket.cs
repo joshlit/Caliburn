@@ -29,6 +29,11 @@ namespace DOL.GS.Scripts
             return 0;
         }
 
+        public void SendEncumbrance()
+        {
+            
+        }
+
         public void SendAddFriends(string[] friendNames)
         {
         }
@@ -252,6 +257,11 @@ namespace DOL.GS.Scripts
         {
         }
 
+        public void SendInventorySlotsUpdate(ICollection<eInventorySlot> slots)
+        {
+            
+        }
+
         public void SendInventoryItemsUpdate(eInventoryWindowType windowType, ICollection<DbInventoryItem> itemsToUpdate)
         {
         }
@@ -401,6 +411,10 @@ namespace DOL.GS.Scripts
         }
 
         public void SendObjectDelete(ushort oid)
+        {
+        }
+
+        public void SendObjectUpdate(GameObject obj, bool udp = true)
         {
         }
 
@@ -669,6 +683,10 @@ namespace DOL.GS.Scripts
         }
 
         public void SendUpdatePlayer()
+        {
+        }
+
+        public void SendUpdatePlayerSkills(bool updateInternalCache)
         {
         }
 

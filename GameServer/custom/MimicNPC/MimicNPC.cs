@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using static DOL.GS.AttackData;
 using static DOL.GS.GamePlayer;
 
@@ -38,6 +39,11 @@ namespace DOL.GS.Scripts
         public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
         public StyleComponent StyleComponent { get { return styleComponent; } }
         public EffectListComponent EffectListComponent { get { return effectListComponent; } }
+        public IPropertyIndexer ItemBonus { get; }
+        public IPropertyIndexer BaseBuffBonusCategory { get; }
+        public IPropertyIndexer SpecBuffBonusCategory { get; }
+        public IPropertyIndexer DebuffCategory { get; }
+        public IPropertyIndexer BuffBonusCategory4 { get; }
 
         private MimicSpawner _mimicSpawner;
         public MimicSpawner MimicSpawner 
@@ -1027,6 +1033,10 @@ namespace DOL.GS.Scripts
         }
 
         private bool _autoloot;
+        public Lock XpGainersLock { get; set; }
+        
+        public bool HasShadeModel => Model == ShadeModel;
+
         public bool Autoloot
         {
             get { return true; }
@@ -1505,6 +1515,8 @@ namespace DOL.GS.Scripts
         {
             base.DisableSkill(skill, duration);
         }
+
+        public IPropertyIndexer AbilityBonus { get; }
 
         public void SetLevel(byte level)
         {
@@ -2009,11 +2021,12 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// gets the DamageRvR Memory of this player
         /// </summary>
-        public override long DamageRvRMemory
+        public static long DamageRvRMemory
         {
             get => m_damageRvRMemory;
             set => m_damageRvRMemory = value;
         }
+        private static long m_damageRvRMemory;
 
         public override long LastAttackTickPvE
         {
@@ -4836,6 +4849,12 @@ namespace DOL.GS.Scripts
             GainRealmPoints(amount, true, true);
         }
 
+        public void AddXPGainer(GameObject xpGainer, float damageAmount)
+        {
+            if (xpGainer is not GameLiving living) return;
+            base.AddXPGainer(living, damageAmount);
+        }
+
         /// <summary>
         /// Called when this living gains realm points
         /// </summary>
@@ -5645,150 +5664,6 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// Called whenever this player gains experience
-        /// </summary>
-        /// <param name="expTotal"></param>
-        /// <param name="expCampBonus"></param>
-        /// <param name="expGroupBonus"></param>
-        /// <param name="expOutpostBonus"></param>
-        /// <param name="sendMessage"></param>
-        public void GainExperience(eXPSource xpSource, long expTotal, long expCampBonus, long expGroupBonus, long expOutpostBonus, bool sendMessage)
-        {
-            GainExperience(xpSource, expTotal, expCampBonus, expGroupBonus, expOutpostBonus, sendMessage, true);
-        }
-
-        /// <summary>
-        /// Called whenever this player gains experience
-        /// </summary>
-        /// <param name="expTotal"></param>
-        /// <param name="expCampBonus"></param>
-        /// <param name="expGroupBonus"></param>
-        /// <param name="expOutpostBonus"></param>
-        /// <param name="sendMessage"></param>
-        /// <param name="allowMultiply"></param>
-        public void GainExperience(eXPSource xpSource, long expTotal, long expCampBonus, long expGroupBonus, long expOutpostBonus, bool sendMessage, bool allowMultiply)
-        {
-            GainExperience(xpSource, expTotal, expCampBonus, expGroupBonus, expOutpostBonus, sendMessage, allowMultiply, true);
-        }
-
-        /// <summary>
-        /// Called whenever this player gains experience
-        /// </summary>
-        /// <param name="expTotal"></param>
-        /// <param name="expCampBonus"></param>
-        /// <param name="expGroupBonus"></param>
-        /// <param name="expOutpostBonus"></param>
-        /// <param name="sendMessage"></param>
-        /// <param name="allowMultiply"></param>
-        /// <param name="notify"></param>
-        public override void GainExperience(eXPSource xpSource, long expTotal, long expCampBonus, long expGroupBonus, long expOutpostBonus, bool sendMessage, bool allowMultiply, bool notify)
-        {
-            if (!GainXP && expTotal > 0)
-                return;
-
-            long baseXp = 0;
-            //xp rate modifier
-            if (allowMultiply)
-            {
-                //we only want to modify the base rate, not the group or camp bonus
-                expTotal -= expGroupBonus;
-                expTotal -= expCampBonus;
-                expTotal -= expOutpostBonus;
-
-                baseXp = expTotal;
-                //[StephenxPimentel] - Zone Bonus XP Support
-                if (ServerProperties.Properties.ENABLE_ZONE_BONUSES)
-                {
-                    //long zoneBonus = expTotal * ZoneBonus.GetXPBonus(this) / 100;
-                    //if (zoneBonus > 0)
-                    //{
-                    //    long tmpBonus = (long)(zoneBonus * ServerProperties.Properties.XP_RATE);
-                    //    Out.SendMessage(ZoneBonus.GetBonusMessage(this, (int)tmpBonus, ZoneBonus.eZoneBonusType.XP),
-                    //        eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                    //    GainExperience(eXPSource.Other, tmpBonus, 0, 0, 0, 0, false, false, false);
-                    //}
-                }
-
-                if (CurrentRegion.IsRvR)
-                    expTotal = (long)(expTotal * ServerProperties.Properties.RvR_XP_RATE);
-                else
-                    expTotal = (long)(expTotal * ServerProperties.Properties.XP_RATE);
-
-                // [Freya] Nidel: ToA Xp Bonus
-                long xpBonus = GetModified(eProperty.XpPoints);
-                if (xpBonus != 0)
-                {
-                    expTotal += (expTotal * xpBonus) / 100;
-                }
-
-                long hardXPCap = (long)(GameServer.ServerRules.GetExperienceForLiving(Level) * ServerProperties.Properties.XP_HARDCAP_PERCENT / 100);
-
-                if (expTotal > hardXPCap)
-                    expTotal = hardXPCap;
-
-                expTotal += expOutpostBonus;
-                expTotal += expGroupBonus;
-                expTotal += expCampBonus;
-            }
-
-            // Get Champion Experience too
-            // GainChampionExperience(expTotal);
-
-            #region Guild XP Bonus
-
-            //long guildBonus = 0;
-            //if (Guild != null && !Guild.IsStartingGuild && Guild.BonusType == Guild.eBonusType.Experience && xpSource == eXPSource.NPC)
-            //{
-            //    guildBonus = (long)Math.Ceiling((double)expTotal * ServerProperties.Properties.GUILD_BUFF_XP / 100);
-            //}
-            //else if (Guild != null && Guild.IsStartingGuild && xpSource == eXPSource.NPC)
-            //{
-            //    guildBonus = (long)Math.Ceiling((double)expTotal * ServerProperties.Properties.GUILD_BUFF_XP / 200);
-            //}
-
-            //expTotal += guildBonus;
-
-            #endregion Guild XP Bonus
-
-            //Commenting base.GainExperience out as it was used to Notify which was only used by GuildEvent (which is now moved here)
-            //base.GainExperience(xpSource, expTotal, expCampBonus, expGroupBonus, expOutpostBonus, atlasBonus, sendMessage, allowMultiply, notify);
-
-            if (IsLevelSecondStage)
-            {
-                if (Experience + expTotal < ExperienceForCurrentLevelSecondStage)
-                {
-                    expTotal = ExperienceForCurrentLevelSecondStage - Experience;
-                }
-            }
-            else if (Experience + expTotal < ExperienceForCurrentLevel)
-            {
-                expTotal = ExperienceForCurrentLevel - Experience;
-            }
-
-            int relicBonus = (int)(baseXp * (0.05 * RelicMgr.GetRelicCount(Realm)));
-            if (relicBonus > 0) expTotal += relicBonus;
-
-            Experience += expTotal;
-
-            if (expTotal >= 0)
-            {
-                //Level up
-                if (Level >= 40 && Level < MaxLevel && !IsLevelSecondStage && Experience >= ExperienceForCurrentLevelSecondStage)
-                {
-                    OnLevelSecondStage();
-                    m_isLevelSecondStage = true;
-                }
-                else if (Level < MaxLevel && Experience >= ExperienceForNextLevel)
-                {
-                    log.Info("level up for " + Name);
-                    Level++;
-                }
-            }
-
-            //Out.SendUpdatePoints();
-        }
-
-        /// <summary>
         /// Gets or sets the level of the player
         /// (delegate to PlayerCharacter)
         /// </summary>
@@ -6071,7 +5946,7 @@ namespace DOL.GS.Scripts
         /// </summary>
         /// <param name="spell"></param>
         /// <returns></returns>
-        public override int CalculateCastingTime(SpellLine line, Spell spell)
+        public int CalculateCastingTime(SpellLine line, Spell spell)
         {
             int ticks = spell.CastTime;
 
@@ -7430,7 +7305,7 @@ namespace DOL.GS.Scripts
             finally
             {
                 //isDying flag is ALWAYS set to false even if exception happens so it can get remove from the list
-                isDeadOrDying = false;
+                IsBeingHandledByReaperService = false;
             }
         }
 
@@ -8705,9 +8580,9 @@ namespace DOL.GS.Scripts
         /// Create a shade effect for this player.
         /// </summary>
         /// <returns></returns>
-        protected virtual ShadeECSGameEffect CreateShadeEffect()
+        protected virtual bool CreateShadeEffect()
         {
-            return CharacterClass.CreateShadeEffect();
+            return CharacterClass.CreateShadeEffect(out _);
         }
 
         /// <summary>
@@ -8771,7 +8646,7 @@ namespace DOL.GS.Scripts
         /// <param name="state">The new state.</param>
         public virtual void Shade(bool state)
         {
-            CharacterClass.Shade(state);
+            CharacterClass.Shade(state, out _);
         }
 
         #endregion Shade
@@ -8803,6 +8678,8 @@ namespace DOL.GS.Scripts
             get { return m_currentAreas; }
             set { m_currentAreas.FreezeWhile(l => { l.Clear(); l.AddRange(value); }); }
         }
+
+        public bool NoHelp { get; set; }
 
         /// <summary>
         /// Property that saves last maximum Z value
@@ -9218,7 +9095,7 @@ namespace DOL.GS.Scripts
         /// (delegates to CharacterClass)
         /// </summary>
         /// <param name="controlledNpc"></param>
-        public override void SetControlledBrain(IControlledBrain controlledBrain)
+        public void SetControlledBrain(IControlledBrain controlledBrain)
         {
             if (controlledBrain == ControlledBrain)
                 return;

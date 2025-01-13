@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using DOL.AI.Brain;
+using DOL.Database;
 using DOL.Events;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
+using DOL.Language;
 
 namespace DOL.GS
 {
@@ -640,19 +643,19 @@ namespace DOL.GS
 
 		public bool TryAutoPickUpMoney(GameMoney money)
 		{
-			return TryPickUpMoney(Leader, money) is not TryPickUpResult.CANNOT_HANDLE;
+			return TryPickUpMoney((GamePlayer)Leader, money) is not IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
 		}
 
 		public bool TryAutoPickUpItem(WorldInventoryItem inventoryItem)
 		{
 			// We don't care if players have auto loot enabled, or if they can see the item (the item isn't added to the world yet anyway), or who attacked last, etc.
-			return TryPickUpItem(Leader, inventoryItem) is not TryPickUpResult.CANNOT_HANDLE;
+			return TryPickUpItem((GamePlayer)Leader, inventoryItem) is not IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
 		}
 
-		public TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money)
+		public IGameStaticItemOwner.TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money)
 		{
 			if (!AutosplitCoins)
-				return TryPickUpResult.CANNOT_HANDLE;
+				return IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
 
 			List<GamePlayer> eligibleMembers = new(8);
 
@@ -660,19 +663,19 @@ namespace DOL.GS
 			foreach (GamePlayer member in GetPlayersInTheGroup())
 			{
 				// Ignores `GamePlayer.AutoSplitLoot`.
-				if (member.ObjectState is eObjectState.Active && member.CanSeeObject(money))
+				if (member.ObjectState is GameObject.eObjectState.Active && member.CanSeeObject(money))
 					eligibleMembers.Add(member);
 			}
 
 			if (eligibleMembers.Count == 0)
 			{
 				source.Out.SendMessage(LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.NoOneGroupWantsMoney"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				return TryPickUpResult.FAILED;
+				return IGameStaticItemOwner.TryPickUpResult.FAILED;
 			}
 
 			SplitMoneyBetweenEligibleMembers(eligibleMembers, money);
 			money.RemoveFromWorld();
-			return TryPickUpResult.SUCCESS;
+			return IGameStaticItemOwner.TryPickUpResult.SUCCESS;
 
 			static void SplitMoneyBetweenEligibleMembers(List<GamePlayer> eligibleMembers, GameMoney money)
 			{
@@ -692,38 +695,38 @@ namespace DOL.GS
 			}
 		}
 
-		public TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item)
+		public IGameStaticItemOwner.TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item)
 		{
 			// A group is only able to pick up items if auto split is enabled. Otherwise, solo logic should apply.
 			// Group members are filtered to exclude far away players or players with auto split solo enabled.
 			// A player with enough room in his inventory is chosen randomly.
 			// If there is none, the item should simply stays on the ground.
 			if (!AutosplitLoot)
-				return TryPickUpResult.CANNOT_HANDLE;
+				return IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
 
 			List<GamePlayer> eligibleMembers = new(8);
 
 			// Members must be in visible range.
 			foreach (GamePlayer member in GetPlayersInTheGroup())
 			{
-				if (member.ObjectState is eObjectState.Active && member.AutoSplitLoot && member.CanSeeObject(item))
+				if (member.ObjectState is GameObject.eObjectState.Active && member.AutoSplitLoot && member.CanSeeObject(item))
 					eligibleMembers.Add(member);
 			}
 
 			if (eligibleMembers.Count == 0)
 			{
 				source.Out.SendMessage(LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.NoOneWantsThis", item.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				return TryPickUpResult.FAILED;
+				return IGameStaticItemOwner.TryPickUpResult.FAILED;
 			}
 
 			if (!GiveItemToRandomEligibleMember(eligibleMembers, item.Item, out GamePlayer eligibleMember))
-				return TryPickUpResult.FAILED;
+				return IGameStaticItemOwner.TryPickUpResult.FAILED;
 
 			Message.SystemToOthers(source, LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, item.Item.GetName(1, false)), eChatType.CT_System);
 			SendMessageToGroupMembers(LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.Autosplit", item.Item.GetName(1, true), eligibleMember.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			InventoryLogging.LogInventoryAction("(ground)", source, eInventoryActionType.Loot, item.Item.Template, item.Item.IsStackable ? item.Item.Count : 1);
 			item.RemoveFromWorld();
-			return TryPickUpResult.SUCCESS;
+			return IGameStaticItemOwner.TryPickUpResult.SUCCESS;
 
 			static bool GiveItemToRandomEligibleMember(List<GamePlayer> eligibleMembers, DbInventoryItem item, out GamePlayer eligibleMember)
 			{

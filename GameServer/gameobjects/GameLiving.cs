@@ -958,11 +958,11 @@ namespace DOL.GS
             }
 
             // Proc #1
-            if (procSpell != null && Util.Chance(procChance))
+            if (procSpell != null && Util.ChanceDouble(procChance))
                 StartWeaponMagicalEffect(weapon, ad, SkillBase.GetSpellLine(GlobalSpellsLines.Item_Effects), weapon.ProcSpellID, false);
 
             // Proc #2
-            if (procSpell1 != null && Util.Chance(procChance))
+            if (procSpell1 != null && Util.ChanceDouble(procChance))
                 StartWeaponMagicalEffect(weapon, ad, SkillBase.GetSpellLine(GlobalSpellsLines.Item_Effects), weapon.ProcSpellID1, false);
 
             // Poison

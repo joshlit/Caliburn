@@ -11,11 +11,11 @@ namespace DOL.GS
     {
         private int _petHealthPercentAfterBrainSet;
 
-        public override void Init(GamePlayer player)
+        public void Init(IGamePlayer player)
         {
             base.Init(player);
 
-            if (Player.HasShadeModel)
+            if (player is GamePlayer {HasShadeModel: true})
                 player.Shade(false);
         }
 
@@ -36,7 +36,7 @@ namespace DOL.GS
 
         public override void OnPetReleased()
         {
-            if (Player.HasShadeModel)
+            if (Player is GamePlayer {HasShadeModel: true})
                 Player.Shade(false);
 
 			((GamePlayer)Player)?.InitControlledBrainArray(0);
@@ -44,7 +44,7 @@ namespace DOL.GS
 
         public override bool StartAttack(GameObject attackTarget)
         {
-            if (!Player.HasShadeModel)
+            if (Player is GamePlayer {HasShadeModel: false})
                 return true;
             else
             {
@@ -57,12 +57,12 @@ namespace DOL.GS
 
         public override bool CreateShadeEffect(out ECSGameAbilityEffect effect)
         {
-            effect = EffectListService.GetAbilityEffectOnTarget(Player, eEffect.Shade);
+            effect = EffectListService.GetAbilityEffectOnTarget((GameLiving)Player, eEffect.Shade);
 
             if (effect != null)
                 return false;
 
-            effect = new NecromancerShadeECSGameEffect(new ECSGameEffectInitParams(Player, 0, 1));
+            effect = new NecromancerShadeECSGameEffect(new ECSGameEffectInitParams((GameLiving)Player, 0, 1));
             return effect.IsBuffActive;
         }
 
@@ -82,7 +82,7 @@ namespace DOL.GS
                     return true;
 
                 // Necromancer has become a shade. Have any previous NPC attacker aggro the pet now, as they can't attack the necromancer any longer.
-                foreach (GameObject attacker in Player.attackComponent.Attackers.Keys)
+                foreach (GameObject attacker in Player.AttackComponent.Attackers.Keys)
                 {
                     if (attacker is not GameNPC npcAttacker || !npcAttacker.attackComponent.AttackState || npcAttacker.Brain is not IOldAggressiveBrain npcAttackerBrain)
                         continue;
@@ -105,7 +105,7 @@ namespace DOL.GS
 
         public override bool RemoveFromWorld()
         {
-            if (Player.HasShadeModel)
+            if (Player is GamePlayer {HasShadeModel: true})
                 Player.Shade(false);
 
             return base.RemoveFromWorld();
@@ -113,7 +113,7 @@ namespace DOL.GS
 
         public override void Die(GameObject killer)
         {
-            if (Player.HasShadeModel)
+            if (Player is GamePlayer {HasShadeModel: true})
                 Player.Shade(false);
 
             base.Die(killer);

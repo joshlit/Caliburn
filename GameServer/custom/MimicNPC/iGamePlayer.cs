@@ -7,6 +7,7 @@ using DOL.GS.PropertyCalc;
 using DOL.GS.Utils;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using static DOL.GS.GameObject;
 using static DOL.GS.GamePlayer;
 
@@ -102,6 +103,12 @@ namespace DOL.GS.Scripts
         public DbInventoryItem ActiveWeapon { get; }
         public eActiveWeaponSlot ActiveWeaponSlot { get; }
 
+        public DbInventoryItem ActiveLeftWeapon { get; }
+        
+        public Lock XpGainersLock { get; set; }
+        
+        public bool HasShadeModel { get; }
+
         public bool Autoloot { get; set; }
         public bool AutoSplitLoot { get; set; }
         public bool CanUseCrossRealmItems { get; }
@@ -180,6 +187,10 @@ namespace DOL.GS.Scripts
         public Region CurrentRegion { get; set; }
         public ushort CurrentRegionID { get; set; }
         public IList<IArea> CurrentAreas { get; set; }
+        
+        public bool NoHelp { get; set; }
+        
+        
 
         public int Z { get; }
     }

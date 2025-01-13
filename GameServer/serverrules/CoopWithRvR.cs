@@ -52,12 +52,7 @@ public class CoopWithRvr : AbstractServerRules
 
     public override byte GetColorHandling(GameClient client)
     => SelectRuleSet(client.Player).GetColorHandling(client);
-
-
-    public override bool IsAllowedToAttack(GameLiving attacker, GameLiving defender, bool quiet)
-                => SelectRuleSet(attacker).IsAllowedToAttack(attacker, defender, quiet);
-    public override bool IsAllowedToCastSpell(GameLiving caster, GameLiving target, Spell spell, SpellLine spellLine)
-        => SelectRuleSet(caster).IsAllowedToCastSpell(caster, target, spell, spellLine);
+    
     public override bool IsAllowedToSpeak(GamePlayer source, string communicationType)
                 => SelectRuleSet(source).IsAllowedToSpeak(source, communicationType);
     public override bool IsAllowedToBind(GamePlayer player, DbBindPoint point)

@@ -10,6 +10,7 @@ using DOL.Events;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using DOL.Language;
 using log4net;
