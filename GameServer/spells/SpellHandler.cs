@@ -3396,6 +3396,7 @@ namespace DOL.GS.Spells
 				case eSpellType.BaseArmorFactorBuff:
 				case eSpellType.SpecArmorFactorBuff:
 				case eSpellType.PaladinArmorFactorBuff:
+                    case eSpellType.ArmorFactorBuff:
 					return "shield";
 				case eSpellType.Bolt:
 					return "bolt";

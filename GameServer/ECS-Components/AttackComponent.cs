@@ -2708,11 +2708,9 @@ namespace DOL.GS
             if (owner is not GamePlayer playerOwner || (eObjectType) leftWeapon.Object_Type is eObjectType.Shield || mainWeapon == null)
                 return 0;
 
-            GamePlayer playerOwner = owner as GamePlayer;
-
             if (owner.GetBaseSpecLevel(Specs.Left_Axe) > 0)
             {
-                if (playerOwner != null && playerOwner.UseDetailedCombatLog)
+                if (playerOwner is {UseDetailedCombatLog: true})
                 {
                     // This shouldn't be done here.
                     double effectiveness = CalculateLeftAxeModifier();

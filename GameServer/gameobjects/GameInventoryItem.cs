@@ -927,7 +927,7 @@ namespace DOL.GS
                         //2 uti TOA bonuses
                         case eProperty.SpellDuration:
                         case eProperty.BuffEffectiveness:
-                        case eProperty.DebuffEffectivness:
+                        case eProperty.DebuffEffectiveness:
                         case eProperty.HealingEffectiveness:
                         case eProperty.FatigueConsumption:
                         case eProperty.PowerPoolCapBonus:

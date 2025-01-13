@@ -361,6 +361,7 @@ namespace DOL.GS
                 case eSpellType.ArmorAbsorptionBuff:
                     return eEffect.ArmorAbsorptionBuff;
                 case eSpellType.BaseArmorFactorBuff:
+                    case eSpellType.ArmorFactorBuff:
                     return eEffect.BaseAFBuff;
                 case eSpellType.SpecArmorFactorBuff:
                     return eEffect.SpecAFBuff;

@@ -39,8 +39,6 @@ public class CoopWithRvr : AbstractServerRules
 
     public override bool IsAllowedToAttack(GameLiving attacker, GameLiving defender, bool quiet)
                 => SelectRuleSet(attacker).IsAllowedToAttack(attacker, defender, quiet);
-    public override bool IsAllowedToCastSpell(GameLiving caster, GameLiving target, Spell spell, SpellLine spellLine)
-                => SelectRuleSet(caster).IsAllowedToCastSpell(caster, target, spell, spellLine);
     public override bool IsAllowedToSpeak(GamePlayer source, string communicationType)
                 => SelectRuleSet(source).IsAllowedToSpeak(source, communicationType);
     public override bool IsAllowedToBind(GamePlayer player, DbBindPoint point)
@@ -59,10 +57,10 @@ public class CoopWithRvr : AbstractServerRules
                 => SelectRuleSet(living).CheckAbilityToUseItem(living, item);
     public override int GetObjectSpecLevel(GamePlayer player, eObjectType objectType)
                 => SelectRuleSet(player).GetObjectSpecLevel(player, objectType);
-    public override int GetBaseObjectSpecLevel(GamePlayer player, eObjectType objectType)
-                => SelectRuleSet(player).GetBaseObjectSpecLevel(player, objectType);
-    public override void OnNPCKilled(GameNPC killedNPC, GameObject killer)
-                => SelectRuleSet(killedNPC).OnNPCKilled(killedNPC, killer);
+    public override int GetObjectBaseSpecLevel(GamePlayer player, eObjectType objectType)
+                => SelectRuleSet(player).GetObjectBaseSpecLevel(player, objectType);
+    public override void OnNpcKilled(GameNPC killedNPC, GameObject killer)
+                => SelectRuleSet(killedNPC).OnNpcKilled(killedNPC, killer);
     public override void OnLivingKilled(GameLiving killedLiving, GameObject killer)
                 => SelectRuleSet(killer).OnLivingKilled(killedLiving, killer);
     public override void OnPlayerKilled(GamePlayer killedPlayer, GameObject killer)
