@@ -14,7 +14,7 @@ namespace DOL.GS
         public short CurrentSpeed { get; set; }
         public short MaxSpeedBase { get; set; } // Currently unused for players.
         public virtual short MaxSpeed => (short) Owner.GetModified(eProperty.MaxSpeed);
-        public bool IsMoving => CurrentSpeed > 0;
+        public bool IsMoving => CurrentSpeed != 0;
         public bool IsTurningDisabled => Interlocked.CompareExchange(ref _turningDisabledCount, 0, 0) > 0 && !Owner.effectListComponent.ContainsEffectForEffectType(eEffect.SpeedOfSound);
 
         protected MovementComponent(GameLiving owner)
@@ -22,12 +22,14 @@ namespace DOL.GS
             Owner = owner;
         }
 
-        public static MovementComponent Create(GameLiving gameLiving)
+        public static MovementComponent Create(GameLiving living)
         {
-            if (gameLiving is GameNPC gameNpc)
-                return new NpcMovementComponent(gameNpc);
+            if (living is GameNPC npc)
+                return new NpcMovementComponent(npc);
+            else if (living is GamePlayer player)
+                return new PlayerMovementComponent(player);
             else
-                return new MovementComponent(gameLiving);
+                return new MovementComponent(living);
         }
 
         public virtual void Tick()

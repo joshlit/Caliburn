@@ -19,13 +19,6 @@ namespace DOL.GS.Scripts
 		{
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(9918);
 			LoadTemplate(npcTemplate);
-			Strength = npcTemplate.Strength;
-			Dexterity = npcTemplate.Dexterity;
-			Constitution = npcTemplate.Constitution;
-			Quickness = npcTemplate.Quickness;
-			Piety = npcTemplate.Piety;
-			Intelligence = npcTemplate.Intelligence;
-			Empathy = npcTemplate.Empathy;
 	
 			// humanoid
 			BodyType = 6;
@@ -34,12 +27,11 @@ namespace DOL.GS.Scripts
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
 			// right hand
-			VisibleActiveWeaponSlots = (byte) eActiveWeaponSlot.Standard;			
-			WeaponSkillScalingFactor = 40;
+			VisibleActiveWeaponSlots = (byte) eActiveWeaponSlot.Standard;
 			base.SetOwnBrain(new JarlOrmarrBrain());
 			LoadedFromScript = false; //load from database
 			SaveIntoDatabase();
-			base.AddToWorld();		
+			base.AddToWorld();
 			return true;
 		}
 		

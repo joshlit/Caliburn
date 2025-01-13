@@ -10,7 +10,7 @@ namespace DOL.GS.Spells
     /// Here they say hit points but spell description states that
     /// it is strength, what should I use hmm...
     /// </summary>
-    [SpellHandlerAttribute("Disease")]
+    [SpellHandler(eSpellType.Disease)]
 	public class DiseaseSpellHandler : SpellHandler
 	{
         public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
@@ -97,15 +97,9 @@ namespace DOL.GS.Spells
 			return 0;
 		}
 
-		/// <summary>
-		/// Calculates the effect duration in milliseconds
-		/// </summary>
-		/// <param name="target">The effect target</param>
-		/// <param name="effectiveness">The effect effectiveness</param>
-		/// <returns>The effect duration in milliseconds</returns>
-		protected override int CalculateEffectDuration(GameLiving target, double effectiveness)
+		protected override int CalculateEffectDuration(GameLiving target)
 		{
-			double duration = base.CalculateEffectDuration(target, effectiveness);
+			double duration = base.CalculateEffectDuration(target);
 			duration -= duration * target.GetResist(Spell.DamageType) * 0.01;
 
 			if (duration < 1)

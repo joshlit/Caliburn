@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Reflection;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
+using DOL.Events;
 using DOL.GS;
 using log4net;
 
@@ -55,14 +55,6 @@ namespace DOL.GS
         {
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60162132);
             LoadTemplate(npcTemplate);
-
-            Strength = npcTemplate.Strength;
-            Constitution = npcTemplate.Constitution;
-            Dexterity = npcTemplate.Dexterity;
-            Quickness = npcTemplate.Quickness;
-            Empathy = npcTemplate.Empathy;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
 
             // demon
             BodyType = 2;
@@ -198,14 +190,6 @@ namespace DOL.GS
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(90162132);
             LoadTemplate(npcTemplate);
 
-            Strength = npcTemplate.Strength;
-            Constitution = npcTemplate.Constitution;
-            Dexterity = npcTemplate.Dexterity;
-            Quickness = npcTemplate.Quickness;
-            Empathy = npcTemplate.Empathy;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
-
             // demon
             BodyType = 2;
 
@@ -213,8 +197,6 @@ namespace DOL.GS
 
             OroCloneBrain sBrain = new OroCloneBrain();
             SetOwnBrain(sBrain);
-
-            IsWorthReward = false;
 
             base.AddToWorld();
             return true;

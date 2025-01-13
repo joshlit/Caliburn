@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using DOL.Database;
 using DOL.GS.PacketHandler;
 using log4net;
@@ -58,10 +59,6 @@ namespace DOL.GS
 		/// </summary>
 		public const int VISIBILITY_DISTANCE = 6000;
 		/// <summary>
-		/// Moving greater than this distance requires the player to do a full world refresh
-		/// </summary>
-		public const int REFRESH_DISTANCE = 1000;
-		/// <summary>
 		/// Is the square distance a player can see
 		/// </summary>
 		public const int VISIBILITY_SQUARE_DISTANCE = 36000000;
@@ -77,7 +74,7 @@ namespace DOL.GS
 		/// 'TeleportID' fields are permitted so long as the 'Realm' field is different for each.
 		/// </summary>
 		private static Dictionary<eRealm, Dictionary<string, DbTeleport>> m_teleportLocations;
-		private static object m_syncTeleport = new object();
+		private static readonly Lock _syncTeleport = new();
 
 		// this is used to hold the player ids with timestamp of ld, that ld near an enemy keep structure, to allow grace period relog
 		public static ConcurrentDictionary<string, DateTime> RvrLinkDeadPlayers = new();
@@ -100,7 +97,7 @@ namespace DOL.GS
 		/// <returns></returns>
 		public static DbTeleport GetTeleportLocation(eRealm realm, string teleportKey)
 		{
-			lock (m_syncTeleport)
+			lock (_syncTeleport)
 			{
 				if (m_teleportLocations.TryGetValue(realm, out Dictionary<string, DbTeleport> teleportLocations))
 				{
@@ -122,7 +119,7 @@ namespace DOL.GS
 			eRealm realm = (eRealm) teleport.Realm;
 			string teleportKey = $"{teleport.Type}:{teleport.TeleportID}";
 
-			lock (m_syncTeleport)
+			lock (_syncTeleport)
 			{
 				if (m_teleportLocations.TryGetValue(realm, out Dictionary<string, DbTeleport> teleports))
 				{
@@ -434,11 +431,12 @@ namespace DOL.GS
 				long merchants = 0;
 				long items = 0;
 				long bindpoints = 0;
-				regionsData.AsParallel().WithDegreeOfParallelism(GameServer.Instance.Configuration.CPUUse << 2).ForAll(data => {
-				                                	Region reg;
-				                                	if (m_regions.TryGetValue(data.Id, out reg))
-				                                		reg.LoadFromDatabase(data.Mobs, ref mobs, ref merchants, ref items, ref bindpoints);
-				});
+
+				foreach (var data in regionsData)
+				{
+					if (m_regions.TryGetValue(data.Id, out Region region))
+						region.LoadFromDatabase(data.Mobs, ref mobs, ref merchants, ref items, ref bindpoints);
+				}
 
 				if (log.IsInfoEnabled)
 				{

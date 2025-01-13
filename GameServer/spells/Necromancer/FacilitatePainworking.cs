@@ -6,7 +6,7 @@ namespace DOL.GS.Spells
     /// Spell handler for Facilitate Painworking.
     /// </summary>
     /// <author>Aredhel</author>
-    [SpellHandlerAttribute("FacilitatePainworking")]
+    [SpellHandler(eSpellType.FacilitatePainworking)]
     class FacilitatePainworking : SpellHandler
     {
         public FacilitatePainworking(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
@@ -18,7 +18,7 @@ namespace DOL.GS.Spells
 
         protected override GameSpellEffect CreateSpellEffect(GameLiving target, double effectiveness)
         {
-            return new FacilitatePainworkingEffect(this, CalculateEffectDuration(target, effectiveness), 0, effectiveness);
+            return new FacilitatePainworkingEffect(this, CalculateEffectDuration(target), 0, effectiveness);
         }
     }
 }

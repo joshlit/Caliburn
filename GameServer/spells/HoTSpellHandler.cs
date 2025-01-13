@@ -1,5 +1,3 @@
-using System;
-using DOL.AI.Brain;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 
@@ -8,7 +6,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Heal Over Time spell handler
 	/// </summary>
-	[SpellHandlerAttribute("HealOverTime")]
+	[SpellHandler(eSpellType.HealOverTime)]
 	public class HoTSpellHandler : SpellHandler
 	{
 		public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
@@ -24,26 +22,6 @@ namespace DOL.GS.Spells
 		{
 			m_caster.Mana -= PowerCost(target);
 			base.FinishSpellCast(target);
-		}
-
-		public override void ApplyEffectOnTarget(GameLiving target)
-		{
-			// TODO: correct formula
-			Effectiveness = 1.25;
-			if(Caster is GamePlayer)
-			{
-				double lineSpec = Caster.GetModifiedSpecLevel(m_spellLine.Spec);
-				if (lineSpec < 1)
-					lineSpec = 1;
-				Effectiveness = 0.75;
-				if (Spell.Level > 0)
-				{
-					Effectiveness += (lineSpec-1.0)/Spell.Level*0.5;
-					if (Effectiveness > 1.25)
-						Effectiveness = 1.25;
-				}
-			}
-			base.ApplyEffectOnTarget(target);
 		}
 
 		protected override GameSpellEffect CreateSpellEffect(GameLiving target, double effectiveness)
@@ -70,7 +48,7 @@ namespace DOL.GS.Spells
 			if (target.IsAlive == false) return;
 
 			base.OnDirectEffect(target);
-			double heal = Spell.Value * Effectiveness;
+			double heal = Spell.Value * CalculateBuffDebuffEffectiveness();
 			
 			if(target.Health < target.MaxHealth)
             {
@@ -84,20 +62,6 @@ namespace DOL.GS.Spells
             {
 				MessageToLiving(target, "You are full health.", eChatType.CT_SpellResisted);
             }
-			
-
-            #region PVP DAMAGE
-
-            if (target.DamageRvRMemory > 0 &&
-                (target is NecromancerPet &&
-                ((target as NecromancerPet).Brain as IControlledBrain).GetPlayerOwner() != null
-                || target is GamePlayer))
-            {
-                if (target.DamageRvRMemory > 0)
-                    target.DamageRvRMemory -= (long)Math.Max(heal, 0);
-            }
-
-            #endregion PVP DAMAGE
 
 			//"You feel calm and healthy."
 			MessageToLiving(target, Spell.Message1, eChatType.CT_Spell);

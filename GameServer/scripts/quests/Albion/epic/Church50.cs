@@ -111,7 +111,7 @@ namespace DOL.GS.Quests.Albion
 				Roben = new GameNPC();
 				Roben.Model = 36;
 				Roben.Name = "Roben Fraomar";
-				Roben.GuildName = "";
+				Roben.GuildName = string.Empty;
 				Roben.Realm = eRealm.Albion;
 				Roben.CurrentRegionID = 1;
 				Roben.Size = 52;
@@ -144,7 +144,7 @@ namespace DOL.GS.Quests.Albion
 				Blythe = new SisterBlythe();
 				Blythe.Model = 67;
 				Blythe.Name = "Sister Blythe";
-				Blythe.GuildName = "";
+				Blythe.GuildName = string.Empty;
 				Blythe.Realm = eRealm.None;
 				Blythe.CurrentRegionID = 1;
 				Blythe.Size = 50;
@@ -359,7 +359,7 @@ namespace DOL.GS.Quests.Albion
 				i.Bonus2Type = (int) eResist.Spirit;
 
 				i.Bonus3 = 12;
-				i.Bonus3Type = (int) eProperty.PowerRegenerationRate;
+				i.Bonus3Type = (int) eProperty.PowerRegenerationAmount;
 
 				i.Bonus4 = 27;
 				i.Bonus4Type = (int) eProperty.MaxHealth;

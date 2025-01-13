@@ -5,7 +5,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Style speed decrease effect spell handler
 	/// </summary>
-	[SpellHandler("StyleSpeedDecrease")]
+	[SpellHandler(eSpellType.StyleSpeedDecrease)]
 	public class StyleSpeedDecrease : SpeedDecreaseSpellHandler
 	{
 		public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
@@ -13,18 +13,12 @@ namespace DOL.GS.Spells
 			return new StatDebuffECSEffect(initParams);
 		}
 		
-		public override int CalculateSpellResistChance(GameLiving target)
+		public override double CalculateSpellResistChance(GameLiving target)
 		{
 			return 0;
 		}
 
-		/// <summary>
-		/// Calculates the effect duration in milliseconds
-		/// </summary>
-		/// <param name="target">The effect target</param>
-		/// <param name="effectiveness">The effect effectiveness</param>
-		/// <returns>The effect duration in milliseconds</returns>
-		protected override int CalculateEffectDuration(GameLiving target, double effectiveness)
+		protected override int CalculateEffectDuration(GameLiving target)
 		{
 			return Spell.Duration;
 		}

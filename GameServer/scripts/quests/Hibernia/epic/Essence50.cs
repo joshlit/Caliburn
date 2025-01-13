@@ -130,7 +130,7 @@ namespace DOL.GS.Quests.Hibernia
 				Brigit.LoadEquipmentTemplateFromDatabase("4d0ceec2-6812-4d38-8b83-e56a7ee89821");
 				Brigit.Model = 346;
 				Brigit.Name = "Brigit";
-				Brigit.GuildName = "";
+				Brigit.GuildName = string.Empty;
 				Brigit.Realm = eRealm.Hibernia;
 				Brigit.CurrentRegionID = 201;
 				Brigit.Size = 50;
@@ -164,7 +164,7 @@ namespace DOL.GS.Quests.Hibernia
 				Caithor = new GhostOfCaithor();
 				Caithor.Model = 339;
 				Caithor.Name = "Giant Caithor";
-				Caithor.GuildName = "";
+				Caithor.GuildName = string.Empty;
 				Caithor.Realm = eRealm.None;
 				Caithor.CurrentRegionID = 200;
 				Caithor.Size = 160;
@@ -244,7 +244,7 @@ namespace DOL.GS.Quests.Hibernia
 				BardEpicBoots.Bonus2Type = (int) eResist.Matter;
 
 				BardEpicBoots.Bonus3 = 4;
-				BardEpicBoots.Bonus3Type = (int) eProperty.PowerRegenerationRate;
+				BardEpicBoots.Bonus3Type = (int) eProperty.PowerRegenerationAmount;
 
 				BardEpicBoots.Bonus4 = 33;
 				BardEpicBoots.Bonus4Type = (int) eProperty.MaxHealth;
@@ -285,7 +285,7 @@ namespace DOL.GS.Quests.Hibernia
 				BardEpicHelm.Bonus1Type = (int) eStat.CHR;
 
 				BardEpicHelm.Bonus2 = 4;
-				BardEpicHelm.Bonus2Type = (int) eProperty.PowerRegenerationRate;
+				BardEpicHelm.Bonus2Type = (int) eProperty.PowerRegenerationAmount;
 
 				BardEpicHelm.Bonus3 = 3;
 				BardEpicHelm.Bonus3Type = (int) eProperty.Skill_Regrowth;
@@ -552,7 +552,7 @@ namespace DOL.GS.Quests.Hibernia
 				ChampionEpicHelm.Bonus3Type = (int) eStat.QUI;
 
 				ChampionEpicHelm.Bonus4 = 6;
-				ChampionEpicHelm.Bonus4Type = (int) eProperty.PowerRegenerationRate;
+				ChampionEpicHelm.Bonus4Type = (int) eProperty.PowerRegenerationAmount;
 
 				if (SAVE_INTO_DATABASE)
 				{

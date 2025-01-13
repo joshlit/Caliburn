@@ -92,13 +92,6 @@ namespace DOL.GS
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(8818);
             LoadTemplate(npcTemplate);
 
-            Strength = npcTemplate.Strength;
-            Constitution = npcTemplate.Constitution;
-            Dexterity = npcTemplate.Dexterity;
-            Quickness = npcTemplate.Quickness;
-            Empathy = npcTemplate.Empathy;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
             Faction = FactionMgr.GetFactionByID(187);
             RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
 
@@ -281,9 +274,7 @@ namespace DOL.GS
             base.Die(killer);
         }
         public override long ExperienceValue => 0;
-        public override void DropLoot(GameObject killer) //no loot
-        {
-        }
+        public override bool CanDropLoot => false;
         public override short Quickness { get => base.Quickness; set => base.Quickness = 125; }
         public override short Strength { get => base.Strength; set => base.Strength = 50; }
         public override bool AddToWorld()
@@ -350,9 +341,7 @@ namespace DOL.GS
             base.Die(killer);
         }
         public override long ExperienceValue => 0;
-        public override void DropLoot(GameObject killer) //no loot
-        {
-        }
+        public override bool CanDropLoot => false;
         public override short Quickness { get => base.Quickness; set => base.Quickness = 125; }
         public override short Strength { get => base.Strength; set => base.Strength = 50; }
         public override bool AddToWorld()

@@ -6,9 +6,7 @@ namespace DOL.GS.Spells
 {
 	public interface ISpellHandler
 	{
-		eCastState CastState { get; set; }
-		GameLiving Target { get; set; }
-		bool HasLos { get; set; }
+		GameLiving Target { get; }
 
 		ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams);
 
@@ -85,15 +83,6 @@ namespace DOL.GS.Spells
 		ECSPulseEffect PulseEffect { get; }
 
 		/// <summary>
-		/// Determines wether new spell is better than existing one
-		/// important for overwriting
-		/// </summary>
-		/// <param name="oldeffect"></param>
-		/// <param name="neweffect"></param>
-		/// <returns>true if new spell is better version</returns>
-		bool IsNewEffectBetter(GameSpellEffect oldeffect, GameSpellEffect neweffect);
-
-		/// <summary>
 		/// Determines wether this spell is compatible with given spell
 		/// and therefore overwritable by better versions
 		/// spells that are overwritable do not stack
@@ -122,12 +111,7 @@ namespace DOL.GS.Spells
 		/// </summary>
 		bool AllowCoexisting { get; }
 
-		/// <summary>
-		/// Does this spell ignore all damage caps?
-		/// </summary>
-		bool IgnoreDamageCap { get; set; }
-
-	    long CastStartTick { get; }
+		long CastStartTick { get; }
 		/// <summary>
 		/// Should this spell use the minimum variance for the type?
 		/// Followup style effects, for example, always use the minimum variance

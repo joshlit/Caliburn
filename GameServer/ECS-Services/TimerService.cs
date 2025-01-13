@@ -67,7 +67,7 @@ namespace DOL.GS
                     long stopTick = GameLoop.GetCurrentTime();
 
                     if (stopTick - startTick > 25)
-                        log.Warn($"Long {SERVICE_NAME}.{nameof(Tick)} for Timer Callback: {timer.Callback?.Method?.DeclaringType}:{timer.Callback?.Method?.Name}  Owner: {timer.Owner?.Name} Time: {stopTick - startTick}ms");
+                        log.Warn($"Long {SERVICE_NAME}.{nameof(Tick)} for Timer Callback: {timer.CallbackInfo?.DeclaringType}:{timer.CallbackInfo?.Name}  Owner: {timer.Owner?.Name} Time: {stopTick - startTick}ms");
                 }
             }
             catch (Exception e)
@@ -84,7 +84,8 @@ namespace DOL.GS
         private long _nextTick;
 
         public GameObject Owner { get; }
-        public ECSTimerCallback Callback { get; set; }
+        public ECSTimerCallback Callback { private get; set; }
+        public MethodInfo CallbackInfo => Callback?.GetMethodInfo();
         public int Interval { get; set; }
         public ref long NextTick => ref _nextTick;
         public bool IsAlive { get; private set; }
@@ -152,14 +153,9 @@ namespace DOL.GS
             {
                 if (_properties == null)
                 {
-                    lock (this)
+                    lock(this)
                     {
-                        if (_properties == null)
-                        {
-                            PropertyCollection properties = new PropertyCollection();
-                            Thread.MemoryBarrier();
-                            _properties = properties;
-                        }
+                        _properties ??= new();
                     }
                 }
 

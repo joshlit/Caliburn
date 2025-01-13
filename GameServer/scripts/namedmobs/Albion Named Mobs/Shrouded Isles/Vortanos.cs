@@ -56,13 +56,6 @@ namespace DOL.GS
 		{
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60167731);
 			LoadTemplate(npcTemplate);
-			Strength = npcTemplate.Strength;
-			Dexterity = npcTemplate.Dexterity;
-			Constitution = npcTemplate.Constitution;
-			Quickness = npcTemplate.Quickness;
-			Piety = npcTemplate.Piety;
-			Intelligence = npcTemplate.Intelligence;
-			Empathy = npcTemplate.Empathy;
 			Faction = FactionMgr.GetFactionByID(64);
 
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
@@ -465,9 +458,7 @@ namespace DOL.GS
 			return true;
 		}
 		public override long ExperienceValue => 0;
-		public override void DropLoot(GameObject killer)
-		{
-		}
+		public override bool CanDropLoot => false;
 	}
 }
 namespace DOL.AI.Brain

@@ -54,10 +54,10 @@ namespace DOL.GS
         public bool HasActiveResetHeadingAction => _resetHeadingAction != null && _resetHeadingAction.IsAlive;
         public Point3D DestinationForClient { get; private set; }
 
-        public NpcMovementComponent(GameNPC npcOwner) : base(npcOwner)
+        public NpcMovementComponent(GameNPC owner) : base(owner)
         {
-            Owner = npcOwner;
-            _pathCalculator = new(npcOwner);
+            Owner = owner;
+            _pathCalculator = new(owner);
             _positionForUpdatePackets = Owner;
         }
 
@@ -121,7 +121,7 @@ namespace DOL.GS
 
                 if (_needsBroadcastUpdate)
                 {
-                    ClientService.UpdateObjectForPlayers(Owner);
+                    ClientService.UpdateNpcForPlayers(Owner);
                     _needsBroadcastUpdate = false;
                 }
             }

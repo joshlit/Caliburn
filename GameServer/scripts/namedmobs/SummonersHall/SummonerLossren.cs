@@ -82,13 +82,6 @@ namespace DOL.GS
 		{
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(18806);
 			LoadTemplate(npcTemplate);
-			Strength = npcTemplate.Strength;
-			Dexterity = npcTemplate.Dexterity;
-			Constitution = npcTemplate.Constitution;
-			Quickness = npcTemplate.Quickness;
-			Piety = npcTemplate.Piety;
-			Intelligence = npcTemplate.Intelligence;
-			Empathy = npcTemplate.Empathy;
 			RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 			Faction = FactionMgr.GetFactionByID(206);
 			IsCloakHoodUp = true;
@@ -387,9 +380,7 @@ namespace DOL.GS
 			++TorturedSoulKilled;
             base.Die(killer);
         }
-        public override void DropLoot(GameObject killer)//dont drop loot
-        {
-        }
+		public override bool CanDropLoot => false;
         List<string> soul_names = new List<string>()
 		{
 			"Aphryx's Tortured Soul","Arus's Tortured Soul","Briandina's Tortured Soul","Dwuanne's Tortured Soul",
@@ -554,9 +545,7 @@ namespace DOL.GS
 			RandomTarget = null;
 			base.Die(killer);
 		}
-        public override void DropLoot(GameObject killer)//dont drop loot
-        {
-        }
+        public override bool CanDropLoot => false;
         public static GamePlayer randomtarget = null;
 		public static GamePlayer RandomTarget
 		{

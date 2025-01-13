@@ -60,13 +60,6 @@ namespace DOL.GS
         {
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60166369);
             LoadTemplate(npcTemplate);
-            Strength = npcTemplate.Strength;
-            Dexterity = npcTemplate.Dexterity;
-            Constitution = npcTemplate.Constitution;
-            Quickness = npcTemplate.Quickness;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
-            Empathy = npcTemplate.Empathy;
 
             MeleeDamageType = eDamageType.Spirit;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
@@ -190,7 +183,7 @@ namespace DOL.AI.Brain
         {
             AggroLevel = 100;
             AggroRange = 400;
-            CanBAF = false;
+            CanBaf = false;
         }
 
         public static bool InRoom = false;
@@ -369,9 +362,7 @@ namespace DOL.GS
             --SoulCount;
             base.Die(killer);
         }
-        public override void DropLoot(GameObject killer)
-        {
-        }
+        public override bool CanDropLoot => false;
         public override short Quickness { get => base.Quickness; set => base.Quickness = 80; }
         public override short Strength { get => base.Strength; set => base.Strength = 150; }
         public static int SoulCount = 0;
@@ -417,7 +408,7 @@ namespace DOL.AI.Brain
         {
             AggroLevel = 100;
             AggroRange = 500;
-            CanBAF = false;
+            CanBaf = false;
         }
         public override void Think()
         {

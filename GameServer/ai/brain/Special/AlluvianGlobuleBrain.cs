@@ -50,15 +50,13 @@ namespace DOL.AI.Brain
 					for (int i = 0; i < PlayersSeen.Count; i++)
 					{
 						if (!currentPlayersSeen.Contains(PlayersSeen[i]))
-						{
-							PlayersSeen.RemoveAt(i);
-						}
+							PlayersSeen.SwapRemoveAt(i);
 					}
 				}
 				if (!Body.attackComponent.AttackState && AggroLevel > 0)
 				{
 					CheckPlayerAggro();
-					CheckNPCAggro();
+					CheckNpcAggro();
 				}
 				if (HasAggro)
 				{

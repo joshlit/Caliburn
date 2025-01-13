@@ -66,7 +66,7 @@ namespace DOL.GS
 		/// <returns>list with string messages</returns>
 		public override IList GetExamineMessages(GamePlayer player)
 		{
-			string TrainerClassName = "";
+			string TrainerClassName = string.Empty;
             switch (player.Client.Account.Language)
 			{
                 case "DE":
@@ -192,7 +192,7 @@ namespace DOL.GS
 					}
 					player.RefreshSpecDependantSkills(false);
 					// Notify Player of points
-					player.Out.SendUpdatePlayerSkills();
+					player.Out.SendUpdatePlayerSkills(true);
 					player.Out.SendUpdatePoints();
 					player.Out.SendUpdatePlayer();
 					player.Out.SendTrainerWindow();
@@ -225,7 +225,7 @@ namespace DOL.GS
 		protected virtual void CheckAbilityToUseItem(GamePlayer player)
 		{
 			// drop any equiped-non usable item, in inventory or on the ground if full
-			lock (player.Inventory.LockObject)
+			lock (player.Inventory.Lock)
 			{
 				foreach (DbInventoryItem item in player.Inventory.EquippedItems)
 				{
@@ -338,14 +338,14 @@ namespace DOL.GS
 				player.RemoveAllAbilities();
 				player.RemoveAllSpellLines();
 
-				if (messageToPlayer != "")
+				if (messageToPlayer != string.Empty)
 					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameTrainer.PromotePlayer.Says", this.Name, messageToPlayer), eChatType.CT_System, eChatLoc.CL_PopupWindow);
 				player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameTrainer.PromotePlayer.Upgraded", player.CharacterClass.Name), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 
 				player.CharacterClass.OnLevelUp(player, player.Level);
 				player.RefreshSpecDependantSkills(true);
 				player.StartPowerRegeneration();
-				player.Out.SendUpdatePlayerSkills();
+				player.Out.SendUpdatePlayerSkills(true);
 				player.Out.SendUpdatePlayer();
 				// drop any non usable item
 				CheckAbilityToUseItem(player);

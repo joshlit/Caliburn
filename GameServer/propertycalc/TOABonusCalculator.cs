@@ -13,7 +13,7 @@ namespace DOL.GS.PropertyCalc
     /// </summary>
 
     //Debuff Effectivness
-    [PropertyCalculator(eProperty.DebuffEffectivness)]
+    [PropertyCalculator(eProperty.DebuffEffectiveness)]
     public class DebuffEffectivnessPercentCalculator : PropertyCalculator
     {
         public override int CalcValue(GameLiving living, eProperty property)
@@ -53,11 +53,6 @@ namespace DOL.GS.PropertyCalc
                 + living.ItemBonus[(int)property]);
             // Add RA bonus
             percent += living.AbilityBonus[(int)property];
-
-            // Relic bonus calculated before RA bonuses
-            if (living is GamePlayer or GameSummonedPet)
-                percent += (int)(100 * RelicMgr.GetRelicBonusModifier(living.Realm, eRelicType.Magic));
-
             return percent;
         }
     }

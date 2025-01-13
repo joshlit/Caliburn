@@ -38,7 +38,7 @@ namespace DOL.GS.Commands
 				if (args.Length == 2 && args[1].ToLower() == "refresh")
 				{
 					client.Player.LeaveHouse();
-					client.Player.RefreshWorld();
+					client.Player.ClearUpdateCaches();
 					return;
 				}
 				#endregion Refresh
@@ -346,7 +346,7 @@ namespace DOL.GS.Commands
 				{
 					Stack<GameLocation> locations;
 
-					locations = client.Player.TempProperties.GetProperty<Stack<GameLocation>>(TEMP_KEY_JUMP, null);
+					locations = client.Player.TempProperties.GetProperty<Stack<GameLocation>>(TEMP_KEY_JUMP);
 
 					if (locations == null)
 					{
@@ -369,7 +369,7 @@ namespace DOL.GS.Commands
 				{
 					Stack<GameLocation> locations;
 
-					locations = client.Player.TempProperties.GetProperty<Stack<GameLocation>>(TEMP_KEY_JUMP, null);
+					locations = client.Player.TempProperties.GetProperty<Stack<GameLocation>>(TEMP_KEY_JUMP);
 
 					if (locations == null || locations.Count < 1)
 					{
