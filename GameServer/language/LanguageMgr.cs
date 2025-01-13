@@ -62,7 +62,6 @@ namespace DOL.Language
 
         #region Variables
         private const string TRANSLATION_ID_EMPTY = "No translation ID could be found for this message.";
-        private const string TRANSLATION_NULL = "NULL";
 
         /// <summary>
         /// Translation ID for the sentence, array position 0
@@ -90,13 +89,13 @@ namespace DOL.Language
         private static string LangPath {
             get
             {
-                if (soleInstance.LangPathImpl == "")
+                if (soleInstance.LangPathImpl == string.Empty)
                     soleInstance.LangPathImpl = Path.Combine(GameServer.Instance.Configuration.RootDirectory, "languages");
 
                 return soleInstance.LangPathImpl;
             }
         }
-        protected string LangPathImpl = "";
+        protected string LangPathImpl = string.Empty;
         #endregion Variables
 
         #region Properties
@@ -488,7 +487,7 @@ namespace DOL.Language
         {
             if (client == null)
             {
-                translation = TRANSLATION_NULL;
+                translation = null;
                 return true;
             }
 
@@ -500,7 +499,7 @@ namespace DOL.Language
                 {
                     if (client.ClientState == GameClient.eClientState.Playing)
                     {
-                        if (client.Player.TempProperties.GetProperty("LANGUAGEMGR-DEBUG", false))
+                        if (client.Player.TempProperties.GetProperty<bool>("LANGUAGEMGR-DEBUG"))
                             translation = "Id is " + translationId + " " + translation;
                     }
                 }

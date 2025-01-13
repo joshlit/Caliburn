@@ -125,7 +125,7 @@ namespace DOL.GS.Quests.Albion
 				Ferowl.Name = "Master Ferowl";
 				if (log.IsWarnEnabled)
 					log.Warn("Could not find " + Ferowl.Name + " , creating it ...");
-				Ferowl.GuildName = "";
+				Ferowl.GuildName = string.Empty;
 				Ferowl.Realm = eRealm.Albion;
 				Ferowl.CurrentRegionID = 1;
 				Ferowl.Size = 51;
@@ -158,7 +158,7 @@ namespace DOL.GS.Quests.Albion
 				Morgana.Name = "Morgana";
 				if (log.IsWarnEnabled)
 					log.Warn("Could not find " + Morgana.Name + " , creating it ...");
-				Morgana.GuildName = "";
+				Morgana.GuildName = string.Empty;
 				Morgana.Realm = eRealm.None;
 				Morgana.CurrentRegionID = 1;
 				Morgana.Size = 51;
@@ -204,7 +204,7 @@ namespace DOL.GS.Quests.Albion
 				Bechard = new Bechard();
 				Bechard.Model = 606;
 				Bechard.Name = "Bechard";
-				Bechard.GuildName = "";
+				Bechard.GuildName = string.Empty;
 				Bechard.Realm = eRealm.None;
 				Bechard.CurrentRegionID = 1;
 				Bechard.Size = 50;
@@ -237,7 +237,7 @@ namespace DOL.GS.Quests.Albion
 				Silcharde = new Silcharde();
 				Silcharde.Model = 606;
 				Silcharde.Name = "Silcharde";
-				Silcharde.GuildName = "";
+				Silcharde.GuildName = string.Empty;
 				Silcharde.Realm = eRealm.None;
 				Silcharde.CurrentRegionID = 1;
 				Silcharde.Size = 50;
@@ -442,7 +442,7 @@ namespace DOL.GS.Quests.Albion
 				item.Bonus1Type = (int) eResist.Cold;
 
 				item.Bonus2 = 14;
-				item.Bonus2Type = (int) eProperty.PowerRegenerationRate;
+				item.Bonus2Type = (int) eProperty.PowerRegenerationAmount;
 
 				item.Bonus3 = 24;
 				item.Bonus3Type = (int) eProperty.MaxHealth;
@@ -693,7 +693,7 @@ namespace DOL.GS.Quests.Albion
 				item.Bonus1Type = (int) eResist.Cold;
 
 				item.Bonus2 = 8;
-				item.Bonus2Type = (int) eProperty.PowerRegenerationRate;
+				item.Bonus2Type = (int) eProperty.PowerRegenerationAmount;
 
 				item.Bonus3 = 39;
 				item.Bonus3Type = (int) eProperty.MaxHealth;
@@ -952,7 +952,7 @@ namespace DOL.GS.Quests.Albion
 				item.Bonus1Type = (int) eResist.Spirit;
 
 				item.Bonus2 = 14;
-				item.Bonus2Type = (int) eProperty.PowerRegenerationRate;
+				item.Bonus2Type = (int) eProperty.PowerRegenerationAmount;
 
 				item.Bonus3 = 24;
 				item.Bonus3Type = (int) eProperty.MaxHealth;
@@ -1120,7 +1120,7 @@ namespace DOL.GS.Quests.Albion
 				Morgana.Name = "Morgana";
 				if (log.IsWarnEnabled)
 					log.Warn("Could not find " + Morgana.Name + " , creating it ...");
-				Morgana.GuildName = "";
+				Morgana.GuildName = string.Empty;
 				Morgana.Realm = eRealm.None;
 				Morgana.CurrentRegionID = 1;
 				Morgana.Size = 51;

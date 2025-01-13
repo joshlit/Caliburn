@@ -9,7 +9,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Damages the target and lowers their resistance to the spell's type.
 	/// </summary>
-	[SpellHandler("DirectDamageWithDebuff")]
+	[SpellHandler(eSpellType.DirectDamageWithDebuff)]
 	public class DirectDamageDebuffSpellHandler : AbstractResistDebuff
 	{
 		public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
@@ -84,27 +84,17 @@ namespace DOL.GS.Spells
 
 		public override void ApplyEffectOnTarget(GameLiving target)
 		{
-			// do not apply debuff to keep components or doors
-			if ((target is Keeps.GameKeepComponent) == false && (target is Keeps.GameKeepDoor) == false)
-			{
-				base.ApplyEffectOnTarget(target);
-			}
+			base.ApplyEffectOnTarget(target);
 
-			if ((Spell.Duration > 0 && Spell.Target != eSpellTarget.AREA) || Spell.Concentration > 0)
-			{
+			if ((Spell.Duration > 0 && Spell.Target is not eSpellTarget.AREA) || Spell.Concentration > 0)
 				OnDirectEffect(target);
-			}
 		}
 
 		private void DealDamage(GameLiving target)
 		{
-			if (!target.IsAlive || target.ObjectState != GameLiving.eObjectState.Active) return;
-
-			if (target is Keeps.GameKeepDoor || target is Keeps.GameKeepComponent)
-			{
-				MessageToCaster("Your spell has no effect on the keep component!", eChatType.CT_SpellResisted);
+			if (!target.IsAlive || target.ObjectState is not GameObject.eObjectState.Active)
 				return;
-			}
+
 			// calc damage
 			AttackData ad = CalculateDamageToTarget(target);
 			SendDamageMessages(ad);
@@ -114,18 +104,20 @@ namespace DOL.GS.Spells
 			if (target.IsAlive)
 				base.ApplyEffectOnTarget(target, effectiveness);*/
 		}
+
 		/*
 		 * We need to send resist spell los check packets because spell resist is calculated first, and
 		 * so you could be inside keep and resist the spell and be interupted when not in view
 		 */
 		protected override void OnSpellResisted(GameLiving target)
 		{
-			if (target is GamePlayer && Caster.TempProperties.GetProperty("player_in_keep_property", false))
+			if (target is GamePlayer && Caster.TempProperties.GetProperty<bool>("player_in_keep_property"))
 			{
 				GamePlayer player = target as GamePlayer;
 				player.Out.SendCheckLos(Caster, player, new CheckLosResponse(ResistSpellCheckLos));
 			}
-			else SpellResisted(target);
+			else
+				base.OnSpellResisted(target);
 		}
 
 		private void ResistSpellCheckLos(GamePlayer player, eLosCheckResponse response, ushort sourceOID, ushort targetOID)
@@ -136,7 +128,7 @@ namespace DOL.GS.Spells
 				{
 					GameLiving target = Caster.CurrentRegion.GetObject(targetOID) as GameLiving;
 					if (target != null)
-						SpellResisted(target);
+						base.OnSpellResisted(target);
 				}
 				catch (Exception e)
 				{
@@ -146,10 +138,6 @@ namespace DOL.GS.Spells
 			}
 		}
 
-		private void SpellResisted(GameLiving target)
-		{
-			base.OnSpellResisted(target);
-		}
 		#endregion
 
 		/// <summary>

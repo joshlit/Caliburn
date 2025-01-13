@@ -22,19 +22,11 @@ namespace DOL.GS.Scripts
 		{
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(9913);
 			LoadTemplate(npcTemplate);
-			Strength = npcTemplate.Strength;
-			Dexterity = npcTemplate.Dexterity;
-			Constitution = npcTemplate.Constitution;
-			Quickness = npcTemplate.Quickness;
-			Piety = npcTemplate.Piety;
-			Intelligence = npcTemplate.Intelligence;
-			Empathy = npcTemplate.Empathy;
 
 			MeleeDamageType = eDamageType.Crush;
 			Faction = FactionMgr.GetFactionByID(779);
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
-			WeaponSkillScalingFactor = 60;
 			base.SetOwnBrain(new ThaneDyggveBrain());
 			LoadedFromScript = false; //load from database
 			SaveIntoDatabase();
@@ -94,7 +86,7 @@ namespace DOL.GS.Scripts
 			private bool CanCastSpell = false;
 			public ThaneDyggveBrain() : base()
 			{
-				CanBAF = false;
+				CanBaf = false;
 				m_MjollnirAnnounce = new String[]
 				{
 					"You feel your energy draining and {0} summons powerful lightning hammers!",

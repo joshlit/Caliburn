@@ -72,13 +72,7 @@ namespace DOL.GS.Spells
 			base.FinishSpellCast(target);
 		}
 
-		/// <summary>
-		/// Calculates the effect duration in milliseconds
-		/// </summary>
-		/// <param name="target">The effect target</param>
-		/// <param name="effectiveness">The effect effectiveness</param>
-		/// <returns>The effect duration in milliseconds</returns>
-		protected override int CalculateEffectDuration(GameLiving target, double effectiveness)
+		protected override int CalculateEffectDuration(GameLiving target)
 		{
 			double duration = Spell.Duration;
 			duration *= (1.0 + m_caster.GetModified(eProperty.SpellDuration) * 0.01);
@@ -123,37 +117,6 @@ namespace DOL.GS.Spells
 			return 0;
 		}
 
-		/// <summary>
-		/// Determines wether this spell is better than given one
-		/// </summary>
-		/// <returns>true if this spell is better version than compare spell</returns>
-		public override bool IsNewEffectBetter(GameSpellEffect oldeffect, GameSpellEffect neweffect)
-		{
-			Spell oldProcSpell = SkillBase.GetSpellByID((int)oldeffect.Spell.Value);
-			Spell newProcSpell = SkillBase.GetSpellByID((int)neweffect.Spell.Value);
-
-			if (oldProcSpell == null || newProcSpell == null)
-				return true;
-
-			// do not replace active proc with different type proc
-			if (oldProcSpell.SpellType != newProcSpell.SpellType) return false;
-
-			if (oldProcSpell.Concentration > 0) return false;
-
-			// if the new spell does less damage return false
-			if (oldProcSpell.Damage > newProcSpell.Damage) return false;
-
-			// if the new spell is lower than the old one return false
-			if (oldProcSpell.Value > newProcSpell.Value) return false;
-
-			//makes problems for immunity effects
-			if (oldeffect is GameSpellAndImmunityEffect == false || ((GameSpellAndImmunityEffect)oldeffect).ImmunityState == false)
-			{
-				if (neweffect.Duration <= oldeffect.RemainingTime) return false;
-			}
-
-			return true;
-		}
 		public override bool IsOverwritable(ECSGameSpellEffect compare)
 		{
 			if (Spell.EffectGroup != 0 || compare.SpellHandler.Spell.EffectGroup != 0)
@@ -216,8 +179,8 @@ namespace DOL.GS.Spells
 			{
 				var list = new List<string>();
 
-//                list.Add("Function: " + (string)(Spell.SpellType == "" ? "(not implemented)" : Spell.SpellType));
-				list.Add(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "ProcSpellHandler.DelveInfo.Function", (string)(Spell.SpellType.ToString() == "" ? "(not implemented)" : Spell.SpellType.ToString())));
+//                list.Add("Function: " + (string)(Spell.SpellType == string.Empty ? "(not implemented)" : Spell.SpellType));
+				list.Add(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "ProcSpellHandler.DelveInfo.Function", (string)(Spell.SpellType.ToString() == string.Empty ? "(not implemented)" : Spell.SpellType.ToString())));
 
 //                list.Add("Target: " + Spell.Target);
 				list.Add(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "DelveInfo.Target", Spell.Target));
@@ -279,7 +242,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// This class contains data for OffensiveProc spells
 	/// </summary>
-	[SpellHandler("OffensiveProc")]
+	[SpellHandler(eSpellType.OffensiveProc)]
 	public class OffensiveProcSpellHandler : BaseProcSpellHandler
 	{
 		private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -359,7 +322,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// This class contains data for DefensiveProc spells
 	/// </summary>
-	[SpellHandler("DefensiveProc")]
+	[SpellHandler(eSpellType.DefensiveProc)]
 	public class DefensiveProcSpellHandler : BaseProcSpellHandler
 	{
 		/// <summary>
@@ -431,7 +394,7 @@ namespace DOL.GS.Spells
 		public DefensiveProcSpellHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
 	}
 	
-	[SpellHandler( "OffensiveProcPvE" )]
+	[SpellHandler(eSpellType.OffensiveProcPvE)]
 	public class OffensiveProcPvESpellHandler : OffensiveProcSpellHandler
 	{
 		/// <summary>

@@ -28,7 +28,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Shears strength buff 
 	/// </summary>
-	[SpellHandlerAttribute("StrengthShear")]
+	[SpellHandler(eSpellType.StrengthShear)]
 	public class StrengthShear : AbstractBuffShear
 	{
 		public override string ShearSpellType { get	{ return "StrengthBuff"; } }
@@ -53,7 +53,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Shears dexterity buff
 	/// </summary>
-	[SpellHandlerAttribute("DexterityShear")]
+	[SpellHandler(eSpellType.DexterityShear)]
 	public class DexterityShear : AbstractBuffShear
 	{
 		public override string ShearSpellType { get	{ return "DexterityBuff"; } }
@@ -65,7 +65,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Shears constitution buff
 	/// </summary>
-	[SpellHandlerAttribute("ConstitutionShear")]
+	[SpellHandler(eSpellType.ConstitutionShear)]
 	public class ConstitutionShear : AbstractBuffShear
 	{
 		public override string ShearSpellType { get	{ return "ConstitutionBuff"; } }
@@ -77,7 +77,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Shears acuity buff
 	/// </summary>
-	[SpellHandlerAttribute("AcuityShear")]
+	[SpellHandler(eSpellType.AcuityShear)]
 	public class AcuityShear : AbstractBuffShear
 	{
 		public override string ShearSpellType { get	{ return "AcuityBuff"; } }
@@ -89,7 +89,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Shears str/con buff
 	/// </summary>
-	[SpellHandlerAttribute("StrengthConstitutionShear")]
+	[SpellHandler(eSpellType.StrengthConstitutionShear)]
 	public class StrengthConstitutionShear : AbstractBuffShear
 	{
 		public override string ShearSpellType { get	{ return "StrengthConstitutionBuff"; } }
@@ -101,7 +101,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Shears dex/qui buff
 	/// </summary>
-	[SpellHandlerAttribute("DexterityQuicknessShear")]
+	[SpellHandler(eSpellType.DexterityQuicknessShear)]
 	public class DexterityQuicknessShear : AbstractBuffShear
 	{
 		public override string ShearSpellType { get	{ return "DexterityQuicknessBuff"; } }
@@ -228,7 +228,7 @@ namespace DOL.GS.Spells
 
 				var list = new List<string>();
 
-				list.Add("Function: " + (Spell.SpellType.ToString() == "" ? "(not implemented)" : Spell.SpellType.ToString()));
+				list.Add("Function: " + (Spell.SpellType.ToString() == string.Empty ? "(not implemented)" : Spell.SpellType.ToString()));
 				list.Add(" "); //empty line
 				list.Add(Spell.Description);
 				list.Add(" "); //empty line
@@ -248,7 +248,7 @@ namespace DOL.GS.Spells
 		public AbstractBuffShear(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) {}
 	}
 
-	[SpellHandlerAttribute("RandomBuffShear")]
+	[SpellHandler(eSpellType.RandomBuffShear)]
 	public class RandomBuffShear : SpellHandler
 	{
 

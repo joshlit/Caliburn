@@ -33,12 +33,11 @@ namespace DOL.GS.RealmAbilities
         {
             if (CheckPreconditions(living, DEAD | SITTING | MEZZED | STUNNED))
                 return;
+
             if (living is GamePlayer)
                 CreateSpell(name, icon, clientEffect, damageType, GetDamageAddAmount(living));
-           
-            ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(living, m_spell, m_spellline);
-            spellHandler.IgnoreDamageCap = true;
 
+            ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(living, m_spell, m_spellline);
             new AtlasOF_RainOfBaseECSEffect(new ECSGameEffectInitParams(living, duration, 1, spellHandler));
             DisableSkill(living);
         }
@@ -65,7 +64,7 @@ namespace DOL.GS.RealmAbilities
                 Range = 0
             };
             m_spell = new Spell(m_dbspell, 0); // make spell level 0 so it bypasses the spec level adjustment code
-            m_spellline = new SpellLine("RAs", "RealmAbilities", "RealmAbilities", true);
+            m_spellline = GlobalSpellsLines.RealmSpellsSpellLine;
         }
         
         private double GetDamageAddAmount(GameLiving caster)

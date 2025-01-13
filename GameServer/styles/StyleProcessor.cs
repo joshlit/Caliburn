@@ -68,7 +68,7 @@ namespace DOL.GS.Styles
 
 						break;
 					case Style.eOpening.Defensive:
-						AttackData targetsLastAD = target.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+						AttackData targetsLastAD = target.attackComponent.attackAction.LastAttackData;
 
 						// Last attack result.
 						if (requiredAttackResult != eAttackResult.Any)
@@ -167,7 +167,7 @@ namespace DOL.GS.Styles
 				// Put player into attack state before setting the styles.
 				// Changing the attack state clears out the styles.
 				if (player.attackComponent.AttackState == false || EffectListService.GetEffectOnTarget(player, eEffect.Engage) != null)
-					player.attackComponent.RequestStartAttack(player.TargetObject);
+					player.attackComponent.RequestStartAttack();
 
 				if (player.TargetObject == null)
 				{
@@ -175,7 +175,7 @@ namespace DOL.GS.Styles
 					return;
 				}
 
-				DbInventoryItem weapon = (style.WeaponTypeRequirement == (int) eObjectType.Shield) ? player.Inventory.GetItem(eInventorySlot.LeftHandWeapon) : player.ActiveWeapon;
+				DbInventoryItem weapon = (eObjectType) style.WeaponTypeRequirement is eObjectType.Shield ? player.ActiveLeftWeapon : player.ActiveWeapon;
 
 				if (!CheckWeaponType(style, player, weapon))
 				{
@@ -190,7 +190,7 @@ namespace DOL.GS.Styles
 				bool automaticStyleUsed = false;
 				if (Properties.AUTO_SELECT_OPENING_STYLE && style.OpeningRequirementType != Style.eOpening.Positional)
 				{
-					AttackData lastAttackData = player.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+					AttackData lastAttackData = player.attackComponent.attackAction.LastAttackData;
 					Style styleToUse = style;
 
 					while (!CanUseStyle(lastAttackData, player, styleToUse, weapon))
@@ -223,7 +223,7 @@ namespace DOL.GS.Styles
 				{
 					if (preRequireStyle != null)
 					{
-						AttackData lastAD = player.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+						AttackData lastAD = player.attackComponent.attackAction.LastAttackData;
 						if (lastAD == null
 							|| lastAD.AttackResult != eAttackResult.HitStyle
 							|| lastAD.Style == null
@@ -277,7 +277,7 @@ namespace DOL.GS.Styles
 						{
 							if (preRequireStyle != null)
 							{
-								AttackData lastAD = player.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+								AttackData lastAD = player.attackComponent.attackAction.LastAttackData;
 
 								if (lastAD == null
 									|| lastAD.AttackResult != eAttackResult.HitStyle
@@ -330,7 +330,7 @@ namespace DOL.GS.Styles
 						player.Endurance -= CalculateEnduranceCost(living, style, weapon.SPD_ABS);
 				}
 
-				AttackData lastAttackData = living.TempProperties.GetProperty<AttackData>(GameLiving.LAST_ATTACK_DATA, null);
+				AttackData lastAttackData = living.attackComponent.attackAction.LastAttackData;
 
 				// Did primary and backup style fail?
 				if (!CanUseStyle(lastAttackData, living, style, weapon))
@@ -340,15 +340,11 @@ namespace DOL.GS.Styles
 				}
 				else
 				{
-					bool staticGrowth = style.StealthRequirement; // Static growth is not a function of (effective) weapon speed.
-					double talyGrowth = style.GrowthRate;
-					double talySpec = living.GetModifiedSpecLevel(style.Spec);
-					double talySpeed = living.attackComponent.AttackSpeed(weapon) * 0.001;
+					double spec = living.GetModifiedSpecLevel(style.Spec);
 
-					if (staticGrowth)
+					// Stealth openers are unaffected by weapon speed.
+					if (style.StealthRequirement)
 					{
-						int spec = Math.Min(living.Level, living.GetModifiedSpecLevel(style.Spec));
-
 						switch (style.ID)
 						{
 							case 335: //Backstab I
@@ -382,18 +378,20 @@ namespace DOL.GS.Styles
 
 						// Styles with a static growth don't use unstyled damage, so armor has to be taken into account here.
 						DbInventoryItem armor = target.Inventory?.GetItem((eInventorySlot) armorHitLocation);
-						styleDamage = styleDamage * (1.0 - Math.Min(0.85, target.GetArmorAbsorb(armorHitLocation)));
+						styleDamage = styleDamage * (1.0 - target.GetArmorAbsorb(armorHitLocation));
 						styleDamageCap = -1; // Uncapped. Is there supposed to be one?
 					}
 					else
 					{
-						double modifiedGrowthRate = talyGrowth * talySpec * talySpeed / unstyledDamageCap;
+						double growthRate = style.GrowthRate;
+						double attackSpeed = living.attackComponent.AttackSpeed(weapon) * 0.001;
+						double modifiedGrowthRate = growthRate * spec * attackSpeed / unstyledDamageCap;
 						styleDamage = modifiedGrowthRate * unstyledDamage;
 						styleDamageCap = modifiedGrowthRate * unstyledDamageCap;
 
 						// Force styles do at least 1 damage to make level 2 styles actually do something.
 						// Don't forget to ignore the cap. Do it only if the style has a GR.
-						if (styleDamage < 1 && talyGrowth > 0)
+						if (styleDamage < 1 && growthRate > 0)
 						{
 							styleDamage = 1;
 							styleDamageCap = 0;
@@ -540,47 +538,56 @@ namespace DOL.GS.Styles
 		{
 			if (living is GameNPC)
 				return true;
-			GamePlayer player = living as GamePlayer;
-			if (player == null) return false;
+
+			if (living is not GamePlayer player)
+				return false;
 
 			switch (style.WeaponTypeRequirement)
 			{
 				case Style.SpecialWeaponType.DualWield:
+				{
 					// both weapons are needed to use style,
 					// shield is not a weapon here
 					DbInventoryItem rightHand = player.ActiveWeapon;
-					DbInventoryItem leftHand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+					DbInventoryItem leftHand = player.ActiveLeftWeapon;
 
-					if (rightHand == null || leftHand == null || (rightHand.Item_Type != Slot.RIGHTHAND && rightHand.Item_Type != Slot.LEFTHAND))
+					if (rightHand == null || leftHand == null || (rightHand.Item_Type is not Slot.RIGHTHAND and not Slot.LEFTHAND))
 						return false;
 
-					if (style.Spec == Specs.HandToHand && (rightHand.Object_Type != (int)eObjectType.HandToHand || leftHand.Object_Type != (int)eObjectType.HandToHand))
+					if (style.Spec == Specs.HandToHand && ((eObjectType) rightHand.Object_Type is not eObjectType.HandToHand || (eObjectType) leftHand.Object_Type is not eObjectType.HandToHand))
 						return false;
-					else if (style.Spec == Specs.Fist_Wraps && (rightHand.Object_Type != (int)eObjectType.FistWraps || leftHand.Object_Type != (int)eObjectType.FistWraps))
+					else if (style.Spec == Specs.Fist_Wraps && ((eObjectType) rightHand.Object_Type is not eObjectType.FistWraps || (eObjectType) leftHand.Object_Type is not eObjectType.FistWraps))
 						return false;
 
-					return leftHand.Object_Type != (int)eObjectType.Shield;
-
+					return (eObjectType) leftHand.Object_Type is not eObjectType.Shield;
+				}
 				case Style.SpecialWeaponType.AnyWeapon:
+				{
 					// TODO: style can be used with any weapon type,
 					// shield is not a weapon here
 					return weapon != null;
-
+				}
 				default:
-					// WeaponTypeRequirement holds eObjectType of weapon needed for style
-					// no weapon = can't use style
+				{
 					if (weapon == null)
 						return false;
 
-					// can't use shield styles if no active weapon
-					if (style.WeaponTypeRequirement == (int)eObjectType.Shield
-						&& (player.ActiveWeapon == null || (player.ActiveWeapon.Item_Type != Slot.RIGHTHAND && player.ActiveWeapon.Item_Type != Slot.LEFTHAND)))
+					eObjectType weaponTypeRequirement = (eObjectType) style.WeaponTypeRequirement;
+
+					// Can't use shield styles if no active weapon.
+					if (weaponTypeRequirement is eObjectType.Shield &&
+						(player.ActiveWeapon == null || (player.ActiveWeapon.Item_Type is not Slot.RIGHTHAND and not Slot.LEFTHAND)))
 						return false;
 
-					// weapon type check
-					return GameServer.ServerRules.IsObjectTypesEqual(
-							(eObjectType)style.WeaponTypeRequirement,
-							(eObjectType)weapon.Object_Type);
+					eObjectType objectType = (eObjectType) weapon.Object_Type;
+
+					// Treat a left axe as a normal axe.
+					if ((eObjectType) weapon.Object_Type is eObjectType.LeftAxe)
+						objectType = eObjectType.Axe;
+
+					// Weapon type check.
+					return GameServer.ServerRules.IsObjectTypesEqual(weaponTypeRequirement, objectType);
+				}
 			}
 		}
 
@@ -592,42 +599,17 @@ namespace DOL.GS.Styles
 		/// <param name="spellID">The spellid of the magical effect</param>
 		protected static ISpellHandler CreateMagicEffect(GameLiving caster, GameLiving target, int spellID)
 		{
-			SpellLine styleLine = SkillBase.GetSpellLine(GlobalSpellsLines.Combat_Styles_Effect);
-			if (styleLine == null || target == null) return null;
+			Spell spell = SkillBase.GetSpellByID(spellID);
 
-			List<Spell> spells = SkillBase.GetSpellList(styleLine.KeyName);
-
-			Spell styleSpell = null;
-			foreach (Spell spell in spells)
-			{
-				if (spell.ID == spellID)
-				{
-					// We have to scale style procs when cast
-					if (caster is GameSummonedPet pet)
-						pet.ScalePetSpell(spell);
-
-					styleSpell = spell;
-					break;
-				}
-			}
-
-			ISpellHandler spellHandler = ScriptMgr.CreateSpellHandler(caster, styleSpell, styleLine);
-			if (spellHandler == null && styleSpell != null && caster is GamePlayer)
-			{
-				((GamePlayer)caster).Out.SendMessage(styleSpell.Name + " not implemented yet (" + styleSpell.SpellType + ")", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+			if (spell == null)
 				return null;
-			}
 
-			// No negative effects can be applied on a keep door or via attacking a keep door
-			if ((target is GameKeepComponent || target is GameKeepDoor) && spellHandler?.HasPositiveEffect == false)
-			{
-				return null;
-			}
+			// We have to scale style procs when cast.
+			if (caster is GameSummonedPet pet)
+				pet.ScalePetSpell(spell);
 
-
-			return spellHandler;
+			return ScriptMgr.CreateSpellHandler(caster, spell, SkillBase.GetSpellLine(GlobalSpellsLines.Combat_Styles_Effect));
 		}
-
 
 		/// <summary>
 		/// Delve a Style handled by this processor
@@ -740,17 +722,17 @@ namespace DOL.GS.Styles
 				delveInfo.Add(string.Format("- Error: Opening Requirement '{0}' but requirement type is Any!", style.OpeningRequirementValue));
 			}
 
-			temp = "";
+			temp = string.Empty;
 
 			foreach (Style st in SkillBase.GetStyleList(style.Spec, player.CharacterClass.ID))
 			{
 				if (st.AttackResultRequirement == Style.eAttackResultRequirement.Style && st.OpeningRequirementValue == style.ID)
 				{
-					temp = (temp == "" ? st.Name : temp + LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Or", st.Name));
+					temp = (temp == string.Empty ? st.Name : temp + LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.Or", st.Name));
 				}
 			}
 
-			if (temp != "")
+			if (temp != string.Empty)
 			{
 				delveInfo.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "DetailDisplayHandler.HandlePacket.FollowupStyle", temp));
 			}
@@ -907,7 +889,7 @@ namespace DOL.GS.Styles
 				delveInfo.Add(string.Format("Endurance: {0}", style.EnduranceCost));
 				delveInfo.Add(string.Format("StealthRequirement: {0}", style.StealthRequirement));
 				delveInfo.Add(string.Format("WeaponTypeRequirement: {0}", style.WeaponTypeRequirement));
-				string indicator = "";
+				string indicator = string.Empty;
 				if (style.OpeningRequirementValue != 0 && style.AttackResultRequirement == 0 && style.OpeningRequirementType == 0)
 				{
 					indicator = "!!";
@@ -923,10 +905,10 @@ namespace DOL.GS.Styles
 				{
 					delveInfo.Add(" ");
 
-					string procs = "";
+					string procs = string.Empty;
 					foreach ((Spell, int, int) spell in style.Procs)
 					{
-						if (procs != "")
+						if (procs != string.Empty)
 							procs += ", ";
 
 						procs += spell.Item1.ID;

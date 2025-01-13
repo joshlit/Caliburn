@@ -26,10 +26,10 @@ namespace DOL.GS.SkillHandler
 
             if (player.TargetObject is not GameLiving target)
             {
-                foreach (InterceptECSGameEffect intercept in player.effectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Intercept))
+                foreach (InterceptECSGameEffect intercept in player.effectListComponent.GetAbilityEffects().Where(e => e.EffectType is eEffect.Intercept))
                 {
                     if (intercept.Source == player)
-                        EffectService.RequestCancelEffect(intercept);
+                        EffectService.RequestImmediateCancelEffect(intercept);
                 }
 
                 player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "Skill.Ability.Intercept.CancelTargetNull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -70,14 +70,14 @@ namespace DOL.GS.SkillHandler
             foundOurEffect = false;
             effectFromAnotherSource = null;
 
-            foreach (InterceptECSGameEffect intercept in target.effectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Intercept))
+            foreach (InterceptECSGameEffect intercept in target.effectListComponent.GetAbilityEffects().Where(e => e.EffectType is eEffect.Intercept))
             {
                 if (intercept.Source == source)
                 {
                     foundOurEffect = true;
 
                     if (cancelOurs)
-                        EffectService.RequestCancelEffect(intercept);
+                        EffectService.RequestImmediateCancelEffect(intercept);
                 }
 
                 if (intercept.Target == target)
@@ -87,10 +87,10 @@ namespace DOL.GS.SkillHandler
 
         public static void CancelOurEffectThenAddOnTarget(GameLiving source, GameLiving target)
         {
-            foreach (InterceptECSGameEffect intercept in source.effectListComponent.GetAbilityEffects().Where(e => e.EffectType == eEffect.Intercept))
+            foreach (InterceptECSGameEffect intercept in source.effectListComponent.GetAbilityEffects().Where(e => e.EffectType is eEffect.Intercept))
             {
                 if (intercept.Source == source)
-                    EffectService.RequestCancelEffect(intercept);
+                    EffectService.RequestImmediateCancelEffect(intercept);
             }
 
             new InterceptECSGameEffect(new ECSGameEffectInitParams(source, 0, 1, null), source, target);

@@ -59,7 +59,7 @@ namespace DOL.GS {
 
                 //chance = 100;
                 
-                BattleGroup bg = player.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
+                BattleGroup bg = player.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY);
 
                 if (bg != null)
                 {
@@ -102,7 +102,7 @@ namespace DOL.GS {
 
                     int numDrops = 0;
                     //roll for an item for each player in the group
-                    foreach (var groupPlayer in player.Group.GetNearbyPlayersInTheGroup(player))
+                    foreach (var groupPlayer in player.Group.GetPlayersInTheGroup())
                     {
                         if(groupPlayer.GetDistance(player) > WorldMgr.VISIBILITY_DISTANCE)
                             continue;

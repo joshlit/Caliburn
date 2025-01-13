@@ -18,13 +18,6 @@ namespace DOL.GS.Scripts
 		{
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(9910);
 			LoadTemplate(npcTemplate);
-			Strength = npcTemplate.Strength;
-			Dexterity = npcTemplate.Dexterity;
-			Constitution = npcTemplate.Constitution;
-			Quickness = npcTemplate.Quickness;
-			Piety = npcTemplate.Piety;
-			Intelligence = npcTemplate.Intelligence;
-			Empathy = npcTemplate.Empathy;
 		
 			// 1h Axe, left + main
 			GameNpcInventoryTemplate hamarTemp = new GameNpcInventoryTemplate();
@@ -42,7 +35,6 @@ namespace DOL.GS.Scripts
 			VisibleActiveWeaponSlots = 16;
 			RespawnInterval = ServerProperties.Properties.SET_EPIC_GAME_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
-			WeaponSkillScalingFactor = 40;
 			base.SetOwnBrain(new HamarBrain());
 			LoadedFromScript = false; //load from database
 			SaveIntoDatabase();

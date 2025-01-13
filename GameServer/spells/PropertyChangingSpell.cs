@@ -30,18 +30,13 @@ namespace DOL.GS.Spells
 			base.FinishSpellCast(target);
 		}
 
-		/// <summary>
-		/// Calculates the effect duration in milliseconds
-		/// </summary>
-		/// <param name="target">The effect target</param>
-		/// <param name="effectiveness">The effect effectiveness</param>
-		/// <returns>The effect duration in milliseconds</returns>
-		protected override int CalculateEffectDuration(GameLiving target, double effectiveness)
+		protected override int CalculateEffectDuration(GameLiving target)
 		{
-			double duration = Spell.Duration;
 			if (HasPositiveEffect)
-			{	
-				duration *= (1.0 + m_caster.GetModified(eProperty.SpellDuration) * 0.01);
+			{
+				double duration = Spell.Duration;
+				duration *= 1.0 + m_caster.GetModified(eProperty.SpellDuration) * 0.01;
+
 				if (Spell.InstrumentRequirement != 0)
 				{
 					DbInventoryItem instrument = Caster.ActiveWeapon;
@@ -51,14 +46,16 @@ namespace DOL.GS.Spells
 						duration *= instrument.Condition / (double)instrument.MaxCondition * instrument.Quality / 100;
 					}
 				}
+
 				if (duration < 1)
 					duration = 1;
 				else if (duration > (Spell.Duration * 4))
-					duration = (Spell.Duration * 4);
-				return (int)duration; 
+					duration = Spell.Duration * 4;
+
+				return (int) duration;
 			}
-			duration = base.CalculateEffectDuration(target, effectiveness);
-			return (int)duration;
+
+			return base.CalculateEffectDuration(target);
 		}
 
 		public override void ApplyEffectOnTarget(GameLiving target)
@@ -210,8 +207,6 @@ namespace DOL.GS.Spells
 
 		}
 
-		BuffCheckAction m_buffCheckAction = null;
-
 		/// <summary>
 		/// When an applied effect expires.
 		/// Duration spells only.
@@ -241,12 +236,6 @@ namespace DOL.GS.Spells
 
 			SendUpdates(effect.Owner);
 
-			if (m_buffCheckAction != null)
-			{
-				m_buffCheckAction.Stop();
-				m_buffCheckAction = null;
-			}
-
 			return base.OnEffectExpires(effect, noMessages);
 		}
 
@@ -268,8 +257,8 @@ namespace DOL.GS.Spells
 				case eBuffBonusCategory.Debuff:
 					bonuscat = target.DebuffCategory;
 					break;
-				case eBuffBonusCategory.Other:
-					bonuscat = target.BuffBonusCategory4;
+				case eBuffBonusCategory.OtherBuff:
+					bonuscat = target.OtherBonus;
 					break;
 				case eBuffBonusCategory.SpecDebuff:
 					bonuscat = target.SpecDebuffCategory;
@@ -506,41 +495,6 @@ namespace DOL.GS.Spells
 		// constructor
 		public PropertyChangingSpell(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line)
 		{
-		}
-	}
-
-	public class BuffCheckAction : ECSGameTimerWrapperBase
-	{
-		public const int BUFFCHECKINTERVAL = 60000;//60 seconds
-
-		private GameLiving m_caster = null;
-		private GameLiving m_owner = null;
-		private GameSpellEffect m_effect = null;
-
-		public BuffCheckAction(GameLiving caster, GameLiving owner, GameSpellEffect effect)
-			: base(caster)
-		{
-			m_caster = caster;
-			m_owner = owner;
-			m_effect = effect;
-		}
-
-		/// <summary>
-		/// Called on every timer tick
-		/// </summary>
-		protected override int OnTick(ECSGameTimer timer)
-		{
-			if (m_caster == null ||
-			    m_owner == null ||
-			    m_effect == null)
-				return 0;
-
-			if ( !m_caster.IsWithinRadius( m_owner, ServerProperties.Properties.BUFF_RANGE ) )
-				m_effect.Cancel(false);
-			else
-				return BUFFCHECKINTERVAL;
-
-			return 0;
 		}
 	}
 }

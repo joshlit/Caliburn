@@ -11,7 +11,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// Increases the target's movement speed.
 	/// </summary>
-	[SpellHandlerAttribute("SpeedEnhancement")]
+	[SpellHandler(eSpellType.SpeedEnhancement)]
 	public class SpeedEnhancementSpellHandler : SpellHandler
 	{
 		/// <summary>
@@ -28,13 +28,7 @@ namespace DOL.GS.Spells
             return new StatBuffECSEffect(initParams);
         }
 
-        /// <summary>
-        /// Calculates the effect duration in milliseconds
-        /// </summary>
-        /// <param name="target">The effect target</param>
-        /// <param name="effectiveness">The effect effectiveness</param>
-        /// <returns>The effect duration in milliseconds</returns>
-        protected override int CalculateEffectDuration(GameLiving target, double effectiveness)
+		protected override int CalculateEffectDuration(GameLiving target)
 		{
 			double duration = Spell.Duration;
 			duration *= (1.0 + m_caster.GetModified(eProperty.SpellDuration) * 0.01);
@@ -60,7 +54,7 @@ namespace DOL.GS.Spells
 			if (target.EffectList.GetOfType<ChargeEffect>() != null)
 				return;
 
-			if (target.TempProperties.GetProperty("Charging", false))
+			if (target.TempProperties.GetProperty<bool>("Charging"))
 				return;
 
 			if (target.EffectList.GetOfType<ArmsLengthEffect>() != null)

@@ -75,13 +75,6 @@ namespace DOL.GS
 			}
 			INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(50022);
 			LoadTemplate(npcTemplate);
-			Strength = npcTemplate.Strength;
-			Dexterity = npcTemplate.Dexterity;
-			Constitution = npcTemplate.Constitution;
-			Quickness = npcTemplate.Quickness;
-			Piety = npcTemplate.Piety;
-			Intelligence = npcTemplate.Intelligence;
-			Empathy = npcTemplate.Empathy;
 			GreenMawAdd.GreenMawRedCount = 0;
 			GreenMawAdd2.GreenMawOrangeCount = 0;
 
@@ -198,9 +191,7 @@ namespace DOL.GS
 				SpawnCopies();
 			base.Die(killer);
         }
-		public override void DropLoot(GameObject killer) //no loot
-		{
-		}
+		public override bool CanDropLoot => false;
 		private void SpawnCopies()
 		{
 			for (int i = 0; i < 4; i++)
@@ -295,9 +286,7 @@ namespace DOL.GS
 				SpawnCopies();
 			base.Die(killer);
 		}
-		public override void DropLoot(GameObject killer) //no loot
-		{
-		}
+		public override bool CanDropLoot => false;
 		private void SpawnCopies()
 		{
 			for (int i = 0; i < 2; i++)
@@ -385,9 +374,7 @@ namespace DOL.GS
 			base.AddToWorld();
 			return true;
 		}
-		public override void DropLoot(GameObject killer) //no loot
-		{
-		}
+		public override bool CanDropLoot => false;
 	}
 }
 namespace DOL.AI.Brain

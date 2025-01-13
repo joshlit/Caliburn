@@ -55,7 +55,7 @@ namespace DOL.GS.Commands
 				DisplaySyntax(client);
 				return;
 			}
-			string param = "";
+			string param = string.Empty;
 			if (args.Length > 2)
 				param = String.Join(" ", args, 2, args.Length - 2);
 
@@ -84,10 +84,12 @@ namespace DOL.GS.Commands
 						info.Add(" Model: " + targetObject.Model);
 						info.Add(" Emblem: " + targetObject.Emblem);
 						info.Add(" Realm: " + targetObject.Realm);
-						if (targetObject.Owners.LongLength > 0)
+						if (targetObject.Owners.Count > 0)
 						{
 							info.Add(" ");
-							info.Add(" Owner: " + targetObject.Owners[0].Name);
+
+							foreach (IGameStaticItemOwner owner in targetObject.Owners)
+								info.Add($" Owner: {owner.Name}");
 						}
 						if (string.IsNullOrEmpty(targetObject.OwnerID) == false)
 						{
@@ -254,7 +256,7 @@ namespace DOL.GS.Commands
 					}
 				case "name":
 					{
-						if (param != "")
+						if (param != string.Empty)
 						{
 							targetObject.Name = param;
 							targetObject.SaveIntoDatabase();
@@ -264,7 +266,7 @@ namespace DOL.GS.Commands
 					}
 				case "noname":
 					{
-						targetObject.Name = "";
+						targetObject.Name = string.Empty;
 						targetObject.SaveIntoDatabase();
 						DisplayMessage(client, "Object name removed");
 						break;

@@ -62,14 +62,6 @@ namespace DOL.GS
         {
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60164704);
             LoadTemplate(npcTemplate);
-            Strength = npcTemplate.Strength;
-            Dexterity = npcTemplate.Dexterity;
-            Constitution = npcTemplate.Constitution;
-            Quickness = npcTemplate.Quickness;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
-            Charisma = npcTemplate.Charisma;
-            Empathy = npcTemplate.Empathy;
 
             OrganicEnergyMechanismBrain sBrain = new OrganicEnergyMechanismBrain();
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000; //1min is 60000 miliseconds
@@ -409,9 +401,7 @@ namespace DOL.GS
             get { return 5000; }
         }
         public override int MeleeAttackRange => 350;
-        public override void DropLoot(GameObject killer) //no loot
-        {
-        }
+        public override bool CanDropLoot => false;
         public override void Die(GameObject killer)
         {
             base.Die(null); //null to not gain experience
@@ -436,7 +426,6 @@ namespace DOL.GS
             Gender = eGender.Neutral;
             MeleeDamageType = eDamageType.Slash;
             Faction = FactionMgr.GetFactionByID(96);
-            IsWorthReward = false; //worth no reward
 
             BodyType = 1;
             MaxSpeedBase = 245;
@@ -464,7 +453,6 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            Body.IsWorthReward = false; //worth no reward
             if (Body.InCombat && HasAggro && Body.TargetObject != null)
             {
                 GameLiving target = Body.TargetObject as GameLiving;

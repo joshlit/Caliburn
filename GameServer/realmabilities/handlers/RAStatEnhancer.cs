@@ -80,7 +80,7 @@ namespace DOL.GS.RealmAbilities
 			{
 				player.Out.SendCharStatsUpdate();
 				player.Out.SendUpdateWeaponAndArmorStats();
-				player.UpdateEncumberance();
+				player.UpdateEncumbrance();
 				player.UpdatePlayerStatus();
 			}
 
@@ -177,6 +177,6 @@ namespace DOL.GS.RealmAbilities
 	
 	public class RAEndRegenEnhancer : RAStatEnhancer
 	{
-		public RAEndRegenEnhancer(DbAbility dba, int level) : base(dba, level, eProperty.EnduranceRegenerationRate) { }
+		public RAEndRegenEnhancer(DbAbility dba, int level) : base(dba, level, eProperty.EnduranceRegenerationAmount) { }
 	}
 }

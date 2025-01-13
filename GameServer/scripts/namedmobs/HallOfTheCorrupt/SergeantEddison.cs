@@ -26,7 +26,7 @@ namespace DOL.GS
         public int Range(ECSGameTimer timer)
         {
             this.Strength = 250;
-            this.SwitchToRanged(this.TargetObject);
+            this.StartAttackWithRangedWeapon(this.TargetObject);
             new ECSGameTimer(this, new ECSGameTimer.ECSTimerCallback(RangeEnd), 9500);
             IsRanged = true;
             return 0;
@@ -150,13 +150,6 @@ namespace DOL.GS
         {
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(7713);
             LoadTemplate(npcTemplate);
-            Strength = npcTemplate.Strength;
-            Dexterity = npcTemplate.Dexterity;
-            Constitution = npcTemplate.Constitution;
-            Quickness = npcTemplate.Quickness;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
-            Empathy = npcTemplate.Empathy;
             Faction = FactionMgr.GetFactionByID(187);
             BodyType = (ushort)NpcTemplateMgr.eBodyType.Humanoid;
 

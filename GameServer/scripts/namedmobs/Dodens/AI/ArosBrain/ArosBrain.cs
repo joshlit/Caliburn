@@ -30,8 +30,6 @@ namespace DOL.AI.Brain
             FSM.Add(new ArosState_IDLE(this));
             FSM.Add(new ArosState_AGGRO(this));
             FSM.Add(new ArosState_RETURN_TO_SPAWN(this));
-            FSM.Add(new StandardMobState_DEAD(this));
-            FSM.SetCurrentState(eFSMStateType.WAKING_UP);
         }
 
         /// <summary>
@@ -133,7 +131,7 @@ namespace DOL.AI.Brain
                 Body.AbilityBonus[(int)eProperty.StyleAbsorb] = 10;
             }
         }
-        protected override void CheckNPCAggro()
+        protected override void CheckNpcAggro()
         {
             if (Body.attackComponent.AttackState)
                 return;

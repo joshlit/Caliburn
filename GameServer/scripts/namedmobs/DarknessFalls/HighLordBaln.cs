@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Reflection;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.Database;
-using log4net;
+using DOL.Events;
 using DOL.GS;
+using log4net;
 
 namespace DOL.GS
 {
@@ -52,13 +52,6 @@ namespace DOL.GS
             INpcTemplate npcTemplate = NpcTemplateMgr.GetTemplate(60162130);
             LoadTemplate(npcTemplate);
 
-            Strength = npcTemplate.Strength;
-            Constitution = npcTemplate.Constitution;
-            Dexterity = npcTemplate.Dexterity;
-            Quickness = npcTemplate.Quickness;
-            Empathy = npcTemplate.Empathy;
-            Piety = npcTemplate.Piety;
-            Intelligence = npcTemplate.Intelligence;
             RespawnInterval = ServerProperties.Properties.SET_SI_EPIC_ENCOUNTER_RESPAWNINTERVAL * 60000;//1min is 60000 miliseconds
 
             // demon
@@ -163,6 +156,7 @@ namespace DOL.AI.Brain
         }
     }
 }
+
 namespace DOL.GS
 {
     public class BalnMinion : GameNPC
@@ -182,7 +176,6 @@ namespace DOL.GS
             RoamingRange = 350;
             RespawnInterval = -1;
             TetherRange = 2000;
-            IsWorthReward = false; // worth no reward
             Realm = eRealm.None;
             BalnMinionBrain adds = new BalnMinionBrain();
             LoadedFromScript = true;
@@ -196,9 +189,7 @@ namespace DOL.GS
             base.AddToWorld();
             return true;
         }
-        public override void DropLoot(GameObject killer) //no loot
-        {
-        }
+        public override bool CanDropLoot => false;
         public override long ExperienceValue => 0;
         public override void Die(GameObject killer)
         {
@@ -206,6 +197,7 @@ namespace DOL.GS
         }
     }
 }
+
 namespace DOL.AI.Brain
 {
     public class BalnMinionBrain : StandardMobBrain
