@@ -16,6 +16,7 @@ using DOL.GS.RealmAbilities;
 using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.Language;
+using DOL.Network;
 using log4net;
 
 namespace DOL.GS.PacketHandler
@@ -72,7 +73,7 @@ namespace DOL.GS.PacketHandler
 				#endif
 
 				SendTCP(pak);
-				m_gameClient.PacketProcessor.ProcessTcpQueue();
+				m_gameClient.PacketProcessor.SendPendingPackets();
 			}
 		}
 
@@ -617,7 +618,7 @@ namespace DOL.GS.PacketHandler
 				else if (loc == eChatLoc.CL_PopupWindow)
 					str = "##";
 				else
-					str = "";
+					str = string.Empty;
 
 				str = String.Concat(str, msg);
 				pak.WriteString(str);
@@ -704,15 +705,19 @@ namespace DOL.GS.PacketHandler
 					pak.WriteInt(0x00);
 				else
 				{
-					pak.WriteShort(guild.ID);
-					pak.WriteShort(guild.ID);
+					// Since we load every guild, the runtime ID might be too big for the client.
+					// No idea what happens if there's a collision.
+					// It's also possible that the two shorts should be an int instead.
+					ushort id = (ushort) (guild.ID % ushort.MaxValue);
+					pak.WriteShort(id);
+					pak.WriteShort(id);
 				}
 				pak.WriteShort(0x00); //seems random, not used by the client
 				SendTCP(pak);
 			}
 		}
 
-		public virtual void SendObjectUpdate(GameObject obj)
+		public virtual void SendObjectUpdate(GameObject obj, bool udp = true)
 		{
 			if (m_gameClient.Player == null || !m_gameClient.Player.IsVisibleTo(obj))
 				return;
@@ -807,7 +812,20 @@ namespace DOL.GS.PacketHandler
 				}
 			}
 
-			using (GSUDPPacketOut pak = new GSUDPPacketOut(GetPacketCode(eServerPackets.ObjectUpdate)))
+			if (udp)
+			{
+				using GSUDPPacketOut pak = new(GetPacketCode(eServerPackets.ObjectUpdate));
+				Write(pak);
+				SendUDP(pak);
+			}
+			else
+			{
+				using GSTCPPacketOut pak = new(GetPacketCode(eServerPackets.ObjectUpdate));
+				Write(pak);
+				SendTCP(pak);
+			}
+
+			void Write(PacketOut pak)
 			{
 				pak.WriteShort(speed);
 				pak.WriteShort(heading);
@@ -831,14 +849,13 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte((byte) zone.ZoneSkinID);
 				//Dinberg:Instances - targetZone already accomodates for this feat.
 				pak.WriteByte((byte) targetZoneSkinId);
-				SendUDP(pak);
 			}
 		}
 
 		public virtual void SendPlayerQuit(bool totalOut)
 		{
 			// Prevents the client from entering the game when this is called when the player is changing region.
-			m_gameClient.PacketProcessor.ClearPacketQueues();
+			m_gameClient.PacketProcessor.ClearPendingOutboundPackets();
 
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.Quit)))
 			{
@@ -854,10 +871,11 @@ namespace DOL.GS.PacketHandler
 		public virtual void SendObjectRemove(GameObject obj)
 		{
 			int oType = 0;
+
 			if (obj is GamePlayer)
 				oType = 2;
-			else if (obj is GameNPC)
-				oType = ((GameLiving) obj).IsAlive ? 1 : 0;
+			else if (obj is GameNPC npc)
+				oType = npc.Health > 0 ? 1 : 0;
 
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.RemoveObject)))
 			{
@@ -1028,7 +1046,7 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(flags);
 				pak.WriteByte(0x20); //TODO this is the default maxstick distance
 
-				string add = "";
+				string add = string.Empty;
 				if (m_gameClient.Account.PrivLevel > 1)
 				{
 					if ((npc.Flags & GameNPC.eFlags.CANTTARGET) != 0)
@@ -1163,16 +1181,14 @@ namespace DOL.GS.PacketHandler
 			//Speed is in % not a fixed value!
 			if (m_gameClient.Player == null)
 				return;
+
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.MaxSpeed)))
 			{
-				pak.WriteShort((ushort) (m_gameClient.Player.MaxSpeed*100/GamePlayer.PLAYER_BASE_SPEED));
+				ushort maxSpeedPercent = (ushort) m_gameClient.Player.movementComponent.MaxSpeedPercent;
+				pak.WriteShort(maxSpeedPercent);
 				pak.WriteByte((byte) (m_gameClient.Player.IsTurningDisabled ? 0x01 : 0x00));
 				// water speed in % of land speed if its over 0 i think
-				pak.WriteByte(
-					(byte)
-					Math.Min(byte.MaxValue,
-					         ((m_gameClient.Player.MaxSpeed*100/GamePlayer.PLAYER_BASE_SPEED)*
-					          (m_gameClient.Player.GetModified(eProperty.WaterSpeed)*.01))));
+				pak.WriteByte((byte) Math.Min(byte.MaxValue, maxSpeedPercent * m_gameClient.Player.GetModified(eProperty.WaterSpeed) * 0.01));
 				SendTCP(pak);
 			}
 		}
@@ -1497,9 +1513,7 @@ namespace DOL.GS.PacketHandler
 
 			ushort sourceObjectId = (ushort) source.ObjectID;
 			ushort targetObjectId = (ushort) target.ObjectID;
-
-			if (!HandleCallback(m_gameClient, sourceObjectId, targetObjectId, callback))
-				return false;
+			HandleCallback(m_gameClient, sourceObjectId, targetObjectId, callback);
 
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.CheckLOSRequest)))
 			{
@@ -1512,7 +1526,7 @@ namespace DOL.GS.PacketHandler
 
 			return true;
 
-			static bool HandleCallback(GameClient client, ushort sourceObjectId, ushort targetObjectId, CheckLosResponse callback)
+			static void HandleCallback(GameClient client, ushort sourceObjectId, ushort targetObjectId, CheckLosResponse callback)
 			{
 				CheckLosResponseHandler.TimeoutTimer timer;
 
@@ -1525,11 +1539,9 @@ namespace DOL.GS.PacketHandler
 					if (!timer.IsAlive)
 					{
 						timer.Start();
-						return true;
+						return; // Don't add the callback here. It's already done in the timer's constructor.
 					}
 				} while (!timer.TryAddCallback(callback));
-
-				return false;
 
 				static CheckLosResponseHandler.TimeoutTimer CreateTimer((ushort sourceObjectId, ushort targetObjectId) key, (GamePlayer player, CheckLosResponse callback) args)
 				{
@@ -1728,7 +1740,7 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		public virtual void SendInventorySlotsUpdate(ICollection<int> slots)
+		public virtual void SendInventorySlotsUpdate(ICollection<eInventorySlot> slots)
 		{
 			// slots contain ints
 
@@ -1743,8 +1755,9 @@ namespace DOL.GS.PacketHandler
 			}
 			else
 			{
-				var updateSlots = new List<int>(ServerProperties.Properties.MAX_ITEMS_PER_PACKET);
-				foreach (int slot in slots)
+				var updateSlots = new List<eInventorySlot>(ServerProperties.Properties.MAX_ITEMS_PER_PACKET);
+
+				foreach (eInventorySlot slot in slots)
 				{
 					updateSlots.Add(slot);
 					if (updateSlots.Count >= ServerProperties.Properties.MAX_ITEMS_PER_PACKET)
@@ -1783,13 +1796,13 @@ namespace DOL.GS.PacketHandler
 
 			// clients crash if too long packet is sent
 			// so we send big updates in parts
-			var slotsToUpdate = new List<int>(Math.Min(ServerProperties.Properties.MAX_ITEMS_PER_PACKET, itemsToUpdate.Count));
+			var slotsToUpdate = new List<eInventorySlot>(Math.Min(ServerProperties.Properties.MAX_ITEMS_PER_PACKET, itemsToUpdate.Count));
 			foreach (DbInventoryItem item in itemsToUpdate)
 			{
 				if (item == null)
 					continue;
 
-				slotsToUpdate.Add(item.SlotPosition);
+				slotsToUpdate.Add((eInventorySlot) item.SlotPosition);
 				if (slotsToUpdate.Count >= ServerProperties.Properties.MAX_ITEMS_PER_PACKET)
 				{
 					SendInventorySlotsUpdateRange(slotsToUpdate, windowType);
@@ -1942,7 +1955,7 @@ namespace DOL.GS.PacketHandler
 				return;
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.TradeWindow)))
 			{
-				lock (m_gameClient.Player.TradeWindow.Sync)
+				lock (m_gameClient.Player.TradeWindow.Lock)
 				{
 					foreach (DbInventoryItem item in m_gameClient.Player.TradeWindow.TradeItems)
 					{
@@ -2106,13 +2119,13 @@ namespace DOL.GS.PacketHandler
 			maxSkills++;
 		}
 
-		public virtual void SendUpdatePlayerSkills()
+		public virtual void SendUpdatePlayerSkills(bool updateInternalCache)
 		{
 			if (m_gameClient.Player == null)
 				return;
 
 			// Get Skills as "Usable Skills" which are in network order ! (with forced update)
-			List<Tuple<Skill, Skill>> usableSkills = m_gameClient.Player.GetAllUsableSkills(true);
+			List<Tuple<Skill, Skill>> usableSkills = m_gameClient.Player.GetAllUsableSkills(updateInternalCache);
 
 			bool sent = false; // set to true once we can't send packet anymore !
 			int index = 0; // index of our position in the list !
@@ -2375,15 +2388,15 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		public virtual void SendEncumberance()
+		public virtual void SendEncumbrance()
 		{
 			if (m_gameClient.Player == null)
 				return;
 
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.Encumberance)))
 			{
-				pak.WriteShort((ushort) m_gameClient.Player.MaxEncumberance); // encumb total
-				pak.WriteShort((ushort) m_gameClient.Player.Encumberance); // encumb used
+				pak.WriteShort((ushort) m_gameClient.Player.MaxCarryingCapacity);
+				pak.WriteShort((ushort) m_gameClient.Player.Inventory.InventoryWeight);
 				SendTCP(pak);
 			}
 		}
@@ -2396,7 +2409,7 @@ namespace DOL.GS.PacketHandler
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.DetailWindow)))
 			{
 				if (caption == null)
-					caption = "";
+					caption = string.Empty;
 
 				if (caption.Length > byte.MaxValue)
 					caption = caption.Substring(0, byte.MaxValue);
@@ -3662,7 +3675,7 @@ namespace DOL.GS.PacketHandler
 
 					if (ServerProperties.Properties.CONSIGNMENT_USE_BP)
 					{
-						string bpPrice = "";
+						string bpPrice = string.Empty;
 						if (item.SellPrice > 0)
 							bpPrice = "[" + item.SellPrice.ToString() + " BP";
 
@@ -3855,7 +3868,7 @@ namespace DOL.GS.PacketHandler
 		protected string BuildTaskString()
 		{
 			if (m_gameClient.Player == null)
-				return "";
+				return string.Empty;
 
 			AbstractTask task = m_gameClient.Player.Task;
 			AbstractMission pMission = m_gameClient.Player.Mission;
@@ -3868,20 +3881,20 @@ namespace DOL.GS.PacketHandler
 
 			//all the task info is sent in name field
 
-			string taskStr = "";
+			string taskStr = string.Empty;
 			if (task == null)
 				taskStr = "You have no current personal task.\n";
 			else taskStr = "[" + task.Name + "] " + task.Description + ".\n";
 
-			string personalMission = "";
+			string personalMission = string.Empty;
 			if (pMission != null)
 				personalMission = "[" + pMission.Name + "] " + pMission.Description + ".\n";
 
-			string groupMission = "";
+			string groupMission = string.Empty;
 			if (gMission != null)
 				groupMission = "[" + gMission.Name + "] " + gMission.Description + ".\n";
 
-			string realmMission = "";
+			string realmMission = string.Empty;
 			if (rMission != null)
 				realmMission = "[" + rMission.Name + "]" + " " + rMission.Description + ".\n";
 
@@ -3964,7 +3977,7 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		protected virtual void SendInventorySlotsUpdateRange(ICollection<int> slots, eInventoryWindowType windowType)
+		protected virtual void SendInventorySlotsUpdateRange(ICollection<eInventorySlot> slots, eInventoryWindowType windowType)
 		{
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.InventoryUpdate)))
 			{

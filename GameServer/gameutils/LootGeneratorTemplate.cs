@@ -332,7 +332,7 @@ namespace DOL.GS
                                             timedDrops[
                                                 Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
 
-                                    lock (((GameLiving)player)._xpGainersLock)
+                                    lock (player.XpGainersLock)
                                     {
                                         DbItemTemplate drop =
                                             GameServer.Database.FindObjectByKey<DbItemTemplate>(lootTemplate
@@ -340,8 +340,7 @@ namespace DOL.GS
                                         int dropCooldown =
                                             lootTemplate.Chance * -1 * 60 * 1000; //chance time in minutes
                                         long tempProp =
-                                            player.TempProperties.GetProperty<long>(XPItemKey,
-                                                0); //check if our loot has dropped for player
+                                            player.TempProperties.GetProperty<long>(XPItemKey); //check if our loot has dropped for player
                                         List<string> itemsDropped =
                                             player.TempProperties
                                                 .GetProperty<List<string>>(
@@ -483,7 +482,7 @@ namespace DOL.GS
                                             timedDrops[
                                                 Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
 
-                                    lock (((GameLiving)player)._xpGainersLock)
+                                    lock (player.XpGainersLock)
                                     {
                                         DbItemTemplate drop =
                                             GameServer.Database.FindObjectByKey<DbItemTemplate>(lootTemplate
@@ -491,8 +490,7 @@ namespace DOL.GS
                                         int dropCooldown =
                                             lootTemplate.Chance * -1 * 60 * 1000; //chance time in minutes
                                         long tempProp =
-                                            player.TempProperties.GetProperty<long>(XPItemKey,
-                                                0); //check if our loot has dropped for player
+                                            player.TempProperties.GetProperty<long>(XPItemKey); //check if our loot has dropped for player
                                         List<string> itemsDropped =
                                             player.TempProperties
                                                 .GetProperty<List<string>>(
@@ -602,15 +600,15 @@ namespace DOL.GS
             return loot;
         }
 
-        private IGamePlayer CheckGroupForValidXpTimer(String xpItemKey, int dropCooldown, IGamePlayer player)
+        private GamePlayer CheckGroupForValidXpTimer(String xpItemKey, int dropCooldown, IGamePlayer player)
         {
             //check if any group member has a valid timer to use
-            foreach (IGamePlayer groupMember in player.Group.GetNearbyPlayersInTheGroup(player))
+            foreach (GamePlayer groupMember in player.Group.GetPlayersInTheGroup())
             {
                 if ((player.CurrentZone != groupMember.CurrentZone) ||
                     player.CurrentRegion != groupMember.CurrentRegion) continue;
-                if (player.GetDistance((GameLiving)groupMember) > WorldMgr.MAX_EXPFORKILL_DISTANCE) continue;
-                long tempProp = groupMember.TempProperties.GetProperty<long>(xpItemKey, 0);
+                if (player.GetDistance(groupMember) > WorldMgr.MAX_EXPFORKILL_DISTANCE) continue;
+                long tempProp = groupMember.TempProperties.GetProperty<long>(xpItemKey);
                 if (tempProp == 0 || tempProp + dropCooldown < GameLoop.GameLoopTime)
                     return groupMember;
             }

@@ -22,7 +22,7 @@ namespace DOL.GS.GameEvents
         private static IPerformanceStatistic _programCpuUsagePercent;
         private static IPerformanceStatistic _pageFaultsPerSecond;
         private static IPerformanceStatistic _diskTransfersPerSecond;
-        private static object _lock  = new();
+        private static readonly Lock _lock  = new();
 
         [GameServerStartedEvent]
         public static void OnScriptCompiled(DOLEvent e, object sender, EventArgs args)
@@ -120,11 +120,12 @@ namespace DOL.GS.GameEvents
             }
         }
 
-        private static void AppendStatistic(StringBuilder stringBuilder, string shortName, IPerformanceStatistic statistic, string unit = "")
+        private static void AppendStatistic(StringBuilder stringBuilder, string shortName, IPerformanceStatistic statistic, string unit = null)
         {
             if (statistic == null)
                 return;
 
+            unit ??= string.Empty;
             stringBuilder.Append($"  {shortName}={statistic.GetNextValue().ToString("0.0")}{unit}");
         }
 

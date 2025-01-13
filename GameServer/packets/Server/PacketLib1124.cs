@@ -182,7 +182,7 @@ namespace DOL.GS.PacketHandler
 					pak.WriteByte(flags);
 					pak.WriteByte(0x20); //TODO this is the default maxstick distance
 
-					string add = "";
+					string add = string.Empty;
 					byte flags2 = 0x00;
 
 					if (npc.Brain is IControlledBrain)
@@ -204,7 +204,7 @@ namespace DOL.GS.PacketHandler
 							flags2 |= 0x02;
 					}
 
-					if ((npc.Flags & GameNPC.eFlags.STEALTH) > 0)
+					if (npc.IsStealthed)
 						flags2 |= 0x04;
 
 					eQuestIndicator questIndicator = npc.GetQuestIndicator(m_gameClient.Player);
@@ -444,6 +444,10 @@ namespace DOL.GS.PacketHandler
 
 			using (GSTCPPacketOut pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PositionAndObjectID)))
 			{
+				if (m_gameClient.Player.X <= 0)
+				{
+					int x = 0;
+				}
 				pak.WriteFloatLowEndian(m_gameClient.Player.X);
 				pak.WriteFloatLowEndian(m_gameClient.Player.Y);
 				pak.WriteFloatLowEndian(m_gameClient.Player.Z);
@@ -767,7 +771,7 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(m_gameClient.MajorBuild); // last seen : 0x44 0x05
 				pak.WriteByte(m_gameClient.MinorBuild);
 				SendTCP(pak);
-				m_gameClient.PacketProcessor.ProcessTcpQueue();
+				m_gameClient.PacketProcessor.SendPendingPackets();
 			}
 		}
 
@@ -818,7 +822,7 @@ namespace DOL.GS.PacketHandler
 				{
 					byte i = 0;
 					var effects = living.effectListComponent.GetAllEffects();
-					if (living is GamePlayer necro && necro.CharacterClass.ID == (int)eCharacterClass.Necromancer && necro.IsShade)
+					if (living is GamePlayer necro && (eCharacterClass) necro.CharacterClass.ID is eCharacterClass.Necromancer && necro.HasShadeModel)
 						effects.AddRange(necro.ControlledBrain.Body.effectListComponent.GetAllEffects().Where(e => e.TriggersImmunity));
 					foreach (var effect in effects)
 					{
@@ -954,8 +958,8 @@ namespace DOL.GS.PacketHandler
 				flag |= 0x04; // enable craft button
 			ushort icon1 = 0;
 			ushort icon2 = 0;
-			string spell_name1 = "";
-			string spell_name2 = "";
+			string spell_name1 = string.Empty;
+			string spell_name2 = string.Empty;
 			if (item.Object_Type != (int)eObjectType.AlchemyTincture)
 			{
 				if (item.SpellID > 0/* && item.Charges > 0*/)
@@ -1017,7 +1021,7 @@ namespace DOL.GS.PacketHandler
 				else
 					name += "[" + Money.GetString(item.SellPrice) + "]";
 			}
-			if (name == null) name = "";
+			if (name == null) name = string.Empty;
 			if (name.Length > 55)
 				name = name.Substring(0, 55);
 			pak.WritePascalString(name);

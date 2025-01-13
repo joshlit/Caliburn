@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
 using DOL.Database;
 using DOL.Events;
 using DOL.Language;
@@ -29,13 +31,7 @@ namespace DOL.GS
 
 		public override eGameObjectType GameObjectType => eGameObjectType.ITEM;
 
-		/// <summary>
-		/// Constructs a new GameStaticItem
-		/// </summary>
-		public GameStaticItem() : base()
-		{
-			m_owners = new ArrayList(1);
-		}
+		public GameStaticItem() : base() { }
 
 		#region Name/Model/GetName/GetExamineMessages
 		/// <summary>
@@ -76,7 +72,7 @@ namespace DOL.GS
         /// <summary>
         /// The translation id
         /// </summary>
-        protected string m_translationId = "";
+        protected string m_translationId = string.Empty;
 
         /// <summary>
         /// Gets or sets the translation id
@@ -108,7 +104,7 @@ namespace DOL.GS
         /// <summary>
         /// Holds the examine article
         /// </summary>
-        private string m_examineArticle = "";
+        private string m_examineArticle = string.Empty;
         /// <summary>
         /// Gets or sets the examine article
         /// </summary>
@@ -135,8 +131,8 @@ namespace DOL.GS
 		/// <returns>name of this object (includes article if needed)</returns>
 		public override string GetName(int article, bool firstLetterUppercase)
 		{
-			if (Name == "")
-				return "";
+			if (Name == string.Empty)
+				return string.Empty;
 
 			if(char.IsUpper(Name[0]))
 			{
@@ -345,14 +341,14 @@ namespace DOL.GS
 		/// <summary>
 		/// The sync object for respawn timer modifications
 		/// </summary>
-		protected readonly object m_respawnTimerLock = new object();
+		protected readonly Lock _respawnTimerLock = new();
 
 		/// <summary>
 		/// Starts the Respawn Timer
 		/// </summary>
 		protected virtual void StartRespawn(int respawnSeconds)
 		{
-			lock (m_respawnTimerLock)
+			lock (_respawnTimerLock)
 			{
 				if (m_respawnTimer == null)
 				{
@@ -370,7 +366,7 @@ namespace DOL.GS
 		/// <returns>the new interval</returns>
 		protected virtual int RespawnTimerCallback(ECSGameTimer respawnTimer)
 		{
-			lock (m_respawnTimerLock)
+			lock (_respawnTimerLock)
 			{
 				if (m_respawnTimer != null)
 				{
@@ -383,54 +379,53 @@ namespace DOL.GS
 			return 0;
 		}
 
+		public HashSet<IGameStaticItemOwner> Owners { get; private set; }
 
-		/// <summary>
-		/// Holds the owners of this item, can be more than 1 person
-		/// </summary>
-		private readonly ArrayList	  m_owners;
-		/// <summary>
-		/// Adds an owner to this item
-		/// </summary>
-		/// <param name="player">the object that is an owner</param>
-		public void AddOwner(GameObject player)
+		public void AddOwner(IGameStaticItemOwner owner)
 		{
-			lock(m_owners)
-			{
-				foreach(WeakReference weak in m_owners)
-					if(weak.Target==player) return;
-				m_owners.Add(new WeakRef(player));
-			}
+			Owners ??= new();
+			Owners.Add(owner);
 		}
-		/// <summary>
-		/// Tests if a specific gameobject owns this item
-		/// </summary>
-		/// <param name="testOwner">the owner to test for</param>
-		/// <returns>true if this object owns this item</returns>
-		public bool IsOwner(GameObject testOwner)
-		{
-			lock(m_owners)
-			{
-				//No owner ... return true
-				if(m_owners.Count==0) return true;
 
-				foreach(WeakReference weak in m_owners)
-					if(weak.Target==testOwner) return true;
+		public bool IsOwner(GamePlayer player)
+		{
+			if (Owners == null)
 				return false;
-			}
+
+			if (Owners.Contains(player) || Owners.Contains(player.Group))
+				return true;
+
+			BattleGroup battleGroup = player.TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY);
+			return battleGroup != null && Owners.Contains(battleGroup);
+		}
+	}
+
+	public interface IGameStaticItemOwner
+	{
+		string Name { get; }
+		bool TryAutoPickUpMoney(GameMoney money);
+		bool TryAutoPickUpItem(WorldInventoryItem item);
+		TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money); // Expected to return false only if the object shouldn't try to pick up the item at all.
+		TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item); // Expected to return false only if the object shouldn't try to pick up the item at all.
+
+		enum TryPickUpResult
+		{
+			SUCCESS,               // The item was picked up.
+			CANNOT_HANDLE,         // The item cannot be handled by this owner.
+			FAILED                 // The item can be handled by this owner, but failed (inventory full, no one in range, etc.)
 		}
 
-		/// <summary>
-		/// Returns an array of owners
-		/// </summary>
-		public GameObject[] Owners
+		public class ItemOwnerTotalDamagePair
 		{
-			get
+			public IGameStaticItemOwner Owner { get; set; }
+			public double Damage { get; set; }
+
+			public ItemOwnerTotalDamagePair() { }
+
+			public ItemOwnerTotalDamagePair(IGameStaticItemOwner owner, double damage)
 			{
-				ArrayList activeOwners = new ArrayList();
-				foreach(WeakReference weak in m_owners)
-					if(weak.Target!=null)
-						activeOwners.Add(weak.Target);
-				return (GameObject[])activeOwners.ToArray(typeof(GameObject));
+				Owner = owner;
+				Damage = damage;
 			}
 		}
 	}

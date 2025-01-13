@@ -5,7 +5,7 @@ namespace DOL.GS.Spells
 	/// <summary>
 	/// All Stats buff
 	/// </summary>
-	[SpellHandlerAttribute("AllStatsBarrel")]
+	[SpellHandler(eSpellType.AllStatsBarrel)]
 	public class AllStatsBarrel : SingleStatBuff
 	{
 		public static List<int> BuffList = new List<int> {8090,8091,8094,8092,8095,8093/*,8071*/};
@@ -39,19 +39,14 @@ namespace DOL.GS.Spells
 			Spell acuitySpell = SkillBase.GetSpellByID(acuityID);
 			SpellHandler acuitySpellHandler = ScriptMgr.CreateSpellHandler(target, acuitySpell, potionEffectLine) as SpellHandler;
 
-			//Spell hasteSpell = SkillBase.FindSpell(hasteID, potionEffectLine);
-			//SpellHandler hasteSpellHandler = ScriptMgr.CreateSpellHandler(target, hasteSpell, potionEffectLine) as SpellHandler;
-
-			strenghtSpellHandler.StartSpell(target);
-			conSpellHandler.StartSpell(target);
-			strenghtConSpellHandler.StartSpell(target);
-			dexSpellHandler.StartSpell(target);
-			dexQuickSpellHandler.StartSpell(target);
-			acuitySpellHandler.StartSpell(target);
-			//hasteSpellHandler.StartSpell(target);
-
-			return true;
+			return strenghtSpellHandler.StartSpell(target) |
+				conSpellHandler.StartSpell(target) |
+				strenghtConSpellHandler.StartSpell(target) |
+				dexSpellHandler.StartSpell(target) |
+				dexQuickSpellHandler.StartSpell(target) |
+				acuitySpellHandler.StartSpell(target);
 		}
+
         public override eProperty Property1 => eProperty.Strength;
 
         public override eProperty Property2 => eProperty.Constitution;

@@ -6,7 +6,7 @@ using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Spells
 {
-    [SpellHandlerAttribute("BainsheePulseDmg")]
+    [SpellHandler(eSpellType.BainsheePulseDmg)]
 	public class BainsheePulseDmgSpellHandler : SpellHandler
 	{
 		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -123,7 +123,7 @@ namespace DOL.GS.Spells
 		 */
 		protected override void OnSpellResisted(GameLiving target)
 		{
-			if (target is GamePlayer && Caster.TempProperties.GetProperty("player_in_keep_property", false))
+			if (target is GamePlayer && Caster.TempProperties.GetProperty<bool>("player_in_keep_property"))
 			{
 				GamePlayer player = target as GamePlayer;
 				player.Out.SendCheckLos(Caster, player, new CheckLosResponse(ResistSpellCheckLos));

@@ -8,7 +8,7 @@ namespace DOL.GS.Spells
     /// <summary>
     /// Reduce range needed to cast the spell
     /// </summary>
-    [SpellHandler("Nearsight")]
+	[SpellHandler(eSpellType.Nearsight)]
     public class NearsightSpellHandler : ImmunityEffectSpellHandler
     {
         public override ECSGameSpellEffect CreateECSEffect(ECSGameEffectInitParams initParams)
@@ -52,7 +52,7 @@ namespace DOL.GS.Spells
         /// </summary>
         /// <param name="target">the target of the spell</param>
         /// <returns>chance that spell will be resisted for specific target</returns>
-        public override int CalculateSpellResistChance(GameLiving target)
+        public override double CalculateSpellResistChance(GameLiving target)
         {
             //Bonedancer rr5
             if (target.EffectList.GetOfType<AllureofDeathEffect>() != null)
@@ -125,7 +125,7 @@ namespace DOL.GS.Spells
 
                 var list = new List<string>();
 
-                list.Add(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "NearsightSpellHandler.DelveInfo.Function", (Spell.SpellType.ToString() == "" ? "(not implemented)" : Spell.SpellType.ToString())));
+                list.Add(LanguageMgr.GetTranslation((Caster as GamePlayer).Client, "NearsightSpellHandler.DelveInfo.Function", (Spell.SpellType.ToString() == string.Empty ? "(not implemented)" : Spell.SpellType.ToString())));
                 list.Add(" "); //empty line
                 list.Add(Spell.Description);
                 list.Add(" "); //empty line
@@ -169,7 +169,7 @@ namespace DOL.GS.Spells
     /// <summary>
     /// Reduce efficacity of nearsight effect
     /// </summary>
-    [SpellHandler("NearsightReduction")]
+	[SpellHandler(eSpellType.NearsightReduction)]
     public class NearsightReductionSpellHandler : SpellHandler
     {
         /// <summary>

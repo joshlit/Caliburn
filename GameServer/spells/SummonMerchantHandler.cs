@@ -5,7 +5,7 @@ using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Spells
 {
-    [SpellHandler("SummonMerchant")]
+    [SpellHandler(eSpellType.SummonMerchant)]
     public class SummonMerchantSpellHandler : SpellHandler
     {
         protected GameMerchant Npc;
@@ -23,7 +23,7 @@ namespace DOL.GS.Spells
         {
             var template = NpcTemplateMgr.GetTemplate((int) m_spell.Value);
 
-            if (template.ClassType == "")
+            if (template.ClassType == string.Empty)
                 Npc = new GameAtlasMerchant();
             else
             {

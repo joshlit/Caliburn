@@ -8,28 +8,14 @@ namespace DOL.GS.Spells
     /// <summary>
     /// Damages target and decreases speed after
     /// </summary>
-    [SpellHandlerAttribute("DamageSpeedDecrease")]
-    public class DamageSpeedDecreaseSpellHandler : SpeedDecreaseSpellHandler
-    {
-        public override void ApplyEffectOnTarget(GameLiving target)
-        {
-            // do damage even if immune to duration effect
-            OnDirectEffect(target);
-
-            if ((target is Keeps.GameKeepDoor) == false && (target is Keeps.GameKeepComponent == false))
-            {
-                /*
-				if (Caster.HasAbilityType(typeof(AtlasOF_WildArcanaAbility)))
-				{
-					if (Util.Chance(Caster.SpellCriticalChance))
-					{
-						effectiveness *= 2;
-						if(Caster is GamePlayer c) c.Out.SendMessage($"Your {Spell.Name} critically hits the enemy for 100% additional effect!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-					}
-				}*/
-                base.ApplyEffectOnTarget(target);
-            }
-        }
+	[SpellHandler(eSpellType.DamageSpeedDecrease)]
+	public class DamageSpeedDecreaseSpellHandler : SpeedDecreaseSpellHandler
+	{
+		public override void ApplyEffectOnTarget(GameLiving target)
+		{
+			OnDirectEffect(target);
+			base.ApplyEffectOnTarget(target);
+		}
 
         public override void OnDirectEffect(GameLiving target)
         {

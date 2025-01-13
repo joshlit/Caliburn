@@ -18,9 +18,20 @@ namespace DOL.GS
             EffectService.RequestStartEffect(this);
         }
 
-        public override ushort Icon { get { return 0x193; } }
-        public override string Name { get { return LanguageMgr.GetTranslation(OwnerPlayer?.Client, "Effects.StealthEffect.Name"); } }
-        public override bool HasPositiveEffect { get { return true; } }
+        public override ushort Icon
+        {
+            get { return 0x193; }
+        }
+
+        public override string Name
+        {
+            get { return LanguageMgr.GetTranslation(OwnerPlayer?.Client, "Effects.StealthEffect.Name"); }
+        }
+
+        public override bool HasPositiveEffect
+        {
+            get { return true; }
+        }
 
         public override void OnStartEffect()
         {
@@ -52,19 +63,10 @@ namespace DOL.GS
 
                 gamePlayer.Sprint(false);
 
-                if (gamePlayer.Client.Account.PrivLevel == 1 || gamePlayer.Client.Account.PrivLevel == 0)
+                foreach (GamePlayer player in OwnerPlayer.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
                 {
-                    //GameEventMgr.AddHandler(this, GameLivingEvent.AttackedByEnemy, new DOLEventHandler(Unstealth));
-                    foreach (GamePlayer player in gamePlayer.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                    {
-                        if (player == null || player == gamePlayer)
-                            continue;
-
-                        if (!player.CanDetect(gamePlayer))
-                            player.Out.SendObjectDelete((GameObject)gamePlayer);
-                    }
-
-                    gamePlayer.Out.SendUpdateMaxSpeed();
+                    if (player != OwnerPlayer && !player.CanDetect(OwnerPlayer))
+                        player.Out.SendObjectDelete(OwnerPlayer);
                 }
 
                 StealthStateChanged();
@@ -88,7 +90,7 @@ namespace DOL.GS
                 //GameEventMgr.RemoveHandler(this, GameLivingEvent.AttackedByEnemy, new DOLEventHandler(GamePlayer.Unstealth));
                 foreach (GamePlayer otherPlayer in gamePlayer.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
                 {
-                    if (otherPlayer == null || otherPlayer == gamePlayer) 
+                    if (otherPlayer == null || otherPlayer == gamePlayer)
                         continue;
 
                     /// [Atlas - Takii] This commented code from DOL causes a large (1-2 seconds) delay before the target unstealths.
@@ -141,11 +143,7 @@ namespace DOL.GS
             if (OwnerPlayer != null)
             {
                 OwnerPlayer.Notify(GamePlayerEvent.StealthStateChanged, OwnerPlayer, null);
-
-                if (OwnerPlayer.Client.Account.PrivLevel == 1 || OwnerPlayer.Client.Account.PrivLevel == 0)
-                {
-                    OwnerPlayer.Out.SendUpdateMaxSpeed();
-                }
+                OwnerPlayer.OnMaxSpeedChange();
             }
         }
     }

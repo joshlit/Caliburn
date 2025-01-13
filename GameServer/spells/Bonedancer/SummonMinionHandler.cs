@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DOL.AI.Brain;
-using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
@@ -31,7 +29,7 @@ namespace DOL.GS.Spells
     /// 4 = Buffer
     /// 5 = Range
     /// </summary>
-    [SpellHandler("SummonMinion")]
+    [SpellHandler(eSpellType.SummonMinion)]
     public class SummonMinionHandler : SummonSpellHandler
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -106,21 +104,10 @@ namespace DOL.GS.Spells
                 brain.SetAggressionState(eAggressionState.Passive);
         }
 
-        protected override void OnNpcReleaseCommand(DOLEvent e, object sender, EventArgs arguments)
-        {
-            if (sender is not GameNPC pet)
-                return;
-
-            GameEventMgr.RemoveHandler(pet, GameLivingEvent.PetReleased, new DOLEventHandler(OnNpcReleaseCommand));
-
-            if (pet.effectListComponent.Effects.TryGetValue(eEffect.Pet, out var petEffect))
-                EffectService.RequestImmediateCancelEffect(petEffect.FirstOrDefault());
-        }
-
         public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
         {
             if (effect.Owner is BdPet bdPetOwner && bdPetOwner.Brain is IControlledBrain brain && brain.Owner is CommanderPet commander)
-                commander.RemoveControlledNpc(brain);
+                commander.RemoveControlledBrain(brain);
 
             return base.OnEffectExpires(effect, noMessages);
         }
@@ -164,7 +151,7 @@ namespace DOL.GS.Spells
 
         protected override void SetBrainToOwner(IControlledBrain brain)
         {
-            Caster.ControlledBrain.Body.AddControlledNpc(brain);
+            Caster.ControlledBrain.Body.AddControlledBrain(brain);
         }
 
         public override IList<string> DelveInfo

@@ -262,7 +262,7 @@ namespace DOL.AI.Brain
             // Check if seedsman is dead, returning home, stunned, or mezzed, if yes then don't think.
             if (!seedsman.IsAlive) { return; }
             if (seedsman.IsReturningToSpawnPoint) { return; }
-            if (seedsman.AttackState) { return; }
+            if (seedsman.IsAttacking) { return; }
             // if ((seedsman.IsStunned) || (seedsman.IsMezzed)) { return; }
 
             // Check if seedsman should start planting tree's
@@ -282,7 +282,7 @@ namespace DOL.AI.Brain
             // When seedsman gets to a plant spot, plant a tree.
             if (UndeadSeedsman.IsPlanting && Body.GetDistanceTo(UndeadSeedsman.WalkTarget) < 25)
             {
-                if ((!UndeadSeedsman.IsPlanting) || (seedsman.InCombat) || (seedsman.IsStunned) || (seedsman.IsMezzed) || (seedsman.AttackState)) { return; } //disregard if not planting or in combat
+                if ((!UndeadSeedsman.IsPlanting) || (seedsman.InCombat) || (seedsman.IsStunned) || (seedsman.IsMezzed) || (seedsman.IsAttacking)) { return; } //disregard if not planting or in combat
 
                 int x, y, z;
                 //Treemnumber is the current index

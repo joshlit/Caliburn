@@ -61,8 +61,12 @@ namespace DOL.GS
             if (_gameLoopThread == null)
                 return;
 
-            _gameLoopThread.Interrupt();
-            _gameLoopThread.Join();
+            if (Thread.CurrentThread != _gameLoopThread)
+            {
+                _gameLoopThread.Interrupt();
+                _gameLoopThread.Join();
+            }
+
             _gameLoopThread = null;
             _busyWaitThresholdThread.Interrupt();
             _busyWaitThresholdThread.Join();
@@ -101,6 +105,8 @@ namespace DOL.GS
             static void TickServices()
             {
                 ECS.Debug.Diagnostics.StartPerfCounter(THREAD_NAME);
+                TimerService.Tick();
+                ClientService.BeginTick();
                 NpcService.Tick();
                 AttackService.Tick();
                 CastingService.Tick();
@@ -108,9 +114,8 @@ namespace DOL.GS
                 EffectListService.Tick();
                 ZoneService.Tick();
                 CraftingService.Tick();
-                TimerService.Tick();
                 ReaperService.Tick();
-                ClientService.Tick();
+                ClientService.EndTick();
                 DailyQuestService.Tick();
                 WeeklyQuestService.Tick();
                 ConquestService.Tick();

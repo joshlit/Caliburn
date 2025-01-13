@@ -8,7 +8,7 @@ namespace DOL.GS.spells
 	/// <summary>
 	/// Power Rend is a style effect unique to the Valkyrie's sword specialization line.
 	/// </summary>
-	[SpellHandlerAttribute("PowerRend")]
+	[SpellHandler(eSpellType.PowerRend)]
 	public class PowerRendSpellHandler : SpellHandler
 	{
 		private Random m_rng = new Random();
@@ -88,7 +88,7 @@ namespace DOL.GS.spells
 			}
 		}
 
-		public override int CalculateSpellResistChance(GameLiving target) => 100 - CalculateToHitChance(target);
+		public override double CalculateSpellResistChance(GameLiving target) => 100 - CalculateToHitChance(target);
 
 		private double GetVariance()
 		{

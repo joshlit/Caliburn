@@ -22,7 +22,7 @@ namespace DOL.GS.Spells
             get { return true; }
         }
 
-        public override int CalculateSpellResistChance(GameLiving target)
+        public override double CalculateSpellResistChance(GameLiving target)
         {
             return 0;
         }
@@ -202,7 +202,7 @@ namespace DOL.GS.Spells
     #endregion
 
     #region Stylhandler
-    [SpellHandlerAttribute("MLStyleHandler")]
+    [SpellHandler(eSpellType.MLStyleHandler)]
     public class MLStyleHandler : MasterlevelHandling
     {
         public MLStyleHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
@@ -228,7 +228,7 @@ namespace DOL.GS.Spells
             get { return true; }
         }
 
-        public override int CalculateSpellResistChance(GameLiving target)
+        public override double CalculateSpellResistChance(GameLiving target)
         {
             return 0;
         }
@@ -276,7 +276,7 @@ namespace DOL.GS.Spells
         // bonus category
         public override eBuffBonusCategory BonusCategory1 { get { return eBuffBonusCategory.BaseBuff; } }
 
-        public override int CalculateSpellResistChance(GameLiving target)
+        public override double CalculateSpellResistChance(GameLiving target)
         {
             return 0;
         }
@@ -325,7 +325,7 @@ namespace DOL.GS.Spells
         public override eBuffBonusCategory BonusCategory1 { get { return eBuffBonusCategory.BaseBuff; } }
         public override eBuffBonusCategory BonusCategory2 { get { return eBuffBonusCategory.SpecBuff; } }
 
-        public override int CalculateSpellResistChance(GameLiving target)
+        public override double CalculateSpellResistChance(GameLiving target)
         {
             return 0;
         }
@@ -382,14 +382,14 @@ namespace DOL.GS.Spells
             get { return true; }
         }
 
-        public override int CalculateSpellResistChance(GameLiving target)
+        public override double CalculateSpellResistChance(GameLiving target)
         {
             return 0;
         }
 
         public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
         {
-            ECSGameTimer timer = effect.Owner.TempProperties.GetProperty<ECSGameTimer>(EFFECT_PROPERTY, null);
+            ECSGameTimer timer = effect.Owner.TempProperties.GetProperty<ECSGameTimer>(EFFECT_PROPERTY);
             effect.Owner.TempProperties.RemoveProperty(EFFECT_PROPERTY);
             timer.Stop();
 
@@ -690,7 +690,7 @@ namespace DOL.GS.Spells
     #endregion
 
     #region TargetModifier
-    [SpellHandlerAttribute("TargetModifier")]
+    [SpellHandler(eSpellType.TargetModifier)]
     public class TargetModifierSpellHandler : MasterlevelHandling
     {
         public override bool HasPositiveEffect
@@ -702,7 +702,7 @@ namespace DOL.GS.Spells
     #endregion
 
     #region Passive
-    [SpellHandlerAttribute("PassiveSpell")]
+    [SpellHandler(eSpellType.PassiveSpell)]
     public class PassiveSpellHandler : MasterlevelHandling
     {
         public override bool CheckBeginCast(GameLiving selectedTarget)

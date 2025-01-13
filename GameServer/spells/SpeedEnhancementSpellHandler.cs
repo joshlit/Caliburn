@@ -11,7 +11,7 @@ namespace DOL.GS.Spells
     /// <summary>
     /// Increases the target's movement speed.
     /// </summary>
-    [SpellHandlerAttribute("SpeedEnhancement")]
+	[SpellHandler(eSpellType.SpeedEnhancement)]
     public class SpeedEnhancementSpellHandler : SpellHandler
     {
         /// <summary>
@@ -54,7 +54,7 @@ namespace DOL.GS.Spells
 			if (target.EffectList.GetOfType<ChargeEffect>() != null)
 				return;
 
-            if (target.TempProperties.GetProperty("Charging", false))
+			if (target.TempProperties.GetProperty<bool>("Charging"))
                 return;
 
             if (target.EffectList.GetOfType<ArmsLengthEffect>() != null)

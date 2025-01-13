@@ -29,7 +29,7 @@ namespace DOL.GS.Spells
     /// <summary>
     /// Damage Over Time spell handler
     /// </summary>
-    [SpellHandlerAttribute("HealthToEndurance")]
+	[SpellHandler(eSpellType.HealthToEndurance)]
     public class HealthToEndurance : SpellHandler
     {
         public override bool CheckBeginCast(GameLiving selectedTarget)

@@ -12,22 +12,25 @@ namespace DOL.AI.Brain
             StateType = eFSMStateType.WAKING_UP;
         }
 
+        public override void Enter()
+        {
+            if (_abilitiesChecked)
+                return;
+
+            ControlledMobBrain brain = _brain as ControlledMobBrain;
+            brain.Body.SortSpells();
+            _abilitiesChecked = true;
+        }
+
         public override void Think()
         {
             ControlledMobBrain brain = _brain as ControlledMobBrain;
 
-            if (!_abilitiesChecked)
-            {
-                brain.CheckAbilities();
-                brain.Body.SortSpells();
-                _abilitiesChecked = true;
-            }
-
-            if (brain.AggressionState == eAggressionState.Aggressive)
+            if (brain.AggressionState is eAggressionState.Aggressive)
                 brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
-            else if (brain.AggressionState == eAggressionState.Defensive)
+            else if (brain.AggressionState is eAggressionState.Defensive)
                 brain.FSM.SetCurrentState(eFSMStateType.IDLE);
-            else if (brain.AggressionState == eAggressionState.Passive)
+            else if (brain.AggressionState is eAggressionState.Passive)
                 brain.FSM.SetCurrentState(eFSMStateType.PASSIVE);
 
             brain.Think();
@@ -59,17 +62,18 @@ namespace DOL.AI.Brain
             }
 
             // Handle state changes.
-            if (brain.AggressionState == eAggressionState.Aggressive)
+            if (brain.AggressionState is eAggressionState.Aggressive)
                 brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
-            else if (brain.AggressionState == eAggressionState.Passive)
+            else if (brain.AggressionState is eAggressionState.Passive)
                 brain.FSM.SetCurrentState(eFSMStateType.PASSIVE);
 
             // Handle pet movement.
-            if (brain.WalkState == eWalkState.Follow && brain.Owner != null)
+            if (brain.WalkState is eWalkState.Follow && brain.Owner != null)
                 brain.Follow(brain.Owner);
 
             // Cast defensive spells if applicable.
             brain.CheckSpells(StandardMobBrain.eCheckSpellType.Defensive);
+            brain.CheckAbilities();
         }
     }
 
@@ -102,7 +106,7 @@ namespace DOL.AI.Brain
                     playerOwner.CommandNpcRelease();
             }
 
-            if (brain.AggressionState == eAggressionState.Passive)
+            if (brain.AggressionState is eAggressionState.Passive)
             {
                 brain.FSM.SetCurrentState(eFSMStateType.PASSIVE);
                 return;
@@ -110,7 +114,7 @@ namespace DOL.AI.Brain
 
             //brain.CheckSpells(eCheckSpellType.Offensive);
 
-            if (brain.AggressionState == eAggressionState.Aggressive)
+            if (brain.AggressionState is eAggressionState.Aggressive)
                 brain.CheckProximityAggro();
 
             /* this was added in 1.88 : https://camelotherald.fandom.com/wiki/Patch_Notes:_Version_1.88
@@ -135,7 +139,7 @@ namespace DOL.AI.Brain
                     return;
 
                 // Return to defensive if there's no valid target.
-                if (brain.AggressionState != eAggressionState.Aggressive)
+                if (brain.AggressionState is not eAggressionState.Aggressive)
                 {
                     brain.FSM.SetCurrentState(eFSMStateType.IDLE);
                     return;
@@ -143,6 +147,7 @@ namespace DOL.AI.Brain
             }
 
             brain.AttackMostWanted();
+            brain.CheckAbilities();
         }
     }
 
@@ -174,17 +179,18 @@ namespace DOL.AI.Brain
             }
 
             // Handle state changes.
-            if (brain.AggressionState == eAggressionState.Aggressive)
+            if (brain.AggressionState is eAggressionState.Aggressive)
                 brain.FSM.SetCurrentState(eFSMStateType.AGGRO);
-            else if (brain.AggressionState == eAggressionState.Defensive)
+            else if (brain.AggressionState is eAggressionState.Defensive)
                 brain.FSM.SetCurrentState(eFSMStateType.IDLE);
 
             // Handle pet movement.
-            if (brain.WalkState == eWalkState.Follow && brain.Owner != null)
+            if (brain.WalkState is eWalkState.Follow && brain.Owner != null)
                 brain.Follow(brain.Owner);
 
             // Cast defensive spells if applicable.
             brain.CheckSpells(StandardMobBrain.eCheckSpellType.Defensive);
+            brain.CheckAbilities();
         }
     }
 }

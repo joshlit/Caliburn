@@ -209,7 +209,7 @@ namespace DOL.GS.Keeps
 		{
 			get
 			{
-				string name = "";
+				string name = string.Empty;
 
 				if (IsAttackableDoor)
 				{
@@ -253,20 +253,6 @@ namespace DOL.GS.Keeps
 		#endregion
 
 		#region function override
-
-		/// <summary>
-		/// Procs don't normally fire on game keep components
-		/// </summary>
-		/// <param name="ad"></param>
-		/// <param name="weapon"></param>
-		/// <returns></returns>
-		public override bool AllowWeaponMagicalEffect(AttackData ad, DbInventoryItem weapon, Spell weaponSpell)
-		{
-			if (weapon.Flags == 10) //Bruiser or any other item needs Itemtemplate "Flags" set to 10 to proc on keep components
-				return true;
-			else return false; // special code goes here
-		}
-
 
 		public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
 		{
@@ -543,23 +529,6 @@ namespace DOL.GS.Keeps
 		public override string GetName(int article, bool firstLetterUppercase)
 		{
 			return "the " + base.GetName(article, firstLetterUppercase);
-		}
-
-		/// <summary>
-		/// Starts the power regeneration
-		/// </summary>
-		public override void StartPowerRegeneration()
-		{
-			// No regeneration for doors
-			return;
-		}
-		/// <summary>
-		/// Starts the endurance regeneration
-		/// </summary>
-		public override void StartEnduranceRegeneration()
-		{
-			// No regeneration for doors
-			return;
 		}
 
 		public override void StartHealthRegeneration()
