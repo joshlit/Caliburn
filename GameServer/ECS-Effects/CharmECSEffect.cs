@@ -17,7 +17,7 @@ namespace DOL.GS
             if (Owner is not GameNPC charmNpc)
                 return;
 
-            if (charmMob is MimicNPC)
+            if (charmNpc is MimicNPC)
                 return;
 
             CharmSpellHandler charmSpellHandler = SpellHandler as CharmSpellHandler;

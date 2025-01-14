@@ -1877,7 +1877,7 @@ namespace DOL.GS
         /// <param name="forced">if true, the dismounting can't be prevented by handlers</param>
         /// <param name="player">the player that is dismounting</param>
         /// <returns>true if dismounted successfully</returns>
-        public virtual bool RiderDismount(bool forced, GamePlayer player)
+        public virtual bool RiderDismount(bool forced, IGamePlayer player)
         {
             if (Riders.Length <= 0)
                 return false;
@@ -1911,7 +1911,7 @@ namespace DOL.GS
         /// </summary>
         /// <param name="player">the player to get location of</param>
         /// <returns></returns>
-        public int RiderArrayLocation(GamePlayer player)
+        public int RiderArrayLocation(IGamePlayer player)
         {
             for (int i = 0; i < MAX_PASSENGERS; i++)
             {

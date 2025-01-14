@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using static DOL.GS.AttackData;
 using static DOL.GS.GamePlayer;
@@ -36,14 +37,16 @@ namespace DOL.GS.Scripts
         private DummyClient _dummyClient;
 
         public AttackComponent AttackComponent { get { return attackComponent; } }
+        public GameSiegeWeapon SiegeWeapon { get; set; }
         public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
         public StyleComponent StyleComponent { get { return styleComponent; } }
         public EffectListComponent EffectListComponent { get { return effectListComponent; } }
-        public IPropertyIndexer ItemBonus { get; }
-        public IPropertyIndexer BaseBuffBonusCategory { get; }
-        public IPropertyIndexer SpecBuffBonusCategory { get; }
-        public IPropertyIndexer DebuffCategory { get; }
-        public IPropertyIndexer BuffBonusCategory4 { get; }
+        public new IPropertyIndexer ItemBonus { get => base.ItemBonus; set => base.ItemBonus = (PropertyIndexer)value; }
+        public new IPropertyIndexer BaseBuffBonusCategory => base.BaseBuffBonusCategory;
+        public new IPropertyIndexer SpecBuffBonusCategory => base.SpecBuffBonusCategory;
+        public new IPropertyIndexer DebuffCategory => base.DebuffCategory;
+        public new IPropertyIndexer OtherBonus => base.OtherBonus;
+        public double MaxSpeedModifierFromEncumbrance { get; set; }
 
         private MimicSpawner _mimicSpawner;
         public MimicSpawner MimicSpawner 
@@ -84,6 +87,13 @@ namespace DOL.GS.Scripts
 		/// Bolt spell list and accessor
 		/// </summary>
         public List<Spell> BoltSpells { get; set; } = null;
+        
+        protected WeakReference m_steed;
+        public GameNPC Steed
+        {
+            get { return m_steed.Target as GameNPC; }
+            set { m_steed.Target = value; }
+        }
 
         public MimicSpec MimicSpec = new MimicSpec();
         public int Kills;
@@ -100,7 +110,7 @@ namespace DOL.GS.Scripts
 
         public MimicNPC(eMimicClass cClass, byte level, eGender gender = eGender.Neutral)
         {
-            _dummyClient = new DummyClient(GameServer.Instance);
+            _dummyClient = new DummyClient(GameServer.Instance, new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp));
             _dummyLib = new DummyPacketLib();
 
             Inventory = new MimicNPCInventory();
@@ -589,7 +599,8 @@ namespace DOL.GS.Scripts
                                "End: " + Endurance + "/" + MaxEndurance + " (" + EndurancePercent + "%)\n" +
                                "Power: " + Mana + "/" + MaxMana + " (" + ManaPercent + "%)\n" +
                                "AF: " + EffectiveOverallAF + "\n" +
-                               "Conc: " + Concentration + "/" + MaxConcentration + "\n";
+                               "Conc: " + Concentration + "/" + MaxConcentration + "\n" +
+                               "Speed: "+ CurrentSpeed + " MaxSpeed: " + MaxSpeed + "\n";
                     break;
                 }
 
@@ -798,14 +809,8 @@ namespace DOL.GS.Scripts
                 return;
             }
 
-            if (floorObject.ObjectState != eObjectState.Active)
+            if (floorObject.ObjectState is not eObjectState.Active)
                 return;
-
-            if (floorObject is GameStaticItemTimed staticItem && !staticItem.IsOwner(this) && Client.Account.PrivLevel == (uint)ePrivLevel.Player)
-            {
-                Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.LootDoesntBelongYou"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
-            }
 
             if (floorObject is not GameBoat && !checkRange && !floorObject.IsWithinRadius(this, Properties.WORLD_PICKUP_DISTANCE, true))
             {
@@ -813,202 +818,146 @@ namespace DOL.GS.Scripts
                 return;
             }
 
-            if (floorObject is WorldInventoryItem)
+            if (floorObject is WorldInventoryItem floorItem)
             {
-                WorldInventoryItem floorItem = floorObject as WorldInventoryItem;
+                if (floorItem.ObjectState is not eObjectState.Active)
+                    return;
 
-                lock (floorItem)
+                if (floorItem.Item == null || !floorItem.Item.IsPickable)
                 {
-                    if (floorItem.ObjectState != eObjectState.Active)
-                        return;
-
-                    if (floorItem.Item == null || floorItem.Item.IsPickable == false)
-                    {
-                        Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        return;
-                    }
-
-                    if (floorItem.GetPickupTime > 0)
-                    {
-                        Out.SendMessage("You must wait another " + floorItem.GetPickupTime / 1000 + " seconds to pick up " + floorItem.Name + "!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        return;
-                    }
-
-                    Group group = Group;
-                    BattleGroup mybattlegroup = TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY, null);
-
-                    if (mybattlegroup != null && mybattlegroup.GetBGLootType() == true && mybattlegroup.GetBGTreasurer() != null)
-                    {
-                        GamePlayer theTreasurer = mybattlegroup.GetBGTreasurer();
-                        if (theTreasurer.CanSeeObject(floorObject) || this.CanSeeObject((floorObject)))
-                        {
-                            bool good = false;
-                            if (floorItem.Item.IsStackable)
-                                good = theTreasurer.Inventory.AddTemplate(floorItem.Item, floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
-                            else
-                                good = theTreasurer.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, floorItem.Item);
-
-                            if (!good)
-                            {
-                                theTreasurer.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.BackpackFull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                                return;
-                            }
-                            theTreasurer.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouGet", floorItem.Item.GetName(1, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, floorItem.Item.GetName(1, false)), eChatType.CT_System);
-                            InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, floorItem.Item.Template, floorItem.Item.IsStackable ? floorItem.Item.Count : 1);
-                        }
-                        else
-                        {
-                            mybattlegroup.SendMessageToBattleGroupMembers(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.NoOneWantsThis", floorObject.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        }
-                    }
-                    else if (group != null && group.AutosplitLoot)
-                    {
-                        List<GameObject> owners = new List<GameObject>((GameObject[])floorItem.Owners);
-                        List<IGamePlayer> eligibleMembers = new List<IGamePlayer>(8);
-
-                        foreach (IGamePlayer ply in group.GetNearbyPlayersInTheGroup(this))
-                        {
-                            if (ply.IsAlive
-                                && ply.CanSeeObject(floorObject)
-                                && this.IsWithinRadius((GameObject)ply, WorldMgr.MAX_EXPFORKILL_DISTANCE)
-                                && (ply.ObjectState == eObjectState.Active)
-                                && (ply.AutoSplitLoot)
-                                && (owners.Contains((GameObject)ply) || owners.Count == 0)
-                                && (ply.Inventory.FindFirstEmptySlot(eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack) != eInventorySlot.Invalid))
-                            {
-                                eligibleMembers.Add(ply);
-                            }
-                        }
-
-                        if (eligibleMembers.Count <= 0)
-                        {
-                            Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.NoOneWantsThis", floorObject.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            return;
-                        }
-
-                        int i = Util.Random(0, eligibleMembers.Count - 1);
-                        IGamePlayer eligibleMember = eligibleMembers[i];
-
-                        if (eligibleMember != null)
-                        {
-                            bool good = false;
-
-                            if (floorItem.Item.IsStackable) // poison ID is lost here
-                                good = eligibleMember.Inventory.AddTemplate(floorItem.Item, floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
-                            else
-                                good = eligibleMember.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, floorItem.Item);
-
-                            if (!good)
-                            {
-                                eligibleMember.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.BackpackFull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                                return;
-                            }
-
-                            Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, floorItem.Item.GetName(1, false)), eChatType.CT_System);
-                            group.SendMessageToGroupMembers(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.Autosplit", floorItem.Item.GetName(1, true), eligibleMember.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, floorItem.Item.Template, floorItem.Item.IsStackable ? floorItem.Item.Count : 1);
-                        }
-                    }
-                    else
-                    {
-                        bool good = false;
-                        if (floorItem.Item.IsStackable)
-                            good = Inventory.AddTemplate(GameInventoryItem.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
-                        else
-                            good = Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, floorItem.Item);
-
-                        if (!good)
-                        {
-                            Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.BackpackFull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            return;
-                        }
-
-                        Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouGet", floorItem.Item.GetName(1, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, floorItem.Item.GetName(1, false)), eChatType.CT_System);
-                        InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, floorItem.Item.Template, floorItem.Item.IsStackable ? floorItem.Item.Count : 1);
-                    }
-                    floorItem.RemoveFromWorld();
+                    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    return;
                 }
+
+                if (floorItem.GetPickupTime > 0)
+                {
+                    Out.SendMessage($"You must wait another {floorItem.GetPickupTime / 1000} seconds to pick up {floorItem.Name}!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    return;
+                }
+
+                BattleGroup battleGroup = TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY);
+
+                if (battleGroup == null || battleGroup.TryPickUpItem(battleGroup.GetBGTreasurer(), floorItem) is IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE)
+                {
+                    Group group = Group;
+
+                    if (group == null || group.TryPickUpItem(group.GetPlayersInTheGroup().FirstOrDefault(), floorItem) is IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE)
+                        TryPickUpItem(this, floorItem);
+                }
+
                 return;
             }
 
-            if (floorObject is GameMoney)
+            if (floorObject is GameMoney money)
             {
-                GameMoney moneyObject = floorObject as GameMoney;
+                if (money.ObjectState is not eObjectState.Active)
+                    return;
 
-                lock (moneyObject)
+                BattleGroup battleGroup = TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY);
+
+                if (battleGroup == null || battleGroup.TryPickUpMoney(battleGroup.GetBGTreasurer(), money) is IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE)
                 {
-                    if (moneyObject.ObjectState != eObjectState.Active)
-                        return;
+                    Group group = Group;
 
-                    if (Group != null && Group.AutosplitCoins)
-                    {
-                        //Spread the money in the group
-                        var eligibleMembers = from p in Group.GetNearbyPlayersInTheGroup(this)
-                                              where p.IsAlive && p.CanSeeObject(floorObject) && p.ObjectState == eObjectState.Active
-                                              select p;
-
-                        var gamePlayers = eligibleMembers as IGamePlayer[] ?? eligibleMembers.ToArray();
-
-                        if (!gamePlayers.Any())
-                        {
-                            Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.NoOneGroupWantsMoney"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            return;
-                        }
-
-                        long moneyToPlayer = moneyObject.TotalCopper / gamePlayers.Count();
-
-                        foreach (IGamePlayer eligibleMember in gamePlayers)
-                        {
-                            if (eligibleMember.Guild != null && eligibleMember.Guild.IsGuildDuesOn())
-                            {
-                                long moneyToGuild = moneyToPlayer * eligibleMember.Guild.GetGuildDuesPercent() / 100;
-                                if (eligibleMember.Guild.GetGuildDuesPercent() != 100)
-                                    eligibleMember.AddMoney(moneyToPlayer, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
-                                else
-                                    eligibleMember.AddMoney(moneyToPlayer);
-
-                                InventoryLogging.LogInventoryAction("(ground)", (GameObject)eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
-                                eligibleMember.Guild.SetGuildBank(eligibleMember, moneyToGuild);
-                            }
-                            else
-                            {
-                                eligibleMember.AddMoney(moneyToPlayer, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
-                                InventoryLogging.LogInventoryAction("(ground)", (GameObject)eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        //Add money only to picking player
-                        if (Guild != null && Guild.IsGuildDuesOn() && moneyObject.TotalCopper > 0 && Guild.GetGuildDuesPercent() > 0)
-                        {
-                            long moneyToGuild = moneyObject.TotalCopper * Guild.GetGuildDuesPercent() / 100;
-                            if (Guild.GetGuildDuesPercent() != 100)
-                            {
-                                AddMoney(moneyObject.TotalCopper, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouPickUp", Money.GetString(moneyObject.TotalCopper)));
-                            }
-                            else
-                            {
-                                AddMoney(moneyObject.TotalCopper);
-                            }
-                            InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, moneyObject.TotalCopper);
-                            Guild.SetGuildBank(this, moneyToGuild);
-                        }
-                        else
-                        {
-                            AddMoney(moneyObject.TotalCopper, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouPickUp", Money.GetString(moneyObject.TotalCopper)));
-                            InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, moneyObject.TotalCopper);
-                        }
-                    }
-                    moneyObject.Delete();
+                    if (group == null || group.TryPickUpMoney(group.GetPlayersInTheGroup().FirstOrDefault(), money) is IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE)
+                        TryPickupMoney(this, money);
                 }
+
+                return;
+            }
+
+            if (floorObject is GameBoat)
+            {
+                if (!IsWithinRadius(floorObject, 1000))
+                {
+                    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.TooFarFromBoat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    return;
+                }
+
+                if (!InCombat)
+                    MountSteed(floorObject as GameBoat, false);
+
                 return;
             }
 
             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
             return;
+        }
+
+        public IGameStaticItemOwner.TryPickUpResult TryPickupMoney(MimicNPC source, GameMoney money)
+        {
+            var battlegroup = TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY);
+            if (source.Group != null)
+                return source.Group.TryPickUpMoney(source.Group.GetPlayersInTheGroup().FirstOrDefault(), money);
+            if (battlegroup != null)
+                return battlegroup.GetBGTreasurer().TryPickUpMoney(battlegroup.GetBGTreasurer(), money);
+            return IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
+        }
+        
+        public IGameStaticItemOwner.TryPickUpResult TryPickUpItem(MimicNPC source, WorldInventoryItem item)
+        {
+            var battlegroup = TempProperties.GetProperty<BattleGroup>(BattleGroup.BATTLEGROUP_PROPERTY);
+            if (source.Group != null)
+                return source.Group.TryPickUpItem(source.Group.GetPlayersInTheGroup().FirstOrDefault(), item);
+            if (battlegroup != null)
+                return battlegroup.GetBGTreasurer().TryPickUpItem(battlegroup.GetBGTreasurer(), item);
+            return IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
+        }
+        
+        public virtual bool MountSteed(GameNPC steed, bool forced)
+        {
+            return false;
+            // Sanity 'coherence' checks
+            if (Steed != null)
+                if (!DismountSteed(forced))
+                    return false;
+
+            if (IsOnHorse)
+                IsOnHorse = false;
+
+            //if (!steed.RiderMount(this, forced) && !forced)
+               // return false;
+
+            //if (OnMountSteed != null && !OnMountSteed(this, steed, forced) && !forced)
+               // return false;
+
+            // Standard checks, as specified in rules
+            //if (GameServer.ServerRules.ReasonForDisallowMounting(this) != string.Empty && !forced)
+              //  return false;
+
+            foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+            {
+                if (player == null) continue;
+                player.Out.SendRiding(this, steed, false);
+            }
+
+            return true;
+        }
+        
+        public delegate bool DismountSteedHandler(MimicNPC rider, GameLiving steed, bool forced);
+        public event DismountSteedHandler OnDismountSteed;
+        public void ClearDismountSteedHandlers()
+        {
+            OnDismountSteed = null;
+        }
+        
+        public virtual bool DismountSteed(bool forced)
+        {
+            if (Steed == null)
+                return false;
+            if (Steed.Name == "Forceful Zephyr" && !forced) return false;
+            if (OnDismountSteed != null && !OnDismountSteed(this, Steed, forced) && !forced)
+                return false;
+            GameObject steed = Steed;
+            if (!Steed.RiderDismount(forced, this) && !forced)
+                return false;
+
+            foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+            {
+                if (player == null) continue;
+                player.Out.SendRiding(this, steed, true);
+            }
+            return true;
         }
 
         /// <summary>
@@ -1033,7 +982,7 @@ namespace DOL.GS.Scripts
         }
 
         private bool _autoloot;
-        public Lock XpGainersLock { get; set; }
+        public new Lock XpGainersLock { get; set; } = new Lock();
         
         public bool HasShadeModel => Model == ShadeModel;
 
@@ -1516,7 +1465,7 @@ namespace DOL.GS.Scripts
             base.DisableSkill(skill, duration);
         }
 
-        public IPropertyIndexer AbilityBonus { get; }
+        public new IPropertyIndexer AbilityBonus => base.AbilityBonus;
 
         public void SetLevel(byte level)
         {
@@ -1745,6 +1694,23 @@ namespace DOL.GS.Scripts
             get { return m_OutOfClassROGPercent; }
             set { m_OutOfClassROGPercent = value; }
         }
+
+        public bool IsEncumbered { get; private set;}
+        public int MaxCarryingCapacity
+        {
+            get
+            {
+                double result = Strength;
+                RAPropertyEnhancer lifter = GetAbility<AtlasOF_LifterAbility>();
+
+                if (lifter != null)
+                    result *= 1 + lifter.Amount * 0.01;
+
+                return (int) result;
+            }
+        }
+        public int PreviousInventoryWeight { get; set; }
+        public int PreviousMaxCarryingCapacity { get; set; }
 
         /// <summary>
         /// Player is in BG ?
@@ -3042,31 +3008,6 @@ namespace DOL.GS.Scripts
         #region Health/Mana/Endurance/Regeneration
 
         /// <summary>
-        /// Starts the health regeneration.
-        /// Overriden. No lazy timers for GamePlayers.
-        /// </summary>
-        public override void StartHealthRegeneration()
-        {
-            if (!IsAlive || ObjectState != eObjectState.Active)
-                return;
-
-            if (m_healthRegenerationTimer is { IsAlive: true })
-                return;
-
-            if (m_healthRegenerationTimer == null)
-            {
-                m_healthRegenerationTimer = new ECSGameTimer(this);
-                m_healthRegenerationTimer.Callback = new ECSGameTimer.ECSTimerCallback(HealthRegenerationTimerCallback);
-            }
-            else if (m_healthRegenerationTimer.IsAlive)
-            {
-                return;
-            }
-
-            m_healthRegenerationTimer.Start(m_healthRegenerationPeriod);
-        }
-
-        /// <summary>
         /// Starts the power regeneration.
         /// Overriden. No lazy timers for GamePlayers.
         /// </summary>
@@ -3146,19 +3087,9 @@ namespace DOL.GS.Scripts
             if (Health < MaxHealth)
                 ChangeHealth(this, eHealthChangeType.Regenerate, GetModified(eProperty.HealthRegenerationAmount));
 
-            bool atMaxHealth = Health >= MaxHealth;
-
-            if (DamageRvRMemory > 0)
+            if (Health >= MaxHealth)
             {
-                if (atMaxHealth)
-                    DamageRvRMemory = 0;
-                else
-                    DamageRvRMemory -= Math.Max(GetModified(eProperty.HealthRegenerationAmount), 0);
-            }
-
-            if (atMaxHealth)
-            {
-                lock (m_xpGainers.SyncRoot)
+                lock (XpGainersLock)
                 {
                     m_xpGainers.Clear();
                 }
@@ -3176,25 +3107,6 @@ namespace DOL.GS.Scripts
         }
 
         public int PowerRegenStackingBonus { get; set; } = 0;
-
-        /// <summary>
-        /// Override PowerRegenTimer because if we are not connected anymore
-        /// we DON'T regenerate mana, even if we are not garbage collected yet!
-        /// </summary>
-        /// <param name="selfRegenerationTimer">the timer</param>
-        /// <returns>the new time</returns>
-        protected override int PowerRegenerationTimerCallback(ECSGameTimer selfRegenerationTimer)
-        {
-            if (IsSitting)
-            {
-                if (PowerRegenStackingBonus < 3)
-                    PowerRegenStackingBonus++;
-            }
-            else
-                PowerRegenStackingBonus = 0;
-
-            return base.PowerRegenerationTimerCallback(selfRegenerationTimer);
-        }
 
         /// <summary>
         /// Override EnduranceRegenTimer because if we are not connected anymore
@@ -3225,7 +3137,7 @@ namespace DOL.GS.Scripts
                         regen -= longWind;
 
                         if (endChant > 1)
-                            regen = (int)Math.Ceiling(regen * endChant * 0.01);
+                            regen = (int) Math.Ceiling(regen * endChant * 0.01);
 
                         if (Endurance + regen > MaxEndurance - longWind)
                             regen -= Endurance + regen - (MaxEndurance - longWind);
@@ -4189,14 +4101,6 @@ namespace DOL.GS.Scripts
         }
 
         #endregion Abilities
-
-        public virtual void RemoveAllAbilities()
-        {
-            lock (m_lockAbilities)
-            {
-                m_abilities.Clear();
-            }
-        }
 
         public virtual void RemoveAllSpecs()
         {
@@ -5942,48 +5846,6 @@ namespace DOL.GS.Scripts
         #region Combat
 
         /// <summary>
-        /// Calculate how fast this player can cast a given spell
-        /// </summary>
-        /// <param name="spell"></param>
-        /// <returns></returns>
-        public int CalculateCastingTime(SpellLine line, Spell spell)
-        {
-            int ticks = spell.CastTime;
-
-            if (spell.InstrumentRequirement != 0 ||
-                line.KeyName == GlobalSpellsLines.Item_Spells ||
-                line.KeyName.StartsWith(GlobalSpellsLines.Champion_Lines_StartWith))
-            {
-                return ticks;
-            }
-
-            if (CharacterClass.CanChangeCastingSpeed(line, spell) == false)
-                return ticks;
-
-            if (EffectListService.GetAbilityEffectOnTarget(this, eEffect.QuickCast) != null)
-            {
-                // Most casters have access to the Quickcast ability (or the Necromancer equivalent, Facilitate Painworking).
-                // This ability will allow you to cast a spell without interruption.
-                // http://support.darkageofcamelot.com/kb/article.php?id=022
-
-                // A: You're right. The answer I should have given was that Quick Cast reduces the time needed to cast to a flat two seconds,
-                // and that a spell that has been quick casted cannot be interrupted. ...
-                // http://www.camelotherald.com/news/news_article.php?storyid=1383
-
-                return 2000;
-            }
-
-            double percent = DexterityCastTimeReduction;
-            percent *= 1.0 - GetModified(eProperty.CastingSpeed) * 0.01;
-
-            ticks = (int)(ticks * Math.Max(CastingSpeedReductionCap, percent));
-            if (ticks < MinimumCastingSpeed)
-                ticks = MinimumCastingSpeed;
-
-            return ticks;
-        }
-
-        /// <summary>
         /// Gets/Sets safety flag
         /// (delegate to PlayerCharacter)
         /// </summary>
@@ -6470,7 +6332,7 @@ namespace DOL.GS.Scripts
                     eaf = eafcap;
                 eaf += (int)Math.Min(Level * 1.875, SpecBuffBonusCategory[(int)eProperty.ArmorFactor])
                        - DebuffCategory[(int)eProperty.ArmorFactor]
-                       + BuffBonusCategory4[(int)eProperty.ArmorFactor]
+                       + OtherBonus[(int)eProperty.ArmorFactor]
                        + Math.Min(Level, ItemBonus[(int)eProperty.ArmorFactor]);
 
                 eaf = (int)(eaf * BuffBonusMultCategory1.Get((int)eProperty.ArmorFactor));
@@ -6871,7 +6733,7 @@ namespace DOL.GS.Scripts
 
             // Don't cancel offensive focus spell
             if (ad.AttackType != eAttackType.Spell)
-                CancelFocusSpell();
+                castingComponent.CancelFocusSpells(this.IsMoving);
         }
 
         /// <summary>
@@ -7763,18 +7625,9 @@ namespace DOL.GS.Scripts
         }
 
         /// <summary>
-        /// The Encumberance state of this player
-        /// </summary>
-        protected bool m_overencumbered = true;
-
-        /// <summary>
         /// Gets/Set the players Encumberance state
         /// </summary>
-        public bool IsOverencumbered
-        {
-            get { return m_overencumbered; }
-            set { m_overencumbered = value; }
-        }
+        public bool IsOverencumbered { get; set; }
 
         /// <summary>
         /// Updates the appearance of the equipment this player is using
@@ -7793,23 +7646,41 @@ namespace DOL.GS.Scripts
         /// <summary>
         /// Updates Encumberance and its effects
         /// </summary>
-        public void UpdateEncumberance()
+        public void UpdateEncumbrance(bool forced = false)
         {
-            if (Inventory.InventoryWeight > MaxEncumberance)
+            int inventoryWeight = Inventory.InventoryWeight;
+            int maxCarryingCapacity = MaxCarryingCapacity;
+
+            if (!forced && PreviousInventoryWeight == inventoryWeight && PreviousMaxCarryingCapacity == maxCarryingCapacity)
+                return;
+
+            double maxCarryingCapacityRatio = maxCarryingCapacity * 0.35;
+            double newMaxSpeedModifier = 1 - inventoryWeight / maxCarryingCapacityRatio + maxCarryingCapacity / maxCarryingCapacityRatio;
+
+            if (forced || MaxSpeedModifierFromEncumbrance != newMaxSpeedModifier)
             {
-                //IsOverencumbered = true;
-                // Out.SendUpdateMaxSpeed();
-                //   if (MaxSpeed == 0)
-                //   Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "PropertyCalc.MaxSpeed.YouAreEncumbered"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                // else
-                // Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.UpdateEncumberance.EncumberedMoveSlowly"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                if (inventoryWeight > maxCarryingCapacity)
+                {
+                    IsEncumbered = true;
+                    string message;
+
+                    if (movementComponent.MaxSpeedPercent <= 0)
+                        message = "GamePlayer.UpdateEncumbrance.EncumberedCannotMove";
+                    else
+                        message = "GamePlayer.UpdateEncumbrance.EncumberedMoveSlowly";
+
+                    if(Group is {Leader: GamePlayer p}) p.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, message), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+                }
+                else
+                    IsEncumbered = false;
+
+                MaxSpeedModifierFromEncumbrance = newMaxSpeedModifier;
+                Out.SendUpdateMaxSpeed(); // Should automatically end up updating max speed using `MaxSpeedModifierFromEncumbrance` if `IsEncumbered` is set to true.
             }
-            else if (IsOverencumbered)
-            {
-                //IsOverencumbered = false;
-                //Out.SendUpdateMaxSpeed();
-            }
-            //Out.SendEncumberance();
+
+            PreviousInventoryWeight = inventoryWeight;
+            PreviousMaxCarryingCapacity = maxCarryingCapacity;
+            Out.SendEncumbrance();
         }
 
         public override void UpdateHealthManaEndu()
@@ -8253,7 +8124,7 @@ namespace DOL.GS.Scripts
 
         public virtual void RefreshItemBonuses()
         {
-            m_itemBonus = new PropertyIndexer();
+            ItemBonus = new PropertyIndexer();
             string slotToLoad = "";
             switch (VisibleActiveWeaponSlots)
             {
@@ -9107,6 +8978,21 @@ namespace DOL.GS.Scripts
                 InitControlledBrainArray(1);
 
             ControlledBrain = controlledBrain;
+        }
+
+        public override IControlledBrain ControlledBrain 
+        {
+            get
+            {
+                if (m_controlledBrain == null)
+                    return null;
+
+                return m_controlledBrain[0];
+            }
+            set
+            {
+                m_controlledBrain[0] = value;
+            }
         }
 
         /// <summary>

@@ -1,7 +1,9 @@
+using System;
 using System.Linq;
 using DOL.AI.Brain;
 using DOL.GS.Effects;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -29,7 +31,7 @@ namespace DOL.GS.PropertyCalc
 
             double speed = living.BuffBonusMultCategory1.Get((int)property);
 
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 // Since Dark Age of Camelot's launch, we have heard continuous feedback from our community about the movement speed in our game. The concerns over how slow
                 // our movement is has continued to grow as we have added more and more areas in which to travel. Because we believe these concerns are valid, we have decided
@@ -53,7 +55,7 @@ namespace DOL.GS.PropertyCalc
                         speed *= 1.25; // New run speed is 125% when no buff.
                 }
 
-                if (player.IsEncumbered && player.Client.Account.PrivLevel == 1 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
+                if (player.IsOverencumbered && player.Client.Account.PrivLevel == 1 && ServerProperties.Properties.ENABLE_ENCUMBERANCE_SPEED_LOSS)
                 {
                     speed *= player.MaxSpeedModifierFromEncumbrance;
 
@@ -82,11 +84,11 @@ namespace DOL.GS.PropertyCalc
                     //if (bloodrage != null)
                     //    speed *= 1 + (bloodrage.Spell.Value * 0.01); // 25 * 0.01 = 0.25 (a.k 25%) value should be 25.5
 
-                    if (player.effectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
+                    if (player.EffectListComponent.ContainsEffectForEffectType(eEffect.ShadowRun))
                         speed *= 2;
                 }
 
-                if (GameRelic.IsPlayerCarryingRelic(player))
+                if (player is GamePlayer p && GameRelic.IsPlayerCarryingRelic(p))
                 {
                     if (speed > 1.0)
                         speed = 1.0;
@@ -104,10 +106,12 @@ namespace DOL.GS.PropertyCalc
                 if (npc.Brain is IControlledBrain brain)
                 {
                     GameLiving owner = brain.Owner;
+                    
 
                     if (owner != null && owner == brain.Body.FollowTarget)
                     {
                         GamePlayer playerOwner = brain.GetPlayerOwner();
+                        if (owner is MimicNPC) owner = brain.GetLivingOwner();
 
                         if (!living.InCombat)
                         {
@@ -139,7 +143,23 @@ namespace DOL.GS.PropertyCalc
                         else if (playerOwner != null && playerOwner.IsSprinting)
                             speed *= 1.3;
                     }
+                    else
+                    {
+                        GameLiving otherOwner = brain?.Owner;
+
+                        if (otherOwner != null && otherOwner == brain.Body.FollowTarget)
+                        {
+                            if (otherOwner is GameNPC && otherOwner is not MimicNPC)
+                                otherOwner = brain.GetPlayerOwner();
+                            else if (otherOwner is MimicNPC)
+                                otherOwner = brain.GetLivingOwner();
+
+                            if (otherOwner is IGamePlayer playerOwner && playerOwner.IsSprinting)
+                                speed *= 1.3;
+                        }
+                    }
                 }
+                
 
                 double healthPercent = living.Health / (double) living.MaxHealth;
 

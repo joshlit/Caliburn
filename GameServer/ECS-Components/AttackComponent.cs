@@ -863,7 +863,7 @@ namespace DOL.GS
                 if (playerOwner.IsAlive && oldAttackState)
                     playerOwner.Out.SendAttackMode(AttackState);
             }
-            else if (owner is MimicNPC mimic && !mimic.MimicBrain.HasAggro)
+            else if (owner is MimicNPC mimic && mimic.MimicBrain != null && !mimic.MimicBrain.HasAggro)
             {
                 if (mimic.CharacterClass.ID == (int)eCharacterClass.Hunter ||
                     mimic.CharacterClass.ID == (int)eCharacterClass.Ranger ||
@@ -2134,7 +2134,7 @@ namespace DOL.GS
                 else
                     missRoll = Util.CryptoNextDouble();
 
-                if (playerAttacker != null && playerAttacker.UseDetailedCombatLog)
+                if (playerAttacker is GamePlayer {UseDetailedCombatLog:true})
                 {
                     playerAttacker.Out.SendMessage($"miss rate: {missChance * 100:0.##}% rand: {missRoll * 100:0.##}", eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 

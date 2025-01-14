@@ -27,6 +27,9 @@ namespace DOL.GS.Scripts
         public int CalculateMaxHealth(int level, int constitution);
         public int CalculateMaxMana(int level, int manaStat);
         public int GetBaseStat(eStat stat);
+        public double MaxSpeedModifierFromEncumbrance { get; set; }
+        public byte ManaPercent { get; }
+
 
         public List<Tuple<Skill, Skill>> GetAllUsableSkills(bool update = false);
         public List<Tuple<SpellLine, List<Skill>>> GetAllUsableListSpells(bool update = false);
@@ -81,7 +84,9 @@ namespace DOL.GS.Scripts
 
         public bool IsControlledNPC(GameNPC npc);
         public void CommandNpcRelease();
-
+        
+        public GameNPC Steed { get; set; }
+        public GameSiegeWeapon SiegeWeapon { get; set; }
         public RangeAttackComponent RangeAttackComponent { get; }
         public AttackComponent AttackComponent { get; }
         public StyleComponent StyleComponent { get; }
@@ -92,7 +97,7 @@ namespace DOL.GS.Scripts
         public IPropertyIndexer BaseBuffBonusCategory { get; }
         public IPropertyIndexer SpecBuffBonusCategory { get; }
         public IPropertyIndexer DebuffCategory { get; }
-        public IPropertyIndexer BuffBonusCategory4 { get; }
+        public IPropertyIndexer OtherBonus { get; }
 
         public GameObject TargetObject { get; set; }
 
@@ -104,7 +109,7 @@ namespace DOL.GS.Scripts
         public eActiveWeaponSlot ActiveWeaponSlot { get; }
 
         public DbInventoryItem ActiveLeftWeapon { get; }
-        
+
         public Lock XpGainersLock { get; set; }
         
         public bool HasShadeModel { get; }
@@ -113,6 +118,12 @@ namespace DOL.GS.Scripts
         public bool AutoSplitLoot { get; set; }
         public bool CanUseCrossRealmItems { get; }
         public int OutOfClassROGPercent { get; set; }
+
+        public bool IsEncumbered { get; }
+        public int MaxCarryingCapacity { get; }
+        public int PreviousInventoryWeight { get; set; }
+        public int PreviousMaxCarryingCapacity { get; set; }
+        public void UpdateEncumbrance(bool forced = false);
 
         public IControlledBrain ControlledBrain { get; set; }
 

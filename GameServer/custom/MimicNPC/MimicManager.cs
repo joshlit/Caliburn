@@ -405,6 +405,8 @@ namespace DOL.GS.Scripts
                         mimicBrain.PreventCombat = preventCombat;
                 }
 
+                mimic.movementComponent.MaxSpeedBase = GamePlayer.PLAYER_BASE_SPEED;
+
                 return mimic;
             }
 

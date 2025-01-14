@@ -45,11 +45,13 @@ namespace DOL.GS
         public RangeAttackComponent RangeAttackComponent { get { return rangeAttackComponent; } }
         public StyleComponent StyleComponent { get { return styleComponent; } }
         public EffectListComponent EffectListComponent { get { return effectListComponent; } }
-        public IPropertyIndexer ItemBonus { get; set; }
-        public IPropertyIndexer BaseBuffBonusCategory { get; }
-        public IPropertyIndexer SpecBuffBonusCategory { get; }
-        public IPropertyIndexer DebuffCategory { get; }
-        public IPropertyIndexer BuffBonusCategory4 { get; }
+        
+        public new IPropertyIndexer ItemBonus { get => base.ItemBonus; set => base.ItemBonus = (PropertyIndexer)value; }
+        public new IPropertyIndexer BaseBuffBonusCategory => base.BaseBuffBonusCategory;
+        public new IPropertyIndexer SpecBuffBonusCategory => base.SpecBuffBonusCategory;
+        public new IPropertyIndexer DebuffCategory => base.DebuffCategory;
+        public new IPropertyIndexer OtherBonus => base.OtherBonus;
+        
 
         private const int SECONDS_TO_QUIT_ON_LINKDEATH = 60;
 
@@ -478,7 +480,7 @@ namespace DOL.GS
             set { if (DBCharacter != null) DBCharacter.GuildNote = value; }
         }
 
-        public Lock XpGainersLock { get; set; }
+        public new Lock XpGainersLock { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the autoloot flag for this player
@@ -5445,8 +5447,10 @@ namespace DOL.GS
             if (IsAlive)
             {
                 // workaround for starting regeneration
-                StartHealthRegeneration();
-                StartPowerRegeneration();
+                if(Health < MaxHealth)
+                    StartHealthRegeneration();
+                if(Mana < MaxMana)
+                    StartPowerRegeneration();
             }
 
             DeathCount = 0;
@@ -6240,7 +6244,7 @@ namespace DOL.GS
                     eaf = eafcap;
                 eaf += (int)Math.Min(Level * 1.875, SpecBuffBonusCategory[(int)eProperty.ArmorFactor])
                        - DebuffCategory[(int)eProperty.ArmorFactor]
-                       + OtherBonus[(int)eProperty.ArmorFactor]
+                       + base.OtherBonus[(int)eProperty.ArmorFactor]
                        + Math.Min(Level, ItemBonus[(int)eProperty.ArmorFactor]);
 
                 eaf = (int)(eaf * BuffBonusMultCategory1.Get((int)eProperty.ArmorFactor));
@@ -7009,7 +7013,7 @@ namespace DOL.GS
             Out.SendDisableSkill(disables);
         }
 
-        public IPropertyIndexer AbilityBonus { get; }
+        public new IPropertyIndexer AbilityBonus => base.AbilityBonus;
 
         /// <summary>
         /// Grey out collection of skills on client for specified duration
@@ -9827,16 +9831,28 @@ namespace DOL.GS
 
         private int _previousInventoryWeight;
         private int _previousMaxCarryingCapacity;
+        
+        public int PreviousInventoryWeight
+        {
+            get => _previousInventoryWeight;
+            set { }
+        }
+
+        public int PreviousMaxCarryingCapacity
+        {
+            get => _previousMaxCarryingCapacity;
+            set { }
+        }
 
         public bool IsEncumbered { get; private set;}
-        public double MaxSpeedModifierFromEncumbrance { get; private set; }
+        public double MaxSpeedModifierFromEncumbrance { get; set; }
 
         public void UpdateEncumbrance(bool forced = false)
         {
             int inventoryWeight = Inventory.InventoryWeight;
             int maxCarryingCapacity = MaxCarryingCapacity;
 
-            if (!forced && _previousInventoryWeight == inventoryWeight && _previousMaxCarryingCapacity == maxCarryingCapacity)
+            if (!forced && PreviousInventoryWeight == inventoryWeight && PreviousMaxCarryingCapacity == maxCarryingCapacity)
                 return;
 
             double maxCarryingCapacityRatio = maxCarryingCapacity * 0.35;

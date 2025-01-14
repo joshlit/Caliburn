@@ -1,5 +1,6 @@
 using System;
 using DOL.AI.Brain;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -24,12 +25,12 @@ namespace DOL.GS.PropertyCalc
             else if (ServerProperties.Properties.EXPAND_WILD_MINION &&
                 living is GameNPC npc &&
                 npc.Brain is IControlledBrain brain &&
-                brain.GetPlayerOwner() is GamePlayer playerOwner)
+                brain.GetPlayerOwner() is IGamePlayer playerOwner)
             {
                 if (npc is NecromancerPet)
                     chance += 10;
 
-                if (playerOwner.GetAbility<RealmAbilities.AtlasOF_WildMinionAbility>() is RealmAbilities.AtlasOF_WildMinionAbility wildMinionAbility)
+                if (playerOwner.GetAbility<RealmAbilities.AtlasOF_WildMinionAbility>() is { } wildMinionAbility)
                     chance += wildMinionAbility.Amount;
             }
 

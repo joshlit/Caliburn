@@ -1,6 +1,7 @@
 using System;
 using DOL.GS.Keeps;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 
 namespace DOL.GS.PropertyCalc
@@ -44,6 +45,29 @@ namespace DOL.GS.PropertyCalc
                 result *= 1 + multiplicativeAbilityBonus * 0.01;
                 result += itemBonus + buffBonus + flatAbilityBonus;
                 return (int) result;
+            }
+            if (living is MimicNPC mimic  && mimic.Level > 1)
+            {
+                int hpBase = mimic.CalculateMaxHealth(mimic.Level, mimic.GetModified(eProperty.Constitution));
+                int buffBonus = mimic.BaseBuffBonusCategory[(int)property];
+
+                if (buffBonus < 0)
+                    buffBonus = (int)((1 + buffBonus / -100.0) * hpBase) - hpBase;
+
+                int itemBonus = mimic.ItemBonus[(int)property];
+                int cap = GetItemBonusCap(mimic) + GetItemBonusCapIncrease(mimic);
+                itemBonus = Math.Min(itemBonus, cap);
+
+                if (mimic.HasAbility(Abilities.ScarsOfBattle) && mimic.Level >= 40)
+                {
+                    int levelBonus = Math.Min(mimic.Level - 40, 10);
+                    hpBase = (int)(hpBase * (100 + levelBonus) * 0.01);
+                }
+
+                int abilityBonus = mimic.AbilityBonus[(int)property];
+                AtlasOF_ToughnessAbility toughness = mimic.GetAbility<AtlasOF_ToughnessAbility>();
+                double toughnessMod = toughness != null ? 1 + toughness.GetAmountForLevel(toughness.Level) * 0.01 : 1;
+                return Math.Max((int)(hpBase * toughnessMod) + itemBonus + buffBonus + abilityBonus, 1);
             }
             else if (living is GameKeepComponent keepComponent)
             {

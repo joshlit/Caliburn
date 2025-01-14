@@ -1,4 +1,5 @@
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -36,7 +37,7 @@ namespace DOL.GS.PropertyCalc
             regen += living.BaseBuffBonusCategory[(int) property] + living.AbilityBonus[(int) property] + living.ItemBonus[(int) property] - debuff;
 
             if (ServerProperties.Properties.MANA_REGEN_AMOUNT_HALVED_BELOW_50_PERCENT &&
-                living is GamePlayer player &&
+                living is IGamePlayer player &&
                 player.CharacterClass.ClassType is eClassType.ListCaster &&
                 player.ManaPercent < 50)
             {

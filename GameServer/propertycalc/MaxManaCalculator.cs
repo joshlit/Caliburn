@@ -1,4 +1,5 @@
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -18,8 +19,11 @@ namespace DOL.GS.PropertyCalc
 
         public override int CalcValue(GameLiving living, eProperty property) 
         {
-            if (living is not GamePlayer player)
+            if (living is not IGamePlayer player)
                 return 0;
+            
+            if (living is MimicNPC && living.Level == 1)
+                return 100;
 
             eStat manaStat;
 

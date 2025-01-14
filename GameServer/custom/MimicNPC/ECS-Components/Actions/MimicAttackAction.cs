@@ -4,6 +4,7 @@ using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 using DOL.GS.ServerProperties;
 using System;
+using DOL.Database;
 using static DOL.GS.GameObject;
 using static DOL.GS.NpcAttackAction;
 
@@ -32,7 +33,7 @@ namespace DOL.GS
         protected override bool PrepareMeleeAttack()
         {
             if (StyleComponent.NextCombatStyle == null)
-                _combatStyle = StyleComponent.MimicGetStyleToUse();
+                _combatStyle = StyleComponent.GetStyleToUse();
             else
                 _combatStyle = StyleComponent.NextCombatStyle;
 
@@ -101,18 +102,26 @@ namespace DOL.GS
                 _mimicOwner.TargetObject != null &&
                 _mimicOwner.IsWithinRadius(_target, 200))
             {
-                _mimicOwner.SwitchToMelee(_target);
+                SwitchToMeleeAndTick();
                 _interval = 0;
                 return false;
             }
 
             return base.FinalizeRangedAttack();
         }
+        
+        private void SwitchToMeleeAndTick()
+        {
+            if (_mimicOwner.ActiveWeaponSlot is not eActiveWeaponSlot.Distance)
+                return;
+
+            _mimicOwner.StartAttackWithMeleeWeapon(_target);
+        }
 
         public override void OnAimInterrupt(GameObject attacker)
         {
             if (_mimicOwner.HealthPercent < MIN_HEALTH_PERCENT_FOR_MELEE_SWITCH_ON_INTERRUPT)
-                _mimicOwner.SwitchToMelee(_target);
+                SwitchToMeleeAndTick();
         }
 
         protected override void CleanUp()
@@ -145,7 +154,7 @@ namespace DOL.GS
 
             if (_mimicOwner.attackComponent.AttackState)
             {
-                _mimicOwner.SwitchToMelee(_target);
+                SwitchToMeleeAndTick();
                 _interval = 0;
             }
         }

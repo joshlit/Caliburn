@@ -141,8 +141,8 @@ namespace DOL.GS
                 }
                 else if (spellEffect is not ECSImmunityEffect)
                     SendSpellAnimation(spellEffect);
-                if (e is StatDebuffECSEffect && spell.CastTime == 0)
-                    StatDebuffECSEffect.TryDebuffInterrupt(spell, e.Owner, caster);
+                if (e is StatDebuffECSEffect && spell.CastTime == 0 && e.Owner is IGamePlayer)
+                    StatDebuffECSEffect.TryDebuffInterrupt(spell, (IGamePlayer)e.Owner, caster);
             }
             else
                 e.OnStartEffect();
@@ -193,7 +193,7 @@ namespace DOL.GS
                     if (enableEffect != null && enableEffect.IsDisabled)
                         RequestEnableEffect(enableEffect);
                 }
-            }else if (e.Owner is MimicNPC mimic)
+            }else if (effect.Owner is MimicNPC mimic)
             {
                 if (mimic.Group != null)
                 {

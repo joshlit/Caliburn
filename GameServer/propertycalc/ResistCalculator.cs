@@ -1,4 +1,5 @@
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -25,8 +26,8 @@ namespace DOL.GS.PropertyCalc
             // Necromancer pets receive resistances from Avoidance of Magic and other active RAs.
             GameLiving livingToCheck;
 
-            if (living is NecromancerPet necroPet && necroPet.Owner is GamePlayer playerOwner)
-                livingToCheck = playerOwner;
+            if (living is NecromancerPet necroPet && necroPet.Owner is IGamePlayer playerOwner)
+                livingToCheck = (GameLiving)playerOwner;
             else
                 livingToCheck = living;
 
@@ -63,7 +64,7 @@ namespace DOL.GS.PropertyCalc
             result += (int) ((1 - result * 0.01) * abilityBonus); // Secondary resists.
 
             // Treat NPC resists from constitution buffs as another layer of resists for now.
-            if (living is GameNPC)
+            if (living is GameNPC and not MimicNPC)
             {
                 double resistanceFromConstitution = StatCalculator.CalculateBuffContributionToAbsorbOrResist(living, eProperty.Constitution) / 8 * 100;
                 result += (int) ((1 - result * 0.01) * resistanceFromConstitution);

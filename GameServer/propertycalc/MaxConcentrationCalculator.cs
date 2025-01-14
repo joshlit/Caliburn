@@ -18,6 +18,7 @@
  */
 using System;
 using System.Reflection;
+using DOL.GS.Scripts;
 using log4net;
 
 namespace DOL.GS.PropertyCalc
@@ -40,7 +41,7 @@ namespace DOL.GS.PropertyCalc
 		{
 			if (living is GamePlayer) 
 			{
-				GamePlayer player = living as GamePlayer;
+				IGamePlayer player = living as IGamePlayer;
 				if (player.CharacterClass.ManaStat == eStat.UNDEFINED) 
                     return 1000000;
 

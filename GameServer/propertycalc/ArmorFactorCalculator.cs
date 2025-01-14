@@ -1,5 +1,6 @@
 using System;
 using DOL.GS.Keeps;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -20,7 +21,7 @@ namespace DOL.GS.PropertyCalc
         {
             switch (living)
             {
-                case GamePlayer:
+                case IGamePlayer:
                 case GameTrainingDummy:
                     return CalculatePlayerArmorFactor(living, property);
                 case GameKeepDoor:

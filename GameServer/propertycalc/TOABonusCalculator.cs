@@ -1,4 +1,5 @@
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -31,8 +32,8 @@ namespace DOL.GS.PropertyCalc
         {
             GameLiving livingToCheck;
 
-            if (living is NecromancerPet necroPet && necroPet.Owner is GamePlayer playerOwner)
-                livingToCheck = playerOwner;
+            if (living is NecromancerPet necroPet && necroPet.Owner is IGamePlayer playerOwner)
+                livingToCheck = (GameLiving)playerOwner;
             else
                 livingToCheck = living;
 
@@ -84,8 +85,8 @@ namespace DOL.GS.PropertyCalc
         {
             GameLiving livingToCheck;
 
-            if (living is NecromancerPet necroPet && necroPet.Owner is GamePlayer playerOwner)
-                livingToCheck = playerOwner;
+            if (living is NecromancerPet necroPet && necroPet.Owner is IGamePlayer playerOwner)
+                livingToCheck = (GameLiving) playerOwner;
             else
                 livingToCheck = living;
 

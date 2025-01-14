@@ -19,6 +19,7 @@
 
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 
 namespace DOL.GS
 {
@@ -196,7 +197,7 @@ namespace DOL.GS
 			return true;
 		}
 
-		public override bool RiderDismount(bool forced, GamePlayer player)
+		public override bool RiderDismount(bool forced, IGamePlayer player)
 		{
 			if (!base.RiderDismount(forced, player))
 				return false;

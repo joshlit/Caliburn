@@ -1,5 +1,6 @@
 using System;
 using DOL.AI.Brain;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -39,7 +40,7 @@ namespace DOL.GS.PropertyCalc
 
             regen += living.BaseBuffBonusCategory[(int) property] + living.AbilityBonus[(int) property] + living.ItemBonus[(int)property] - debuff;
 
-            if (living is GameNPC npc)
+            if (living is GameNPC npc && npc is not MimicNPC)
             {
                 // Halved regeneration amount for NPCs in combat.
                 // NPCs (necromancer pets excluded) out of combat and without anything in their aggro list (so that it doesn't trigger when NPCs are being kited) get a huge bonus.
@@ -48,7 +49,7 @@ namespace DOL.GS.PropertyCalc
                 else if (npc is not NecromancerPet && (npc.Brain is not StandardMobBrain brain || !brain.HasAggro))
                     regen = npc.MaxHealth * 0.125;
             }
-            else if (living is GamePlayer)
+            else if (living is IGamePlayer)
             {
                 if (living.IsSitting)
                     regen *= 1.75;

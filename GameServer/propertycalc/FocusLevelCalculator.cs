@@ -1,4 +1,5 @@
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -20,7 +21,7 @@ namespace DOL.GS.PropertyCalc
 
         public override int CalcValue(GameLiving living, eProperty property)
         {
-            if (living is GamePlayer player)
+            if (living is IGamePlayer player)
             {
                 int itemBonus = player.ItemBonus[(int) property];
                 int focusLevel = player.BaseBuffBonusCategory[(int) property];

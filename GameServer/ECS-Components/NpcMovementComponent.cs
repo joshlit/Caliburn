@@ -37,6 +37,8 @@ namespace DOL.GS
         public GameLiving FollowTarget { get; private set; }
         public int FollowMinDistance { get; private set; } = 100;
         public int FollowMaxDistance { get; private set; } = 3000;
+        
+        public int MaxSpeedPercent => MaxSpeed * 100 / MaxSpeedBase;
         public string PathID { get; set; }
         public PathPoint CurrentWaypoint { get; set; }
         public bool IsReturningToSpawnPoint { get; private set; }

@@ -17,6 +17,7 @@
  *
  */
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -37,10 +38,8 @@ namespace DOL.GS.PropertyCalc
 		public override int CalcValue(GameLiving living, eProperty property) 
 		{
 //			DOLConsole.WriteSystem("calc skill prop "+property+":");
-			if (living is GamePlayer) 
+			if (living is IGamePlayer player) 
 			{
-				GamePlayer player = (GamePlayer)living;
-
 				int itemCap = player.Level/5+1;
 
 				int itemBonus = player.ItemBonus[(int)property];

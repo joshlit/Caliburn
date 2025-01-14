@@ -1,4 +1,5 @@
 using System;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.PropertyCalc
 {
@@ -24,6 +25,12 @@ namespace DOL.GS.PropertyCalc
 				endurance += (int)(endurance * (Math.Min(15, living.ItemBonus[(int)property]) * .01));
 				return endurance;
 			}
+            else if (living is MimicNPC)
+            {
+                int endurance = 100;
+                endurance += (int)(endurance * (Math.Min(15, living.ItemBonus[(int)property]) * .01));
+                return endurance;
+            }
 
 			return 100;
 		}
