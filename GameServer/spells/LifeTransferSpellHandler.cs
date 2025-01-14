@@ -12,7 +12,6 @@ namespace DOL.GS.Spells
 	[SpellHandler(eSpellType.LifeTransfer)]
     public class LifeTransferSpellHandler : SpellHandler
     {
-        // constructor
         public LifeTransferSpellHandler(GameLiving caster, Spell spell, SpellLine line) : base(caster, spell, line) { }
 
         /// <summary>

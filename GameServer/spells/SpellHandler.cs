@@ -38,6 +38,7 @@ namespace DOL.GS.Spells
 		protected bool HasLos { get; private set; }
 		protected double DistanceFallOff { get; private set; }
 		protected double CasterEffectiveness { get; private set; } = 1.0; // Needs to default to 1 since some spell handlers override `StartSpell`, preventing it from being set.
+		protected virtual bool IsDualComponentSpell => false; // Dual component spells have a higher chance to be resisted.
 
 		protected Spell m_spell;
 		protected SpellLine m_spellLine;
@@ -1102,16 +1103,7 @@ namespace DOL.GS.Spells
                             if (!CheckEndCast(Target))
                                 CastState = eCastState.Interrupted;
                             else
-                            {
-                                // Unsure about  Calling 'SendCastAnimation' on non-harmful instant spells plays an annoying deep hum that overlaps with the
-                                // sound of the spell effect (but is fine to have on harmful ones). For certain spells (like Skald's resist chants) it instead
-                                // plays the audio of the spell effect a second time.
-                                // It may prevent certain animations from playing, but I don't think there's any non-harmful instant spell with a casting animation.
-                                if (Spell.IsHarmful)
-                                    SendCastAnimation(0);
-
                                 CastState = eCastState.Finished;
-                            }
                         }
                         else
                         {
@@ -2425,7 +2417,12 @@ namespace DOL.GS.Spells
 			 */
 
 			// 12.5% resist rate based on live tests done for Uthgard.
-			double hitChance = 87.5 + (spellLevel - target.Level) / 2.0;
+			double hitChance = 87.5;
+
+			if (IsDualComponentSpell)
+				hitChance -= 2.5;
+
+			hitChance += (spellLevel - target.Level) / 2.0;
 			hitChance += m_caster.GetModified(eProperty.ToHitBonus);
 
 			if (playerCaster == null || target is not IGamePlayer)
