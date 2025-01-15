@@ -8991,6 +8991,7 @@ namespace DOL.GS.Scripts
             }
             set
             {
+                if(m_controlledBrain == null) InitControlledBrainArray(1);
                 m_controlledBrain[0] = value;
             }
         }
