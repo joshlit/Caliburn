@@ -1782,12 +1782,12 @@ namespace DOL.GS
                 DbInventoryItem rightHand = source.ActiveWeapon;
                 DbInventoryItem leftHand = source.ActiveLeftWeapon;
 
-                if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || (eObjectType) leftHand.Object_Type is not eObjectType.Shield) && source is not GameNPC)
+                if (((rightHand != null && rightHand.Hand == 1) || leftHand == null || (eObjectType) leftHand.Object_Type is not eObjectType.Shield) && ( source is not GameNPC || source is MimicNPC))
                     continue;
-
+                
                 double guardChance;
 
-            if (source is GameNPC && source is not MimicNPC)
+                if (source is GameNPC && source is not MimicNPC)
                     guardChance = source.GetModified(eProperty.BlockChance);
                 else
                     guardChance = source.GetModified(eProperty.BlockChance) * (leftHand.Quality * 0.01) * (leftHand.Condition / (double) leftHand.MaxCondition);

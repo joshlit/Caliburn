@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DOL.Events;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
@@ -63,11 +64,8 @@ namespace DOL.GS
 
                 gamePlayer.Sprint(false);
 
-                foreach (GamePlayer player in OwnerPlayer.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                {
-                    if (player != OwnerPlayer && !player.CanDetect(OwnerPlayer))
-                        player.Out.SendObjectDelete(OwnerPlayer);
-                }
+                foreach (var player in Owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE).Where(player => player != Owner && !player.CanDetect(Owner)))
+                    player.Out.SendObjectDelete(Owner);
 
                 StealthStateChanged();
             }
