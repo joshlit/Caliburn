@@ -31,7 +31,7 @@ using static DOL.GS.GamePlayer;
 
 namespace DOL.GS.Scripts
 {
-    public class MimicNPC : GameNPC, IGamePlayer
+    public class MimicNPC : GameNPC, IGamePlayer, IGameStaticItemOwner
     {
         private DummyPacketLib _dummyLib;
         private DummyClient _dummyClient;
@@ -9187,5 +9187,25 @@ namespace DOL.GS.Scripts
         }
 
         #endregion ControlledNpc
+
+        public bool TryAutoPickUpMoney(GameMoney money)
+        {
+            return Autoloot && TryPickUpMoney(this, money) is IGameStaticItemOwner.TryPickUpResult.SUCCESS;
+        }
+
+        public bool TryAutoPickUpItem(WorldInventoryItem item)
+        {
+            return Autoloot && TryPickUpItem(this, item) is IGameStaticItemOwner.TryPickUpResult.SUCCESS;
+        }
+
+        public IGameStaticItemOwner.TryPickUpResult TryPickUpMoney(IGamePlayer source, GameMoney money)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IGameStaticItemOwner.TryPickUpResult TryPickUpItem(IGamePlayer source, WorldInventoryItem item)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

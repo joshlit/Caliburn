@@ -10753,7 +10753,7 @@ namespace DOL.GS
             return Autoloot && TryPickUpItem(this, inventoryItem) is TryPickUpResult.SUCCESS;
         }
 
-        public TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money)
+        public TryPickUpResult TryPickUpMoney(IGamePlayer source, GameMoney money)
         {
             if (this != source)
             {
@@ -10775,7 +10775,7 @@ namespace DOL.GS
             return TryPickUpResult.SUCCESS;
         }
 
-        public TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item)
+        public TryPickUpResult TryPickUpItem(IGamePlayer source, WorldInventoryItem item)
         {
             if (this != source)
             {

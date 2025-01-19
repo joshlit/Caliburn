@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using DOL.Database;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.Language;
 using static DOL.GS.IGameStaticItemOwner;
 
@@ -300,13 +301,13 @@ namespace DOL.GS
 			return TryPickUpItem(battlegroupTreasurer, worldItem) is not TryPickUpResult.CANNOT_HANDLE;
 		}
 
-		public TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money)
+		public TryPickUpResult TryPickUpMoney(IGamePlayer source, GameMoney money)
 		{
 			// Splitting money in a battlegroup could cause performance issues. Let it fallback to group then solo logic.
 			return TryPickUpResult.CANNOT_HANDLE;
 		}
 
-		public TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item)
+		public TryPickUpResult TryPickUpItem(IGamePlayer source, WorldInventoryItem item)
 		{
 			// A battlegroup is only able to pick up items if it has a treasurer, otherwise it's supposed to fallback to group then solo logic.
 			// There is no range check. If you're in a BG, every item goes to the treasurer or stay on the ground.
@@ -321,7 +322,7 @@ namespace DOL.GS
 			}
 
 			battlegroupTreasurer.Out.SendMessage(LanguageMgr.GetTranslation(battlegroupTreasurer.Client.Account.Language, "GamePlayer.PickupObject.YouGet", item.Item.GetName(1, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			Message.SystemToOthers(source, LanguageMgr.GetTranslation(battlegroupTreasurer.Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, item.Item.GetName(1, false)), eChatType.CT_System);
+			Message.SystemToOthers((GameLiving)source, LanguageMgr.GetTranslation(battlegroupTreasurer.Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, item.Item.GetName(1, false)), eChatType.CT_System);
 			item.RemoveFromWorld();
 			return TryPickUpResult.SUCCESS;
 

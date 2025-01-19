@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Scripts;
 using DOL.Language;
 
 namespace DOL.GS
@@ -405,8 +406,8 @@ namespace DOL.GS
 		string Name { get; }
 		bool TryAutoPickUpMoney(GameMoney money);
 		bool TryAutoPickUpItem(WorldInventoryItem item);
-		TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money); // Expected to return false only if the object shouldn't try to pick up the item at all.
-		TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item); // Expected to return false only if the object shouldn't try to pick up the item at all.
+		TryPickUpResult TryPickUpMoney(IGamePlayer source, GameMoney money); // Expected to return false only if the object shouldn't try to pick up the item at all.
+		TryPickUpResult TryPickUpItem(IGamePlayer source, WorldInventoryItem item); // Expected to return false only if the object shouldn't try to pick up the item at all.
 
 		enum TryPickUpResult
 		{

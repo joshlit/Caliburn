@@ -13,7 +13,7 @@ using static DOL.GS.GamePlayer;
 
 namespace DOL.GS.Scripts
 {
-    public interface IGamePlayer
+    public interface IGamePlayer : IGameStaticItemOwner
     {
         public IPacketLib Out { get; }
         public GameClient Client { get; }

@@ -753,6 +753,9 @@ namespace DOL.GS
 
             if (CommanderType != eCommanderType.DreadGuardian && CommanderType != eCommanderType.DreadLich)
                 return;
+            
+            if(HarmfulSpells == null)
+                HarmfulSpells = new List<Spell>();
 
             CommSpellDamage = null;
             CommSpellDamageDebuff = null;

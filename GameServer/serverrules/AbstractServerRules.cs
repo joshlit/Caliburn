@@ -1014,7 +1014,7 @@ namespace DOL.GS.ServerRules
 		{
 			if (!ProcessXpGainers(killedNpc,
 				out double totalDamage,
-				out Dictionary<GamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
+				out Dictionary<IGamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
 				out ItemOwnerTotalDamagePair mostDamagingPlayer,
 				out Dictionary<Group, EntityCountTotalDamagePair> groupCountAndDamage,
 				out ItemOwnerTotalDamagePair mostDamagingGroup,
@@ -1037,7 +1037,9 @@ namespace DOL.GS.ServerRules
 			// Let `AwardExperience` fetch players that are in a group or a BG but didn't attack the target, and decide how experience should be shared.
 			foreach (var pair in playerCountAndDamage)
 			{
-				GamePlayer player = pair.Key;
+				GamePlayer player = pair.Key as GamePlayer;
+                if(player == null)
+                    continue;
 				AwardExperience(player, totalDamage, killedNpc, playerCountAndDamage, groupCountAndDamage, battlegroupCountAndDamage);
 				killedNpc.Faction?.OnMemberKilled(player);
 
@@ -1087,7 +1089,7 @@ namespace DOL.GS.ServerRules
 
 			static bool ProcessXpGainers(GameNPC killedNpc,
 				out double totalDamage,
-				out Dictionary<GamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
+				out Dictionary<IGamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
 				out ItemOwnerTotalDamagePair mostDamagingPlayer,
 				out Dictionary<Group, EntityCountTotalDamagePair> groupCountAndDamage,
 				out ItemOwnerTotalDamagePair mostDamagingGroup,
@@ -1117,7 +1119,7 @@ namespace DOL.GS.ServerRules
 						return false;
 
 					// We only care about players in range.
-					if (pair.Key is not GamePlayer player || player.ObjectState is not GameObject.eObjectState.Active || !player.IsWithinRadius(killedNpc, WorldMgr.MAX_EXPFORKILL_DISTANCE))
+					if (pair.Key is not IGamePlayer player || player.ObjectState is not GameObject.eObjectState.Active || !player.IsWithinRadius(killedNpc, WorldMgr.MAX_EXPFORKILL_DISTANCE))
 						continue;
 
 					ProcessDamage(player, pair.Value, player, mostDamagingPlayer, playerCountAndDamage);
@@ -1143,7 +1145,7 @@ namespace DOL.GS.ServerRules
 
 				return true;
 
-				static void ProcessDamage<T>(GamePlayer player, double damage, T entity, ItemOwnerTotalDamagePair mostDamagingEntity, Dictionary<T, EntityCountTotalDamagePair> entityDamage) where T : class, IGameStaticItemOwner
+				static void ProcessDamage<T>(IGamePlayer player, double damage, T entity, ItemOwnerTotalDamagePair mostDamagingEntity, Dictionary<T, EntityCountTotalDamagePair> entityDamage) where T : class, IGameStaticItemOwner
 				{
 					double totalDamage;
 
@@ -1177,7 +1179,7 @@ namespace DOL.GS.ServerRules
 		public virtual void AwardExperience(GamePlayer playerToAward,
 			double npcTotalDamageReceived,
 			GameNPC killedNpc,
-			Dictionary<GamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
+			Dictionary<IGamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
 			Dictionary<Group, EntityCountTotalDamagePair> groupCountAndDamage,
 			Dictionary<BattleGroup, EntityCountTotalDamagePair> battlegroupCountAndDamage)
 		{
@@ -1290,7 +1292,7 @@ namespace DOL.GS.ServerRules
 				if (memberCount <= 1)
 					return killedNpc.ExperienceValue;
 
-				GamePlayer highestLevelPlayer = entityCountTotalDamagePair.HighestLevelPlayer;
+				IGamePlayer highestLevelPlayer = entityCountTotalDamagePair.HighestLevelPlayer;
 
 				/*
 					* http://www.camelotherald.com/more/110.shtml

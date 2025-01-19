@@ -210,7 +210,7 @@ namespace DOL.GS.ServerRules
 		void AwardExperience(GamePlayer player,
 			double npcTotalDamageReceived,
 			GameNPC killedNpc,
-			Dictionary<GamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
+			Dictionary<IGamePlayer, EntityCountTotalDamagePair> playerCountAndDamage,
 			Dictionary<Group, EntityCountTotalDamagePair> groupCountAndDamage,
 			Dictionary<BattleGroup, EntityCountTotalDamagePair> battlegroupCountAndDamage);
 
@@ -451,11 +451,11 @@ namespace DOL.GS.ServerRules
 		/// </summary>
 		void OnPlayerLevelUp(GamePlayer player, int previousLevel);
 
-		public class EntityCountTotalDamagePair(int count, double damage, GamePlayer highestLevelPlayer)
+		public class EntityCountTotalDamagePair(int count, double damage, IGamePlayer highestLevelPlayer)
 		{
 			public int Count { get; set; } = count;
 			public double Damage { get; set; } = damage;
-			public GamePlayer HighestLevelPlayer { get; set; } = highestLevelPlayer;
+			public IGamePlayer HighestLevelPlayer { get; set; } = highestLevelPlayer;
 		}
 	}
 }

@@ -652,7 +652,7 @@ namespace DOL.GS
 			return TryPickUpItem((GamePlayer)Leader, inventoryItem) is not IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
 		}
 
-		public IGameStaticItemOwner.TryPickUpResult TryPickUpMoney(GamePlayer source, GameMoney money)
+		public IGameStaticItemOwner.TryPickUpResult TryPickUpMoney(IGamePlayer source, GameMoney money)
 		{
 			if (!AutosplitCoins)
 				return IGameStaticItemOwner.TryPickUpResult.CANNOT_HANDLE;
@@ -695,7 +695,7 @@ namespace DOL.GS
 			}
 		}
 
-		public IGameStaticItemOwner.TryPickUpResult TryPickUpItem(GamePlayer source, WorldInventoryItem item)
+		public IGameStaticItemOwner.TryPickUpResult TryPickUpItem(IGamePlayer source, WorldInventoryItem item)
 		{
 			// A group is only able to pick up items if auto split is enabled. Otherwise, solo logic should apply.
 			// Group members are filtered to exclude far away players or players with auto split solo enabled.
@@ -722,9 +722,9 @@ namespace DOL.GS
 			if (!GiveItemToRandomEligibleMember(eligibleMembers, item.Item, out GamePlayer eligibleMember))
 				return IGameStaticItemOwner.TryPickUpResult.FAILED;
 
-			Message.SystemToOthers(source, LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, item.Item.GetName(1, false)), eChatType.CT_System);
+			Message.SystemToOthers((GameLiving)source, LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, item.Item.GetName(1, false)), eChatType.CT_System);
 			SendMessageToGroupMembers(LanguageMgr.GetTranslation(source.Client.Account.Language, "GamePlayer.PickupObject.Autosplit", item.Item.GetName(1, true), eligibleMember.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			InventoryLogging.LogInventoryAction("(ground)", source, eInventoryActionType.Loot, item.Item.Template, item.Item.IsStackable ? item.Item.Count : 1);
+			InventoryLogging.LogInventoryAction("(ground)",(GameLiving) source, eInventoryActionType.Loot, item.Item.Template, item.Item.IsStackable ? item.Item.Count : 1);
 			item.RemoveFromWorld();
 			return IGameStaticItemOwner.TryPickUpResult.SUCCESS;
 
