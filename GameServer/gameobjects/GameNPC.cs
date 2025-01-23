@@ -3762,7 +3762,7 @@ namespace DOL.GS
             if (m_styles == null)
                 return;
 
-            foreach (Style s in m_styles)
+            foreach (Style s in m_styles.ToArray())
             {
 				if (s == null)
 				{
