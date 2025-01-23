@@ -678,6 +678,17 @@ namespace DOL.GS.Scripts
             return true;
         }
 
+        private List<Style> m_styles = [];
+        public new List<Style> Styles
+        {
+            get => m_styles;
+            set
+            {
+                m_styles = value;
+                SortStyles();
+            }
+        }
+
         public override bool SayReceive(GameLiving source, string str)
         {
             if (source == null || str == null)
