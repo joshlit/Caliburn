@@ -2,6 +2,7 @@
 using DOL.GS.PacketHandler;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace DOL.GS.Scripts
@@ -36,6 +37,8 @@ namespace DOL.GS.Scripts
         public int MaxGroupSize => base.Charisma;
 
         Group mimicGroup = null;
+
+        bool deleteAllOnNextTick = false;
       
         private int TimerCallback(ECSGameTimer timer)
         {
@@ -55,8 +58,33 @@ namespace DOL.GS.Scripts
             if (_mimics.Count >= SpawnMax)
                 return interval;
 
+            var playersInRegion = ClientService.GetPlayersOfRegion(CurrentRegion).Where(a => a.Client != null && a.Client.Account?.PrivLevel == (uint)ePrivLevel.Player).ToList();
+            if (!HasIgnorePlayerCheck && playersInRegion.Count == 0)
+            {
+                if (deleteAllOnNextTick)
+                {
+                    if (Mimics.Count > 0)
+                    {
+                        log.Info($"MimicSpawner {this.Name} deleting {Mimics.Count} mimics! There's been nothing in this region for 1 minutes");
+                    }   
+                    foreach (var mimic in Mimics.ToList())
+                    {
+                        mimic.RemoveFromWorld();
+                        mimic.Delete();
+                        Remove(mimic);
+                    }
+                    deleteAllOnNextTick = false;
+                }
+                else
+                {
+                    deleteAllOnNextTick = true;
+                    log.Info($"MimicSpawner {this.Name} has nothing in region, going to sleep for 1mins");
+                }
+                return 1000 * 60 * 5;
+            }
+
             //handle groups
-            if (MinGroupSize > 1 && MaxGroupSize > 1)
+            if (MinGroupSize >= 1 && MaxGroupSize > 1)
             {
 
                 int grpCount = Util.Random(MinGroupSize,  MaxGroupSize > MinGroupSize ? MaxGroupSize : MinGroupSize);
@@ -262,6 +290,13 @@ namespace DOL.GS.Scripts
             return base.IsVisibleTo(checkObject);
         }
 
+        public bool HasIgnorePlayerCheck
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(PackageID) && PackageID.Contains("IGNORE_PLAYERCHECK");
+            }
+        }
         public override bool Interact(GamePlayer player)
         {
             if (!base.Interact(player))
@@ -276,6 +311,7 @@ namespace DOL.GS.Scripts
         public int MinGroupSize => base.Constitution;
         public int MaxGroupSize => base.Charisma;*/
 
+             
             player.Out.SendMessage(
                 "---------------------------------------\n" +
                 $"Realm: {this.Realm} (Realm)\n" +
@@ -285,6 +321,7 @@ namespace DOL.GS.Scripts
                 $"SpawnMax: {base.Quickness} (Quickness)\n" +
                 $"MinGroupSize: {base.Constitution} (Constitution)\n" +
                 $"MaxGroupSize: {base.Charisma} (Charisma)\n" +
+                $"IgnorePlayerCheck: {HasIgnorePlayerCheck} (add IGNORE_PLAYERCHECK to packageid)\n" +
                 "\n" +
                 "Running: " + _timer.IsAlive + "\n" +
                 "Spawns: " + _mimics.Count + "/" + SpawnMax + "\n\n" +
