@@ -11,6 +11,7 @@ using DOL.GS.SkillHandler;
 using DOL.GS.Spells;
 using DOL.GS.Styles;
 using DOL.Language;
+using DOL.GS.ReGoap.Mimic;
 using log4net;
 using Microsoft.VisualBasic;
 using System;
@@ -33,6 +34,60 @@ namespace DOL.AI.Brain
         public override bool IsActive => Body != null && Body.IsAlive && Body.ObjectState == GameObject.eObjectState.Active;
 
         public bool IsHealer = false;
+
+        public MimicReGoapAgent GoapAgent { get; private set; }
+        public volatile bool GoapEnabled = true;
+        private bool _goapSelectingSpell;
+
+        public virtual bool TryGoap(MimicDecisionContext context)
+        {
+            if (!IsActive || MimicBody == null)
+                return false;
+            GoapAgent ??= new MimicReGoapAgent(MimicBody, this);
+            // Commands only change the flag; all agent mutations stay on this thread.
+            if (GoapEnabled != GoapAgent.IsEnabled())
+            {
+                if (GoapEnabled) GoapAgent.Enable();
+                else GoapAgent.Disable();
+            }
+            return GoapAgent.TryThink(context);
+        }
+
+        public void SelectGoapAttackTarget()
+        {
+            if (!CheckMainTankTarget())
+                Body.TargetObject = CalculateNextAttackTarget();
+        }
+
+        public bool ExecuteGoapSpell(eCheckSpellType type)
+        {
+            // Preserve derived class overrides, but let GOAP choose when to heal.
+            _goapSelectingSpell = true;
+            try
+            {
+                if (type == eCheckSpellType.CrowdControl)
+                {
+                    var group = Body.Group?.MimicGroup;
+                    if (group == null) return false;
+                    group.CCTargets.RemoveAll(t => t == null || !t.IsAlive || t.IsMezzed || t.IsStunned
+                        || t.IsRooted || t == group.CurrentTarget || t.CurrentRegion != Body.CurrentRegion || !CanAggroTarget(t));
+                    if (group.CCTargets.Count == 0) return false;
+                }
+                if (type == eCheckSpellType.Offensive)
+                    Body.ControlledBrain?.Attack(Body.TargetObject);
+                bool result = CheckSpells(type);
+                if (result && type == eCheckSpellType.Offensive)
+                    Body.StopAttack();
+                return result || Body.IsCasting;
+            }
+            finally { _goapSelectingSpell = false; }
+        }
+
+        public bool ExecuteGoapEngagement()
+        {
+            AttackSelectedTarget(false);
+            return Body.IsAttacking || Body.IsMoving || Body.IsCasting;
+        }
 
         public bool IsMainPuller { get { return Body.Group?.MimicGroup.MainPuller == Body; } }
 
@@ -106,6 +161,7 @@ namespace DOL.AI.Brain
             // tolakram - when the brain stops, due to either death or no players in the vicinity, clear the aggro list
             if (base.Stop())
             {
+                GoapAgent?.ClearPlan();
                 ClearAggroList();
                 return true;
             }
@@ -115,6 +171,7 @@ namespace DOL.AI.Brain
 
         public override void KillFSM()
         {
+            GoapAgent?.Disable();
             FSM.KillFSM();
         }
 
@@ -620,7 +677,7 @@ namespace DOL.AI.Brain
             if (LastTargetObject != null && LastTargetObject.ObjectState == GameObject.eObjectState.Active)
                 return true;
 
-            if (CheckSpells(eCheckSpellType.Defensive) || MimicBody.Sit(CheckStats(75)))
+            if (TryGoap(MimicDecisionContext.Support) || CheckSpells(eCheckSpellType.Defensive) || MimicBody.Sit(CheckStats(75)))
                 return true;
 
             if (Body.Group != null &&
@@ -707,7 +764,7 @@ namespace DOL.AI.Brain
 
         public bool CheckDelayRoam()
         {
-            if (Body.IsCasting || CheckSpells(eCheckSpellType.Defensive) || MimicBody.Sit(CheckStats(75)))
+            if (Body.IsCasting || TryGoap(MimicDecisionContext.Support) || CheckSpells(eCheckSpellType.Defensive) || MimicBody.Sit(CheckStats(75)))
                 return true;
 
             if (Body.Group != null &&
@@ -941,12 +998,17 @@ namespace DOL.AI.Brain
             if (!CheckMainTankTarget())
                 Body.TargetObject = CalculateNextAttackTarget();
 
+            AttackSelectedTarget(true);
+        }
+
+        private void AttackSelectedTarget(bool allowSpellSelection)
+        {
             if (Body.TargetObject != null)
             {
                 if (Body.ControlledBrain != null)
                     Body.ControlledBrain.Attack(Body.TargetObject);
 
-                if (!IsFleeing && CheckSpells(eCheckSpellType.Offensive))
+                if (allowSpellSelection && !IsFleeing && CheckSpells(eCheckSpellType.Offensive))
                 {
                     Body.StopAttack();
                 }
@@ -1454,7 +1516,7 @@ namespace DOL.AI.Brain
             List<Spell> spellsToCast = new();
 
             // Healers should heal whether in combat or out of it.
-            if (CheckHeals())
+            if (!_goapSelectingSpell && CheckHeals())
                 return true;
 
             if (!casted && type == eCheckSpellType.CrowdControl)
