@@ -450,14 +450,14 @@ namespace DOL.Tests
 			if (SendCloseTradeWindowMethod != null) SendCloseTradeWindowMethod(this);
 		}
 		public Action<TestPacketLib, GameLiving, GameObject> SendPlayerDiedMethod { get; set; }
-		public void SendPlayerDied(GameLiving killedPlayer, GameObject killer)
+		public void SendPlayerDied(GameLiving killedLiving, GameObject killer)
 		{
-			if (SendPlayerDiedMethod != null) SendPlayerDiedMethod(this, killedPlayer, killer);
+			if (SendPlayerDiedMethod != null) SendPlayerDiedMethod(this, killedLiving, killer);
 		}
 		public Action<TestPacketLib, GameLiving> SendPlayerReviveMethod { get; set; }
-		public void SendPlayerRevive(GameLiving revivedPlayer)
+		public void SendPlayerRevive(GameLiving revivedLiving)
 		{
-			if (SendPlayerReviveMethod != null) SendPlayerReviveMethod(this, revivedPlayer);
+			if (SendPlayerReviveMethod != null) SendPlayerReviveMethod(this, revivedLiving);
 		}
 		public Action<TestPacketLib> SendUpdatePlayerMethod { get; set; }
 		public void SendUpdatePlayer()

@@ -714,8 +714,8 @@ namespace DOL.GS.PacketHandler
 		void SendMerchantWindow(MerchantTradeItems itemlist, eMerchantWindowType windowType);
 		void SendTradeWindow();
 		void SendCloseTradeWindow();
-		void SendPlayerDied(GameLiving killedPlayer, GameObject killer);
-		void SendPlayerRevive(GameLiving revivedPlayer);
+		void SendPlayerDied(GameLiving killedLiving, GameObject killer);
+		void SendPlayerRevive(GameLiving revivedLiving);
 		void SendUpdatePlayer();
 		void SendUpdatePlayerSkills();
 		void SendUpdateWeaponAndArmorStats();

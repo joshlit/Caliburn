@@ -21,6 +21,7 @@ namespace DOL.GS.ReGoap.Mimic
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(MimicReGoapAgent));
         private readonly ReGoapPlanner<string, object> _planner = new();
+        private readonly System.Diagnostics.Stopwatch _phaseWatch = new();
         private bool _initialized;
         private bool _enabled = true;
         private long _retryAt;
@@ -32,6 +33,10 @@ namespace DOL.GS.ReGoap.Mimic
         public string LastGoal { get; private set; } = "None";
         public string LastAction { get; private set; } = "None";
         public string Status { get; private set; } = "Not yet ticked";
+        /// <summary>Last think's milliseconds in sensors / planner. Diagnostics only;
+        /// decisions never depend on them. Reset to 0 when a think does no work.</summary>
+        public long LastSenseMs { get; private set; }
+        public long LastPlanMs { get; private set; }
 
         public MimicReGoapAgent(MimicNPC body, MimicBrain brain)
         {
@@ -54,7 +59,20 @@ namespace DOL.GS.ReGoap.Mimic
             AddGoal(new EmergencyHealGoal(Body, Brain));
             AddGoal(new HealGroupGoal(Body, Brain));
             AddGoal(new CureGroupGoal(Body, Brain));
+            AddGoal(new ResurrectGoal(Body, Brain));
+            AddGoal(new ResurrectOutsiderGoal(Body, Brain));
+            AddGoal(new PurgeGoal(Body, Brain));
             AddGoal(new ControlAddsGoal(Body, Brain));
+            AddGoal(new InterruptEnemyCasterGoal(Body, Brain));
+            AddGoal(new AssistTrainGoal(Body, Brain));
+            AddGoal(new TargetCallerGoal(Body, Brain));
+            AddGoal(new ProtectGroupGoal(Body, Brain));
+            AddGoal(new GuardHealerGoal(Body, Brain));
+            AddGoal(new QuickcastRecoveryGoal(Body, Brain));
+            AddGoal(new KiteGoal(Body, Brain));
+            AddGoal(new DebuffPriorityGoal(Body, Brain));
+            AddGoal(new PositionalStyleGoal(Body, Brain));
+            AddGoal(new ArrowTypeGoal(Body, Brain));
             AddGoal(new DealDamageGoal(Body, Brain));
             AddGoal(new BuffMaintenanceGoal(Body, Brain));
             MimicTacticalAction.Register(this);
@@ -63,6 +81,8 @@ namespace DOL.GS.ReGoap.Mimic
 
         public bool TryThink(MimicDecisionContext context)
         {
+            LastSenseMs = 0;
+            LastPlanMs = 0;
             if (!_enabled || GameLoop.GameLoopTime < _retryAt)
                 return Fallback(_enabled ? "Error retry delay" : "Disabled");
             try
@@ -71,25 +91,15 @@ namespace DOL.GS.ReGoap.Mimic
                 if (sensors.Count == 0 || goals.Count == 0 || actions.Count == 0)
                     return Fallback("Missing sensors, goals or actions");
                 if (!Brain.IsActive) return Fallback("Inactive body");
-                // The FSM owns the flee destination and its recovery. Let it finish
-                // that movement instead of alternating casts and attack orders.
-                if (context == MimicDecisionContext.Combat && !Brain.IsHealer && Body.Group == null &&
-                    Body.CharacterClass.ClassType == eClassType.ListCaster &&
-                    (Brain.IsFleeing || Body.IsBeingInterrupted))
-                    return Fallback("Caster kiting");
-                if (context != MimicDecisionContext.Combat && Brain.TryResurrectGroupMember())
-                {
-                    LastGoal = "ResurrectGroupMember";
-                    LastAction = "CastResurrection";
-                    Decisions++;
-                    Status = "GOAP";
-                    return true;
-                }
                 Context = context;
                 if (context == MimicDecisionContext.Combat && !Brain.PreventCombat && !Brain.IsHealer)
                     Brain.SelectGoapAttackTarget();
                 // Fail closed on sensor exceptions: never use stale data.
+                _phaseWatch.Restart();
                 UpdateSensors();
+                _phaseWatch.Stop();
+                LastSenseMs = _phaseWatch.ElapsedMilliseconds;
+                LastPlanMs = 0;
                 ClearPlan();
                 var available = actions.ToArray();
                 try
@@ -98,7 +108,11 @@ namespace DOL.GS.ReGoap.Mimic
                     // allow a failed spell to yield to engagement without recursion.
                     for (int attempt = 0; attempt < available.Length; attempt++)
                     {
-                        if (!TryPlan(_planner)) return Fallback("No achievable active goal");
+                        _phaseWatch.Restart();
+                        bool planned = TryPlan(_planner);
+                        _phaseWatch.Stop();
+                        LastPlanMs += _phaseWatch.ElapsedMilliseconds;
+                        if (!planned) return Fallback("No achievable active goal");
                         LastGoal = currentGoal.GetName();
                         var action = currentPlan.Peek();
                         LastAction = action.GetName();
@@ -133,6 +147,8 @@ namespace DOL.GS.ReGoap.Mimic
             ClearPlan();
             Fallbacks++;
             Status = "FSM: " + reason;
+            LastGoal = "None";
+            LastAction = "None";
             return false;
         }
 
@@ -142,6 +158,7 @@ namespace DOL.GS.ReGoap.Mimic
         public string GetDebugInfo() =>
             $"AI: {Status}\nEnabled: {_enabled}\nGOAP decisions: {Decisions}; fallback decisions: {Fallbacks}\n" +
             $"Last goal: {LastGoal}\nLast action: {LastAction}\n" +
+            $"Last think: sense {LastSenseMs}ms; plan {LastPlanMs}ms\n" +
             $"Sensors: {sensors.Count}; goals: {goals.Count}; actions: {actions.Count}";
     }
 }

@@ -10,6 +10,12 @@ following, camping, pulling, resting, duel readiness, aggro discovery, combat
 entry/exit, and death/respawn retain their existing state handling. Skipping that
 handling whenever a plan exists would strand bots in stale states.
 
+Group roles (tank/assist/CC/puller) default to the leader at formation and are
+re-elected to the most capable bot whenever membership changes: Guard holders
+tank, mez-casters CC, nukers assist, bow-holders pull, heal-capable bots are
+flagged healers until covered. `/mrole` locks a role and `/mheal` locks the
+healer flag; manual choice always wins. Players are never assigned or demoted.
+
 ## Registered behavior
 
 | Goal | Action/mechanics |
@@ -17,12 +23,25 @@ handling whenever a plan exists would strand bots in stale states.
 | EmergencyHealGoal | HealOrCure; existing emergency, instant and group healing selection |
 | HealGroupGoal | HealOrCure; includes solo self-healing, power/cooldowns, range movement and group coordination |
 | CureGroupGoal | HealOrCure; existing mezz/disease/poison curing rules |
+| ResurrectGoal | CastRez; dead group member in rez range, same realm per engine rules; 15 calm, 25 battle-rez only when the cast is safe (caster clear, corpse nearly alone); manual /mrez wins |
+| ResurrectOutsiderGoal | CastRezOutside; dead stranger in rez range, same realm; only when the own group is fully calm; opt-in via "/mrez outside" |
+| PurgeGoal | UsePurge; self-purge when mezzed/stunned/rooted with Purge ready; bought automatically like all class RAs |
 | ControlAddsGoal | ControlAdd; main CC's valid queued adds, including a single remaining add |
+| InterruptEnemyCasterGoal | InterruptCaster; melee pressure first, else one offensive-spell tick |
+| AssistTrainGoal | FollowAssist; non-assist members take the main assist target |
+| TargetCallerGoal | CallFocusTarget; main assist calls casters first, then weakest valid enemy |
+| ProtectGroupGoal | PeelEnemy; main tank takes mobs off attacked group members |
+| GuardHealerGoal | AssignGuard; neediest member (attacked healer/caster first); manual /mguard wins |
+| QuickcastRecoveryGoal | SecureCast; interrupted caster pops Quickcast; outranks kiting |
+| KiteGoal | KiteToSafety; solo long flight with hold ring, grouped falls back to the tank; melee and main tanks hold |
+| DebuffPriorityGoal | ApplyDebuff; first missing debuff from the harmful pool, then damage |
+| PositionalStyleGoal | MoveToFlank; flank walk for side/back styles; tanks hold front |
+| ArrowTypeGoal | ChooseArrowType; resist-beating chooser buff (new archery only) |
 | DealDamageGoal | CastOffensiveSpell, then EngageTarget if casting cannot act |
 | BuffMaintenanceGoal | MaintainBuffs; existing missing-effect checks and class overrides |
 
-EngageTarget reuses the existing weapon, pet, offensive ability, positional-style,
-chase and caster flee/quickcast mechanics. Spell selection remains class-aware,
+EngageTarget reuses the existing weapon, pet, offensive ability, positional-style and
+chase mechanics. Kiting and Quickcast are separate registered actions (see table). Spell selection remains class-aware,
 including ArcherBrain and AssassinBrain overrides. GOAP actions do not call the
 FSM or recursively enter GOAP.
 
@@ -113,3 +132,22 @@ Before deploying, use a configured development server and DAoC client to check:
    counts. Check role/spec changes, duel readiness and death/respawn.
 
 No database-backed server/client session was run as part of this change.
+
+## Not registered (by design)
+
+All 21 goal files in `ReGoap/Goals` are in a decided state: 15 registered above,
+1 owned by the FSM, 4 retired. Retired files stay in source as reference; their
+presence alone implies no complete sensors, achievable effects, or verified
+execution paths.
+
+| Goal | Disposition |
+| --- | --- |
+| PullTargetGoal | FSM-owned. Pulls run through the CAMP state machine (`CheckPuller`, `IsPulling`, camp re-entry); a GOAP pull would double-pull, fight camp returns, and stall on stale targets. |
+| SurviveGoal | Retired. A universal 0–90 self-preservation goal would preempt every role goal; self-survival is covered by EmergencyHeal (healers) and Kite (pressured casters). |
+| BackupHealGoal | Retired. Same `GROUP_FULL_HEALTH` effect key as HealGroupGoal; registering both double-plans the same work. |
+| MaintainSpeedGoal | Retired. Same `BUFFS_MAINTAINED` effect as BuffMaintenanceGoal (which already escalates on missing speed); its own `speedMaintained` key is set by no action. |
+| BreakEnemyMezzGoal | Retired. Mezz/disease/poison curing runs through CureGroupGoal's existing cure mechanics; its `friendlyTargetFree` key is set by no action. |
+
+Protect and Intercept stay manual (`/mprotect`, `/mintercept`, whispers): one-shot
+reaction windows with no maintained state to plan around. Guard is the only
+defensive ability GOAP manages, and only while no manual `/mguard` stands.

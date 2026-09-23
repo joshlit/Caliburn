@@ -36,8 +36,34 @@ namespace DOL.GS.ReGoap.Mimic.Actions
                 () => brain.ExecuteGoapSpell(MimicBrain.eCheckSpellType.CrowdControl)));
             agent.AddAction(new MimicTacticalAction("CastOffensiveSpell", TacticalSensor.OffenseAvailable,
                 "targetDamaged", () => brain.ExecuteGoapSpell(MimicBrain.eCheckSpellType.Offensive)));
+            agent.AddAction(new MimicTacticalAction("ApplyDebuff", TacticalSensor.DebuffAvailable,
+                "targetDebuffed", () => brain.ExecuteGoapDebuff(), 1f));
+            agent.AddAction(new MimicTacticalAction("ChooseArrowType", TacticalSensor.ArrowTypeAvailable,
+                "arrowTypeChosen", () => brain.ExecuteGoapArrowType(), 1f));
             agent.AddAction(new MimicTacticalAction("EngageTarget", TacticalSensor.AttackAvailable,
                 "targetDamaged", () => brain.ExecuteGoapEngagement(), 2f));
+            agent.AddAction(new MimicTacticalAction("MoveToFlank", TacticalSensor.FlankAvailable,
+                "inOptimalPosition", () => brain.ExecuteGoapFlank(), 1f));
+            agent.AddAction(new MimicTacticalAction("InterruptCaster", TacticalSensor.InterruptAvailable,
+                "enemyInterrupted", () => brain.ExecuteGoapInterrupt(), 0.5f));
+            agent.AddAction(new MimicTacticalAction("FollowAssist", TacticalSensor.AssistAvailable,
+                "onAssistTrain", () => brain.ExecuteGoapAssist(), 0.5f));
+            agent.AddAction(new MimicTacticalAction("CallFocusTarget", TacticalSensor.CallAvailable,
+                "focusCalled", () => brain.ExecuteGoapCallTarget(), 0.5f));
+            agent.AddAction(new MimicTacticalAction("PeelEnemy", TacticalSensor.PeelAvailable,
+                "enemiesPeeled", () => brain.ExecuteGoapPeel(), 1f));
+            agent.AddAction(new MimicTacticalAction("AssignGuard", TacticalSensor.GuardAvailable,
+                "guardAssigned", () => brain.ExecuteGoapGuard(), 1f));
+            agent.AddAction(new MimicTacticalAction("KiteToSafety", TacticalSensor.KiteAvailable,
+                "atSafeDistance", () => brain.ExecuteGoapKite(), 1f));
+            agent.AddAction(new MimicTacticalAction("SecureCast", TacticalSensor.QuickcastReady,
+                "castSecured", () => brain.ExecuteGoapQuickcast(), 0.5f));
+            agent.AddAction(new MimicTacticalAction("CastRez", TacticalSensor.RezAvailable,
+                "corpseRezzed", () => brain.ExecuteGoapRez(), 1f));
+            agent.AddAction(new MimicTacticalAction("CastRezOutside", TacticalSensor.RezOutsideAvailable,
+                "outsiderRezzed", () => brain.ExecuteGoapRezOutside(), 1f));
+            agent.AddAction(new MimicTacticalAction("UsePurge", TacticalSensor.PurgeAvailable,
+                "purged", () => brain.ExecuteGoapPurge(), 1f));
         }
 
         public override float GetCost(IReGoapAgent<string, object> agent, ReGoapState<string, object> state)
