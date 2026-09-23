@@ -151,6 +151,8 @@ namespace DOL.GS.Spells
             }
 
 			living.Health = living.MaxHealth * m_spell.ResurrectHealth / 100;
+			if (living is DOL.GS.Scripts.MimicNPC mimic)
+				mimic.OnResurrected();
 			double tempManaEnd = m_spell.ResurrectMana / 100.0;
 			living.Mana = (int)(living.MaxMana * tempManaEnd);
 

@@ -2015,7 +2015,7 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		public virtual void SendPlayerDied(GamePlayer killedPlayer, GameObject killer)
+		public virtual void SendPlayerDied(GameLiving killedPlayer, GameObject killer)
 		{
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PlayerDeath)))
 			{
@@ -2029,7 +2029,7 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
-		public virtual void SendPlayerRevive(GamePlayer revivedPlayer)
+		public virtual void SendPlayerRevive(GameLiving revivedPlayer)
 		{
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PlayerRevive)))
 			{

@@ -71,6 +71,20 @@ namespace DOL.GS.ReGoap.Mimic
                 if (sensors.Count == 0 || goals.Count == 0 || actions.Count == 0)
                     return Fallback("Missing sensors, goals or actions");
                 if (!Brain.IsActive) return Fallback("Inactive body");
+                // The FSM owns the flee destination and its recovery. Let it finish
+                // that movement instead of alternating casts and attack orders.
+                if (context == MimicDecisionContext.Combat && !Brain.IsHealer && Body.Group == null &&
+                    Body.CharacterClass.ClassType == eClassType.ListCaster &&
+                    (Brain.IsFleeing || Body.IsBeingInterrupted))
+                    return Fallback("Caster kiting");
+                if (context != MimicDecisionContext.Combat && Brain.TryResurrectGroupMember())
+                {
+                    LastGoal = "ResurrectGroupMember";
+                    LastAction = "CastResurrection";
+                    Decisions++;
+                    Status = "GOAP";
+                    return true;
+                }
                 Context = context;
                 if (context == MimicDecisionContext.Combat && !Brain.PreventCombat && !Brain.IsHealer)
                     Brain.SelectGoapAttackTarget();

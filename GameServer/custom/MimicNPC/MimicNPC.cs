@@ -251,6 +251,20 @@ namespace DOL.GS.Scripts
                     case GS.Abilities.Weapon_RecurvedBows: MimicEquipment.SetRangedWeapon(this, eObjectType.RecurvedBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
                     case GS.Abilities.Weapon_Longbows: MimicEquipment.SetRangedWeapon(this, eObjectType.Longbow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
                     case GS.Abilities.Weapon_CompositeBows: MimicEquipment.SetRangedWeapon(this, eObjectType.CompositeBow); SwitchWeapon(eActiveWeaponSlot.Distance); break;
+                    case GS.Abilities.Weapon_Archery when !ServerProperties.Properties.ALLOW_OLD_ARCHERY:
+                        eObjectType bow = CharacterClass.ID switch
+                        {
+                            (int)eCharacterClass.Scout => eObjectType.Longbow,
+                            (int)eCharacterClass.Hunter => eObjectType.CompositeBow,
+                            (int)eCharacterClass.Ranger => eObjectType.RecurvedBow,
+                            _ => eObjectType.GenericItem
+                        };
+                        if (bow != eObjectType.GenericItem)
+                        {
+                            MimicEquipment.SetRangedWeapon(this, bow);
+                            SwitchWeapon(eActiveWeaponSlot.Distance);
+                        }
+                        break;
                 }
             }
         }
@@ -1935,8 +1949,28 @@ namespace DOL.GS.Scripts
 
         public override void Delete()
         {
+            m_corpseTimer?.Stop();
+            m_corpseTimer = null;
             Group?.RemoveMember(this);
             base.Delete();
+        }
+
+        private ECSGameTimer m_corpseTimer;
+
+        public void OnResurrected()
+        {
+            if (!m_isDead || Health <= 0)
+                return;
+
+            m_corpseTimer?.Stop();
+            m_corpseTimer = null;
+            m_isDead = false;
+            Group?.UpdateMember(this, false, false);
+            MimicBrain?.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+            MimicBrain?.Start();
+
+            foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                player.Out.SendPlayerRevive(this);
         }
 
         public override bool RemoveFromWorld()
@@ -7489,9 +7523,6 @@ namespace DOL.GS.Scripts
             }
 
             Duel?.Stop();
-            MimicSpawner?.Remove(this);
-            MimicSpawnerPersistent?.Remove(this);
-
             eChatType messageType;
 
             if (m_releaseType == eReleaseType.Duel)
@@ -7537,13 +7568,34 @@ namespace DOL.GS.Scripts
             IsSitting = false;
             IsSwimming = false;
 
-            // then buffs drop messages
-            //GameLivingProcessDeath(killer);
+            // Preserve a targetable corpse and group membership for resurrection.
 
             if (ControlledBrain != null)
                 CommandNpcRelease();
 
-            base.ProcessDeath(killer);
+            StopMoving();
+            MimicBrain?.Stop();
+            if (killer != null)
+            {
+                if (IsWorthReward)
+                    DropLoot(killer);
+                GameServer.ServerRules.OnNPCKilled(this, killer);
+            }
+            GameLivingProcessDeath(killer);
+            m_deathTick = GameLoop.GameLoopTime;
+            MimicBrain?.FSM.SetCurrentState(eFSMStateType.DEAD);
+
+            foreach (GamePlayer player in GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                player.Out.SendPlayerDied(this, killer);
+
+            m_corpseTimer?.Stop();
+            m_corpseTimer = new ECSGameTimer(this, _ =>
+            {
+                if (!IsAlive)
+                    Delete();
+                return 0;
+            });
+            m_corpseTimer.Start(60000);
 
             if (m_releaseType == eReleaseType.Duel)
             {

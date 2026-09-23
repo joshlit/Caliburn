@@ -669,7 +669,8 @@ namespace DOL.AI.Brain
 
         public override void Think()
         {
-            _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
+            if (_brain.Body.IsAlive)
+                _brain.FSM.SetCurrentState(eFSMStateType.WAKING_UP);
             base.Think();
         }
     }

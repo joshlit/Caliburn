@@ -1503,10 +1503,37 @@ namespace DOL.AI.Brain
             CrowdControl
         }
 
-        /// <summary>
-        /// Checks if any spells need casting
-        /// </summary>
-        /// <param name="type">Which type should we go through and check for?</param>
+        /// <summary>Attempts a group resurrection while out of combat.</summary>
+        public bool TryResurrectGroupMember()
+        {
+            if (Body.Group == null || Body.InCombat || Body.IsCasting || Body.IsBeingInterrupted ||
+                Body.IsStunned || Body.IsMezzed || Body.Spells == null)
+                return false;
+
+            foreach (Spell spell in Body.Spells)
+            {
+                if (spell.SpellType != eSpellType.Resurrect ||
+                    Body.GetSkillDisabledDuration(spell) > 0)
+                    continue;
+
+                foreach (GameLiving member in Body.Group.GetMembersInTheGroup())
+                {
+                    if (member.IsAlive || member.ObjectState != GameObject.eObjectState.Active ||
+                        !Body.IsWithinRadius(member, spell.Range))
+                        continue;
+
+                    GameObject previousTarget = Body.TargetObject;
+                    Body.TargetObject = member;
+                    if (Body.CastSpell(spell, m_mobSpellLine))
+                        return true;
+                    Body.TargetObject = previousTarget;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Checks if any spells need casting.</summary>
         public virtual bool CheckSpells(eCheckSpellType type)
         {
             if (Body == null || Body.Spells == null || Body.Spells.Count <= 0)
@@ -1678,6 +1705,11 @@ namespace DOL.AI.Brain
 
         protected bool CanCastOffensiveSpell(Spell spell)
         {
+            if (spell.SpellType == eSpellType.Archery &&
+                spell.LifeDrainReturn == (int)DOL.GS.Spells.Archery.eShotType.Critical &&
+                !Body.IsStealthed)
+                return false;
+
             if (Body.GetSkillDisabledDuration(spell) <= 0)
             {
                 if (spell.CastTime > 0)
@@ -3011,6 +3043,10 @@ namespace DOL.AI.Brain
                 //Body.SwitchWeapon(eActiveWeaponSlot.Distance);
 
             bool casted = false;
+
+            if (spell.SpellType == eSpellType.Archery &&
+                Body.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
+                Body.SwitchWeapon(eActiveWeaponSlot.Distance);
 
             if (Body.TargetObject is GameLiving living && (spell.Duration == 0 || !LivingHasEffect(living, spell) || spell.SpellType == eSpellType.DirectDamageWithDebuff || spell.SpellType == eSpellType.DamageSpeedDecrease))
             {
