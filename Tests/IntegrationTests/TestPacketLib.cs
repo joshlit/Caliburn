@@ -454,10 +454,18 @@ namespace DOL.Tests
 		{
 			if (SendPlayerDiedMethod != null) SendPlayerDiedMethod(this, killedPlayer, killer);
 		}
+		public void SendPlayerDied(GameLiving killedLiving, GameObject killer)
+		{
+			if (killedLiving is GamePlayer killedPlayer && SendPlayerDiedMethod != null) SendPlayerDiedMethod(this, killedPlayer, killer);
+		}
 		public Action<TestPacketLib, GamePlayer> SendPlayerReviveMethod { get; set; }
 		public void SendPlayerRevive(GamePlayer revivedPlayer)
 		{
 			if (SendPlayerReviveMethod != null) SendPlayerReviveMethod(this, revivedPlayer);
+		}
+		public void SendPlayerRevive(GameLiving revivedLiving)
+		{
+			if (revivedLiving is GamePlayer revivedPlayer && SendPlayerReviveMethod != null) SendPlayerReviveMethod(this, revivedPlayer);
 		}
 		public Action<TestPacketLib> SendUpdatePlayerMethod { get; set; }
 		public void SendUpdatePlayer()

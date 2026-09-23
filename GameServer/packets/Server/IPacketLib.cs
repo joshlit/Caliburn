@@ -715,7 +715,9 @@ namespace DOL.GS.PacketHandler
 		void SendTradeWindow();
 		void SendCloseTradeWindow();
 		void SendPlayerDied(GamePlayer killedPlayer, GameObject killer);
+		void SendPlayerDied(GameLiving killedLiving, GameObject killer); // PR16: mimic corpses (OID-based, same packet)
 		void SendPlayerRevive(GamePlayer revivedPlayer);
+		void SendPlayerRevive(GameLiving revivedLiving); // PR17: rezzed mimics (OID-based, same packet)
 		void SendUpdatePlayer();
 		void SendUpdatePlayerSkills();
 		void SendUpdateWeaponAndArmorStats();

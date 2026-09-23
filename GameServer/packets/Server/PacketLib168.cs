@@ -2029,6 +2029,30 @@ namespace DOL.GS.PacketHandler
 			}
 		}
 
+		public virtual void SendPlayerDied(GameLiving killedLiving, GameObject killer)
+		{
+			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PlayerDeath)))
+			{
+				pak.WriteShort((ushort) killedLiving.ObjectID);
+				if (killer != null)
+					pak.WriteShort((ushort) killer.ObjectID);
+				else
+					pak.WriteShort(0x00);
+				pak.Fill(0x0, 4);
+				SendTCP(pak);
+			}
+		}
+
+		public virtual void SendPlayerRevive(GameLiving revivedLiving)
+		{
+			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PlayerRevive)))
+			{
+				pak.WriteShort((ushort) revivedLiving.ObjectID);
+				pak.WriteShort(0x00);
+				SendTCP(pak);
+			}
+		}
+
 		public virtual void SendPlayerRevive(GamePlayer revivedPlayer)
 		{
 			using (var pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PlayerRevive)))

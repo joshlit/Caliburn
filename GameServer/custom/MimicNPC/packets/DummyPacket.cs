@@ -432,6 +432,9 @@ namespace DOL.GS.Scripts
         {
         }
 
+        public void SendPlayerDied(GameLiving killedLiving, GameObject killer)
+        {
+        }
         public void SendPlayerForgedPosition(GamePlayer player)
         {
         }
@@ -461,6 +464,10 @@ namespace DOL.GS.Scripts
         }
 
         public void SendPlayerRevive(GamePlayer revivedPlayer)
+        {
+        }
+
+        public void SendPlayerRevive(GameLiving revivedLiving)
         {
         }
 
